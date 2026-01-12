@@ -1,0 +1,35 @@
+@font-face {
+  font-family: 'kopubworld-dotum';
+  src:
+    local('kopubworld-dotum'),
+    // url('../fonts/kopubworld-dotum/kopubworld-dotum-regular.woff2') format('woff2'),
+    // url('../fonts/kopubworld-dotum/kopubworld-dotum-regular.woff') format('woff'),
+    url('../fonts/kopubworld-dotum/kopubworld-dotum-bold.ttf') format('truetype');
+  font-weight: bold;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'kopubworld-dotum';
+  src:
+    local('kopubworld-dotum'),
+    // url('../fonts/kopubworld-dotum/kopubworld-dotum-regular.woff2') format('woff2'),
+    // url('../fonts/kopubworld-dotum/kopubworld-dotum-regular.woff') format('woff'),
+    url('../fonts/kopubworld-dotum/kopubworld-dotum-medium.ttf') format('truetype');
+  font-weight: 500;
+  font-display: swap;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'kopubworld-dotum';
+  src:
+    local('kopubworld-dotum'),
+    // url('../fonts/kopubworld-dotum/kopubworld-dotum-regular.woff2') format('woff2'),
+    // url('../fonts/kopubworld-dotum/kopubworld-dotum-regular.woff') format('woff'),
+    url('../fonts/kopubworld-dotum/kopubworld-dotum-medium.ttf') format('truetype');
+  font-weight: normal;
+  font-display: swap;
+  font-style: normal;
+}

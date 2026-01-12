@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Multi-Account Authorization</title>
+  <meta charset="utf-8">
+  <script nonce="<%= content_security_policy_nonce %>">
+    (function() {
+      var closeTimeout = null;
+      var closeInitiated = false;
+      var messageSent = false;
+      var targetOrigin = '<%= @redirect_origin.present? ? j(@redirect_origin) : '' %>';
+
+      // Listen for close confirmation from parent window
+      window.addEventListener('message', function(event) {
+        var data = event.data;
+
+        if (data && data.type === 'multi-account-close-popup') {
+          if (closeTimeout) {
+            clearTimeout(closeTimeout);
+          }
+          closeInitiated = true;
+          window.close();
+        }
+      });
+
+      // Function to send message to opener
+      function sendMessage(messageType, payload) {
+        if (messageSent) {
+          return;
+        }
+
+        if (window.opener && !window.opener.closed) {
+          try {
+            // Try with specific origin first, fallback to current origin or '*'
+            var origin = targetOrigin || window.location.origin || '*';
+            window.opener.postMessage({
+              type: messageType,
+              state: '<%= j @state %>',
+              code: '<%= j @code %>',
+              error: payload.error || null
+            }, origin);
+            messageSent = true;
+          } catch (e) {
+            console.error('Failed to send message:', e);
+            // Retry with current origin if targetOrigin was different
+            if (targetOrigin && targetOrigin !== window.location.origin) {
+              try {
+                window.opener.postMessage({
+                  type: messageType,
+                  state: '<%= j @state %>',
+                  code: '<%= j @code %>',
+                  error: payload.error || null
+                }, window.location.origin);
+                messageSent = true;
+              } catch (e2) {
+                console.error('Failed to send message with current origin:', e2);
+                // Last resort: try with wildcard
+                try {
+                  window.opener.postMessage({
+                    type: messageType,
+                    state: '<%= j @state %>',
+                    code: '<%= j @code %>',
+                    error: payload.error || null
+                  }, '*');
+                  messageSent = true;
+                } catch (e3) {
+                  console.error('Failed to send message with wildcard origin:', e3);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      <% if @error.present? %>
+        // Send error to opener
+        sendMessage('multi-account-error', { error: '<%= j @error %>' });
+
+        // Close window after waiting for parent response or timeout
+        closeTimeout = setTimeout(function() {
+          if (!closeInitiated) {
+            window.close();
+          }
+        }, 5000);
+      <% else %>
+        // Send success data to opener
+        sendMessage('multi-account-callback', {});
+
+        // Wait for parent window to confirm before closing (with 10s timeout)
+        closeTimeout = setTimeout(function() {
+          if (!closeInitiated) {
+            // Try to close, but don't fail if it doesn't work
+            try {
+              window.close();
+            } catch (e) {
+              console.warn('Could not close window automatically:', e);
+            }
+          }
+        }, 10000);
+      <% end %>
+    })();
+  </script>
+</head>
+<body>
+  <% if @error.present? %>
+    <h1>Authorization Error</h1>
+    <p><%= @error %></p>
+    <p>This window will close automatically...</p>
+  <% else %>
+    <h1>Authorization Successful</h1>
+    <p>This window will close automatically...</p>
+  <% end %>
+</body>
+</html>

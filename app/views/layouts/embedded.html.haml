@@ -1,0 +1,24 @@
+!!! 5
+%html{ lang: I18n.locale }
+  %head
+    %meta{ charset: 'utf-8' }/
+    %meta{ name: 'robots', content: 'noindex' }/
+
+    - if cdn_host?
+      %link{ rel: 'dns-prefetch', href: cdn_host }/
+      %meta{ name: 'cdn-host', content: cdn_host }/
+
+    - if storage_host?
+      %link{ rel: 'dns-prefetch', href: storage_host }/
+
+    = vite_client_tag
+    = vite_react_refresh_tag
+    = theme_style_tags 'mastodon-light'
+    = vite_preload_file_tag "mastodon/locales/#{I18n.locale}.json"
+    = render_initial_state
+    = vite_typescript_tag 'embed.tsx', integrity: true, crossorigin: 'anonymous'
+  %body.embed
+    = yield
+
+    .logo-resources{ 'tabindex' => '-1', 'inert' => true, 'aria-hidden' => 'true' }
+      = inline_svg_tag 'logo-symbol-icon.svg'

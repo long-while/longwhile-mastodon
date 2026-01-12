@@ -1,0 +1,26 @@
+- content_for :page_title do
+  DM 관리
+
+.table-wrapper
+  %table.table
+    %thead
+      %tr
+        %th 발신자
+        %th 내용
+        %th 작성일시
+    %tbody
+      - if @direct_messages.empty?
+        %tr
+          %td{ colspan: 3, style: 'text-align: center; padding: 2rem;' }
+            다이렉트 메시지가 없습니다.
+      - else
+        - @direct_messages.each do |direct_message|
+          %tr
+            %td
+              %strong= "@#{direct_message.account.username}"
+            %td
+              = truncate(strip_tags(direct_message.content), length: 100)
+            %td
+              = l(direct_message.created_at, format: :short)
+
+= paginate @direct_messages
