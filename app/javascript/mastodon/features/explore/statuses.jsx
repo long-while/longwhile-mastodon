@@ -57,11 +57,10 @@ class Statuses extends PureComponent {
     const { isLoading, hasMore, statusIds, multiColumn, identity } = this.props;
     const { signedIn } = identity;
 
-    const emptyMessage = (
-      <>
-        <FormattedMessage id='empty_column.explore_statuses' defaultMessage='Nothing is trending right now. Check back later!' />
-        {!signedIn && <SignInBanner />}
-      </>
+    const emptyMessage = !signedIn && (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '50vh' }}>
+        <SignInBanner />
+      </div>
     );
 
     return (

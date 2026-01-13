@@ -58,11 +58,11 @@ class Links extends PureComponent {
         <div className='explore__links scrollable scrollable--flex'>
           {banner}
 
-          <div className='empty-column-indicator'>
-            <FormattedMessage id='empty_column.explore_statuses' defaultMessage='Nothing is trending right now. Check back later!' />
-          </div>
-
-          {!signedIn && <SignInBanner />}
+          {!signedIn && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+              <SignInBanner />
+            </div>
+          )}
         </div>
       );
     }
