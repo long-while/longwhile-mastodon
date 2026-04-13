@@ -29,8 +29,6 @@ namespace :mastodon do
 
       prompt.say "\n"
 
-      # Single user mode 안내만 출력하고, 기본값으로 비활성화
-      prompt.say('Single user mode disables registrations and redirects the landing page to your public profile.')
       env['SINGLE_USER_MODE'] = false
 
       %w(SECRET_KEY_BASE OTP_SECRET).each do |key|
@@ -53,8 +51,6 @@ namespace :mastodon do
 
       prompt.say "\n"
 
-      # Docker는 사용하지 않는 고정값
-      using_docker        = false
       db_connection_works = false
 
       prompt.say "\n"
@@ -356,101 +352,92 @@ namespace :mastodon do
       env['BOT_THROTTLE_API_PERIOD'] ||= '300'
 
       prompt.say "\n"
-      prompt.say 'This configuration will be written to .env.production'
+      prompt.say 'Saving configuration to .env.production...'
 
-      if prompt.yes?('Save configuration?')
-        incompatible_syntax = false
+      incompatible_syntax = false
 
-        env_contents = env.each_pair.map do |key, value|
-          value = value.to_s
-          escaped = dotenv_escape(value)
-          incompatible_syntax = true if value != escaped
+      env_contents = env.each_pair.map do |key, value|
+        value = value.to_s
+        escaped = dotenv_escape(value)
+        incompatible_syntax = true if value != escaped
 
-          "#{key}=#{escaped}"
-        end.join("\n")
+        "#{key}=#{escaped}"
+      end.join("\n")
 
-        generated_header = generate_header(incompatible_syntax)
+      generated_header = generate_header(incompatible_syntax)
 
-        Rails.root.join('.env.production').write("#{generated_header}#{env_contents}\n")
+      Rails.root.join('.env.production').write("#{generated_header}#{env_contents}\n")
 
-        if using_docker
-          prompt.ok 'Below is your configuration, save it to an .env.production file outside Docker:'
-          prompt.say "\n"
-          prompt.say "#{generated_header}#{env.each_pair.map { |key, value| "#{key}=#{value}" }.join("\n")}"
-          prompt.say "\n"
-          prompt.ok 'It is also saved within this container so you can proceed with this wizard.'
-        end
+      prompt.ok 'Configuration saved.'
 
-        prompt.say "\n"
-        prompt.say 'Now that configuration is saved, the database will be prepared (create if missing, then migrate).'
+      prompt.say "\n"
+      prompt.say 'Preparing the database (create if missing, then migrate)...'
+      prompt.say 'Running `RAILS_ENV=production rails db:prepare` ...'
+      prompt.say "\n\n"
 
-        if prompt.yes?('Prepare the database now?')
-          prompt.say 'Running `RAILS_ENV=production rails db:prepare` ...'
-          prompt.say "\n\n"
-
-          if system(env.transform_values(&:to_s).merge({ 'RAILS_ENV' => 'production', 'SAFETY_ASSURED' => '1' }), 'rails db:prepare')
-            prompt.ok 'Database prepared successfully.'
-          else
-            prompt.error 'Database preparation (`rails db:prepare`) did not complete successfully. Please review the output above.'
-            errors << 'Preparing the database failed'
-          end
-        end
-
-        prompt.say "\n"
-
-        # Multi-account OAuth client 자동 설정
-        if db_connection_works && prompt.yes?('Do you want to automatically configure the multi-account OAuth client?', default: true)
-          begin
-            ensure_multi_account_client!(env, prompt)
-          rescue => e
-            prompt.error 'Failed to set up multi-account OAuth client automatically.'
-            prompt.error e.message
-            errors << 'Multi-account OAuth client setup failed.'
-          end
-        end
-
-        if errors.any?
-          prompt.warn 'Your Mastodon server is set up, but there were some errors along the way, you may have to fix them:'
-          errors.each { |error| prompt.warn "- #{error}" }
-        else
-          prompt.ok 'All done! You can now power on the Mastodon server 🐘'
-        end
-        prompt.say "\n"
-
-        if db_connection_works && prompt.yes?('Do you want to create an admin user straight away?')
-          env.each_pair do |key, value|
-            ENV[key] = value.to_s
-          end
-
-          require_relative '../../config/environment'
-          disable_log_stdout!
-
-          username = prompt.ask('Username:') do |q|
-            q.required true
-            q.default 'admin'
-            q.validate(/\A[a-z0-9_]+\z/i)
-            q.modify :strip
-          end
-
-          email = prompt.ask('E-mail:') do |q|
-            q.required true
-            q.modify :strip
-          end
-
-          password = SecureRandom.hex(16)
-
-          owner_role = UserRole.find_by(name: 'Owner')
-          user = User.new(email: email, password: password, confirmed_at: Time.now.utc, account_attributes: { username: username }, bypass_registration_checks: true, role: owner_role)
-          user.save(validate: false)
-          user.approve!
-
-          Setting.site_contact_username = username
-
-          prompt.ok "You can login with the password: #{password}"
-          prompt.warn 'You can change your password once you login.'
-        end
+      if system(env.transform_values(&:to_s).merge({ 'RAILS_ENV' => 'production', 'SAFETY_ASSURED' => '1' }), 'rails db:prepare')
+        prompt.ok 'Database prepared successfully.'
       else
-        prompt.warn 'Nothing saved. Bye!'
+        prompt.error 'Database preparation (`rails db:prepare`) did not complete successfully. Please review the output above.'
+        errors << 'Preparing the database failed'
+      end
+
+      prompt.say "\n"
+
+      # Multi-account OAuth client 자동 설정
+      if db_connection_works
+        prompt.say 'Configuring multi-account OAuth client...'
+        begin
+          ensure_multi_account_client!(env, prompt)
+        rescue => e
+          prompt.error 'Failed to set up multi-account OAuth client automatically.'
+          prompt.error e.message
+          errors << 'Multi-account OAuth client setup failed.'
+        end
+      end
+
+      if errors.any?
+        prompt.warn 'Your Mastodon server is set up, but there were some errors along the way, you may have to fix them:'
+        errors.each { |error| prompt.warn "- #{error}" }
+      else
+        prompt.ok 'All done! You can now power on the Mastodon server 🐘'
+      end
+      prompt.say "\n"
+
+      if db_connection_works
+        prompt.say 'Creating admin user...'
+        env.each_pair do |key, value|
+          ENV[key] = value.to_s
+        end
+
+        unless defined?(Rails) && Rails.application&.initialized?
+          require_relative '../../config/environment'
+        end
+        disable_log_stdout!
+
+        username = prompt.ask('Username:') do |q|
+          q.required true
+          q.default 'NOTICE'
+          q.validate(/\A[a-z0-9_]+\z/i)
+          q.modify :strip
+        end
+
+        email = prompt.ask('E-mail:') do |q|
+          q.required true
+          q.modify :strip
+        end
+
+        password = SecureRandom.hex(16)
+
+        owner_role = UserRole.find_by(name: 'Owner')
+        user = User.new(email: email, password: password, confirmed_at: Time.now.utc, account_attributes: { username: username }, bypass_registration_checks: true, role: owner_role)
+        user.save(validate: false)
+        user.approve!
+
+        Setting.site_contact_username = username
+
+        prompt.ok "You can login with the password: #{password}"
+        prompt.warn 'You can change your password once you login.'
       end
     rescue TTY::Reader::InputInterrupt
       prompt.ok 'Aborting. Bye!'
