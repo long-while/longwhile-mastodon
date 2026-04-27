@@ -44,28 +44,30 @@ const Explore: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
         multiColumn={multiColumn}
       />
 
-      <div className='explore__search-header'>
-        <Search singleColumn />
-      </div>
+      {signedIn && (
+        <div className='explore__search-header'>
+          <Search singleColumn />
+        </div>
+      )}
 
-      <div className='account__section-headline'>
-        <NavLink exact to='/explore'>
-          <FormattedMessage
-            tagName='div'
-            id='explore.trending_statuses'
-            defaultMessage='Posts'
-          />
-        </NavLink>
+      {signedIn && (
+        <div className='account__section-headline'>
+          <NavLink exact to='/explore'>
+            <FormattedMessage
+              tagName='div'
+              id='explore.trending_statuses'
+              defaultMessage='Posts'
+            />
+          </NavLink>
 
-        <NavLink exact to='/explore/tags'>
-          <FormattedMessage
-            tagName='div'
-            id='explore.trending_tags'
-            defaultMessage='Hashtags'
-          />
-        </NavLink>
+          <NavLink exact to='/explore/tags'>
+            <FormattedMessage
+              tagName='div'
+              id='explore.trending_tags'
+              defaultMessage='Hashtags'
+            />
+          </NavLink>
 
-        {signedIn && (
           <NavLink exact to='/explore/suggestions'>
             <FormattedMessage
               tagName='div'
@@ -73,16 +75,16 @@ const Explore: React.FC<{ multiColumn: boolean }> = ({ multiColumn }) => {
               defaultMessage='People'
             />
           </NavLink>
-        )}
 
-        <NavLink exact to='/explore/links'>
-          <FormattedMessage
-            tagName='div'
-            id='explore.trending_links'
-            defaultMessage='News'
-          />
-        </NavLink>
-      </div>
+          <NavLink exact to='/explore/links'>
+            <FormattedMessage
+              tagName='div'
+              id='explore.trending_links'
+              defaultMessage='News'
+            />
+          </NavLink>
+        </div>
+      )}
 
       <Switch>
         <Route path='/explore/tags' component={Tags} />

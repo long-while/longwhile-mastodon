@@ -8,8 +8,6 @@
 = simple_form_for @account, url: settings_profile_path, html: { id: :edit_profile } do |f|
   = render 'shared/error_messages', object: @account
 
-  %p.lead= t('edit_profile.hint_html')
-
   %h4= t('edit_profile.basic_information')
 
   .fields-row
@@ -63,6 +61,13 @@
             = t('generic.delete')
 
   %h4= t('edit_profile.other')
+
+  .fields-group
+    = f.input :private_account,
+              as: :boolean,
+              wrapper: :with_label,
+              label: t('simple_form.labels.defaults.private_account'),
+              hint: t('simple_form.hints.defaults.private_account_html')
 
   .fields-group
     = f.input :bot, as: :boolean, wrapper: :with_label, hint: t('simple_form.hints.defaults.bot')

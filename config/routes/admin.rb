@@ -136,6 +136,7 @@ namespace :admin do
       post :approve
       post :reject
       post :unblock_email
+      post :toggle_protect
     end
 
     collection do

@@ -1,7 +1,9 @@
 @use 'sass:color';
 
-@use '../mastodon/functions' with ($darken-multiplier: 1,
-  $lighten-multiplier: -1);
+@use '../mastodon/functions' with (
+  $darken-multiplier: 1,
+  $lighten-multiplier: -1
+);
 
 $black: #000000; // Black
 $white: #ffffff; // White
@@ -21,9 +23,12 @@ $classic-secondary-color: hsl(0, 0%, 100%); // 수정. 전체배경색
 
 $classic-highlight-color: $longwhile-500;
 
-@use '../mastodon/variables' with ($success-green: color.adjust(hsl(209, 100%, 66%),
-    $lightness: 8%,
-    $space: hsl),
+@use '../mastodon/variables' with (
+  $success-green: color.adjust(
+      hsl(209, 100%, 66%),
+      $lightness: 8%,
+      $space: hsl
+    ),
   $base-overlay-background: $white,
 
   $ui-base-color: $classic-secondary-color,
@@ -31,8 +36,8 @@ $classic-highlight-color: $longwhile-500;
   $ui-base-lighter-color: hsl(206, 41%, 85%), // 수정
 
   $ui-secondary-color: $classic-base-color,
-  $ui-highlight-color: $classic-highlight-color,
 
+  $ui-highlight-color: $classic-highlight-color,
 
   $ui-button-background-color: $longwhile-500,
   $ui-button-focus-background-color: $longwhile-600,
@@ -44,6 +49,8 @@ $classic-highlight-color: $longwhile-500;
   $ui-button-secondary-focus-color: $white,
   $ui-button-tertiary-color: $longwhile-500,
   $ui-button-tertiary-border-color: $longwhile-500,
+
+  $account-switcher-add-text-color: $longwhile-500,
 
   $primary-text-color: $black,
   $darker-text-color: $classic-base-color,

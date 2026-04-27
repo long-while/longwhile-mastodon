@@ -61,7 +61,51 @@ class PublicFeed
   end
 
   def public_scope
-    Status.public_visibility.joins(:account).merge(Account.without_suspended.without_silenced)
+    base_scope = Status.joins(:account).merge(Account.without_suspended.without_silenced)
+
+    return base_scope.none unless account?
+
+    administrator? ? administrator_public_scope(base_scope) : standard_public_scope(base_scope)
+  end
+
+  # 일반 사용자: 팔로우 중 + 본인 계정의 툿 노출
+  # - 비잠금(언프로텍트) 작성자: unlisted 만
+  # - 잠금(프로텍트) 작성자: unlisted + private
+  #   (본인의 private 도 본인 계정이 잠금 상태일 때만 자연스럽게 노출됨)
+  # enum 키가 사라지면 fetch가 즉시 KeyError로 실패 → 마이그레이션 누락을 빠르게 감지
+  def standard_public_scope(base_scope)
+    followed_ids = Follow.where(account_id: account.id).select(:target_account_id)
+
+    base_scope
+      .where('statuses.account_id IN (?) OR statuses.account_id = ?', followed_ids, account.id)
+      .where(
+        '(statuses.visibility = ?) OR (statuses.visibility = ? AND accounts.locked = TRUE)',
+        Status.visibilities.fetch('unlisted'),
+        Status.visibilities.fetch('private')
+      )
+  end
+
+  # Admin / Owner: 팔로우 중 + 본인 계정의 툿 노출 (감시 목적)
+  # - 비잠금 작성자: unlisted + direct
+  # - 잠금(프로텍트) 작성자: unlisted + private + direct
+  # - 본인이 멘션된 툿은 제외 (이미 멘션/알림 타임라인에서 확인 가능)
+  def administrator_public_scope(base_scope)
+    followed_ids       = Follow.where(account_id: account.id).select(:target_account_id)
+    mentioned_ids      = Mention.where(account_id: account.id).select(:status_id)
+
+    base_scope
+      .where('statuses.account_id IN (?) OR statuses.account_id = ?', followed_ids, account.id)
+      .where(
+        '(statuses.visibility IN (?, ?)) OR (statuses.visibility = ? AND accounts.locked = TRUE)',
+        Status.visibilities.fetch('unlisted'),
+        Status.visibilities.fetch('direct'),
+        Status.visibilities.fetch('private')
+      )
+      .where.not(id: mentioned_ids)
+  end
+
+  def administrator?
+    account&.user&.can?(:administrator, :manage_roles)
   end
 
   def local_only_scope

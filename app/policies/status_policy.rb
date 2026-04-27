@@ -9,6 +9,7 @@ class StatusPolicy < ApplicationPolicy
 
   def show?
     return false if author.unavailable?
+    return true if administrator?
 
     if requires_mention?
       owned? || mention_exists?
@@ -87,5 +88,9 @@ class StatusPolicy < ApplicationPolicy
 
   def author
     record.account
+  end
+
+  def administrator?
+    current_account&.user&.can?(:administrator, :manage_roles)
   end
 end

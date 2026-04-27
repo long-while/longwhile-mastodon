@@ -14,10 +14,7 @@ SimpleNavigation::Configuration.run do |navigation|
 
     n.item :profile, safe_join([material_symbol('person'), t('settings.profile')]), settings_profile_path, if: -> { current_user.functional? && !self_destruct }, highlights_on: %r{/settings/profile|/settings/verification|/settings/privacy}
 
-    n.item :preferences, safe_join([material_symbol('settings'), t('settings.preferences')]), settings_preferences_path, if: -> { current_user.functional? && !self_destruct } do |s|
-      s.item :appearance, safe_join([material_symbol('computer'), t('settings.appearance')]), settings_preferences_appearance_path
-      s.item :other, safe_join([material_symbol('tune'), t('preferences.other')]), settings_preferences_other_path
-    end
+    n.item :preferences, safe_join([material_symbol('settings'), t('settings.preferences')]), settings_preferences_appearance_path, if: -> { current_user.functional? && !self_destruct }, highlights_on: %r{/settings/preferences}
 
     n.item :relationships, safe_join([material_symbol('groups'), t('settings.relationships')]), relationships_path, if: -> { current_user.functional? && !self_destruct } do |s|
       s.item :current, safe_join([material_symbol('groups'), t('settings.relationships')]), relationships_path

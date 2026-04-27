@@ -53,6 +53,7 @@ ko:
         locale: 사용자 인터페이스, 이메일, 푸시 알림 언어
         password: 최소 8글자
         phrase: 게시물 내용이나 열람주의 내용 안에서 대소문자 구분 없이 매칭 됩니다
+        private_account_html: 트위터의 프로텍트와 동일한 옵션입니다. 켜면 새 팔로우 요청을 수동 승인해야 하고, 기본 게시 범위가 팔로워 전용으로 바뀌며, 팔로우/팔로워 목록이 프로필에서 가려집니다. 끄면 모두 반대로 복원됩니다.
         scopes: 애플리케이션에 허용할 API들입니다. 최상위 스코프를 선택하면 개별적인 것은 선택하지 않아도 됩니다.
         setting_aggregate_reblogs: 최근에 부스트 됐던 게시물은 새로 부스트 되어도 보여주지 않기 (새로 받은 부스트에만 적용됩니다)
         setting_always_send_emails: 기본적으로 마스토돈을 활동적으로 사용하고 있을 때에는 이메일 알림이 보내지지 않습니다
@@ -146,7 +147,7 @@ ko:
         min_age: 관할지역의 법률에서 요구하는 최저 연령보다 작으면 안 됩니다.
       user:
         chosen_languages: 체크하면, 선택 된 언어로 작성된 게시물들만 공개 타임라인에 보여집니다
-        role: 역할은 사용자가 어떤 권한을 가지게 될 지 결정합니다.
+        role: 역할을 통해 관리자 권한을 부여할 수 있습니다. Admin 계정은 비공개 계정을 포함한 모든 계정의 게시물과 다이렉트 메시지에 접근할 수 있으니 역할 부여 전에 재확인하세요!
       user_role:
         color: 색상은 사용자 인터페이스에서 역할을 나타내기 위해 사용되며, RGB 16진수 형식입니다
         highlighted: 이 역할이 공개적으로 보이도록 설정합니다
@@ -219,6 +220,7 @@ ko:
         otp_attempt: 이중 인증 코드
         password: 암호
         phrase: 키워드 또는 문장
+        private_account: 내 게시물을 비공개로 설정
         setting_aggregate_reblogs: 타임라인의 부스트를 그룹화
         setting_always_send_emails: 항상 이메일 알림 보내기
         setting_auto_play_gif: 애니메이션 GIF를 자동 재생
@@ -237,7 +239,7 @@ ko:
         setting_hide_network: 내 인맥 숨기기
         setting_missing_alt_text_modal: 대체 텍스트 없이 미디어를 게시하려고 할 때 확인창을 띄웁니다
         setting_reduce_motion: 애니메이션 줄이기
-        setting_system_font_ui: (체크 금지) 시스템의 기본 글꼴을 사용
+        setting_system_font_ui: 시스템의 기본 글꼴을 사용
         setting_system_scrollbars_ui: 시스템 기본 스크롤바 사용
         setting_theme: 사이트 테마
         setting_trends: 오늘의 유행 보이기

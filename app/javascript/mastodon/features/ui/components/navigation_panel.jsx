@@ -39,8 +39,6 @@ import { selectUnreadNotificationGroupsCount } from 'mastodon/selectors/notifica
 
 import { AccountSwitcher } from './account_switcher';
 import ColumnLink from './column_link';
-import DisabledAccountBanner from './disabled_account_banner';
-import SignInBanner from './sign_in_banner';
 import { Search } from 'mastodon/features/compose/components/search';
 import { useBreakpoint } from 'mastodon/hooks/useBreakpoint';
 import { closeNavigation } from 'mastodon/actions/navigation';
@@ -171,7 +169,7 @@ class NavigationPanel extends Component {
 
   render () {
     const { intl, isBelowFullBreakpoint, isMobileBreakpoint } = this.props;
-    const { signedIn, disabledAccountId, permissions } = this.props.identity;
+    const { signedIn } = this.props.identity;
 
     const renderSearch = this.props.renderSearch ?? false;
     const renderComposeButton = this.props.renderComposeButton ?? false;
@@ -225,17 +223,6 @@ class NavigationPanel extends Component {
           {!signedIn && !trendsEnabled ? (
             <ColumnLink transparent to='/search' icon='search' iconComponent={SearchIcon} text={intl.formatMessage(messages.search)} />
           ) : null}
-
-          {!signedIn && (
-            <ColumnLink transparent to='/public' isActive={this.isFirehoseActive} icon='globe' iconComponent={PublicIcon} text={intl.formatMessage(messages.firehose)} />
-          )}
-
-          {!signedIn && (
-            <div className='navigation-panel__sign-in-banner'>
-              <hr />
-              { disabledAccountId ? <DisabledAccountBanner /> : <SignInBanner /> }
-            </div>
-          )}
 
         </div>
 

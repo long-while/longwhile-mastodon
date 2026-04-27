@@ -31,7 +31,7 @@ class Tags extends PureComponent {
     ...WithRouterPropTypes,
   };
 
-  componentDidMount () {
+  componentDidMount() {
     const { dispatch, history, hashtags } = this.props;
 
     // If we're navigating back to the screen, do not trigger a reload
@@ -42,15 +42,15 @@ class Tags extends PureComponent {
     dispatch(fetchTrendingHashtags());
   }
 
-  render () {
+  render() {
     const { isLoading, hashtags, identity } = this.props;
     const { signedIn } = identity;
 
-    const banner = (
+    const banner = signedIn ? (
       <DismissableBanner id='explore/tags'>
         <FormattedMessage id='dismissable_banner.explore_tags' defaultMessage='These hashtags are gaining traction on the fediverse today. Hashtags that are used by more different people are ranked higher.' />
       </DismissableBanner>
-    );
+    ) : null;
 
     if (!isLoading && hashtags.isEmpty()) {
       return (

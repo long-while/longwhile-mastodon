@@ -6,8 +6,6 @@ import classNames from 'classnames';
 import { Helmet } from 'react-helmet';
 import { useHistory } from 'react-router-dom';
 
-import Toggle from 'react-toggle';
-
 import AddPhotoAlternateIcon from '@/material-icons/400-24px/add_photo_alternate.svg?react';
 import EditIcon from '@/material-icons/400-24px/edit.svg?react';
 import PersonIcon from '@/material-icons/400-24px/person.svg?react';
@@ -59,9 +57,6 @@ export const Profile: React.FC<{
   );
   const [avatar, setAvatar] = useState<File>();
   const [header, setHeader] = useState<File>();
-  const [discoverable, setDiscoverable] = useState(
-    account?.discoverable ?? true,
-  );
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<ApiAccountErrors>();
   const avatarFileRef = createRef<HTMLInputElement>();
@@ -82,13 +77,6 @@ export const Profile: React.FC<{
       setNote(e.target.value);
     },
     [setNote],
-  );
-
-  const handleDiscoverableChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setDiscoverable(e.target.checked);
-    },
-    [setDiscoverable],
   );
 
   const handleAvatarChange = useCallback(
@@ -129,7 +117,7 @@ export const Profile: React.FC<{
         note,
         avatar,
         header,
-        discoverable,
+        discoverable: false,
       }),
     )
       .then(() => {
@@ -148,7 +136,7 @@ export const Profile: React.FC<{
 
         setIsSaving(false);
       });
-  }, [dispatch, displayName, note, avatar, header, discoverable, history]);
+  }, [dispatch, displayName, note, avatar, header, history]);
 
   return (
     <Column
@@ -271,37 +259,6 @@ export const Profile: React.FC<{
             </div>
           </div>
 
-          <label className='app-form__toggle'>
-            <div className='app-form__toggle__label'>
-              <strong>
-                <FormattedMessage
-                  id='onboarding.profile.discoverable'
-                  defaultMessage='Make my profile discoverable'
-                />
-              </strong>{' '}
-              <span className='recommended'>
-                <FormattedMessage
-                  id='recommended'
-                  defaultMessage='Recommended'
-                />
-              </span>
-              <span className='hint'>
-                <FormattedMessage
-                  id='onboarding.profile.discoverable_hint'
-                  defaultMessage='When you opt in to discoverability on Mastodon, your posts may appear in search results and trending, and your profile may be suggested to people with similar interests to you.'
-                />
-              </span>
-            </div>
-
-            <div className='app-form__toggle__toggle'>
-              <div>
-                <Toggle
-                  checked={discoverable}
-                  onChange={handleDiscoverableChange}
-                />
-              </div>
-            </div>
-          </label>
         </div>
 
         <div className='spacer' />

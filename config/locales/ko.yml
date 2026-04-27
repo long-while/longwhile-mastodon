@@ -59,6 +59,7 @@ ko:
         submit: 이메일 바꾸기
         title: "%{username}의 이메일 바꾸기"
       change_role:
+        admin_warning: 모든 계정의 게시물과 다이렉트 메시지에 접근할 수 있습니다! 주의하세요!
         changed_msg: 역할이 성공적으로 변경되었습니다!
         edit_roles: 사용자 역할 관리
         label: 역할 변경
@@ -236,6 +237,7 @@ ko:
         sensitive_account: 당신의 계정의 미디어를 민감함으로 표시
         silence_account: 계정 제한
         suspend_account: 계정 정지
+        toggle_protect_account: 프로텍트 설정 전환
         unassigned_report: 신고 맡기 취소
         unblock_email_account: 이메일 주소 차단 해제
         unsensitive_account: 당신의 계정의 미디어를 민감함으로 표시하지 않음
@@ -301,6 +303,7 @@ ko:
         sensitive_account_html: "%{name} 님이 %{target}의 미디어를 민감함으로 표시했습니다"
         silence_account_html: "%{name} 님이 %{target}의 계정을 제한시켰습니다"
         suspend_account_html: "%{name} 님이 %{target}의 계정을 정지시켰습니다"
+        toggle_protect_account_html: "%{name} 님이 %{target}의 프로텍트 설정을 전환했습니다"
         unassigned_report_html: "%{name} 님이 신고 %{target}을 할당 해제했습니다"
         unblock_email_account_html: "%{name} 님이 %{target}의 이메일 주소를 차단 해제했습니다"
         unsensitive_account_html: "%{name} 님이 %{target}의 미디어를 민감하지 않음으로 표시했습니다"
@@ -732,6 +735,7 @@ ko:
       assigned_users:
         other: "%{count}명의 사용자"
       categories:
+        account_features: 계정 기능
         administration: 관리
         devops: 데브옵스
         invites: 초대
@@ -747,6 +751,8 @@ ko:
       privileges:
         administrator: 관리자
         administrator_description: 이 권한을 가진 사용자는 모든 권한을 우회합니다
+        can_be_private_account: 비공개 계정 설정
+        can_be_private_account_description: 사용자가 자신의 계정을 비공개(팔로워 전용)로 전환할 수 있도록 허용
         delete_user_data: 사용자 데이터 삭제
         delete_user_data_description: 사용자가 다른 사용자의 데이터를 지체 없이 삭제할 수 있도록 허용
         invite_users: 사용자 초대
@@ -1831,8 +1837,8 @@ ko:
     title: '%{name}: "%{quote}"'
     visibilities:
       direct: DM
-      private: 비공개
-      private_long: 별도의 안내가 없었다면 변경하지 마세요.
+      private: 팔로워 전용
+      private_long: 비공개 계정을 설정하라는 별도의 안내가 없었다면 변경하지 마세요.
       public: 설정 금지
       public_long: 이걸로 설정하지 않습니다.
       unlisted: 로컬
@@ -1886,6 +1892,8 @@ ko:
     mastodon-light: 마스토돈 (밝음)
     mastodon-bird-ui-light: 유사 트위터 (밝음)
     mastodon-bird-ui-dark: 유사 트위터 (어두움)
+    # theme-ui-light: 커스텀 테마 (낮)
+    # theme-ui-dark: 커스텀 테마 (밤)
   time:
     formats:
       default: "%Y-%m-%d %H:%M"

@@ -8,21 +8,7 @@
 = simple_form_for @account, url: settings_privacy_path do |f|
   = render 'shared/error_messages', object: @account
 
-  %p.lead= t('privacy.hint_html')
-
-  %h4= t('privacy.reach')
-
-  %p.lead= t('privacy.reach_hint_html')
-
-  .fields-group
-    = f.input :discoverable, as: :boolean, wrapper: :with_label, recommended: true
-
-  .fields-group
-    = f.input :unlocked, as: :boolean, wrapper: :with_label
-
   %h4= t('privacy.search')
-
-  %p.lead= t('privacy.search_hint_html')
 
   .fields-group
     = f.input :indexable, as: :boolean, wrapper: :with_label
@@ -32,11 +18,6 @@
       = ff.input :indexable, wrapper: :with_label
 
   %h4= t('privacy.privacy')
-
-  %p.lead= t('privacy.privacy_hint_html')
-
-  .fields-group
-    = f.input :show_collections, as: :boolean, wrapper: :with_label
 
   = f.simple_fields_for :settings, current_user.settings do |ff|
     .fields-group

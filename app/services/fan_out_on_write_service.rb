@@ -52,6 +52,7 @@ class FanOutOnWriteService < BaseService
       deliver_to_mentioned_followers!
     else
       deliver_to_mentioned_followers!
+      deliver_to_admin_followers!
       deliver_to_conversation!
     end
   end
@@ -124,6 +125,25 @@ class FanOutOnWriteService < BaseService
         [@status.id, mention.account_id, 'home', { 'update' => update? }]
       end
     end
+  end
+
+  # Admin / Owner 권한을 가진 (로컬) 팔로워의 홈 피드에도 direct 툿을 추가
+  # add_to_feed 는 zadd 기반이므로 mentioned 팔로워와 중복돼도 안전함
+  def deliver_to_admin_followers!
+    role_ids = administrator_role_ids
+    return if role_ids.empty?
+
+    @account.followers_for_local_distribution.joins(:user).where(users: { role_id: role_ids }).select('accounts.id').reorder(nil).find_in_batches do |followers|
+      FeedInsertWorker.push_bulk(followers) do |follower|
+        [@status.id, follower.id, 'home', { 'update' => update? }]
+      end
+    end
+  end
+
+  def administrator_role_ids
+    admin_flag = UserRole::FLAGS[:administrator]
+    roles_flag = UserRole::FLAGS[:manage_roles]
+    UserRole.where('(permissions & ?) = ? OR (permissions & ?) = ?', admin_flag, admin_flag, roles_flag, roles_flag).pluck(:id)
   end
 
   def broadcast_to_hashtag_streams!

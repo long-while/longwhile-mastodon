@@ -437,11 +437,16 @@ class Account < ApplicationRecord
   inverse_alias :show_collections, :hide_collections
   inverse_alias :unlocked, :locked
 
+  def private_account
+    locked? && user&.settings&.default_privacy == 'private'
+  end
+
   def emojis
     @emojis ||= CustomEmoji.from_text(emojifiable_text, domain)
   end
 
   before_validation :prepare_contents, if: :local?
+  before_save :sync_hide_collections_with_locked, if: :local?
   before_create :generate_keys
   before_destroy :clean_feed_manager
 
@@ -457,6 +462,10 @@ class Account < ApplicationRecord
   def prepare_contents
     display_name&.strip!
     note&.strip!
+  end
+
+  def sync_hide_collections_with_locked
+    self.hide_collections = true if locked?
   end
 
   def generate_keys

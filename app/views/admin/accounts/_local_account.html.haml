@@ -17,6 +17,16 @@
       = account.user_role&.name
   %td
     = table_link_to 'contact_mail', t('admin.accounts.change_role.label'), admin_user_role_path(account.user) if can?(:change_role, account.user)
+- if can?(:toggle_protect, account)
+  %tr
+    %th 프로텍트 계정
+    %td= account.locked? ? '설정됨' : '설정되지 않음'
+    %td
+      = table_link_to(account.locked? ? 'check_box_outline_blank' : 'check_box',
+                      account.locked? ? '프로텍트 해제' : '프로텍트 설정',
+                      toggle_protect_admin_account_path(account.id),
+                      method: :post,
+                      data: { confirm: t('admin.accounts.are_you_sure') })
 %tr
   %th{ rowspan: can?(:create, :email_domain_block) ? 3 : 2 }= t('admin.accounts.email')
   %td{ rowspan: can?(:create, :email_domain_block) ? 3 : 2 }= account.user_email

@@ -13,6 +13,9 @@ $long-while-500: #1d9bf0; // 설정창 기본. 좌측 목록 현재선택도 이
 $long-while-400: #1d9bf0; // focus visible
 $long-while-300: #1d9bf0; // 밝은 색상?
 
+// 계정 스위처 "기존 계정 추가" 버튼 글자색 (라이트 테마는 $longwhile-500로 오버라이드)
+$account-switcher-add-text-color: $long-while-500 !default;
+
 $grey-600: hsl(215, 10%, 63%); // Trout
 $grey-100: hsl(209, 41%, 90%); // Topaz
 

@@ -4,7 +4,7 @@ module Admin
   class AccountsController < BaseController
     before_action :set_account, except: [:index, :batch]
     before_action :require_remote_account!, only: [:redownload]
-    before_action :require_local_account!, only: [:enable, :memorialize, :approve, :reject]
+    before_action :require_local_account!, only: [:enable, :memorialize, :approve, :reject, :toggle_protect]
 
     def index
       authorize :account, :index?
@@ -133,6 +133,21 @@ module Admin
       log_action :unblock_email, @account
 
       redirect_to admin_account_path(@account.id), notice: I18n.t('admin.accounts.unblocked_email_msg', username: @account.acct)
+    end
+
+    def toggle_protect
+      authorize @account, :toggle_protect?
+
+      enabling = !@account.locked?
+
+      @account.update!(locked: enabling, hide_collections: enabling)
+      @account.user&.update!(settings_attributes: { default_privacy: enabling ? 'private' : 'unlisted' })
+
+      log_action :toggle_protect, @account
+      ActivityPub::UpdateDistributionWorker.perform_in(ActivityPub::UpdateDistributionWorker::DEBOUNCE_DELAY, @account.id)
+
+      redirect_to admin_account_path(@account.id),
+                  notice: enabling ? '프로텍트 계정으로 설정되었습니다.' : '프로텍트 계정 설정이 해제되었습니다.'
     end
 
     private

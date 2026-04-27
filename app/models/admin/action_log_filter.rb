@@ -66,6 +66,7 @@ class Admin::ActionLogFilter
     sensitive_account: { target_type: 'Account', action: 'sensitive' }.freeze,
     silence_account: { target_type: 'Account', action: 'silence' }.freeze,
     suspend_account: { target_type: 'Account', action: 'suspend' }.freeze,
+    toggle_protect_account: { target_type: 'Account', action: 'toggle_protect' }.freeze,
     unassigned_report: { target_type: 'Report', action: 'unassigned' }.freeze,
     unsensitive_account: { target_type: 'Account', action: 'unsensitive' }.freeze,
     unsilence_account: { target_type: 'Account', action: 'unsilence' }.freeze,

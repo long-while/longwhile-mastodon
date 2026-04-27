@@ -32,7 +32,7 @@ class Links extends PureComponent {
     ...WithRouterPropTypes,
   };
 
-  componentDidMount () {
+  componentDidMount() {
     const { dispatch, links, history } = this.props;
 
     // If we're navigating back to the screen, do not trigger a reload
@@ -43,15 +43,15 @@ class Links extends PureComponent {
     dispatch(fetchTrendingLinks());
   }
 
-  render () {
+  render() {
     const { isLoading, links, identity } = this.props;
     const { signedIn } = identity;
 
-    const banner = (
+    const banner = signedIn ? (
       <DismissableBanner id='explore/links'>
         <FormattedMessage id='dismissable_banner.explore_links' defaultMessage='These news stories are being shared the most on the fediverse today. Newer news stories posted by more different people are ranked higher.' />
       </DismissableBanner>
-    );
+    ) : null;
 
     if (!isLoading && links.isEmpty()) {
       return (

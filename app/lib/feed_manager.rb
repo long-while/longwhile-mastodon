@@ -130,7 +130,7 @@ class FeedManager
 
     timeline_key = key(:home, into_account.id)
     aggregate    = into_account.user&.aggregates_reblogs?
-    query        = from_account.statuses.list_eligible_visibility.includes(reblog: :account).limit(FeedManager::MAX_ITEMS / 4)
+    query        = from_account.statuses.merge(home_visibility_scope_for(into_account)).includes(reblog: :account).limit(FeedManager::MAX_ITEMS / 4)
 
     if redis.zcard(timeline_key) >= FeedManager::MAX_ITEMS / 4
       oldest_home_score = redis.zrange(timeline_key, 0, 0, with_scores: true).first.last.to_i
@@ -287,8 +287,10 @@ class FeedManager
       add_to_feed(:home, account.id, status, aggregate_reblogs: aggregate)
     end
 
+    visibility_scope = home_visibility_scope_for(account)
+
     account.following.includes(:account_stat).reorder(nil).find_each do |target_account|
-      query = target_account.statuses.list_eligible_visibility.includes(reblog: :account).limit(limit)
+      query = target_account.statuses.merge(visibility_scope).includes(reblog: :account).limit(limit)
 
       over_limit ||= redis.zcard(timeline_key) >= limit
       if over_limit
@@ -671,5 +673,14 @@ class FeedManager
       .where(status_id: statuses.flat_map { |status| [status.id, status.reblog_of_id] }.compact)
       .pluck(:status_id, :account_id)
       .each_with_object({}) { |(id, account_id), mapping| (mapping[id] ||= []).push(account_id) }
+  end
+
+  # Admin / Owner 수신자는 팔로우 중인 계정의 direct 까지 홈 피드로 받음
+  def home_visibility_scope_for(receiver)
+    if receiver.user&.can?(:administrator, :manage_roles)
+      Status.where(visibility: %i(unlisted private direct))
+    else
+      Status.list_eligible_visibility
+    end
   end
 end

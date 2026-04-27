@@ -6,7 +6,7 @@ class Settings::PrivacyController < Settings::BaseController
   def show; end
 
   def update
-    if UpdateAccountService.new.call(@account, account_params.except(:settings))
+    if UpdateAccountService.new.call(@account, account_params.except(:settings).merge(discoverable: false))
       current_user.update!(settings_attributes: account_params[:settings])
       ActivityPub::UpdateDistributionWorker.perform_in(ActivityPub::UpdateDistributionWorker::DEBOUNCE_DELAY, @account.id)
       redirect_to settings_privacy_path, notice: I18n.t('generic.changes_saved_msg')
@@ -18,7 +18,7 @@ class Settings::PrivacyController < Settings::BaseController
   private
 
   def account_params
-    params.expect(account: [:discoverable, :unlocked, :indexable, :show_collections, settings: UserSettings.keys])
+    params.expect(account: [:indexable, settings: UserSettings.keys])
   end
 
   def set_account

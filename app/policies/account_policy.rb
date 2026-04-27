@@ -64,4 +64,8 @@ class AccountPolicy < ApplicationPolicy
   def review?
     role.can?(:manage_taxonomies)
   end
+
+  def toggle_protect?
+    role.can?(:manage_users) && role.overrides?(record.user_role)
+  end
 end

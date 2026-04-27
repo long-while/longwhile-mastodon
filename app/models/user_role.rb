@@ -36,6 +36,7 @@ class UserRole < ApplicationRecord
     manage_roles: (1 << 17),
     manage_user_access: (1 << 18),
     delete_user_data: (1 << 19),
+    can_be_private_account: (1 << 20),
   }.freeze
 
   EVERYONE_ROLE_ID = -99
@@ -80,6 +81,10 @@ class UserRole < ApplicationRecord
 
       devops: %i(
         view_devops
+      ).freeze,
+
+      account_features: %i(
+        can_be_private_account
       ).freeze,
 
       special: %i(

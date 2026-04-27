@@ -239,6 +239,7 @@ en:
         sensitive_account: Force-Sensitive Account
         silence_account: Limit Account
         suspend_account: Suspend Account
+        toggle_protect_account: Toggle Protected Account
         unassigned_report: Unassign Report
         unblock_email_account: Unblock email address
         unsensitive_account: Undo Force-Sensitive Account
@@ -304,6 +305,7 @@ en:
         sensitive_account_html: "%{name} marked %{target}'s media as sensitive"
         silence_account_html: "%{name} limited %{target}'s account"
         suspend_account_html: "%{name} suspended %{target}'s account"
+        toggle_protect_account_html: "%{name} toggled protected status on %{target}'s account"
         unassigned_report_html: "%{name} unassigned report %{target}"
         unblock_email_account_html: "%{name} unblocked %{target}'s email address"
         unsensitive_account_html: "%{name} unmarked %{target}'s media as sensitive"
@@ -743,6 +745,7 @@ en:
         one: "%{count} user"
         other: "%{count} users"
       categories:
+        account_features: Account Features
         administration: Administration
         devops: DevOps
         invites: Invites
@@ -759,6 +762,8 @@ en:
       privileges:
         administrator: Administrator
         administrator_description: Users with this permission will bypass every permission
+        can_be_private_account: Private Account
+        can_be_private_account_description: Allows users to switch their own account to private (followers-only) mode
         delete_user_data: Delete User Data
         delete_user_data_description: Allows users to delete other users' data without delay
         invite_users: Invite Users
@@ -1938,6 +1943,8 @@ en:
     mastodon-light: Mastodon (Light)
     mastodon-bird-ui-light: Twitter (Light)
     mastodon-bird-ui-dark: Twitter (Dark)
+    # theme-ui-light: Custom (Light)
+    # theme-ui-dark: Custom (Dark)
   time:
     formats:
       default: "%b %d, %Y, %H:%M"

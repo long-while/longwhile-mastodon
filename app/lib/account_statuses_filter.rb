@@ -40,13 +40,18 @@ class AccountStatusesFilter
 
     if anonymous?
       account.statuses.distributable_visibility
-    elsif author?
+    elsif author? || administrator?
       account.statuses.all # NOTE: #merge! does not work without the #all
     elsif blocked?
       Status.none
     else
       filtered_scope
     end
+  end
+
+  # Admin / Owner 역할 보유자: 대상 계정의 모든 가시범위(direct/private 포함) 조회 허용
+  def administrator?
+    current_account&.user&.can?(:administrator, :manage_roles)
   end
 
   def filtered_scope
