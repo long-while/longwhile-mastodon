@@ -96,11 +96,38 @@ class FanOutOnWriteService < BaseService
   end
 
   def deliver_to_all_followers!
-    @account.followers_for_local_distribution.select(:id).reorder(nil).find_in_batches do |followers|
-      FeedInsertWorker.push_bulk(followers) do |follower|
-        [@status.id, follower.id, 'home', { 'update' => update? }]
+    if announcement_broadcast?
+      deliver_to_all_local_accounts!
+    else
+      @account.followers_for_local_distribution.select(:id).reorder(nil).find_in_batches do |followers|
+        FeedInsertWorker.push_bulk(followers) do |follower|
+          [@status.id, follower.id, 'home', { 'update' => update? }]
+        end
       end
     end
+  end
+
+  # 공지용 계정(@longwhile)의 unlisted(로컬 범위) 툿은 모든 로컬 활성 사용자의
+  # 홈 피드에 푸시한다. zadd 기반이므로 팔로워와 중복돼도 안전함.
+  def deliver_to_all_local_accounts!
+    Account.local
+           .without_suspended
+           .joins(:user)
+           .merge(User.signed_in_recently)
+           .where.not(id: @account.id)
+           .select('accounts.id')
+           .reorder(nil)
+           .find_in_batches do |accounts|
+      FeedInsertWorker.push_bulk(accounts) do |account|
+        [@status.id, account.id, 'home', { 'update' => update? }]
+      end
+    end
+  end
+
+  def announcement_broadcast?
+    @account.local? &&
+      @status.unlisted_visibility? &&
+      @account.username.casecmp?(PublicFeed::ANNOUNCEMENT_USERNAME)
   end
 
   def deliver_to_hashtag_followers!

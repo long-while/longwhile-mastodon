@@ -1,6 +1,12 @@
 # frozen_string_literal: true
 
 class UnreservedUsernameValidator < ActiveModel::Validator
+  # Setting.reserved_usernames 의 운영자 변경 여부와 무관하게 항상 예약되어야 하는 아이디.
+  # 공지용 계정(@longwhile) 등 시스템 단위로 보호되어야 하는 아이디만 등록한다.
+  ALWAYS_RESERVED_USERNAMES = %w(
+    longwhile
+  ).freeze
+
   def validate(account)
     @username = account.username
 
@@ -12,7 +18,11 @@ class UnreservedUsernameValidator < ActiveModel::Validator
   private
 
   def reserved_username?
-    pam_username_reserved? || settings_username_reserved?
+    always_reserved_username? || pam_username_reserved? || settings_username_reserved?
+  end
+
+  def always_reserved_username?
+    ALWAYS_RESERVED_USERNAMES.include?(@username.downcase)
   end
 
   def pam_username_reserved?
