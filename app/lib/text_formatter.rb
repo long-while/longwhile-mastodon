@@ -13,6 +13,12 @@ class TextFormatter
     multiline: true,
   }.freeze
 
+  # 공지용 키워드 -> 자동 링크 매핑. 본문에 키워드가 포함되면 해당 키워드만
+  # 지정된 URL 의 링크(언더라인 + --color-brand-longwhile-links 색상)로 치환된다.
+  AUTO_LINK_KEYWORDS = {
+    '한참 커미션' => 'https://kre.pe/QTRx',
+  }.freeze
+
   attr_reader :text, :options
 
   # @param [String] text
@@ -48,6 +54,9 @@ class TextFormatter
 
     # 멘션/해시태그/링크 처리 후에 마크다운 적용
     html = apply_simple_markdown(html)
+
+    # 키워드 자동 링크는 마크다운 적용 후 (기존 <a> 태그 내부는 건너뜀)
+    html = apply_auto_link_keywords(html)
 
     if multiline?
       MastodonOTELTracer.in_span('TextFormatter#to_s simple_format') do
@@ -111,7 +120,42 @@ class TextFormatter
     # [bg:hex]텍스트[/bg] -> 사용자 지정 배경색
     html = html.gsub(/\[bg:([0-9a-fA-F]{3,8})\](.*?)\[\/bg\]/, '<span style="background-color: #\1;">\2</span>')
 
+    # [center]텍스트[/center] -> 중앙 정렬
+    html = html.gsub(/\[center\](.*?)\[\/center\]\n?/, '<span style="display: block; text-align: center;">\1</span>')
+
+    # [right]텍스트[/right] -> 우측 정렬
+    html = html.gsub(/\[right\](.*?)\[\/right\]\n?/, '<span style="display: block; text-align: right;">\1</span>')
+
+    # [left]텍스트[/left] -> 좌측 정렬
+    html = html.gsub(/\[left\](.*?)\[\/left\]\n?/, '<span style="display: block; text-align: left;">\1</span>')
+
     html
+  end
+
+  # AUTO_LINK_KEYWORDS 의 각 키워드를 자동 링크로 치환한다.
+  # 기존 <a>...</a> 블록 내부에 등장한 경우(URL 표시 텍스트 등)는 중첩 링크를
+  # 만들지 않도록 건너뛴다.
+  def apply_auto_link_keywords(html)
+    return html if html.blank?
+
+    parts = html.split(/(<a\b[^>]*>.*?<\/a>)/m)
+    parts.each_with_index do |part, i|
+      next if part.start_with?('<a')
+
+      AUTO_LINK_KEYWORDS.each do |keyword, url|
+        next unless part.include?(keyword)
+
+        part = part.gsub(keyword, auto_link_html(keyword, url))
+      end
+
+      parts[i] = part
+    end
+
+    parts.join
+  end
+
+  def auto_link_html(keyword, url)
+    %(<a href="#{h(url)}" target="_blank" rel="#{DEFAULT_REL.join(' ')}" style="color: var(--color-brand-longwhile-links); text-decoration: underline;">#{h(keyword)}</a>)
   end
 
   def rewrite
