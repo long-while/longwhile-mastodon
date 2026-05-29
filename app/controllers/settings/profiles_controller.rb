@@ -39,7 +39,7 @@ class Settings::ProfilesController < Settings::BaseController
   def private_account_toggle_changed?
     return false if params.dig(:account, :private_account).blank?
 
-    @account.private_account != private_account_enabled?
+    @account.locked? != private_account_enabled?
   end
 
   def private_account_enabled?

@@ -23,6 +23,8 @@ import ListAltIcon from '@/material-icons/400-24px/list_alt.svg?react';
 import AdministrationIcon from '@/material-icons/400-24px/manufacturing.svg?react';
 import NotificationsActiveIcon from '@/material-icons/400-24px/notifications-fill.svg?react';
 import NotificationsIcon from '@/material-icons/400-24px/notifications.svg?react';
+import PendingMentionsActiveIcon from '@/styles/bird-theme-svg/messages-fill.svg?react';
+import PendingMentionsIcon from '@/styles/bird-theme-svg/messages.svg?react';
 import PublicIcon from '@/material-icons/400-24px/public.svg?react';
 import SearchIcon from '@/material-icons/400-24px/search.svg?react';
 import SettingsIcon from '@/material-icons/400-24px/settings.svg?react';
@@ -52,6 +54,7 @@ const messages = defineMessages({
   explore: { id: 'explore.title', defaultMessage: 'Explore' },
   firehose: { id: 'column.firehose', defaultMessage: 'Live feeds' },
   direct: { id: 'navigation_bar.direct', defaultMessage: 'Private mentions' },
+  pendingMentions: { id: 'navigation_bar.pending-mentions', defaultMessage: 'Awaiting reply' },
   favourites: { id: 'navigation_bar.favourites', defaultMessage: 'Favorites' },
   bookmarks: { id: 'navigation_bar.bookmarks', defaultMessage: 'Bookmarks' },
   lists: { id: 'navigation_bar.lists', defaultMessage: 'Lists' },
@@ -167,7 +170,7 @@ class NavigationPanel extends Component {
     return match || location.pathname.startsWith('/public');
   };
 
-  render () {
+  render() {
     const { intl, isBelowFullBreakpoint, isMobileBreakpoint } = this.props;
     const { signedIn } = this.props.identity;
 
@@ -235,6 +238,7 @@ class NavigationPanel extends Component {
     const homeLabel = intl.formatMessage(messages.home);
     const publicLabel = intl.formatMessage(messages.firehose);
     const directLabel = intl.formatMessage(messages.direct);
+    const pendingMentionsLabel = intl.formatMessage(messages.pendingMentions);
     const bookmarksLabel = intl.formatMessage(messages.bookmarks);
     const favouritesLabel = intl.formatMessage(messages.favourites);
     const preferencesLabel = intl.formatMessage(messages.preferences);
@@ -251,6 +255,7 @@ class NavigationPanel extends Component {
         <ColumnLink transparent to='/home' icon='home' iconComponent={HomeIcon} activeIconComponent={HomeActiveIcon} text={homeLabel} />
         <ColumnLink transparent to='/public' isActive={this.isFirehoseActive} icon='globe' iconComponent={PublicIcon} text={publicLabel} />
         <NotificationsLink />
+        <ColumnLink transparent to='/pending-mentions' icon='pending' iconComponent={PendingMentionsIcon} activeIconComponent={PendingMentionsActiveIcon} text={pendingMentionsLabel} />
         <ColumnLink transparent to='/conversations' icon='at' iconComponent={AlternateEmailIcon} text={directLabel} />
         <ColumnLink transparent to='/bookmarks' icon='bookmarks' iconComponent={BookmarksIcon} activeIconComponent={BookmarksActiveIcon} text={bookmarksLabel} />
         <ColumnLink transparent to='/favourites' icon='star' iconComponent={StarIcon} activeIconComponent={StarActiveIcon} text={favouritesLabel} />

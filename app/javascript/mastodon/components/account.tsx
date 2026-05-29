@@ -5,6 +5,7 @@ import { defineMessages, useIntl, FormattedMessage } from 'react-intl';
 import classNames from 'classnames';
 import { Link } from 'react-router-dom';
 
+import LockIcon from '@/material-icons/400-24px/lock.svg?react';
 import MoreHorizIcon from '@/material-icons/400-24px/more_horiz.svg?react';
 import {
   blockAccount,
@@ -20,6 +21,7 @@ import { FollowersCounter } from 'mastodon/components/counters';
 import { DisplayName } from 'mastodon/components/display_name';
 import { Dropdown } from 'mastodon/components/dropdown_menu';
 import { FollowButton } from 'mastodon/components/follow_button';
+import { Icon } from 'mastodon/components/icon';
 import { RelativeTimestamp } from 'mastodon/components/relative_timestamp';
 import { ShortNumber } from 'mastodon/components/short_number';
 import { Skeleton } from 'mastodon/components/skeleton';
@@ -30,6 +32,11 @@ import { useAppSelector, useAppDispatch } from 'mastodon/store';
 const messages = defineMessages({
   follow: { id: 'account.follow', defaultMessage: 'Follow' },
   unfollow: { id: 'account.unfollow', defaultMessage: 'Unfollow' },
+  account_locked: {
+    id: 'account.locked_info',
+    defaultMessage:
+      'This account privacy status is set to locked. The owner manually reviews who can follow them.',
+  },
   cancel_follow_request: {
     id: 'account.cancel_follow_request',
     defaultMessage: 'Withdraw follow request',
@@ -224,7 +231,17 @@ export const Account: React.FC<{
           </div>
 
           <div className='account__contents'>
-            <DisplayName account={account} />
+            <div className='account__display-name-row'>
+              <DisplayName account={account} />
+              {account?.locked && (
+                <Icon
+                  id='lock'
+                  icon={LockIcon}
+                  className='account__locked-icon'
+                  title={intl.formatMessage(messages.account_locked)}
+                />
+              )}
+            </div>
 
             {!minimal && (
               <div className='account__details'>

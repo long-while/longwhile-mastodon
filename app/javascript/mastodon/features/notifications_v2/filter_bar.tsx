@@ -150,9 +150,9 @@ export const FilterBar: React.FC = () => {
             defaultMessage='Mentions'
           />
         </BarButton>
-        <BarButton 
-          selectedFilter={selectedFilter} 
-          type='noti_dm' 
+        <BarButton
+          selectedFilter={selectedFilter}
+          type='noti_dm'
           key='noti_dm'
           title={intl.formatMessage(tooltips.direct)}
         >

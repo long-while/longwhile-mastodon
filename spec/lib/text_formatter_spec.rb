@@ -429,5 +429,80 @@ RSpec.describe TextFormatter do
         expect(subject).to include 'hashtag'
       end
     end
+
+    context 'when given text with a center alignment tag' do
+      let(:text) { '[center]중앙에 들어가는 문장[/center]' }
+
+      it 'renders a centered block span' do
+        expect(subject).to include '<span style="display: block; text-align: center;">중앙에 들어가는 문장</span>'
+      end
+    end
+
+    context 'when given text with a right alignment tag' do
+      let(:text) { '[right]오른쪽 정렬[/right]' }
+
+      it 'renders a right-aligned block span' do
+        expect(subject).to include '<span style="display: block; text-align: right;">오른쪽 정렬</span>'
+      end
+    end
+
+    context 'when given text with a left alignment tag' do
+      let(:text) { '[left]좌측 정렬[/left]' }
+
+      it 'renders a left-aligned block span' do
+        expect(subject).to include '<span style="display: block; text-align: left;">좌측 정렬</span>'
+      end
+    end
+
+    context 'when given text with consecutive alignment tags on separate lines' do
+      let(:text) { "[center]중앙[/center]\n[right]오른쪽[/right]\n[left]좌측[/left]" }
+
+      it 'renders all three alignment spans' do
+        expect(subject).to include '<span style="display: block; text-align: center;">중앙</span>'
+        expect(subject).to include '<span style="display: block; text-align: right;">오른쪽</span>'
+        expect(subject).to include '<span style="display: block; text-align: left;">좌측</span>'
+      end
+
+      it 'does not insert a <br /> between consecutive alignment blocks' do
+        expect(subject).not_to include '</span><br />'
+      end
+    end
+
+    context 'when given text with a color tag nested inside a center tag' do
+      let(:text) { '[center][color:ff0000]빨강[/color][/center]' }
+
+      it 'renders the color span inside the center span' do
+        expect(subject).to include '<span style="display: block; text-align: center;"><span style="color: #ff0000;">빨강</span></span>'
+      end
+    end
+
+    context 'when given a center tag containing a hashtag' do
+      let(:text) { '[center]#hello[/center]' }
+
+      it 'renders both the alignment span and the hashtag link' do
+        expect(subject).to include '<span style="display: block; text-align: center;">'
+        expect(subject).to include 'class="mention hashtag"'
+      end
+    end
+
+    context 'when given an unclosed alignment tag' do
+      let(:text) { '[center]중앙' }
+
+      it 'does not render an alignment span' do
+        expect(subject).not_to include 'text-align'
+      end
+
+      it 'preserves the literal bracket text' do
+        expect(subject).to include '[center]중앙'
+      end
+    end
+
+    context 'when given an alignment tag with uppercase name' do
+      let(:text) { '[Center]중앙[/Center]' }
+
+      it 'does not render an alignment span' do
+        expect(subject).not_to include 'text-align'
+      end
+    end
   end
 end

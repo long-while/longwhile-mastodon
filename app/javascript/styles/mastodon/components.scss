@@ -8632,6 +8632,20 @@ noscript {
   overflow: hidden;
 }
 
+.account__display-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.account__locked-icon {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  color: $dark-text-color;
+}
+
 .account__details {
   display: flex;
   flex-wrap: wrap;

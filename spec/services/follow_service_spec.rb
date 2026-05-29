@@ -136,6 +136,35 @@ RSpec.describe FollowService do
         expect(Follow.find_by(account: sender, target_account: bob)&.languages).to match_array %w(en es)
       end
     end
+
+    describe 'stale follow request whose target was unlocked' do
+      let(:bob) { Fabricate(:account, locked: true, username: 'bob') }
+
+      before do
+        subject.call(sender, bob)
+        bob.update!(locked: false)
+        subject.call(sender, bob)
+      end
+
+      it 'promotes the stale follow request to a follow' do
+        expect(sender.following?(bob)).to be true
+        expect(FollowRequest.find_by(account: sender, target_account: bob)).to be_nil
+      end
+    end
+
+    describe 'stale follow request whose target is still locked' do
+      let(:bob) { Fabricate(:account, locked: true, username: 'bob') }
+
+      before do
+        subject.call(sender, bob)
+        subject.call(sender, bob, reblogs: false)
+      end
+
+      it 'leaves the request pending and updates its options' do
+        expect(sender.following?(bob)).to be false
+        expect(FollowRequest.find_by(account: sender, target_account: bob, show_reblogs: false)).to_not be_nil
+      end
+    end
   end
 
   context 'when remote ActivityPub account' do

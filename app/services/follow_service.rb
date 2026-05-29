@@ -26,7 +26,10 @@ class FollowService < BaseService
     if @source_account.following?(@target_account)
       return change_follow_options!
     elsif @source_account.requested?(@target_account)
-      return change_follow_request_options!
+      follow_request = change_follow_request_options!
+      return follow_request unless promote_request?
+
+      return AuthorizeFollowService.new.call(@source_account, @target_account)
     end
 
     ActivityTracker.increment('activity:interactions')
@@ -63,6 +66,10 @@ class FollowService < BaseService
 
   def change_follow_request_options!
     @source_account.request_follow!(@target_account, **follow_options)
+  end
+
+  def promote_request?
+    @target_account.local? && !@source_account.silenced? && (!@target_account.locked? || @options[:bypass_locked])
   end
 
   def request_follow!

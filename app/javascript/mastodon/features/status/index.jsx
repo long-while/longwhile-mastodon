@@ -100,6 +100,7 @@ const makeMapStateToProps = () => {
       status,
       ancestorsIds,
       descendantsIds,
+      contextLoaded: !!state.contexts.loadedRoots[props.params.statusId],
       askReplyConfirmation: state.getIn(['compose', 'text']).trim().length !== 0,
       domain: state.getIn(['meta', 'domain']),
       pictureInPicture: getPictureInPicture(state, { id: props.params.statusId }),
@@ -137,6 +138,7 @@ class Status extends ImmutablePureComponent {
     isLoading: PropTypes.bool,
     ancestorsIds: PropTypes.arrayOf(PropTypes.string).isRequired,
     descendantsIds: PropTypes.arrayOf(PropTypes.string).isRequired,
+    contextLoaded: PropTypes.bool,
     intl: PropTypes.object.isRequired,
     askReplyConfirmation: PropTypes.bool,
     multiColumn: PropTypes.bool,
@@ -522,10 +524,18 @@ class Status extends ImmutablePureComponent {
   }
 
   _scrollIfReady() {
-    const { status, isLoading, params } = this.props;
+    const { status, isLoading, contextLoaded, params } = this.props;
     const id = params?.statusId;
 
     if (!status || isLoading) return;
+
+    // Wait until the thread context (ancestors/descendants) has finished
+    // loading before performing the first scroll. Otherwise, if the focused
+    // status arrives before its ancestors, scrolling lands at the top of the
+    // scroll container and the subsequent ancestor insertion leaves the user
+    // visually stuck at the top of the thread.
+    if (status.get('in_reply_to_id') && !contextLoaded) return;
+
     if (this._scrolledToStatusId === id) return;
 
     this._scrolledToStatusId = id;

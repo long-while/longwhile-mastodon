@@ -25,11 +25,13 @@ interface TimelineUpdateAction extends UnknownAction {
 interface State {
   inReplyTos: Record<string, string>;
   replies: Record<string, string[]>;
+  loadedRoots: Record<string, true>;
 }
 
 const initialState: State = {
   inReplyTos: {},
   replies: {},
+  loadedRoots: {},
 };
 
 const normalizeContext = (
@@ -127,6 +129,11 @@ export const contextsReducer = createReducer(initialState, (builder) => {
   builder
     .addCase(fetchContext.fulfilled, (state, action) => {
       normalizeContext(state, action.meta.arg.statusId, action.payload.context);
+      state.loadedRoots[action.meta.arg.statusId] = true;
+    })
+    .addCase(fetchContext.rejected, (state, action) => {
+      // Unblock the first-scroll gate even on failure so we don't wait forever.
+      state.loadedRoots[action.meta.arg.statusId] = true;
     })
     .addCase(blockAccountSuccess, (state, action) => {
       filterContexts(

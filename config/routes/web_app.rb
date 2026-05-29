@@ -23,6 +23,7 @@
   /mutes
   /notifications_v2/(*any)
   /notifications/(*any)
+  /pending-mentions
   /pinned
   /public
   /local

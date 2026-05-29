@@ -110,12 +110,12 @@ class InitialStateSerializer < ActiveModel::Serializer
       trends_enabled: Setting.trends,
       version: instance_presenter.version,
       terms_of_service_enabled: TermsOfService.live.exists?,
-      advanced_layout: false,
+      advanced_layout: object_account_user&.setting_advanced_layout,
     }
   end
 
   def object_account_user
-    object.current_account.user
+    object.current_account&.user
   end
 
   def serialized_account(account)

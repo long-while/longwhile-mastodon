@@ -333,6 +333,64 @@ RSpec.describe Admin::AccountsController do
     end
   end
 
+  describe 'POST #toggle_protect' do
+    subject { post :toggle_protect, params: { id: account.id } }
+
+    let(:current_user) { Fabricate(:user, role: role) }
+
+    context 'when user is admin' do
+      let(:role) { UserRole.find_by(name: 'Admin') }
+
+      context 'when account is locked' do
+        let(:account) { Fabricate(:account, locked: true) }
+
+        before do
+          Fabricate(:user, account: account)
+          @follower = Fabricate(:account)
+          Fabricate(:follow_request, account: @follower, target_account: account)
+        end
+
+        it 'unlocks the account and rejects pending follow requests' do
+          subject
+
+          expect(account.reload).to_not be_locked
+          expect(FollowRequest.where(target_account: account)).to be_empty
+          expect(response).to redirect_to admin_account_path(account.id)
+        end
+      end
+
+      context 'when account is unlocked' do
+        let(:account) { Fabricate(:account, locked: false) }
+
+        before do
+          Fabricate(:user, account: account)
+        end
+
+        it 'locks the account' do
+          subject
+
+          expect(account.reload).to be_locked
+          expect(response).to redirect_to admin_account_path(account.id)
+        end
+      end
+    end
+
+    context 'when user is not admin' do
+      let(:role) { UserRole.everyone }
+      let(:account) { Fabricate(:account) }
+
+      before do
+        Fabricate(:user, account: account)
+      end
+
+      it 'fails to change account' do
+        subject
+
+        expect(response).to have_http_status 403
+      end
+    end
+  end
+
   describe 'POST #unsensitive' do
     subject { post :unsensitive, params: { id: account.id } }
 

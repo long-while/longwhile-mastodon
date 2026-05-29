@@ -8,6 +8,7 @@
 /**
  * @typedef InitialStateMeta
  * @property {string} access_token
+ * @property {boolean=} advanced_layout
  * @property {boolean} auto_play_gif
  * @property {boolean} activity_api_enabled
  * @property {string} admin
@@ -69,7 +70,13 @@ const element = document.getElementById('initial-state');
 /** @type {InitialState | undefined} */
 const initialState = element?.textContent && JSON.parse(element.textContent);
 
-export const forceSingleColumn = true;
+/** @type {string} */
+const initialPath = document.querySelector("head meta[name=initialPath]")?.getAttribute("content") ?? '';
+/** @type {boolean} */
+export const hasMultiColumnPath = initialPath === '/'
+  || initialPath === '/getting-started'
+  || initialPath === '/home'
+  || initialPath.startsWith('/deck');
 
 /**
  * @template {keyof InitialStateMeta} K
@@ -89,6 +96,7 @@ export const disabledAccountId = getMeta('disabled_account_id');
 export const displayMedia = getMeta('display_media');
 export const domain = getMeta('domain');
 export const expandSpoilers = getMeta('expand_spoilers');
+export const forceSingleColumn = !getMeta('advanced_layout');
 export const limitedFederationMode = getMeta('limited_federation_mode');
 export const mascot = getMeta('mascot');
 export const me = getMeta('me');

@@ -143,6 +143,8 @@ module Admin
       @account.update!(locked: enabling, hide_collections: enabling)
       @account.user&.update!(settings_attributes: { default_privacy: enabling ? 'private' : 'unlisted' })
 
+      reject_pending_follow_requests! unless enabling
+
       log_action :toggle_protect, @account
       ActivityPub::UpdateDistributionWorker.perform_in(ActivityPub::UpdateDistributionWorker::DEBOUNCE_DELAY, @account.id)
 
@@ -151,6 +153,14 @@ module Admin
     end
 
     private
+
+    def reject_pending_follow_requests!
+      @account.follow_requests.includes(:account).find_each do |follow_request|
+        RejectFollowService.new.call(follow_request.account, @account)
+      rescue ActiveRecord::RecordNotFound
+        next
+      end
+    end
 
     def set_account
       @account = Account.find(params[:id])

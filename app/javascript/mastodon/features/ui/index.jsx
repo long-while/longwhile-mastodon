@@ -56,6 +56,7 @@ import {
   FollowRequests,
   FavouritedStatuses,
   BookmarkedStatuses,
+  PendingMentions,
   FollowedTags,
   LinkTimeline,
   ListTimeline,
@@ -141,18 +142,25 @@ class SwitchingColumnsArea extends PureComponent {
     forceOnboarding: PropTypes.bool,
   };
 
-  UNSAFE_componentWillMount () {
-    document.body.classList.add('layout-single-column');
-    document.body.classList.remove('layout-multiple-columns');
+  UNSAFE_componentWillMount() {
+    if (this.props.singleColumn) {
+      document.body.classList.toggle('layout-single-column', true);
+      document.body.classList.toggle('layout-multiple-columns', false);
+    } else {
+      document.body.classList.toggle('layout-single-column', false);
+      document.body.classList.toggle('layout-multiple-columns', true);
+    }
   }
 
-  componentDidUpdate (prevProps) {
+  componentDidUpdate(prevProps) {
     if (![this.props.location.pathname, '/'].includes(prevProps.location.pathname)) {
       this.node.handleChildrenContentChange();
     }
 
-    document.body.classList.add('layout-single-column');
-    document.body.classList.remove('layout-multiple-columns');
+    if (prevProps.singleColumn !== this.props.singleColumn) {
+      document.body.classList.toggle('layout-single-column', this.props.singleColumn);
+      document.body.classList.toggle('layout-multiple-columns', !this.props.singleColumn);
+    }
   }
 
   setRef = c => {
@@ -161,7 +169,7 @@ class SwitchingColumnsArea extends PureComponent {
     }
   };
 
-  render () {
+  render() {
     const { children, singleColumn, forceOnboarding } = this.props;
     const { signedIn } = this.props.identity;
     const pathName = this.props.location.pathname;
@@ -191,7 +199,7 @@ class SwitchingColumnsArea extends PureComponent {
             {redirect}
 
             {singleColumn ? <Redirect from='/deck' to='/home' exact /> : null}
-            {singleColumn && pathName.startsWith('/deck/') ? <Redirect from={pathName} to={{...this.props.location, pathname: pathName.slice(5)}} /> : null}
+            {singleColumn && pathName.startsWith('/deck/') ? <Redirect from={pathName} to={{ ...this.props.location, pathname: pathName.slice(5) }} /> : null}
             {/* Redirect old bookmarks (without /deck) with home-like routes to the advanced interface */}
             {!singleColumn && pathName === '/getting-started' ? <Redirect from='/getting-started' to='/deck/getting-started' exact /> : null}
             {!singleColumn && pathName === '/home' ? <Redirect from='/home' to='/deck/getting-started' exact /> : null}
@@ -219,6 +227,7 @@ class SwitchingColumnsArea extends PureComponent {
             <WrappedRoute path='/notifications' component={Notifications} content={children} exact />
             <WrappedRoute path='/notifications/requests' component={NotificationRequests} content={children} exact />
             <WrappedRoute path='/notifications/requests/:id' component={NotificationRequest} content={children} exact />
+            <WrappedRoute path='/pending-mentions' component={PendingMentions} content={children} />
             <WrappedRoute path='/favourites' component={FavouritedStatuses} content={children} />
 
             <WrappedRoute path='/bookmarks' component={BookmarkedStatuses} content={children} />
@@ -399,7 +408,7 @@ class UI extends PureComponent {
     }
   };
 
-  componentDidMount () {
+  componentDidMount() {
     const { signedIn } = this.props.identity;
 
     window.addEventListener('focus', this.handleWindowFocus, false);
@@ -413,7 +422,7 @@ class UI extends PureComponent {
     document.addEventListener('dragleave', this.handleDragLeave, false);
     document.addEventListener('dragend', this.handleDragEnd, false);
 
-    if ('serviceWorker' in  navigator) {
+    if ('serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('message', this.handleServiceWorkerPostMessage);
     }
 
@@ -431,7 +440,7 @@ class UI extends PureComponent {
     };
   }
 
-  componentWillUnmount () {
+  componentWillUnmount() {
     window.removeEventListener('focus', this.handleWindowFocus);
     window.removeEventListener('blur', this.handleWindowBlur);
     window.removeEventListener('beforeunload', this.handleBeforeUnload);
@@ -479,7 +488,7 @@ class UI extends PureComponent {
   };
 
   handleHotkeyFocusColumn = e => {
-    const index  = (e.key * 1) + 1; // First child is drawer, skip that
+    const index = (e.key * 1) + 1; // First child is drawer, skip that
     const column = this.node.querySelector(`.column:nth-child(${index})`);
     if (!column) return;
     const container = column.querySelector('.scrollable');
@@ -568,7 +577,7 @@ class UI extends PureComponent {
     this.props.history.push('/follow_requests');
   };
 
-  render () {
+  render() {
     const { draggingOver } = this.state;
     const { children, isComposing, location, layout, firstLaunch, newAccount } = this.props;
 

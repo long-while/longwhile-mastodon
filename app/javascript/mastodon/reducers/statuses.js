@@ -2,6 +2,7 @@ import { Map as ImmutableMap, fromJS } from 'immutable';
 
 import { timelineDelete } from 'mastodon/actions/timelines_typed';
 
+import { COMPOSE_SUBMIT_SUCCESS } from '../actions/compose';
 import { STATUS_IMPORT, STATUSES_IMPORT } from '../actions/importer';
 import { normalizeStatusTranslation } from '../actions/importer/normalizer';
 import {
@@ -117,6 +118,13 @@ export default function statuses(state = initialState, action) {
     });
   case STATUS_COLLAPSE:
     return state.setIn([action.id, 'collapsed'], action.isCollapsed);
+  case COMPOSE_SUBMIT_SUCCESS: {
+    // 내가 답글을 올리면 원글의 replies_count를 즉시 +1.
+    // (서버 응답을 기다리지 않고 답변 대기 페이지에서 바로 사라지도록.)
+    const parentId = action.status?.in_reply_to_id;
+    if (!parentId || state.get(parentId) === undefined) return state;
+    return state.updateIn([parentId, 'replies_count'], count => (typeof count === 'number' ? count + 1 : 1));
+  }
   case timelineDelete.type:
     return deleteStatus(state, action.payload.statusId, action.payload.references);
   case STATUS_TRANSLATE_SUCCESS:
