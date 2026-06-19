@@ -16,6 +16,7 @@ import {
   markNotificationsAsRead,
   mountNotifications,
   unmountNotifications,
+  setNotificationsFilter,
 } from 'mastodon/actions/notification_groups';
 import { compareId } from 'mastodon/compare_id';
 import { Icon } from 'mastodon/components/icon';
@@ -31,6 +32,7 @@ import {
 import {
   selectNeedsNotificationPermission,
   selectSettingsNotificationsShowUnread,
+  selectSettingsNotificationsQuickFilterActive,
 } from 'mastodon/selectors/settings';
 import { useAppDispatch, useAppSelector } from 'mastodon/store';
 
@@ -130,6 +132,17 @@ export const Notifications: React.FC<{
       dispatch(unmountNotifications());
       void dispatch(updateScrollPosition({ top: false }));
     };
+  }, [dispatch]);
+
+  // Always land on the "All" (모두) filter tab when opening the notifications
+  // column, regardless of which quick filter was last persisted in settings.
+  const initialFilterRef = useRef(
+    useAppSelector(selectSettingsNotificationsQuickFilterActive),
+  );
+  useEffect(() => {
+    if (initialFilterRef.current !== 'all') {
+      void dispatch(setNotificationsFilter({ filterType: 'all' }));
+    }
   }, [dispatch]);
 
   const handleLoadGap = useCallback(
