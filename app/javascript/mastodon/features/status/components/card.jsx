@@ -37,25 +37,46 @@ const getHostname = url => {
 
 const domParser = new DOMParser();
 
-const addAutoPlay = html => {
+const handleIframeUrl = (html, url, providerName) => {
   const document = domParser.parseFromString(html, 'text/html').documentElement;
   const iframe = document.querySelector('iframe');
 
-  if (iframe) {
-    if (iframe.src.indexOf('?') !== -1) {
-      iframe.src += '&';
-    } else {
-      iframe.src += '?';
-    }
-
-    iframe.src += 'autoplay=1&auto_play=1';
-
-    // DOM parser creates html/body elements around original HTML fragment,
-    // so we need to get innerHTML out of the body and not the entire document
-    return document.querySelector('body').innerHTML;
+  if (!iframe) {
+    return html;
   }
 
-  return html;
+  let iframeUrl;
+
+  try {
+    iframeUrl = new URL(iframe.src);
+  } catch {
+    // Malformed embed URL — leave the markup untouched rather than break it.
+    return html;
+  }
+
+  iframeUrl.searchParams.set('autoplay', '1');
+  iframeUrl.searchParams.set('auto_play', '1');
+
+  // YouTube requires a referer to play embeds and uses `start` (not `t`) for
+  // the resume position carried on the original link.
+  if (providerName === 'YouTube') {
+    let startTime = null;
+
+    try {
+      startTime = new URL(url).searchParams.get('t');
+    } catch {
+      startTime = null;
+    }
+
+    iframeUrl.searchParams.set('start', startTime ?? '');
+    iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+  }
+
+  iframe.src = iframeUrl.href;
+
+  // DOM parser creates html/body elements around original HTML fragment,
+  // so we need to get innerHTML out of the body and not the entire document
+  return document.querySelector('body').innerHTML;
 };
 
 export default class Card extends PureComponent {
@@ -114,7 +135,7 @@ export default class Card extends PureComponent {
 
   renderVideo () {
     const { card } = this.props;
-    const content = { __html: addAutoPlay(card.get('html')) };
+    const content = { __html: handleIframeUrl(card.get('html'), card.get('url'), card.get('provider_name')) };
 
     return (
       <div

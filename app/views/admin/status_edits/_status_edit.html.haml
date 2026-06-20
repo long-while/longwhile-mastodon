@@ -18,6 +18,9 @@
               %strong> Content warning: #{prerender_custom_emojis(h(status_edit.spoiler_text), status_edit.emojis)}
             = prerender_custom_emojis(status_content_format(status_edit), status_edit.emojis)
 
+      - if status_edit.with_poll?
+        = render partial: 'admin/reports/poll', locals: { poll: status_edit.preloadable_poll, local: status_edit.local?, emojis: status_edit.emojis }
+
       - unless status_edit.ordered_media_attachments.empty?
         = render partial: 'admin/reports/media_attachments', locals: { status: status_edit }
 

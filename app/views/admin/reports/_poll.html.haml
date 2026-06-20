@@ -1,0 +1,13 @@
+.poll
+  %ul
+    - poll.options.each do |option|
+      %li
+        %label.poll__option.disabled<>
+          - if poll.multiple?
+            %span.poll__input.checkbox{ role: 'checkbox', 'aria-label': option }
+          - else
+            %span.poll__input{ role: 'radio', 'aria-label': option }
+          %span.poll__option__text
+            = prerender_custom_emojis(html_aware_format(option, local, multiline: false), emojis)
+  %button.button.button-secondary{ disabled: true }
+    = t('polls.vote')

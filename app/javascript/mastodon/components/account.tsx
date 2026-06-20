@@ -231,6 +231,8 @@ export const Account: React.FC<{
           </div>
 
           <div className='account__contents'>
+            {/* @_longwhile custom feature / 한참(longwhile) 제작 기능 — 프로텍트(잠금) 계정 표시 아이콘.
+                사용·재사용 시 서버 내 출처 표기 필수 / Credit required: Twitter/X @_longwhile · Crepe https://kre.pe/QTRx */}
             <div className='account__display-name-row'>
               <DisplayName account={account} />
               {account?.locked && (

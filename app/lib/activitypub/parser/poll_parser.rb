@@ -3,6 +3,8 @@
 class ActivityPub::Parser::PollParser
   include JsonLdHelper
 
+  MAX_ITEMS = 500
+
   def initialize(json)
     @json = json
   end
@@ -48,6 +50,6 @@ class ActivityPub::Parser::PollParser
   private
 
   def items
-    @json['anyOf'] || @json['oneOf']
+    (@json['anyOf'] || @json['oneOf'])&.take(MAX_ITEMS)
   end
 end

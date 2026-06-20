@@ -71,6 +71,9 @@
           %strong> Content warning: #{prerender_custom_emojis(h(@status.proper.spoiler_text), @status.proper.emojis)}
         = prerender_custom_emojis(status_content_format(@status.proper), @status.proper.emojis)
 
+    - if @status.proper.with_poll?
+      = render partial: 'admin/reports/poll', locals: { poll: @status.proper.preloadable_poll, local: @status.proper.local?, emojis: @status.proper.emojis }
+
     - unless @status.proper.ordered_media_attachments.empty?
       = render partial: 'admin/reports/media_attachments', locals: { status: @status.proper }
 
