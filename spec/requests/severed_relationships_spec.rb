@@ -3,9 +3,10 @@
 require 'rails_helper'
 
 RSpec.describe 'Severed Relationships' do
-  let(:account_rs_event) { Fabricate :account_relationship_severance_event }
+  let(:user) { Fabricate(:user) }
+  let(:account_rs_event) { Fabricate(:account_relationship_severance_event, account: user.account) }
 
-  before { sign_in Fabricate(:user) }
+  before { sign_in user }
 
   describe 'GET /severed_relationships/:id/following' do
     it 'returns a CSV file with correct data' do
@@ -21,6 +22,16 @@ RSpec.describe 'Severed Relationships' do
         FILENAME
       expect(response.body)
         .to include('Account address')
+    end
+
+    context 'when the event belongs to another account' do
+      let(:other_event) { Fabricate(:account_relationship_severance_event) }
+
+      it 'returns 404 instead of leaking the other account data' do
+        get following_severed_relationship_path(other_event, format: :csv)
+
+        expect(response).to have_http_status(404)
+      end
     end
   end
 
@@ -38,6 +49,16 @@ RSpec.describe 'Severed Relationships' do
         FILENAME
       expect(response.body)
         .to include('Account address')
+    end
+
+    context 'when the event belongs to another account' do
+      let(:other_event) { Fabricate(:account_relationship_severance_event) }
+
+      it 'returns 404 instead of leaking the other account data' do
+        get followers_severed_relationship_path(other_event, format: :csv)
+
+        expect(response).to have_http_status(404)
+      end
     end
   end
 end

@@ -355,7 +355,9 @@ const startServer = async () => {
    * @returns {Promise<ResolvedAccount>}
    */
   const accountFromToken = async (token, req) => {
-    const result = await pgPool.query('SELECT oauth_access_tokens.id, oauth_access_tokens.resource_owner_id, users.account_id, users.chosen_languages, oauth_access_tokens.scopes FROM oauth_access_tokens INNER JOIN users ON oauth_access_tokens.resource_owner_id = users.id WHERE oauth_access_tokens.token = $1 AND oauth_access_tokens.revoked_at IS NULL LIMIT 1', [token]);
+    // GHSA-r2fh-jr9c-9pxh: reject tokens whose user is disabled or whose
+    // account is suspended, so suspended/disabled accounts cannot (re)connect.
+    const result = await pgPool.query('SELECT oauth_access_tokens.id, oauth_access_tokens.resource_owner_id, users.account_id, users.chosen_languages, oauth_access_tokens.scopes FROM oauth_access_tokens INNER JOIN users ON oauth_access_tokens.resource_owner_id = users.id INNER JOIN accounts ON users.account_id = accounts.id WHERE oauth_access_tokens.token = $1 AND oauth_access_tokens.revoked_at IS NULL AND users.disabled IS FALSE AND accounts.suspended_at IS NULL LIMIT 1', [token]);
 
     if (result.rows.length === 0) {
       throw new AuthenticationError('Invalid access token');
@@ -434,11 +436,9 @@ const startServer = async () => {
   const checkScopes = (req, logger, channelName) => new Promise((resolve, reject) => {
     logger.debug(`Checking OAuth scopes for ${channelName}`);
 
-    // When accessing public channels, no scopes are needed
-    if (channelName && PUBLIC_CHANNELS.includes(channelName)) {
-      resolve();
-      return;
-    }
+    // GHSA-7gwh-mw97-qjgp: every streaming connection here is authenticated, so
+    // even public channels require a token carrying the `read` (or
+    // `read:statuses`) scope. Tokens lacking it must not subscribe.
 
     // The `read` scope has the highest priority, if the token has it
     // then it can access all streams

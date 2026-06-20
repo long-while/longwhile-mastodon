@@ -26,7 +26,9 @@ class SeveredRelationshipsController < ApplicationController
   private
 
   def set_event
-    @event = AccountRelationshipSeveranceEvent.find(params[:id])
+    # GHSA-ww85-x9cp-5v24: scope to the current account so a non-owned id 404s
+    # instead of leaking another user's severed-relationship data.
+    @event = AccountRelationshipSeveranceEvent.where(account: current_account).find(params[:id])
   end
 
   def following_data

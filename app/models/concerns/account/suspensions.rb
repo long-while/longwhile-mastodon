@@ -32,6 +32,11 @@ module Account::Suspensions
       update!(suspended_at: date, suspension_origin: origin)
       create_canonical_email_block! if block_email
     end
+
+    # GHSA-r2fh-jr9c-9pxh: terminate any open streaming sessions for a local
+    # account the moment it is suspended (reconnection is blocked by the
+    # streaming server's account-status check).
+    redis.publish("timeline:system:#{id}", Oj.dump(event: :kill)) if local?
   end
 
   def unsuspend!
