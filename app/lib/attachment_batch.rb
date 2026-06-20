@@ -112,10 +112,12 @@ class AttachmentBatch
     keys.each_slice(LIMIT) do |keys_slice|
       logger.debug { "Deleting #{keys_slice.size} objects" }
 
-      bucket.delete_objects(delete: {
-        objects: keys_slice.map { |key| { key: key } },
-        quiet: true,
-      })
+      with_overridden_timeout(bucket.client, 120) do
+        bucket.delete_objects(delete: {
+          objects: keys_slice.map { |key| { key: key } },
+          quiet: true,
+        })
+      end
     rescue => e
       retries += 1
 
@@ -132,6 +134,21 @@ class AttachmentBatch
 
   def bucket
     @bucket ||= records.first.public_send(@attachment_names.first).s3_bucket
+  end
+
+  # The aws-sdk-s3 gem does not offer a way to cleanly override the timeout
+  # on a per-request basis, so we temporarily change the client's config and
+  # restore it afterwards. Large batch deletes can be slow, so we raise the
+  # read timeout for the duration of the call (#37004).
+  def with_overridden_timeout(s3_client, longer_read_timeout)
+    original_timeout = s3_client.config.http_read_timeout
+    s3_client.config.http_read_timeout = [original_timeout, longer_read_timeout].max
+
+    begin
+      yield
+    ensure
+      s3_client.config.http_read_timeout = original_timeout
+    end
   end
 
   def nullified_attributes

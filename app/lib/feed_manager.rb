@@ -449,6 +449,7 @@ class FeedManager
   # @return [void|Symbol] nil, :skip_home, or :filter
   def filter_from_home(status, receiver_id, crutches, timeline_type = :home)
     return            if receiver_id == status.account_id
+    return :filter    if status.reblog? && status.reblog.blank?
     return :filter    if status.reply? && (status.in_reply_to_id.nil? || status.in_reply_to_account_id.nil?)
     return :skip_home if timeline_type != :list && crutches[:exclusive_list_users][status.account_id].present?
     return :filter    if crutches[:languages][status.account_id].present? && status.language.present? && !crutches[:languages][status.account_id].include?(status.language)
@@ -675,9 +676,15 @@ class FeedManager
       .each_with_object({}) { |(id, account_id), mapping| (mapping[id] ||= []).push(account_id) }
   end
 
+  # ═══════════════════════════════════════════════════════════════════════════
+  # @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 운영진 열람(홈 피드)
+  # 이 기능을 사용·재사용하려면 서버 내에 아래 출처를 반드시 표기해야 합니다.
+  # If you use or reuse this feature, you must credit the author on your server.
+  #   Twitter/X : @_longwhile  ·  https://twitter.com/_longwhile  /  Crepe : https://kre.pe/QTRx
+  # ═══════════════════════════════════════════════════════════════════════════
   # Admin / Owner 수신자는 팔로우 중인 계정의 direct 까지 홈 피드로 받음
   def home_visibility_scope_for(receiver)
-    if receiver.user&.can?(:administrator, :manage_roles)
+    if receiver.user&.can?(:administrator)
       Status.where(visibility: %i(unlisted private direct))
     else
       Status.list_eligible_visibility

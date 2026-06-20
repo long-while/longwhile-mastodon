@@ -27,6 +27,12 @@ class UnfollowService < BaseService
 
     return unless follow
 
+    # Capture the affected list ids *before* destroying the follow: the
+    # list_accounts rows are removed by an `ON DELETE CASCADE` foreign key as
+    # soon as the follow is destroyed, so querying them afterwards always
+    # returns nothing and the posts are never purged from the list feeds (#38048).
+    list_ids = list_ids_to_unmerge unless @options[:skip_unmerge]
+
     follow.destroy!
 
     create_notification(follow) if !@target_account.local? && @target_account.activitypub?
@@ -34,12 +40,19 @@ class UnfollowService < BaseService
 
     unless @options[:skip_unmerge]
       UnmergeWorker.perform_async(@target_account.id, @source_account.id, 'home')
-      UnmergeWorker.push_bulk(List.where(account: @source_account).joins(:list_accounts).where(list_accounts: { account_id: @target_account.id }).pluck(:list_id)) do |list_id|
+      UnmergeWorker.push_bulk(list_ids) do |list_id|
         [@target_account.id, list_id, 'list']
       end
     end
 
     follow
+  end
+
+  def list_ids_to_unmerge
+    List.where(account: @source_account)
+        .joins(:list_accounts)
+        .where(list_accounts: { account_id: @target_account.id })
+        .pluck(:list_id)
   end
 
   def undo_follow_request!

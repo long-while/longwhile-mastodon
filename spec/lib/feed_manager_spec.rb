@@ -87,6 +87,19 @@ RSpec.describe FeedManager do
         expect(subject.filter?(:home, reblog, bob)).to be true
       end
 
+      it 'returns true for a reblog whose original status has been deleted' do
+        status = Fabricate(:status, text: 'Hello world', account: jeff)
+        reblog = Fabricate(:status, reblog: status, account: alice)
+        bob.follow!(alice)
+
+        # Simulate the original status having been deleted out from under the
+        # reblog (the reblog_of_id is still set, but the association is gone).
+        # Without the nil-guard this raises NoMethodError instead of filtering.
+        allow(reblog).to receive(:reblog).and_return(nil)
+
+        expect(subject.filter?(:home, reblog, bob)).to be true
+      end
+
       it 'returns false for reply by followee to another followee' do
         status = Fabricate(:status, text: 'Hello world', account: jeff)
         reply  = Fabricate(:status, text: 'Nay', thread: status, account: alice)

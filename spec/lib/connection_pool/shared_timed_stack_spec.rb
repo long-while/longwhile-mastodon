@@ -12,6 +12,14 @@ RSpec.describe ConnectionPool::SharedTimedStack do
       def initialize(site)
         @site = site
       end
+
+      def close
+        @closed = true
+      end
+
+      def closed?
+        @closed == true
+      end
     end
   end
 
@@ -40,6 +48,20 @@ RSpec.describe ConnectionPool::SharedTimedStack do
     it 'repurposes a connection for a different site when maximum amount is reached' do
       5.times { subject.push(mini_connection_class.new('foo')) }
       expect(subject.pop('bar')).to be_a mini_connection_class
+    end
+
+    it 'closes the discarded connection when recycling at capacity for a new site' do
+      # Fill the pool to capacity with one live connection per site, each kept
+      # on the stack, so a pop for a new site forces a connection to be recycled.
+      connections = %w(a b c d e).map do |site|
+        connection = subject.pop(site, 0)
+        subject.push(connection)
+        connection
+      end
+
+      subject.pop('f', 0)
+
+      expect(connections.count(&:closed?)).to eq 1
     end
   end
 

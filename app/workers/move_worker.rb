@@ -62,11 +62,28 @@ class MoveWorker
                    .where.not(account: @target_account.followers.local)
                    .where.not(account_id: @target_account.id)
                    .in_batches do |follows|
+      # Bulk update_all bypasses the RelationshipCacheable callbacks, so the
+      # relationship cache must be invalidated manually here (#37664)
+      clear_relationship_cache!(follows)
+
       ListAccount.where(follow: follows).in_batches.update_all(account_id: @target_account.id)
       num_moved += follows.update_all(target_account_id: @target_account.id)
     end
 
     num_moved
+  end
+
+  # Delete the cached relationship entries for both directions of each follow,
+  # including the pairs that will exist once the follow points at the new account
+  def clear_relationship_cache!(follows)
+    Rails.cache.delete_multi(follows.flat_map do |follow|
+      [
+        ['relationship', follow.account_id, follow.target_account_id],
+        ['relationship', follow.target_account_id, follow.account_id],
+        ['relationship', follow.account_id, @target_account.id],
+        ['relationship', @target_account.id, follow.account_id],
+      ]
+    end)
   end
 
   def queue_follow_unfollows!

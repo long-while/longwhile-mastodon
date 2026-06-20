@@ -187,6 +187,17 @@ RSpec.describe MoveWorker do
         expect(local_follower.following?(target_account)).to be true
       end
 
+      it 'clears the stale relationship cache for the rewritten follow' do
+        cache_key = ['relationship', local_follower.id, source_account.id]
+        Rails.cache.write(cache_key, 'stale')
+
+        subject.perform(source_account.id, target_account.id)
+
+        # The follow is redirected with a bulk update_all that bypasses the
+        # RelationshipCacheable callbacks, so the worker must invalidate it.
+        expect(Rails.cache.read(cache_key)).to be_nil
+      end
+
       it_behaves_like 'common tests'
 
       it 'does not allow the moved account to follow themselves' do
