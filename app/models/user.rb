@@ -198,6 +198,8 @@ class User < ApplicationRecord
 
   def disable!
     update!(disabled: true)
+    # GHSA-r2fh-jr9c-9pxh: close any open streaming sessions on disable.
+    redis.publish("timeline:system:#{account_id}", Oj.dump(event: :kill))
   end
 
   def enable!
@@ -255,7 +257,11 @@ class User < ApplicationRecord
   end
 
   def functional_or_moved?
-    confirmed? && approved? && !disabled? && !account.unavailable? && !account.memorial?
+    confirmed? && approved? && !disabled? && !account.unavailable? && !account.memorial? && !missing_2fa?
+  end
+
+  def missing_2fa?
+    !two_factor_enabled? && role.require_2fa?
   end
 
   def unconfirmed?
@@ -387,17 +393,22 @@ class User < ApplicationRecord
     end
   end
 
-  def reset_password!
-    # First, change password to something random and deactivate all sessions
+  def change_password!(new_password)
+    # First, change the password and deactivate all sessions
     transaction do
-      update(password: SecureRandom.hex)
+      update(password: new_password)
       session_activations.destroy_all
     end
 
     # Then, remove all authorized applications and connected push subscriptions
     revoke_access!
+  end
 
-    # Finally, send a reset password prompt to the user
+  def reset_password!
+    # Change password to something random, revoking sessions and tokens
+    change_password!(SecureRandom.hex)
+
+    # Then, send a reset password prompt to the user
     send_reset_password_instructions
   end
 
