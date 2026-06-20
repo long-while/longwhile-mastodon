@@ -31,6 +31,8 @@ class Fasp::Provider < ApplicationRecord
   validates :provider_public_key_pem, presence: true
   validates :remote_identifier, presence: true
 
+  scope :confirmed, -> { where(confirmed: true) }
+
   before_create :create_keypair
   after_commit :update_remote_capabilities
 

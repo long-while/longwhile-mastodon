@@ -46,7 +46,7 @@ class Api::Fasp::BaseController < ApplicationController
     raise Error, 'signature-input is missing' if signature_input.blank?
 
     keyid = signature_input.match(KEYID_PATTERN)[1]
-    provider = Fasp::Provider.find(keyid)
+    provider = Fasp::Provider.confirmed.find(keyid)
     linzer_request = Linzer.new_request(
       request.method,
       request.original_url,

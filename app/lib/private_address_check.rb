@@ -16,6 +16,7 @@ module PrivateAddressCheck
     IPAddr.new('224.0.0.0/4'),     # IP multicast (former Class D network)
     IPAddr.new('240.0.0.0/4'),     # Reserved (former Class E network)
     IPAddr.new('255.255.255.255'), # Broadcast
+    IPAddr.new('::/128'),          # Unspecified address (RFC 4291)
     IPAddr.new('64:ff9b::/96'),    # IPv4/IPv6 translation (RFC 6052)
     IPAddr.new('100::/64'),        # Discard prefix (RFC 6666)
     IPAddr.new('2001::/32'),       # Teredo tunneling

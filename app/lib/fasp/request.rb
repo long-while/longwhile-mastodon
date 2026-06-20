@@ -23,7 +23,7 @@ class Fasp::Request
     url = @provider.url(path)
     body = body.present? ? body.to_json : ''
     headers = request_headers(verb, url, body)
-    response = HTTP.headers(headers).send(verb, url, body:)
+    response = HTTP.headers(headers).send(verb, url, body:, socket_class: ::Request::Socket)
     validate!(response)
 
     response.parse if response.body.present?

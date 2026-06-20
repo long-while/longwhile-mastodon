@@ -78,6 +78,16 @@ RSpec.describe Sanitize::Config do
       expect(Sanitize.fragment(mathml, subject)).to eq '$\sqrt x$'
     end
 
+    it 'does not raise on a malformed annotation missing the encoding attribute (GHSA-qrgq-9fx2-vf2r)' do
+      mathml = '<math><semantics><msqrt><mi>x</mi></msqrt><annotation>sqrt(x)</annotation></semantics></math>'
+      expect { Sanitize.fragment(mathml, subject) }.to_not raise_error
+    end
+
+    it 'falls back past an encoding-less annotation to a valid latex annotation (GHSA-qrgq-9fx2-vf2r)' do
+      mathml = '<math><semantics><msqrt><mi>x</mi></msqrt><annotation>sqrt(x)</annotation><annotation encoding="application/x-tex">\\sqrt x</annotation></semantics></math>'
+      expect(Sanitize.fragment(mathml, subject)).to eq '$\sqrt x$'
+    end
+
     it 'keeps safe color style on span' do
       expect(Sanitize.fragment('<span style="color: #ff0000;">빨강</span>', subject)).to eq '<span style="color: #ff0000;">빨강</span>'
     end
