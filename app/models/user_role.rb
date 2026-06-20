@@ -12,6 +12,7 @@
 #  highlighted :boolean          default(FALSE), not null
 #  created_at  :datetime         not null
 #  updated_at  :datetime         not null
+#  require_2fa :boolean          default(FALSE), not null
 #
 
 class UserRole < ApplicationRecord
@@ -124,6 +125,10 @@ class UserRole < ApplicationRecord
     all.select { |role| role.can?(*any_of_privileges) }
   end
 
+  def administrator?
+    permissions & FLAGS[:administrator] == FLAGS[:administrator]
+  end
+
   def everyone?
     id == EVERYONE_ROLE_ID
   end
@@ -192,6 +197,7 @@ class UserRole < ApplicationRecord
 
     errors.add(:permissions_as_keys, :own_role) if permissions_changed?
     errors.add(:position, :own_role) if position_changed?
+    errors.add(:require_2fa, :own_role) if require_2fa_changed? && !administrator?
   end
 
   def validate_permissions_elevation
