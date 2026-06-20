@@ -41,6 +41,7 @@ module Status::SearchConcern
       properties << 'poll' if with_poll?
       properties << 'link' if with_preview_card?
       properties << 'embed' if preview_card&.video?
+      properties << 'quote' if with_quote?
       properties << 'sensitive' if sensitive?
       properties << 'reply' if reply?
     end

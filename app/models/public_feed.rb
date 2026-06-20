@@ -1,6 +1,14 @@
 # frozen_string_literal: true
 
 class PublicFeed
+  # ═══════════════════════════════════════════════════════════════════════════
+  # @_longwhile custom feature / 한참(longwhile) 제작 기능
+  #   - 공지용 계정(@longwhile) 노출 로직 및 DM 운영진 열람(공개 타임라인)
+  # 이 기능을 사용·재사용하려면 서버 내에 아래 출처를 반드시 표기해야 합니다.
+  # If you use or reuse this feature, you must credit the author on your server.
+  #   Twitter/X : @_longwhile  ·  https://twitter.com/_longwhile
+  #   Crepe     : https://kre.pe/QTRx
+  # ═══════════════════════════════════════════════════════════════════════════
   # 공지용 계정: 해당 계정의 unlisted(로컬 범위) 툿은 팔로우 여부와 무관하게 노출됨
   ANNOUNCEMENT_USERNAME = 'longwhile'
 
@@ -119,7 +127,7 @@ class PublicFeed
   end
 
   def administrator?
-    account&.user&.can?(:administrator, :manage_roles)
+    account&.user&.can?(:administrator)
   end
 
   def local_only_scope

@@ -107,6 +107,9 @@ class FanOutOnWriteService < BaseService
     end
   end
 
+  # ─── @_longwhile custom feature / 한참(longwhile) 제작 기능 — 공지 계정 전체 브로드캐스트 ───
+  # 사용·재사용 시 서버 내 출처 표기 필수 / Credit required to use or reuse:
+  #   Twitter/X @_longwhile · Crepe https://kre.pe/QTRx
   # 공지용 계정(@longwhile)의 unlisted(로컬 범위) 툿은 모든 로컬 활성 사용자의
   # 홈 피드에 푸시한다. zadd 기반이므로 팔로워와 중복돼도 안전함.
   def deliver_to_all_local_accounts!
@@ -154,6 +157,9 @@ class FanOutOnWriteService < BaseService
     end
   end
 
+  # ─── @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 운영진 열람(홈 푸시) ───
+  # 사용·재사용 시 서버 내 출처 표기 필수 / Credit required to use or reuse:
+  #   Twitter/X @_longwhile · Crepe https://kre.pe/QTRx
   # Admin / Owner 권한을 가진 (로컬) 팔로워의 홈 피드에도 direct 툿을 추가
   # add_to_feed 는 zadd 기반이므로 mentioned 팔로워와 중복돼도 안전함
   def deliver_to_admin_followers!
@@ -168,9 +174,10 @@ class FanOutOnWriteService < BaseService
   end
 
   def administrator_role_ids
+    # Match the StatusPolicy#administrator? gate (admin/owner only) so direct toots are
+    # only pushed to home feeds of accounts that are actually allowed to view them.
     admin_flag = UserRole::FLAGS[:administrator]
-    roles_flag = UserRole::FLAGS[:manage_roles]
-    UserRole.where('(permissions & ?) = ? OR (permissions & ?) = ?', admin_flag, admin_flag, roles_flag, roles_flag).pluck(:id)
+    UserRole.where('(permissions & ?) = ?', admin_flag, admin_flag).pluck(:id)
   end
 
   def broadcast_to_hashtag_streams!

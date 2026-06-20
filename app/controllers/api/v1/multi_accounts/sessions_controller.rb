@@ -5,7 +5,7 @@ class Api::V1::MultiAccounts::SessionsController < Api::BaseController
   skip_before_action :require_not_suspended!, only: :refresh
 
   def refresh
-    Rails.logger.info("[MultiAccount] refresh_flow_enabled?=#{MultiAccountConfig.refresh_flow_enabled?}, config=#{Rails.configuration.x.multi_account.to_h.except('client_secret')}")
+    Rails.logger.debug { "[MultiAccount] refresh_flow_enabled?=#{MultiAccountConfig.refresh_flow_enabled?}" }
 
     unless MultiAccountConfig.refresh_flow_enabled?
       Rails.logger.warn('[MultiAccount] Refresh flow is DISABLED — check MA_MULTI_ACCOUNT_REFRESH_FLOW env var and config/settings.yml')
@@ -36,14 +36,11 @@ class Api::V1::MultiAccounts::SessionsController < Api::BaseController
         return
       end
     else
-      Rails.logger.warn("[MultiAccount] Token NOT found by value (first 20 chars: #{refresh_token_param.to_s[0..20]})")
+      Rails.logger.warn('[MultiAccount] Refresh token not found')
     end
 
     result = service.call
 
-    Rails.logger.info(
-      "[MultiAccount] Session refresh attempt with token: #{refresh_token_param.to_s[0..20]}",
-    )
     Rails.logger.info(
       "[MultiAccount] Before sign_in - current_user: #{current_user&.id}, target_user: #{result.user&.id}",
     )

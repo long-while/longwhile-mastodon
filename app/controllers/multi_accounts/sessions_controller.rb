@@ -6,15 +6,9 @@ class MultiAccounts::SessionsController < ApplicationController
   def restore
     payload = params.require(:payload).permit(:state, :nonce)
 
-    state = payload[:state]
-    nonce = payload[:nonce]
-
-    data = MultiAccounts::StateStore.fetch(state)
-
-    if data.blank? || data[:nonce] != nonce
-      render json: { error: 'Invalid state or nonce' }, status: :unauthorized
-      return
-    end
+    # consume! validates the nonce in constant time and deletes the state from Redis,
+    # so a captured (state, nonce) pair cannot be replayed to re-issue a session.
+    data = MultiAccounts::StateStore.consume!(payload[:state], payload[:nonce])
 
     user = User.find_by(id: data[:user_id])
 
@@ -26,6 +20,8 @@ class MultiAccounts::SessionsController < ApplicationController
     sign_in(:user, user)
 
     head :ok
+  rescue MultiAccounts::StateStore::InvalidStateError
+    render json: { error: 'Invalid state or nonce' }, status: :unauthorized
   rescue ActionController::ParameterMissing => e
     render json: { error: "Missing parameter: #{e.param}" }, status: :bad_request
   rescue StandardError => e

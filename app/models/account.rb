@@ -99,6 +99,7 @@ class Account < ApplicationRecord
   include DomainMaterializable
   include DomainNormalizable
   include Paginable
+  include Redisable
   include Reviewable
 
   enum :protocol, { ostatus: 0, activitypub: 1 }
@@ -437,6 +438,9 @@ class Account < ApplicationRecord
   inverse_alias :show_collections, :hide_collections
   inverse_alias :unlocked, :locked
 
+  # ─── @_longwhile custom feature / 한참(longwhile) 제작 기능 — 프로텍트(잠금) 계정 판별/동기화 ───
+  # 사용·재사용 시 서버 내 출처 표기 필수 / Credit required to use or reuse:
+  #   Twitter/X @_longwhile · Crepe https://kre.pe/QTRx
   def private_account
     locked? && user&.settings&.default_privacy == 'private'
   end

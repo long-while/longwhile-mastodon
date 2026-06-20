@@ -53,19 +53,10 @@
                 }, window.location.origin);
                 messageSent = true;
               } catch (e2) {
+                // Do NOT fall back to a wildcard ('*') targetOrigin here: the payload
+                // contains the OAuth authorization code, and '*' would expose it to any
+                // origin that can reference this window's opener.
                 console.error('Failed to send message with current origin:', e2);
-                // Last resort: try with wildcard
-                try {
-                  window.opener.postMessage({
-                    type: messageType,
-                    state: '<%= j @state %>',
-                    code: '<%= j @code %>',
-                    error: payload.error || null
-                  }, '*');
-                  messageSent = true;
-                } catch (e3) {
-                  console.error('Failed to send message with wildcard origin:', e3);
-                }
               }
             }
           }

@@ -65,6 +65,8 @@ class Api::BaseController < ApplicationController
       render json: { error: 'Your login is missing a confirmed e-mail address' }, status: 403
     elsif !current_user.approved?
       render json: { error: 'Your login is currently pending approval' }, status: 403
+    elsif current_user.missing_2fa?
+      render json: { error: 'Your role requires two-factor authentication to be enabled' }, status: 403
     elsif !current_user.functional?
       render json: { error: 'Your login is currently disabled' }, status: 403
     else

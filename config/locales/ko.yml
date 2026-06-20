@@ -1672,6 +1672,7 @@ ko:
       self_vote: 자신이 만든 설문에는 투표할 수 없음
       too_few_options: 둘 이상의 항목이 있어야 함
       too_many_options: 항목은 %{max}개를 넘을 수 없습니다
+    vote: 투표
   preferences:
     other: 기타
     posting_defaults: 게시물 기본설정
@@ -2041,6 +2042,7 @@ ko:
     invalid_otp_token: 2단계 인증 코드가 올바르지 않습니다
     otp_lost_help_html: 만약 양쪽 모두를 잃어버렸다면 %{email}을 통해 복구할 수 있습니다
     rate_limited: 너무 많은 인증 시도가 있었습니다, 잠시 후에 시도하세요.
+    role_requirement: 계속하려면 역할에 따라 2단계 인증을 먼저 설정해야 합니다.
     seamless_external_login: 외부 서비스를 이용해 로그인했으므로 이메일과 암호는 설정할 수 없습니다.
     signed_in_as: '다음과 같이 로그인 중:'
   verification:

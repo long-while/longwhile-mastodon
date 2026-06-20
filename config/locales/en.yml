@@ -1710,6 +1710,7 @@ en:
       self_vote: You cannot vote in your own polls
       too_few_options: must have more than one item
       too_many_options: can't contain more than %{max} items
+    vote: Vote
   preferences:
     other: Other
     posting_defaults: Posting defaults
@@ -2093,6 +2094,7 @@ en:
     invalid_otp_token: Invalid two-factor code
     otp_lost_help_html: If you lost access to both, you may get in touch with %{email}
     rate_limited: Too many authentication attempts, try again later.
+    role_requirement: Your role requires you to set up two-factor authentication before you can continue.
     seamless_external_login: You are logged in via an external service, so password and email settings are not available.
     signed_in_as: 'Signed in as:'
   verification:

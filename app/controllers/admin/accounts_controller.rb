@@ -135,6 +135,9 @@ module Admin
       redirect_to admin_account_path(@account.id), notice: I18n.t('admin.accounts.unblocked_email_msg', username: @account.acct)
     end
 
+    # ─── @_longwhile custom feature / 한참(longwhile) 제작 기능 — 관리자 프로텍트(잠금) 계정 토글 ───
+    # 사용·재사용 시 서버 내 출처 표기 필수 / Credit required to use or reuse:
+    #   Twitter/X @_longwhile · Crepe https://kre.pe/QTRx
     def toggle_protect
       authorize @account, :toggle_protect?
 

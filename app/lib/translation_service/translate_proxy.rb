@@ -47,9 +47,14 @@ class TranslationService::TranslateProxy < TranslationService
   private
 
   def sanitize(text)
+    text = text.gsub(%r{<br\s*/?>}, "\n") # Replace br tag to newline
+
+    # Strip remaining HTML tags, repeating until none remain so that
+    # overlapping sequences (e.g. "<<b>b>") cannot reconstruct a tag
+    # after a single pass.
+    text = text.gsub(%r{</?[^>]+?>}, '') while text.match?(%r{</?[^>]+?>})
+
     text
-      .gsub(%r{<br\s*/?>}, "\n") # Replace br tag to newline
-      .gsub(%r{</?[^>]+?>}, '') # Remove HTML tags
   end
 
   def restore_text(text)

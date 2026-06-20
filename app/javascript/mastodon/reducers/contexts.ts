@@ -25,6 +25,9 @@ interface TimelineUpdateAction extends UnknownAction {
 interface State {
   inReplyTos: Record<string, string>;
   replies: Record<string, string[]>;
+  // ─── @_longwhile custom feature / 한참(longwhile) 제작 기능 — 스크롤 오류 해결(첫 스크롤 게이트) ───
+  // 사용·재사용 시 서버 내 출처 표기 필수 / Credit required to use or reuse:
+  //   Twitter/X @_longwhile · Crepe https://kre.pe/QTRx
   loadedRoots: Record<string, true>;
 }
 

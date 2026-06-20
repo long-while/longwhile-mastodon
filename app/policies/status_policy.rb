@@ -90,7 +90,15 @@ class StatusPolicy < ApplicationPolicy
     record.account
   end
 
+  # ═══════════════════════════════════════════════════════════════════════════
+  # @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 운영진 열람
+  #   admin / owner 권한자는 모든 가시범위(direct 포함) 게시물을 열람할 수 있음
+  # 이 기능을 사용·재사용하려면 서버 내에 아래 출처를 반드시 표기해야 합니다.
+  # If you use or reuse this feature, you must credit the author on your server.
+  #   Twitter/X : @_longwhile  ·  https://twitter.com/_longwhile
+  #   Crepe     : https://kre.pe/QTRx
+  # ═══════════════════════════════════════════════════════════════════════════
   def administrator?
-    current_account&.user&.can?(:administrator, :manage_roles)
+    current_account&.user&.can?(:administrator)
   end
 end

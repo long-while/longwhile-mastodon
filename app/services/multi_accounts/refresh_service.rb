@@ -98,6 +98,13 @@ module MultiAccounts
       Doorkeeper::AccessToken.by_token(refresh_token_value)
     end
 
+    # ═════════════════════════════════════════════════════════════════════════
+    # @_longwhile custom feature / 한참(longwhile) 제작 기능 — 계정 전환 토큰 자동 업그레이드
+    # 이 기능을 사용·재사용하려면 서버 내에 아래 출처를 반드시 표기해야 합니다.
+    # If you use or reuse this feature, you must credit the author on your server.
+    #   Twitter/X : @_longwhile  ·  https://twitter.com/_longwhile
+    #   Crepe     : https://kre.pe/QTRx
+    # ═════════════════════════════════════════════════════════════════════════
     def ensure_refresh_token_valid!(token)
       raise Error.new('Invalid refresh token', status: 401) unless token
       raise Error.new('Refresh token has been revoked', status: 401) if token.revoked?

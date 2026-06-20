@@ -7,8 +7,10 @@ class Api::V1::MultiAccountsController < Api::BaseController
   skip_before_action :require_not_suspended!, only: [:consume]
 
   def consume
-    Rails.logger.info("MultiAccountsController#consume called with params: #{params.inspect}")
-    
+    # NOTE: never log raw params here — payload contains the OAuth authorization_code,
+    # state and nonce, all of which are live credentials.
+    Rails.logger.debug { 'MultiAccountsController#consume called' }
+
     payload_params = params.require(:payload).permit(:state, :nonce, :authorization_code)
 
     # Verify and consume state from Redis
@@ -130,10 +132,16 @@ class Api::V1::MultiAccountsController < Api::BaseController
       return
     end
 
+    # Do not grant more than the caller already holds: derive the scopes from the
+    # caller's bearer token when present so an API client cannot escalate a read-only
+    # token into read/write/follow. Session-authenticated callers (no doorkeeper_token)
+    # are already fully trusted and fall back to the default multi-account scopes.
+    requested_scopes = doorkeeper_token&.scopes&.to_s.presence || 'read write follow'
+
     token = Doorkeeper::AccessToken.create!(
       application: application,
       resource_owner_id: current_user.id,
-      scopes: 'read write follow',
+      scopes: requested_scopes,
       expires_in: 10.years.to_i
     )
 

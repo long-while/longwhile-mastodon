@@ -118,6 +118,9 @@ export default function statuses(state = initialState, action) {
     });
   case STATUS_COLLAPSE:
     return state.setIn([action.id, 'collapsed'], action.isCollapsed);
+  // ─── @_longwhile custom feature / 한참(longwhile) 제작 기능 — 답장할 멘션 즉시 반영 ───
+  // 사용·재사용 시 서버 내 출처 표기 필수 / Credit required to use or reuse:
+  //   Twitter/X @_longwhile · Crepe https://kre.pe/QTRx
   case COMPOSE_SUBMIT_SUCCESS: {
     // 내가 답글을 올리면 원글의 replies_count를 즉시 +1.
     // (서버 응답을 기다리지 않고 답변 대기 페이지에서 바로 사라지도록.)

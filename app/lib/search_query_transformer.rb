@@ -65,6 +65,9 @@ class SearchQueryTransformer < Parslet::Transform
       end
     end
 
+    # ─── @_longwhile custom feature / 한참(longwhile) 제작 기능 — 검색 범위 제한(나+팔로잉) ───
+    # 사용·재사용 시 서버 내 출처 표기 필수 / Credit required to use or reuse:
+    #   Twitter/X @_longwhile · Crepe https://kre.pe/QTRx
     def default_filter
       account_id = @options[:current_account].id
       following_ids = @options[:current_account].active_relationships.pluck(:target_account_id)

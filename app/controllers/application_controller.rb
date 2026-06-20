@@ -74,7 +74,9 @@ class ApplicationController < ActionController::Base
 
     respond_to do |format|
       format.any do
-        if current_user.confirmed?
+        if current_user.missing_2fa?
+          redirect_to settings_two_factor_authentication_methods_path, alert: I18n.t('users.role_requirement')
+        elsif current_user.confirmed?
           redirect_to edit_user_registration_path
         else
           redirect_to auth_setup_path
@@ -86,6 +88,8 @@ class ApplicationController < ActionController::Base
           render json: { error: 'Your login is missing a confirmed e-mail address' }, status: 403
         elsif !current_user.approved?
           render json: { error: 'Your login is currently pending approval' }, status: 403
+        elsif current_user.missing_2fa?
+          render json: { error: 'Your role requires two-factor authentication to be enabled' }, status: 403
         elsif !current_user.functional?
           render json: { error: 'Your login is currently disabled' }, status: 403
         end

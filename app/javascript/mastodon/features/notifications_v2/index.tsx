@@ -134,6 +134,9 @@ export const Notifications: React.FC<{
     };
   }, [dispatch]);
 
+  // ─── @_longwhile custom feature / 한참(longwhile) 제작 기능 — 알림 진입 시 '모두' 탭 초기화 ───
+  // 사용·재사용 시 서버 내 출처 표기 필수 / Credit required to use or reuse:
+  //   Twitter/X @_longwhile · Crepe https://kre.pe/QTRx
   // Always land on the "All" (모두) filter tab when opening the notifications
   // column, regardless of which quick filter was last persisted in settings.
   const initialFilterRef = useRef(

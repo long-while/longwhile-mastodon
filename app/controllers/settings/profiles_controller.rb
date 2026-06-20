@@ -26,6 +26,9 @@ class Settings::ProfilesController < Settings::BaseController
     params.expect(account: [:display_name, :note, :avatar, :header, :bot, fields_attributes: [[:name, :value]]])
   end
 
+  # ─── @_longwhile custom feature / 한참(longwhile) 제작 기능 — 프로텍트(잠금) 계정 프로필 설정 ───
+  # 사용·재사용 시 서버 내 출처 표기 필수 / Credit required to use or reuse:
+  #   Twitter/X @_longwhile · Crepe https://kre.pe/QTRx
   def account_attributes(toggle_changed)
     return account_params unless toggle_changed
 

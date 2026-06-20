@@ -9,6 +9,8 @@ module MultiAccounts
     class InvalidStateError < StandardError; end
 
     class << self
+      include Redisable
+
       def store!(state:, nonce:, user_id:, redirect_uri:)
         data = {
           nonce: nonce,
@@ -30,7 +32,7 @@ module MultiAccounts
       def consume!(state, nonce)
         data = fetch(state)
 
-        if data.blank? || data[:nonce] != nonce
+        if data.blank? || !ActiveSupport::SecurityUtils.secure_compare(data[:nonce].to_s, nonce.to_s)
           # Set a short TTL to prevent rapid retry attacks
           redis.expire("#{KEY_PREFIX}#{state}", FAILURE_TTL.to_i) if data.present?
           raise InvalidStateError, 'Invalid state or nonce'
@@ -55,12 +57,6 @@ module MultiAccounts
         redis.setex(key, ttl, data.to_json)
 
         data.with_indifferent_access
-      end
-
-      private
-
-      def redis
-        Redis.current
       end
     end
   end
