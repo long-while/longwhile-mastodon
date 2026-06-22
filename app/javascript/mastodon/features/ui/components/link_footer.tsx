@@ -11,7 +11,7 @@ export const LinkFooter: React.FC<{
       <a href='https://crepe.cm/@longwhile/lw5w0ofg' target='_blank' rel='noopener'>
         크레페 한참 커미션
       </a>
-      으로 설치되었습니다.
+      의 공개 배포 버전을 사용합니다.
     </p>
 
     <p>
