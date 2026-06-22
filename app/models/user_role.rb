@@ -197,7 +197,7 @@ class UserRole < ApplicationRecord
 
     errors.add(:permissions_as_keys, :own_role) if permissions_changed?
     errors.add(:position, :own_role) if position_changed?
-    errors.add(:require_2fa, :own_role) if require_2fa_changed? && !administrator?
+    errors.add(:require_2fa, :own_role) if self.class.column_names.include?('require_2fa') && require_2fa_changed? && !administrator?
   end
 
   def validate_permissions_elevation

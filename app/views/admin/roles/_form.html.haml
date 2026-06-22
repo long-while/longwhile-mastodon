@@ -27,7 +27,7 @@
 
   %hr.spacer/
 
-- if current_user.role.administrator? || current_user.role != form.object
+- if (current_user.role.administrator? || current_user.role != form.object) && UserRole.column_names.include?('require_2fa')
   .fields-group
     = form.input :require_2fa,
                  wrapper: :with_label

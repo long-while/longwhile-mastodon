@@ -261,6 +261,12 @@ class User < ApplicationRecord
   end
 
   def missing_2fa?
+    # Backstop for a half-migrated deploy (2FA code shipped before the
+    # `require_2fa` column migration has run): treat as "not required" rather
+    # than raising NoMethodError on every authenticated request. Once the
+    # migration is applied and the app restarted, enforcement resumes.
+    return false unless UserRole.column_names.include?('require_2fa')
+
     !two_factor_enabled? && role.require_2fa?
   end
 
