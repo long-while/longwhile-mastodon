@@ -57,7 +57,16 @@ registerRoute(
 // Cause a new version of a registered Service Worker to replace an existing one
 // that is already installed, and replace the currently active worker on open pages.
 self.addEventListener('install', function(event) {
-  event.waitUntil(Promise.all([openWebCache(), fetchRoot()]).then(([cache, root]) => cache.put('/', root)));
+  event.waitUntil(Promise.all([openWebCache(), fetchRoot()]).then(([cache, root]) => {
+    // Only cache a real app shell. When the session is invalid, fetchRoot()
+    // (redirect: 'manual') resolves to a login redirect (opaqueredirect, not
+    // ok) — caching that as '/' would pin a broken, logged-out shell.
+    if (root.ok) {
+      return cache.put('/', root);
+    }
+
+    return undefined;
+  }));
 });
 
 self.addEventListener('activate', function(event) {

@@ -76,6 +76,88 @@ const authorizationTokenFromInitialState = (
   };
 };
 
+// ─────────────────────────────────────────────────────────────────────────
+// Zombie-session recovery
+//
+// When the per-session OAuth token embedded in the page (meta.access_token)
+// has been revoked or expired server-side while the document still renders as
+// "logged in", every authenticated request returns 401 and the UI would
+// otherwise spin forever. A plain reload cannot help: `current_session.token`
+// is fixed per session activation, so the server re-injects the same dead
+// token — only a fresh login mints a new one.
+//
+// On the first authenticated 401 we route through /auth/sign_out (DELETE) so
+// the service worker's existing cleanup wipes the cached '/' shell and the
+// 'mastodon' IndexedDB, then land on a clean sign-in page.
+// ─────────────────────────────────────────────────────────────────────────
+
+const SESSION_RECOVERY_FLAG = 'mastodon_session_recovery';
+
+let sessionRecoveryInProgress = false;
+let sessionRecoveryFlagActive = (() => {
+  try {
+    return sessionStorage.getItem(SESSION_RECOVERY_FLAG) === '1';
+  } catch {
+    return false;
+  }
+})();
+
+const clearSessionRecoveryFlag = () => {
+  if (!sessionRecoveryFlagActive) return;
+
+  sessionRecoveryFlagActive = false;
+  try {
+    sessionStorage.removeItem(SESSION_RECOVERY_FLAG);
+  } catch {
+    // sessionStorage unavailable — nothing to clear
+  }
+};
+
+const requestHadAuthorization = (config: AxiosError['config']): boolean =>
+  Boolean(
+    (config?.headers as Record<string, unknown> | undefined)?.Authorization,
+  );
+
+const recoverFromInvalidSession = () => {
+  if (sessionRecoveryInProgress) return;
+  sessionRecoveryInProgress = true;
+
+  // Loop guard: if we already bounced once this tab session and are still
+  // unauthorized, stop rather than redirect forever.
+  if (sessionRecoveryFlagActive) {
+    sessionRecoveryInProgress = false;
+    return;
+  }
+
+  sessionRecoveryFlagActive = true;
+  try {
+    sessionStorage.setItem(SESSION_RECOVERY_FLAG, '1');
+  } catch {
+    // sessionStorage unavailable — proceed with the redirect anyway
+  }
+
+  const redirectToSignIn = () => {
+    window.location.href = '/auth/sign_in';
+  };
+
+  const headers: Record<string, string> = {};
+  const csrfToken = csrfHeader['X-CSRF-Token'];
+  if (typeof csrfToken === 'string') {
+    headers['X-CSRF-Token'] = csrfToken;
+  }
+
+  // DELETE matches the regular logout flow and is what the service worker
+  // intercepts to clear its caches; we redirect regardless of the outcome.
+  void fetch('/auth/sign_out', {
+    method: 'DELETE',
+    credentials: 'include',
+    headers,
+    redirect: 'manual',
+  })
+    .catch(() => undefined)
+    .finally(redirectToSignIn);
+};
+
 // eslint-disable-next-line import/no-default-export
 export default function api(withAuthorization = true) {
   const instance = axios.create({
@@ -105,9 +187,22 @@ export default function api(withAuthorization = true) {
           `Deprecated request: ${response.config.method} ${response.config.url}`,
         );
       }
+
+      // A healthy authenticated response means the session is valid again;
+      // reset the recovery guard so a future genuine expiry can recover.
+      clearSessionRecoveryFlag();
       return response;
     },
     (error: AxiosError) => {
+      // A 401 on a request that carried our bearer token means the session
+      // token is dead. Recover instead of spinning forever.
+      if (
+        error.response?.status === 401 &&
+        requestHadAuthorization(error.config)
+      ) {
+        recoverFromInvalidSession();
+      }
+
       return Promise.reject(error);
     },
   );
