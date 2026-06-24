@@ -2,6 +2,7 @@
 
 class MultiAccounts::EntriesController < ApplicationController
   before_action :authenticate_user!
+  before_action :require_multi_account_client!
 
   def show
     state = SecureRandom.uuid
@@ -36,6 +37,23 @@ class MultiAccounts::EntriesController < ApplicationController
   end
 
   private
+
+  # client_id(또는 그에 해당하는 Doorkeeper 앱)가 없으면 빈 client_id로 authorize URL이
+  # 만들어져 /oauth/authorize 에서 "Missing required parameter: client_id"로 터진다.
+  # 깨진 URL을 내보내는 대신, 운영자가 조치할 수 있도록 명확한 로그/에러를 반환한다.
+  def require_multi_account_client!
+    client_id = Rails.configuration.x.multi_account[:client_id]
+    return if client_id.present? && Doorkeeper::Application.exists?(uid: client_id)
+
+    Rails.logger.error(
+      'Multi-account OAuth client is not configured (missing or unknown client_id). ' \
+      'Run `RAILS_ENV=production bundle exec rails multi_accounts:ensure_client` and restart the service.'
+    )
+
+    render json: {
+      error: '계정 전환 기능이 아직 설정되지 않았습니다. 서버 관리자에게 문의해주세요.',
+    }, status: :service_unavailable
+  end
 
   def config_fetch_scopes
     config_scopes = Rails.configuration.x.multi_account[:scopes]
