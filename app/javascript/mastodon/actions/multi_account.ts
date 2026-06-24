@@ -22,13 +22,14 @@ const refreshOAuthToken = async (
   dispatch: AppDispatch,
   entry: MultiAccountEntry,
 ): Promise<string> => {
-  const { fetchAuthorizeEntry, consumeAuthorizationCode } = await import(
-    '../api/multi_accounts'
-  );
   const {
-    openOAuthPopup,
+    fetchAuthorizeEntry,
+    consumeAuthorizationCode,
     restoreMultiAccountSession,
-  } = await import('../features/multi_account/callback_handler');
+  } = await import('../api/multi_accounts');
+  const { openOAuthPopup } = await import(
+    '../features/multi_account/callback_handler'
+  );
 
   const pending = { state: null as string | null, nonce: null as string | null };
 
@@ -199,9 +200,9 @@ export const hydrateMultiAccount =
           .filter((entry) => entry?.lastUsedAt)
           .sort(
             (a, b) =>
-              new Date(b.lastUsedAt ?? 0).getTime() -
-              new Date(a.lastUsedAt ?? 0).getTime(),
-          )[0]?.id ?? entryIds[0];
+              new Date(b?.lastUsedAt ?? 0).getTime() -
+              new Date(a?.lastUsedAt ?? 0).getTime(),
+          )[0]?.id ?? entryIds[0] ?? null;
         }
       }
 
