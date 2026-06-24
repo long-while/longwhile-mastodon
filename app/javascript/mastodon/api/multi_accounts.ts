@@ -1,5 +1,10 @@
 import api from 'mastodon/api';
 
+// 멀티계정 네트워크 호출 공용 타임아웃(ms). axios 인스턴스에는 전역 timeout이
+// 없어 응답이 안 오면 await가 무한 대기 → 계정 스위처 버튼이 회색으로 멈춘다.
+// 각 멀티계정 호출에 per-request timeout을 걸어 반드시 settle 되도록 한다.
+export const MULTI_ACCOUNT_REQUEST_TIMEOUT = 15000;
+
 interface AuthorizeEntryResponse {
   authorize_url: string;
   state: string;
@@ -40,6 +45,7 @@ export const fetchAuthorizeEntry = async (
     params: {
       force_login: typeof forceLogin === 'boolean' ? forceLogin : undefined,
     },
+    timeout: MULTI_ACCOUNT_REQUEST_TIMEOUT,
   });
   return response.data;
 };
@@ -54,6 +60,7 @@ export const consumeAuthorizationCode = async (
     const response = await api(false).post<ConsumeResponse>(
       url,
       { payload },
+      { timeout: MULTI_ACCOUNT_REQUEST_TIMEOUT },
     );
     return response.data;
   } catch (error: any) {
@@ -95,7 +102,9 @@ interface RestorePayload {
 export const restoreMultiAccountSession = async (
   payload: RestorePayload,
 ): Promise<void> => {
-  await api(false).post('/multi_accounts/session/restore', { payload });
+  await api(false).post('/multi_accounts/session/restore', { payload }, {
+    timeout: MULTI_ACCOUNT_REQUEST_TIMEOUT,
+  });
 };
 
 export interface RefreshSessionResponse {
@@ -122,6 +131,7 @@ export const refreshSession = async (refreshToken: string) => {
       headers: {
         Accept: 'application/json',
       },
+      timeout: MULTI_ACCOUNT_REQUEST_TIMEOUT,
     },
   );
 };

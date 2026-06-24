@@ -3,35 +3,80 @@
 module Admin
   class CustomEmojisController < BaseController
     def index
-      authorize :custom_emoji, :index?  # 기존 권한 유지 (나중에 변경 가능)
+      authorize :custom_emoji, :index?
 
-      @direct_messages = load_direct_messages
-      # @form = Form::DirectMessageBatch.new  # 배치 기능 일단 유지
+      @custom_emojis = filtered_custom_emojis.eager_load(:local_counterpart).page(params[:page])
+      @form          = Form::CustomEmojiBatch.new
+    end
+
+    def new
+      authorize :custom_emoji, :create?
+
+      @custom_emoji = CustomEmoji.new
+    end
+
+    def create
+      authorize :custom_emoji, :create?
+
+      @custom_emoji = CustomEmoji.new(resource_params)
+
+      if @custom_emoji.save
+        log_action :create, @custom_emoji
+        redirect_to admin_custom_emojis_path, notice: I18n.t('admin.custom_emojis.created_msg')
+      else
+        render :new
+      end
     end
 
     def batch
       authorize :custom_emoji, :index?
 
-      # 배치 기능은 일단 비활성화 (DM 수정/삭제는 신중해야 함)
-      flash[:alert] = 'DM 배치 작업은 지원되지 않습니다'
-      redirect_to admin_custom_emojis_path
+      @form = Form::CustomEmojiBatch.new(form_custom_emoji_batch_params.merge(current_account: current_account, action: action_from_button))
+      @form.save
+    rescue ActionController::ParameterMissing
+      flash[:alert] = I18n.t('admin.custom_emojis.no_emoji_selected')
+    rescue Mastodon::NotPermittedError
+      flash[:alert] = I18n.t('admin.custom_emojis.not_permitted')
+    ensure
+      redirect_to admin_custom_emojis_path(filter_params)
     end
 
     private
 
-    def load_direct_messages
-      # API 컨트롤러의 load_statuses 메서드 참조
-      direct_message_scope.page(params[:page])
+    def resource_params
+      params
+        .expect(custom_emoji: [:shortcode, :image, :visible_in_picker])
     end
 
-    def direct_message_scope
-      # 모든 계정의 DM 조회 (API와 달리 특정 계정이 아닌 전체)
-      Status.where(visibility: 'direct')
-            .includes(:account, :mentioned_accounts)  # 발신자와 수신자 정보 로드
-            .order(created_at: :desc)  # 최신 순 정렬
+    def filtered_custom_emojis
+      CustomEmojiFilter.new(filter_params).results
     end
 
-    # 기존 커스텀 이모지 관련 메서드들 제거
-    # def new, create, resource_params, filtered_custom_emojis 등은 삭제
+    def filter_params
+      params.slice(:page, *CustomEmojiFilter::KEYS).permit(:page, *CustomEmojiFilter::KEYS)
+    end
+
+    def action_from_button
+      if params[:update]
+        'update'
+      elsif params[:list]
+        'list'
+      elsif params[:unlist]
+        'unlist'
+      elsif params[:enable]
+        'enable'
+      elsif params[:disable]
+        'disable'
+      elsif params[:copy]
+        'copy'
+      elsif params[:delete]
+        'delete'
+      end
+    end
+
+    def form_custom_emoji_batch_params
+      params
+        .expect(form_custom_emoji_batch: [:action, :category_id, :category_name, custom_emoji_ids: []])
+    end
   end
 end

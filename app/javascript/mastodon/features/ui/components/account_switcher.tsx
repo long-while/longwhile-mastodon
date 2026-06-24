@@ -24,6 +24,7 @@ import { CircularProgress } from 'mastodon/components/circular_progress';
 import { showAlert } from 'mastodon/actions/alerts';
 import type { Account } from 'mastodon/models/account';
 import api, { currentAuthorizationToken } from 'mastodon/api';
+import { MULTI_ACCOUNT_REQUEST_TIMEOUT } from 'mastodon/api/multi_accounts';
 import {
   registerAccount,
   switchAccount,
@@ -40,6 +41,10 @@ import {
 import { decryptToken } from 'mastodon/utils/multi_account_crypto';
 import { clearActiveAccountIdInStorage } from 'mastodon/utils/multi_account_storage';
 import { logOut } from 'mastodon/utils/log_out';
+
+// add-account 전체 흐름의 안전망(backstop). 개별 api 호출(15s)·OAuth 팝업(90s)
+// 타임아웃을 모두 넘기는 예기치 못한 hang에 대비해 UI 플래그를 강제 해제한다.
+const ADD_ACCOUNT_WATCHDOG_TIMEOUT = 100000;
 
 type MultiAccountsModule = typeof import('mastodon/api/multi_accounts');
 type CallbackHandlerModule = typeof import('mastodon/features/multi_account/callback_handler');
@@ -121,6 +126,14 @@ const messages = defineMessages({
     id: 'account_switcher.manage_logout_all_error',
     defaultMessage: 'Failed to log out of all accounts. Please try again.',
   },
+  manageCancelAdd: {
+    id: 'account_switcher.cancel_add',
+    defaultMessage: 'Cancel',
+  },
+  addTimeout: {
+    id: 'account_switcher.add_timeout',
+    defaultMessage: 'Adding an account took too long and was cancelled. Please try again.',
+  },
 });
 
 interface AccountSwitcherTriggerArgs {
@@ -139,6 +152,10 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
   const dispatch = useAppDispatch();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoggingOutAll, setIsLoggingOutAll] = useState(false);
+  // ref 기반 재진입 가드: isProcessing state는 클로저에서 stale 할 수 있어
+  // 동시 실행 방지에는 ref를 사용한다.
+  const isProcessingRef = useRef(false);
+  const addWatchdogRef = useRef<number | null>(null);
   const storingAccountIdsRef = useRef<Set<string>>(new Set());
   const [persistedAccounts, setPersistedAccounts] = useState<MultiAccountEntry[]>([]);
   const [isManageOpen, setIsManageOpen] = useState(false);
@@ -213,6 +230,16 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
       .catch((error) => {
         console.error('Failed to load persisted multi-account entries:', error);
       });
+  }, []);
+
+  // 언마운트 시 add-account 워치독 타이머 정리(언마운트 후 setState 방지).
+  useEffect(() => {
+    return () => {
+      if (addWatchdogRef.current !== null) {
+        window.clearTimeout(addWatchdogRef.current);
+        addWatchdogRef.current = null;
+      }
+    };
   }, []);
 
   const activeEntry = useMemo(() => {
@@ -558,6 +585,7 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
               headers: {
                 Accept: 'application/json',
               },
+              timeout: MULTI_ACCOUNT_REQUEST_TIMEOUT,
             });
           } catch (signOutError) {
             console.error(
@@ -596,8 +624,47 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
     ],
   );
 
+  // add-account 흐름이 끝나면(성공/실패/취소/워치독) UI 플래그와 워치독을 해제.
+  const finishAddProcessing = useCallback(() => {
+    isProcessingRef.current = false;
+    if (addWatchdogRef.current !== null) {
+      window.clearTimeout(addWatchdogRef.current);
+      addWatchdogRef.current = null;
+    }
+    setIsProcessing(false);
+  }, []);
+
+  // 사용자가 계정 추가를 수동 취소: 진행 중인 OAuth 팝업을 닫고 UI를 즉시 복구.
+  const handleCancelAddAccount = useCallback(() => {
+    void loadCallbackHandlerModule().then(({ cancelPendingOAuthRequests }) => {
+      cancelPendingOAuthRequests();
+    });
+    finishAddProcessing();
+  }, [finishAddProcessing]);
+
   const handleAddAccount = useCallback(() => {
     const add = async () => {
+      if (isProcessingRef.current) {
+        return;
+      }
+      isProcessingRef.current = true;
+      setIsProcessing(true);
+
+      // 안전망: 모든 개별 타임아웃(api 15s · OAuth 팝업 90s)을 넘기는 예기치 못한
+      // hang에도 UI가 영구히 잠기지 않도록 흐름 진입 즉시 워치독을 건다.
+      addWatchdogRef.current = window.setTimeout(() => {
+        console.warn(
+          '[MultiAccount] add-account watchdog fired; force-releasing UI state',
+        );
+        void loadCallbackHandlerModule().then(
+          ({ cancelPendingOAuthRequests }) => {
+            cancelPendingOAuthRequests();
+          },
+        );
+        finishAddProcessing();
+        dispatch(showAlert({ message: intl.formatMessage(messages.addTimeout) }));
+      }, ADD_ACCOUNT_WATCHDOG_TIMEOUT);
+
       const pending = { state: null as string | null, nonce: null as string | null };
 
       const currentAccountId = activeAccount?.id ?? currentAccount?.id ?? null;
@@ -635,8 +702,6 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
         | undefined;
 
       try {
-        setIsProcessing(true);
-
         if (currentAccountId) {
           try {
             console.log('[MultiAccount] Pre-OAuth: refreshing current account token...');
@@ -652,7 +717,9 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
               };
               scope?: string;
               expires_at?: string | null;
-            }>('/api/v1/multi_accounts/refresh_token');
+            }>('/api/v1/multi_accounts/refresh_token', undefined, {
+              timeout: MULTI_ACCOUNT_REQUEST_TIMEOUT,
+            });
 
             const { token, account } = response.data;
 
@@ -781,12 +848,19 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
 
         dispatch(showAlert({ message }));
       } finally {
-        setIsProcessing(false);
+        finishAddProcessing();
       }
     };
 
     void add();
-  }, [activeAccount, currentAccount, dispatch, ensureAccountStored, intl]);
+  }, [
+    activeAccount,
+    currentAccount,
+    dispatch,
+    ensureAccountStored,
+    finishAddProcessing,
+    intl,
+  ]);
 
   const handleLogOutAllAccounts = useCallback(() => {
     const logOutAll = async () => {
@@ -940,14 +1014,25 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
             )}
 
             <div className='account-switcher__manage-footer'>
-              <button
-                type='button'
-                className='account-switcher__manage-footer-button account-switcher__manage-footer-button--ghost account-switcher__manage-footer-button--link'
-                onClick={handleAddAccount}
-                disabled={isProcessing || isLoggingOutAll}
-              >
-                {intl.formatMessage(messages.manageAddExisting)}
-              </button>
+              {isProcessing ? (
+                <button
+                  type='button'
+                  className='account-switcher__manage-footer-button account-switcher__manage-footer-button--ghost account-switcher__manage-footer-button--link'
+                  onClick={handleCancelAddAccount}
+                >
+                  <CircularProgress size={16} strokeWidth={3} />
+                  {intl.formatMessage(messages.manageCancelAdd)}
+                </button>
+              ) : (
+                <button
+                  type='button'
+                  className='account-switcher__manage-footer-button account-switcher__manage-footer-button--ghost account-switcher__manage-footer-button--link'
+                  onClick={handleAddAccount}
+                  disabled={isLoggingOutAll}
+                >
+                  {intl.formatMessage(messages.manageAddExisting)}
+                </button>
+              )}
               <button
                 type='button'
                 className='account-switcher__manage-footer-button account-switcher__manage-footer-button--ghost account-switcher__manage-footer-button--danger'

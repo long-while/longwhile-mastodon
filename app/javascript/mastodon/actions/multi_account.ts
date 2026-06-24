@@ -9,6 +9,7 @@ import {
   loadAllEntries,
 } from '../utils/multi_account_db';
 import { decryptToken, encryptToken, resetCryptoKey } from '../utils/multi_account_crypto';
+import { MULTI_ACCOUNT_REQUEST_TIMEOUT } from '../api/multi_accounts';
 import { importFetchedAccount } from './importer';
 import SwitchLogger from '../utils/switch_logger';
 import {
@@ -407,7 +408,9 @@ export const switchAccount =
 
       const verifiedAccount = await (async () => {
         try {
-          const response = await api().get('/api/v1/accounts/verify_credentials');
+          const response = await api().get('/api/v1/accounts/verify_credentials', {
+            timeout: MULTI_ACCOUNT_REQUEST_TIMEOUT,
+          });
           dispatch(importFetchedAccount(response.data));
           return response.data as ApiAccountJSON;
         } catch (verifyError) {

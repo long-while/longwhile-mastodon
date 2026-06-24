@@ -26,9 +26,13 @@ en:
     direct_messages:
       title: DM Management
       sender: Sender
+      recipients: Recipients
       content: Content
       created_at: Created at
-      search_placeholder: Search messages
+      empty: No direct messages found.
+      search_placeholder: Search by sender or content
+      exclude_mentioning_placeholder: Exclude DMs mentioning this account
+      exclude_mentioning_hint: Enter an operator account username to hide DMs that mention it. Separate multiple usernames with spaces or commas. (e.g. to catch DMs that break the operator-tagging rule)
       batch_not_supported: Batch operations are not supported for direct messages
       filters:
         title: Filters
@@ -374,7 +378,7 @@ en:
       overwrite: Overwrite
       shortcode: Shortcode
       shortcode_hint: At least 2 characters, only alphanumeric characters and underscores
-      title: DM Management
+      title: Custom Emojis
       uncategorized: Uncategorized
       unlist: Unlist
       unlisted: Unlisted

@@ -24,9 +24,13 @@ ko:
     direct_messages:
       title: DM 관리
       sender: 발신자
+      recipients: 수신자
       content: 내용
       created_at: 작성일시
-      search_placeholder: 메시지 검색
+      empty: 다이렉트 메시지가 없습니다.
+      search_placeholder: 발신자 또는 내용 검색
+      exclude_mentioning_placeholder: 이 계정이 태그된 DM 제외
+      exclude_mentioning_hint: 운영자 계정 username을 입력하면 해당 계정이 멘션된 DM은 목록에서 제외됩니다. 공백 또는 쉼표로 여러 개 입력 가능. (예시로 운영자 태그 규칙 위반 DM 적발에 사용)
       batch_not_supported: DM 일괄 작업은 지원되지 않습니다
       filters:
         title: 필터
@@ -372,7 +376,7 @@ ko:
       overwrite: 덮어쓰기
       shortcode: 짧은 코드
       shortcode_hint: 최소 2글자, 영문자, 숫자, _만 사용 가능
-      title: DM 관리
+      title: 커스텀 에모지
       uncategorized: 분류되지 않음
       unlist: 목록에서 제거
       unlisted: 목록에 없음

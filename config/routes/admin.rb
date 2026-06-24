@@ -175,6 +175,9 @@ namespace :admin do
     end
   end
 
+  # ─── @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 운영 관리 ───
+  resources :direct_messages, only: [:index]
+
   resources :ip_blocks, only: [:index, :new, :create] do
     collection do
       post :batch

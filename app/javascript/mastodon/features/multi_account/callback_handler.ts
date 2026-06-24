@@ -222,10 +222,17 @@ export const openOAuthPopup = (
       const pending = pendingRequests.get(state);
       if (pending) {
         clearInterval(pending.checkInterval);
+        try {
+          if (pending.popup && !pending.popup.closed) {
+            pending.popup.close();
+          }
+        } catch {
+          // ignore: popup may be inaccessible/cross-origin
+        }
         pending.reject(new Error('OAuth authorization timed out. Please try again.'));
         pendingRequests.delete(state);
       }
-    }, 120000); // 2 minutes timeout
+    }, 90000); // 90s timeout
 
     // Store the promise handlers with popup reference and interval ID
     pendingRequests.set(state, { 
@@ -242,6 +249,30 @@ export const openOAuthPopup = (
       checkInterval 
     });
   });
+};
+
+/**
+ * Cancel all in-flight OAuth popup requests (manual cancel from the UI).
+ * Closes any open popups, clears their watchers, and rejects the pending
+ * promises so the caller's finally{} runs and the UI state is released.
+ */
+export const cancelPendingOAuthRequests = () => {
+  for (const [state, pending] of pendingRequests.entries()) {
+    if (pending.checkInterval) {
+      clearInterval(pending.checkInterval);
+    }
+
+    try {
+      if (pending.popup && !pending.popup.closed) {
+        pending.popup.close();
+      }
+    } catch {
+      // ignore: popup may be inaccessible/cross-origin
+    }
+
+    pending.reject(new Error('OAuth authorization was cancelled.'));
+    pendingRequests.delete(state);
+  }
 };
 
 /**
