@@ -66,8 +66,8 @@ const NotificationsNavItem = () => {
     <NavItem
       to='/notifications'
       label={intl.formatMessage(messages.notifications)}
-      icon={<IconWithBadge id='bell' icon={NotificationsIcon} count={count} className='' />}
-      activeIcon={<IconWithBadge id='bell' icon={NotificationsActiveIcon} count={count} className='' />}
+      icon={<IconWithBadge id='bell' icon={NotificationsIcon} count={count} issueBadge={false} className='' />}
+      activeIcon={<IconWithBadge id='bell' icon={NotificationsActiveIcon} count={count} issueBadge={false} className='' />}
     />
   );
 };

@@ -118,6 +118,8 @@ export const Profile: React.FC<{
         avatar,
         header,
         discoverable: false,
+        // indexable은 온보딩에서 설정하지 않음 → 서버 기본값 유지(런타임에서 무시됨).
+        indexable: undefined,
       }),
     )
       .then(() => {
