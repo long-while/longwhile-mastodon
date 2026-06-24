@@ -113,10 +113,24 @@ const clearSessionRecoveryFlag = () => {
   }
 };
 
-const requestHadAuthorization = (config: AxiosError['config']): boolean =>
-  Boolean(
-    (config?.headers as Record<string, unknown> | undefined)?.Authorization,
+// Zombie-session recovery must only fire for the page's OWN session token
+// (meta.access_token). Multi-account switching temporarily sends a *different*
+// bearer (the switched account's token) via setActiveAccountToken(); a 401 on
+// that token only means the stored/switched account is stale. That case is
+// handled locally by the switch flow and the boot initializer — signing the
+// user out of their working session there caused an endless sign-out loop.
+const requestUsedSessionToken = (config: AxiosError['config']): boolean => {
+  const authorization = (config?.headers as Record<string, unknown> | undefined)
+    ?.Authorization;
+  const sessionToken = getAccessToken();
+
+  return (
+    typeof authorization === 'string' &&
+    typeof sessionToken === 'string' &&
+    sessionToken.length > 0 &&
+    authorization === `Bearer ${sessionToken}`
   );
+};
 
 const recoverFromInvalidSession = () => {
   if (sessionRecoveryInProgress) return;
@@ -198,7 +212,7 @@ export default function api(withAuthorization = true) {
       // token is dead. Recover instead of spinning forever.
       if (
         error.response?.status === 401 &&
-        requestHadAuthorization(error.config)
+        requestUsedSessionToken(error.config)
       ) {
         recoverFromInvalidSession();
       }
