@@ -24,7 +24,7 @@ import { CircularProgress } from 'mastodon/components/circular_progress';
 import { showAlert } from 'mastodon/actions/alerts';
 import type { Account } from 'mastodon/models/account';
 import api, { currentAuthorizationToken } from 'mastodon/api';
-import { MULTI_ACCOUNT_REQUEST_TIMEOUT } from 'mastodon/api/multi_accounts';
+import { MULTI_ACCOUNT_REQUEST_TIMEOUT } from 'mastodon/api/multi_accounts_constants';
 import {
   registerAccount,
   switchAccount,

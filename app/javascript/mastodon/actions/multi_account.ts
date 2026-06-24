@@ -9,7 +9,7 @@ import {
   loadAllEntries,
 } from '../utils/multi_account_db';
 import { decryptToken, encryptToken, resetCryptoKey } from '../utils/multi_account_crypto';
-import { MULTI_ACCOUNT_REQUEST_TIMEOUT } from '../api/multi_accounts';
+import { MULTI_ACCOUNT_REQUEST_TIMEOUT } from '../api/multi_accounts_constants';
 import { importFetchedAccount } from './importer';
 import SwitchLogger from '../utils/switch_logger';
 import {

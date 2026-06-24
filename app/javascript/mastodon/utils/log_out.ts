@@ -1,5 +1,5 @@
 import api from 'mastodon/api';
-import { MULTI_ACCOUNT_REQUEST_TIMEOUT } from 'mastodon/api/multi_accounts';
+import { MULTI_ACCOUNT_REQUEST_TIMEOUT } from 'mastodon/api/multi_accounts_constants';
 
 export async function logOut() {
   try {

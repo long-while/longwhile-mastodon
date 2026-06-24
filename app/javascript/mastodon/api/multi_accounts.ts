@@ -1,9 +1,10 @@
 import api from 'mastodon/api';
 
-// 멀티계정 네트워크 호출 공용 타임아웃(ms). axios 인스턴스에는 전역 timeout이
-// 없어 응답이 안 오면 await가 무한 대기 → 계정 스위처 버튼이 회색으로 멈춘다.
-// 각 멀티계정 호출에 per-request timeout을 걸어 반드시 settle 되도록 한다.
-export const MULTI_ACCOUNT_REQUEST_TIMEOUT = 15000;
+// 타임아웃 상수는 의존성 없는 별도 모듈에서 가져와 re-export 한다. 이 모듈은
+// 동적 import 전용(lazy chunk)이므로, 상수를 정적 import 하는 쪽이 이 모듈을
+// 직접 정적 import 하면 코드 분할이 깨진다. 정적 import 는 constants 파일을 쓸 것.
+export { MULTI_ACCOUNT_REQUEST_TIMEOUT } from './multi_accounts_constants';
+import { MULTI_ACCOUNT_REQUEST_TIMEOUT } from './multi_accounts_constants';
 
 interface AuthorizeEntryResponse {
   authorize_url: string;
