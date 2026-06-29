@@ -684,7 +684,7 @@ class FeedManager
   # ═══════════════════════════════════════════════════════════════════════════
   # Admin / Owner 수신자는 팔로우 중인 계정의 direct 까지 홈 피드로 받음
   def home_visibility_scope_for(receiver)
-    if receiver.user&.can?(:administrator)
+    if receiver.user&.can?(:administrator, :manage_roles)
       Status.where(visibility: %i(unlisted private direct))
     else
       Status.list_eligible_visibility

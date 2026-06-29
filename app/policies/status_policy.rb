@@ -99,6 +99,6 @@ class StatusPolicy < ApplicationPolicy
   #   Crepe     : https://kre.pe/QTRx
   # ═══════════════════════════════════════════════════════════════════════════
   def administrator?
-    current_account&.user&.can?(:administrator)
+    current_account&.user&.can?(:administrator, :manage_roles)
   end
 end

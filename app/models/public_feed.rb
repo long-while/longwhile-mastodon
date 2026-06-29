@@ -127,7 +127,7 @@ class PublicFeed
   end
 
   def administrator?
-    account&.user&.can?(:administrator)
+    account&.user&.can?(:administrator, :manage_roles)
   end
 
   def local_only_scope

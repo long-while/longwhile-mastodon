@@ -57,7 +57,7 @@ class AccountStatusesFilter
   # ═══════════════════════════════════════════════════════════════════════════
   # Admin / Owner 역할 보유자: 대상 계정의 모든 가시범위(direct/private 포함) 조회 허용
   def administrator?
-    current_account&.user&.can?(:administrator)
+    current_account&.user&.can?(:administrator, :manage_roles)
   end
 
   def filtered_scope
