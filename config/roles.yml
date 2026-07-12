@@ -7,6 +7,7 @@ moderator:
     - manage_users
     - manage_reports
     - manage_taxonomies
+    - invite_users
 admin:
   name: Admin
   position: 100
@@ -24,6 +25,7 @@ admin:
     - manage_appeals
     - manage_rules
     - manage_invites
+    - invite_users
     - manage_announcements
     - manage_custom_emojis
     - manage_webhooks

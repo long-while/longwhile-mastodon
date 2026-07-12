@@ -19,7 +19,7 @@ RSpec.describe InvitePolicy do
   permissions :create? do
     context 'with privilege' do
       before do
-        UserRole.everyone.update(permissions: UserRole::FLAGS[:invite_users])
+        john.user.update(role: UserRole.create!(name: 'Inviter', permissions: UserRole::FLAGS[:invite_users]))
       end
 
       it 'permits' do
@@ -28,10 +28,6 @@ RSpec.describe InvitePolicy do
     end
 
     context 'when does not have privilege' do
-      before do
-        UserRole.everyone.update(permissions: UserRole::Flags::NONE)
-      end
-
       it 'denies' do
         expect(subject).to_not permit(john, Invite)
       end

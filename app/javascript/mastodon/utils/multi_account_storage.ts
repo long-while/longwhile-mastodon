@@ -155,27 +155,3 @@ export const hydrateStore = async (store: Store) => {
     console.error('Failed to hydrate multi-account store:', error);
   }
 };
-
-/**
- * Attach persistence layer to Redux store
- * Subscribes to state changes and saves to IndexedDB
- */
-export const attachPersistence = (store: Store) => {
-  let previousState = store.getState();
-
-  store.subscribe(() => {
-    const currentState = store.getState();
-    const previousAccounts = previousState.getIn(['multiAccount', 'accounts']);
-    const currentAccounts = currentState.getIn(['multiAccount', 'accounts']);
-
-    // Check if accounts have changed
-    if (previousAccounts !== currentAccounts) {
-      // Save any new or updated accounts
-      // Note: The actual encrypted tokens are saved in the action creators
-      // This subscription is primarily for future enhancements where we might
-      // want to persist other state changes
-    }
-
-    previousState = currentState;
-  });
-};

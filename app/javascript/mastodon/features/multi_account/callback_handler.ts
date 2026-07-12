@@ -1,5 +1,3 @@
-import type { AppDispatch } from '../../store';
-
 interface CallbackMessage {
   type: string;
   state?: string;
@@ -33,9 +31,11 @@ const handleMessage = (event: MessageEvent) => {
     eventOrigin === currentOrigin ||
     eventOrigin.replace(/^https?:\/\//, '').split(':')[0] === currentOrigin.replace(/^https?:\/\//, '').split(':')[0];
 
-  if (!isOriginValid && eventOrigin !== '*') {
-    console.warn('Received message from unexpected origin:', eventOrigin, 'expected:', currentOrigin);
-    // Still process the message but log a warning
+  if (!isOriginValid) {
+    // Reject messages from unexpected origins instead of processing them — a
+    // cross-origin frame must never be able to deliver an OAuth callback.
+    console.warn('Ignoring message from unexpected origin:', eventOrigin, 'expected:', currentOrigin);
+    return;
   }
 
   if (data.type === 'multi-account-callback') {
@@ -273,18 +273,4 @@ export const cancelPendingOAuthRequests = () => {
     pending.reject(new Error('OAuth authorization was cancelled.'));
     pendingRequests.delete(state);
   }
-};
-
-/**
- * Complete account registration after OAuth callback
- */
-export const completeAccountRegistration = (callbackData: {
-  state: string;
-  code: string;
-}) => {
-  return async (dispatch: AppDispatch) => {
-    // This will be implemented when we integrate with the actions
-    console.log('Completing account registration:', callbackData);
-    // TODO: Call API to consume the authorization code and register the account
-  };
 };

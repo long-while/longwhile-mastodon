@@ -38,7 +38,6 @@ import {
   loadAllEntries,
   loadEncryptedToken,
 } from 'mastodon/utils/multi_account_db';
-import { decryptToken } from 'mastodon/utils/multi_account_crypto';
 import { clearActiveAccountIdInStorage } from 'mastodon/utils/multi_account_storage';
 import { logOut } from 'mastodon/utils/log_out';
 
@@ -388,7 +387,7 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
       try {
         const registered = await ensureAccountRegistered(accountId);
         if (!registered) {
-          throw new Error('?�당 계정??불러?��? 못했?�니??');
+          throw new Error('해당 계정을 불러오지 못했습니다.');
         }
 
         await dispatch(switchAccount(accountId) as unknown as any);
@@ -409,9 +408,6 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
 
   const ensureAccountStored = useCallback(async () => {
     if (!currentAccount) {
-      console.log(
-        '[DEBUG] ensureAccountStored aborted: current account unavailable',
-      );
       return;
     }
 
@@ -425,41 +421,22 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
     })();
 
     if (hasStoredAccount || storingAccountIdsRef.current.has(accountId)) {
-      console.log(
-        '[DEBUG] ensureAccountStored skipped for',
-        accountId,
-        '(already stored or in-progress)',
-      );
       return;
     }
 
     try {
       const existingEncrypted = await loadEncryptedToken(accountId);
       if (existingEncrypted) {
-        console.log(
-          '[DEBUG] ensureAccountStored skipped: encrypted token already exists for',
-          accountId,
-        );
         return;
       }
-    } catch (error) {
-      console.log(
-        '[DEBUG] ensureAccountStored no existing encrypted token found, proceeding:',
-        error,
-      );
+    } catch {
+      // No existing encrypted token found — proceed to store it.
     }
 
-    console.log('[DEBUG] === ensureAccountStored START ===');
-    console.log('[DEBUG] Storing account:', accountId);
-
     const token = currentAuthorizationToken();
-    const tokenPreview =
-      typeof token === 'string' ? token.substring(0, 30) : 'N/A';
-    console.log('[DEBUG] Current API token (first 30):', tokenPreview);
 
     if (!token) {
       console.warn('Unable to capture current account token for multi-account storage.');
-      console.log('[DEBUG] === ensureAccountStored END (missing token) ===');
       return;
     }
 
@@ -479,14 +456,11 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
     };
 
     try {
-      console.log('[DEBUG] ensureAccountStored -> registerAccount start');
       await dispatch(registerAccount(entry, token) as unknown as any);
-      console.log('[DEBUG] ensureAccountStored -> registerAccount success');
     } catch (error) {
       console.error('Failed to register current account for multi-account storage:', error);
     } finally {
       storingAccountIdsRef.current.delete(accountId);
-      console.log('[DEBUG] === ensureAccountStored END ===');
     }
   }, [accounts, currentAccount, dispatch]);
 
@@ -668,34 +642,6 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
       const pending = { state: null as string | null, nonce: null as string | null };
 
       const currentAccountId = activeAccount?.id ?? currentAccount?.id ?? null;
-      console.log('[DEBUG] === handleAddAccount START ===');
-      console.log('[DEBUG] Current account ID:', currentAccountId);
-
-      if (currentAccountId) {
-        try {
-          const encrypted = await loadEncryptedToken(currentAccountId);
-          if (encrypted) {
-            const token = await decryptToken(encrypted);
-            const preview =
-              typeof token === 'string' ? token.substring(0, 30) : 'N/A';
-            console.log(
-              '[DEBUG] Current stored token (first 30):',
-              preview,
-            );
-          } else {
-            console.log(
-              '[DEBUG] No token stored yet for current account (no encrypted payload)',
-            );
-          }
-        } catch (error) {
-          console.log(
-            '[DEBUG] No token stored yet for current account (decrypt/load failed):',
-            error,
-          );
-        }
-      } else {
-        console.log('[DEBUG] Current account ID not resolved');
-      }
 
       let restoreMultiAccountSessionFn:
         | MultiAccountsModule['restoreMultiAccountSession']
@@ -704,7 +650,6 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
       try {
         if (currentAccountId) {
           try {
-            console.log('[MultiAccount] Pre-OAuth: refreshing current account token...');
             const response = await api().post<{
               token?: string;
               account?: {
@@ -748,11 +693,6 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
               };
 
               await dispatch(registerAccount(refreshedEntry, token) as unknown as any);
-              console.log('[MultiAccount] Pre-OAuth: token refresh SUCCESS');
-            } else {
-              console.warn(
-                '[MultiAccount] Pre-OAuth: response missing token or account data',
-              );
             }
           } catch (refreshError) {
             console.error(

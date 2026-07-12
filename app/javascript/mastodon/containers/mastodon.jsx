@@ -19,10 +19,7 @@ import { IntlProvider } from 'mastodon/locales';
 import { store } from 'mastodon/store';
 import { isProduction } from 'mastodon/utils/environment';
 import { setActiveAccountToken } from 'mastodon/api';
-import {
-  hydrateStore as hydrateMultiAccountStore,
-  attachPersistence as attachMultiAccountPersistence,
-} from 'mastodon/utils/multi_account_storage';
+import { hydrateStore as hydrateMultiAccountStore } from 'mastodon/utils/multi_account_storage';
 
 const title = isProduction() ? siteTitle : `${siteTitle} (Dev)`;
 
@@ -33,9 +30,7 @@ if (initialState.meta.me) {
   store.dispatch(fetchCustomEmojis());
 }
 
-void hydrateMultiAccountStore(store).then(() => {
-  attachMultiAccountPersistence(store);
-});
+void hydrateMultiAccountStore(store);
 
 const bootstrapToken = getAccessToken();
 if (bootstrapToken) {

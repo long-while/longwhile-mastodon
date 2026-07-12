@@ -43,7 +43,6 @@ const refreshOAuthToken = async (
     const left = window.screenX + (window.outerWidth - width) / 2;
     const top = window.screenY + (window.outerHeight - height) / 2;
 
-    (window as any).__MA_OAUTH_POPUP_OPEN__ = true;
     const blankPopup = window.open(
       'about:blank',
       'multi-account-oauth',
@@ -51,13 +50,11 @@ const refreshOAuthToken = async (
     );
 
     if (!blankPopup) {
-      (window as any).__MA_OAUTH_POPUP_OPEN__ = false;
       throw new Error('팝업이 차단되었습니다. 브라우저에서 팝업을 허용해주세요.');
     }
 
     const { authorize_url, state, nonce } = authorizeEntry;
     const callback = await openOAuthPopup(authorize_url, state, blankPopup);
-    (window as any).__MA_OAUTH_POPUP_OPEN__ = false;
 
     const { token, account } = await consumeAuthorizationCode({
       state: callback.state,
@@ -79,7 +76,6 @@ const refreshOAuthToken = async (
     await dispatch(registerAccount(refreshedEntry, token) as unknown as any);
     return token;
   } catch (error) {
-    (window as any).__MA_OAUTH_POPUP_OPEN__ = false;
     if (pending.state && pending.nonce) {
       try {
         await restoreMultiAccountSession({

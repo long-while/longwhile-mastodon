@@ -62,7 +62,11 @@ const generateKey = async (): Promise<CryptoKey> => {
         name: ALGORITHM,
         length: KEY_LENGTH,
       },
-      true, // extractable
+      // Non-extractable: the CryptoKey can still be persisted in IndexedDB via
+      // structured clone and used for encrypt/decrypt, but its raw bytes can
+      // never be read back out (no exportKey). This shrinks the XSS token-theft
+      // surface — an attacker cannot exfiltrate the master key.
+      false,
       ['encrypt', 'decrypt'],
     );
     return key;

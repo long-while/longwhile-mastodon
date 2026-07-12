@@ -50,7 +50,12 @@ class UserRole < ApplicationRecord
     NONE = 0
     ALL  = FLAGS.values.reduce(&:|)
 
-    DEFAULT = FLAGS[:invite_users]
+    # @_longwhile custom feature / 한참(longwhile) 제작 기능 — 서버 초대 운영진 전용화
+    #   기본(everyone) 역할에서 invite_users 를 제거해 일반 사용자는 초대 링크를
+    #   생성할 수 없게 하고, 운영진(Owner/Admin/Moderator) 역할에만 부여한다.
+    #   NONE 으로 두면 validate_dangerous_permissions 가 everyone 역할에 invite_users
+    #   를 다시 추가하는 것도 차단한다.
+    DEFAULT = NONE
 
     CATEGORIES = {
       invites: %i(
