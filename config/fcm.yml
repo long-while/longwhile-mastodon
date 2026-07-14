@@ -1,0 +1,11 @@
+# Firebase Cloud Messaging (HTTP v1 API) credentials, used to push notifications
+# directly to native app installs that registered an FCM token as their push
+# endpoint (see Fcm::MessageSender). This is separate from the VAPID keys in
+# vapid.yml, which are used for standard Web Push (browsers, UnifiedPush).
+#
+# Get this file from the Firebase console: Project settings -> Service accounts
+# -> Generate new private key. Place it at the path below (default), or point
+# FCM_SERVICE_ACCOUNT_PATH at wherever you put it.
+#
+shared:
+  service_account_path: <%= ENV.fetch('FCM_SERVICE_ACCOUNT_PATH', Rails.root.join('config', 'fcm_service_account.json').to_s) %>

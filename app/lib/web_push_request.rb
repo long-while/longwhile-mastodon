@@ -50,6 +50,14 @@ class WebPushRequest
     !standard
   end
 
+  def fcm_native?
+    Fcm::MessageSender.native_token?(endpoint)
+  end
+
+  def fcm_device_token
+    Fcm::MessageSender.token_from_endpoint(endpoint)
+  end
+
   private
 
   def standard_vapid_value

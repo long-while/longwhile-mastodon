@@ -1,6 +1,10 @@
 import type { AppDispatch, GetState } from '../store';
 import type { ApiAccountJSON } from '../api_types/accounts';
 import type { EncryptedPayload, MultiAccountEntry } from '../types/multi_account';
+import {
+  MultiAccountSwitchError,
+  SwitchErrorCode,
+} from '../types/multi_account';
 import api, { setActiveAccountToken, updateCSRFToken } from '../api';
 import {
   deleteEncryptedToken,
@@ -8,7 +12,7 @@ import {
   saveEncryptedToken,
   loadAllEntries,
 } from '../utils/multi_account_db';
-import { decryptToken, encryptToken, resetCryptoKey } from '../utils/multi_account_crypto';
+import { decryptToken, encryptToken } from '../utils/multi_account_crypto';
 import { MULTI_ACCOUNT_REQUEST_TIMEOUT } from '../api/multi_accounts_constants';
 import { importFetchedAccount } from './importer';
 import SwitchLogger from '../utils/switch_logger';
@@ -255,14 +259,18 @@ export const switchAccount =
           : Object.prototype.hasOwnProperty.call(accountsSource, accountId));
 
       if (!accountExists) {
-        throw new Error(`Account ${accountId} not found`);
+        throw new MultiAccountSwitchError(
+          SwitchErrorCode.ACCOUNT_NOT_FOUND,
+          `Account ${accountId} not found`,
+        );
       }
 
       const { refreshSession } = await import('../api/multi_accounts');
 
       const encryptedPayload = await loadEncryptedToken(accountId);
       if (!encryptedPayload) {
-        throw new Error(
+        throw new MultiAccountSwitchError(
+          SwitchErrorCode.TOKEN_MISSING,
           '저장된 토큰을 찾을 수 없습니다. 계정을 다시 추가해주세요.',
         );
       }
@@ -271,8 +279,12 @@ export const switchAccount =
       try {
         refreshToken = await decryptToken(encryptedPayload);
       } catch (decryptError) {
+        // NOTE: 절대로 여기서 resetCryptoKey()를 호출하면 안 된다.
+        // 마스터 키를 삭제하면 이 계정뿐 아니라 저장된 '모든' 계정의 토큰이
+        // 영구적으로 복호화 불능이 되며, 재시도는 새 키로 옛 암호문을 풀 수 없어 무의미하다.
+        // 대신 이 계정의 토큰만 죽은 것으로 간주하고 구조화된 에러로 표면화한다.
         console.error(
-          `Failed to decrypt refresh token for account ${accountId}, attempting key reset:`,
+          `Failed to decrypt refresh token for account ${accountId}:`,
           decryptError,
         );
         SwitchLogger.logSwitchFailure(
@@ -281,18 +293,10 @@ export const switchAccount =
           startTime,
         );
 
-        try {
-          await resetCryptoKey();
-          refreshToken = await decryptToken(encryptedPayload);
-        } catch (retryError) {
-          console.error(
-            `Retry decrypt after key reset failed for account ${accountId}:`,
-            retryError,
-          );
-          throw new Error(
-            '저장된 계정 토큰을 복호화할 수 없습니다. 계정을 다시 추가해주세요.',
-          );
-        }
+        throw new MultiAccountSwitchError(
+          SwitchErrorCode.TOKEN_INVALID,
+          '저장된 계정 토큰을 복호화할 수 없습니다. 계정을 다시 추가해주세요.',
+        );
       }
 
       try {
@@ -339,7 +343,8 @@ export const switchAccount =
         );
 
         if (status && [400, 401, 403, 422].includes(status)) {
-          throw new Error(
+          throw new MultiAccountSwitchError(
+            SwitchErrorCode.TOKEN_INVALID,
             '저장된 계정 토큰이 만료되었거나 사용할 수 없습니다. 계정을 다시 로그인하여 추가해주세요.',
           );
         }
@@ -351,7 +356,10 @@ export const switchAccount =
       const sessionToken = refreshResponse?.data?.token as string | undefined;
 
       if (!sessionToken) {
-        throw new Error('세션 토큰을 발급받지 못했습니다.');
+        throw new MultiAccountSwitchError(
+          SwitchErrorCode.SESSION_TOKEN_MISSING,
+          '세션 토큰을 발급받지 못했습니다.',
+        );
       }
 
       setActiveAccountToken(sessionToken);

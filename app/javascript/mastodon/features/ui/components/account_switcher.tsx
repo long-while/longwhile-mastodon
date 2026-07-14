@@ -32,6 +32,7 @@ import {
   removeAccount,
 } from 'mastodon/actions/multi_account';
 import type { MultiAccountEntry } from 'mastodon/types/multi_account';
+import { MultiAccountSwitchError } from 'mastodon/types/multi_account';
 import { useAppDispatch } from 'mastodon/store/typed_functions';
 import {
   clearAllAccounts,
@@ -393,6 +394,25 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
         await dispatch(switchAccount(accountId) as unknown as any);
       } catch (error) {
         console.error(error);
+
+        // 저장된 토큰이 죽은(만료·폐기·복호화 불가) 계정이면 원시 에러만 띄우지 말고,
+        // 관리 모달을 열어 해당 항목을 제거하도록 유도한다. 로케일 문자열 매칭이 아니라
+        // 구조화된 에러 코드로 판별한다.
+        if (error instanceof MultiAccountSwitchError && error.isDeadToken) {
+          const deadEntry =
+            managedAccounts.find((candidate) => candidate.id === accountId) ??
+            mergedAccounts.find((candidate) => candidate.id === accountId) ??
+            null;
+
+          if (deadEntry) {
+            setIsManageOpen(true);
+            setPendingDeletion(deadEntry);
+          }
+
+          dispatch(showAlert({ message: error.message }));
+          return;
+        }
+
         dispatch(
           showAlert({
             message:
@@ -403,7 +423,7 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
         );
       }
     },
-    [dispatch, ensureAccountRegistered, intl],
+    [dispatch, ensureAccountRegistered, intl, managedAccounts, mergedAccounts],
   );
 
   const ensureAccountStored = useCallback(async () => {
@@ -524,6 +544,21 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isManageOpen, handleCloseManage]);
+
+  // 관리 모달을 열 때마다 저장된 항목을 다시 읽어 표시명·아바타를 최신 상태로 유지한다.
+  useEffect(() => {
+    if (!isManageOpen) {
+      return;
+    }
+
+    void loadAllEntries()
+      .then((entries) => {
+        setPersistedAccounts(Object.values(entries));
+      })
+      .catch((error) => {
+        console.error('Failed to refresh persisted multi-account entries:', error);
+      });
+  }, [isManageOpen]);
 
   const handleRequestDelete = useCallback((entry: MultiAccountEntry) => {
     setPendingDeletion(entry);
@@ -736,7 +771,9 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
           );
         }
 
-        const authorizeEntry = await fetchAuthorizeEntry();
+        // 새 계정 추가 시에는 반드시 로그인 화면을 강제한다. 그렇지 않으면 OAuth가
+        // 현재 세션 쿠키의 계정을 그대로 재인가해 "이미 로그인된 계정"을 추가하게 된다.
+        const authorizeEntry = await fetchAuthorizeEntry({ forceLogin: true });
         pending.state = authorizeEntry.state;
         pending.nonce = authorizeEntry.nonce;
         const { authorize_url: authorizeUrl, state, nonce } = authorizeEntry;
@@ -880,8 +917,15 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
             ) : (
               managedAccounts.map((entry) => {
                 const isActive = entry.id === activeAccountId;
+                // 서버 세션이 현재 이 계정인 경우: 이미 로그인돼 있으므로 전환은 무의미하다.
+                const isCurrentLoggedIn = entry.id === currentAccount.id;
                 const isDeleting = deletingAccountId === entry.id;
-                const canSwitch = !(isActive || isDeleting || isProcessing);
+                const canSwitch = !(
+                  isActive ||
+                  isCurrentLoggedIn ||
+                  isDeleting ||
+                  isProcessing
+                );
 
                 const handleItemClick = () => {
                   if (!canSwitch) return;
@@ -900,7 +944,9 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
                   <div
                     key={entry.id}
                     className={`account-switcher__manage-item${
-                      isActive ? ' account-switcher__manage-item--active' : ''
+                      isActive || isCurrentLoggedIn
+                        ? ' account-switcher__manage-item--active'
+                        : ''
                     }`}
                     role='button'
                     tabIndex={0}
@@ -923,7 +969,7 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
                       </span>
                     </div>
                     <div className='account-switcher__manage-actions'>
-                      {isActive && (
+                      {(isActive || isCurrentLoggedIn) && (
                         <span className='account-switcher__manage-status' aria-hidden>
                           <Icon id='check' icon={CheckIcon} className='account-switcher__manage-check' />
                         </span>

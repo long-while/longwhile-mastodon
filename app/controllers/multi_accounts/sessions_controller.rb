@@ -17,6 +17,12 @@ class MultiAccounts::SessionsController < ApplicationController
       return
     end
 
+    # 정지·비활성 계정은 세션 복원을 통해서도 로그인할 수 없어야 한다.
+    if user.disabled? || user.account&.suspended?
+      render json: { error: 'Account is suspended or disabled' }, status: :forbidden
+      return
+    end
+
     sign_in(:user, user)
 
     head :ok

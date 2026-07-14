@@ -11,7 +11,9 @@ class Api::V1::MultiAccountsController < Api::BaseController
     # state and nonce, all of which are live credentials.
     Rails.logger.debug { 'MultiAccountsController#consume called' }
 
-    payload_params = params.require(:payload).permit(:state, :nonce, :authorization_code)
+    # NOTE: :code_verifier는 현재 프론트가 PKCE를 쓰지 않아 항상 비어 있지만,
+    # 아래 토큰 교환에서 참조하므로 향후 PKCE 도입 시 동작하도록 permit에 포함해 둔다.
+    payload_params = params.require(:payload).permit(:state, :nonce, :authorization_code, :code_verifier)
 
     # Verify and consume state from Redis
     state_data = MultiAccounts::StateStore.consume!(

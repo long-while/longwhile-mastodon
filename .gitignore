@@ -26,6 +26,7 @@
 /public/packs-test
 .env
 .env.production
+/config/fcm_service_account.json
 node_modules/
 /build/
 
@@ -35,6 +36,9 @@ node_modules/
 # Ignore IDE files
 .vscode/
 .idea/
+
+# Ignore Claude Code local settings
+.claude/
 
 # Ignore postgres + redis + elasticsearch volume optionally created by docker-compose
 /postgres

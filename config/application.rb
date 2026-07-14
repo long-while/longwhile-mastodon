@@ -120,6 +120,7 @@ module Mastodon
     }
 
     config.x.captcha = config_for(:captcha)
+    config.x.fcm = config_for(:fcm)
     config.x.mastodon = config_for(:mastodon)
     config.x.translation = config_for(:translation)
 

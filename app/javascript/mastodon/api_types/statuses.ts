@@ -101,6 +101,7 @@ export interface ApiStatusJSON {
   reblogged?: boolean;
   muted?: boolean;
   bookmarked?: boolean;
+  replied?: boolean;
   pinned?: boolean;
 
   filtered?: ApiFilterResultJSON[];

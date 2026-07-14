@@ -31,8 +31,7 @@ const isAwaitingReply = (
   if (!status) return true;
 
   if (status.get('favourited') === true) return false;
-  const repliesCount = status.get('replies_count');
-  if (typeof repliesCount === 'number' && repliesCount > 0) return false;
+  if (status.get('replied') === true) return false;
 
   return true;
 };

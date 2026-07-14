@@ -41,6 +41,9 @@ module MultiAccounts
         raise Error.new('Account not found', status: 404) unless account
         raise Error.new('User not found', status: 404) unless user
 
+        # 정지·비활성 계정이 다중 계정 토큰으로 웹 세션을 획득하는 것을 차단한다.
+        raise Error.new('Account is suspended or disabled', status: 403) if user.disabled? || account.suspended?
+
         limiter = nil
         limiter = RateLimiter.new(resource_owner, family: :multi_account_refresh)
         limiter.record!

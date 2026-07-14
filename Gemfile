@@ -96,6 +96,7 @@ gem 'twitter-text', '~> 3.1.0'
 gem 'tzinfo-data', '~> 1.2023'
 gem 'webauthn', '~> 3.0'
 gem 'webpush', github: 'mastodon/webpush', ref: '9631ac63045cfabddacc69fc06e919b4c13eb913'
+gem 'jwt', '~> 2.10'
 
 gem 'json-ld', '~> 3.3.1'
 gem 'json-ld-preloaded', '~> 3.2'

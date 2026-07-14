@@ -35,3 +35,28 @@ export class MultiAccountCryptoError extends Error {
     this.name = 'MultiAccountCryptoError';
   }
 }
+
+export enum SwitchErrorCode {
+  ACCOUNT_NOT_FOUND = 'account_not_found',
+  TOKEN_MISSING = 'token_missing',
+  TOKEN_INVALID = 'token_invalid',
+  SESSION_TOKEN_MISSING = 'session_token_missing',
+}
+
+export class MultiAccountSwitchError extends Error {
+  constructor(
+    public code: SwitchErrorCode,
+    message?: string,
+  ) {
+    super(message || `Switch error: ${code}`);
+    this.name = 'MultiAccountSwitchError';
+  }
+
+  // 이 코드의 계정은 저장된 토큰이 죽은 상태이므로, UI에서 계정 제거를 제안해야 한다.
+  get isDeadToken(): boolean {
+    return (
+      this.code === SwitchErrorCode.TOKEN_MISSING ||
+      this.code === SwitchErrorCode.TOKEN_INVALID
+    );
+  }
+}
