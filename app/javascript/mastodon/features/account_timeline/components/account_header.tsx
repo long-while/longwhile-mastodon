@@ -1014,6 +1014,16 @@ export const AccountHeader: React.FC<{
           <NavLink exact to={`/@${account.acct}/media`}>
             <FormattedMessage id='account.media' defaultMessage='Media' />
           </NavLink>
+          {/* Own profile only: favourites are private, and the API has no way
+              to ask for anyone else's. */}
+          {account.id === me && (
+            <NavLink exact to={`/@${account.acct}/favourites`}>
+              <FormattedMessage
+                id='account.favourites'
+                defaultMessage='Likes'
+              />
+            </NavLink>
+          )}
         </div>
       )}
 

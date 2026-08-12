@@ -70,6 +70,10 @@ export function AccountFeatured() {
   return import('../../account_featured');
 }
 
+export function AccountFavourites() {
+  return import('../../account_favourites');
+}
+
 export function Followers() {
   return import('../../followers');
 }

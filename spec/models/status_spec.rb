@@ -551,4 +551,25 @@ RSpec.describe Status do
       expect(status.uri).to start_with('https://')
     end
   end
+
+  describe 'the profile post count' do
+    let(:account) { Fabricate(:account) }
+
+    it 'counts a public post' do
+      expect { Fabricate(:status, account: account, visibility: :public) }
+        .to change { account.reload.statuses_count }.by(1)
+    end
+
+    it 'leaves a direct message out of it' do
+      expect { Fabricate(:status, account: account, visibility: :direct) }
+        .to_not(change { account.reload.statuses_count })
+    end
+
+    it 'does not go negative when that direct message is deleted' do
+      status = Fabricate(:status, account: account, visibility: :direct)
+
+      expect { status.destroy }
+        .to_not(change { account.reload.statuses_count })
+    end
+  end
 end

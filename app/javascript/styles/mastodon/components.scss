@@ -458,7 +458,10 @@ body>[data-popper-placement] {
 .autosuggest-textarea {
   &__textarea {
     background: transparent;
-    min-height: 100px;
+
+    /* Was 100px. Two or three lines of writing before it starts growing, which
+       is where most posts land. */
+    min-height: 140px;
     padding-bottom: 0;
     resize: none;
     scrollbar-color: initial;
@@ -580,10 +583,42 @@ body>[data-popper-placement] {
   flex: 0 0 auto;
 }
 
+/* Names the reply's recipients above the box, so the handles it will carry are
+   visible without sitting in the text the user is writing.
+
+   It is a sibling of the box, not a child, so it takes the page background and
+   leaves the box's rounded top corners alone. Left edge is flush with both the
+   navigation bar above and the box below. */
+.compose-form__reply-mentions {
+  /* Pulls the box up under its own label to a fixed 8px: the form's own gap
+     separates unrelated blocks, and these two are one thing. Cancelling the
+     gap rather than subtracting a fixed number keeps that true whatever the
+     gap becomes. */
+  margin-bottom: calc(8px - var(--compose-form-gap, 30px));
+  font-size: 14px;
+  line-height: 20px;
+  color: $darker-text-color;
+
+  a {
+    color: $highlight-text-color;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: underline;
+    }
+  }
+}
+
 .compose-form {
   display: flex;
   flex-direction: column;
-  gap: 32px;
+
+  /* The thread line in .reply-indicator has to span this exact gap to meet the
+     box below, so both read the one variable. */
+  --compose-form-gap: 30px;
+
+  gap: var(--compose-form-gap);
 
   .layout-multiple-columns &,
   .column & {
@@ -1204,7 +1239,11 @@ body>[data-popper-placement] {
       transform: translateX(-50%);
       background: lighten($ui-base-color, 8%);
       width: 2px;
-      height: calc(100% + 32px - 8px); // Account for gap to next element
+
+      // Reaches across the form's own gap to the box below. Reads the gap from
+      // the variable rather than repeating the number: hardcoded, the line is
+      // left hanging or overshooting the next time the spacing changes.
+      height: calc(100% + var(--compose-form-gap, 30px) - 8px);
     }
   }
 
@@ -10844,7 +10883,10 @@ noscript {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  padding: 16px 24px;
+  padding-top: 16px;
+  padding-right: 25px;
+  padding-bottom: 16px;
+  padding-left: 18px;
   border-bottom: 1px solid var(--background-border-color);
 
   &__icon {
@@ -11023,7 +11065,10 @@ noscript {
 }
 
 .notification-ungrouped {
-  padding: 16px 24px;
+  padding-top: 16px;
+  padding-right: 26px;
+  padding-bottom: 16px;
+  padding-left: 20px;
   border-bottom: 1px solid var(--background-border-color);
 
   &__header {
@@ -12661,7 +12706,7 @@ div.compose-panel .account__bio {
   flex-wrap: wrap;
   gap: 12px;
   padding: 10px 16px;
-  border-top: 1px solid var(--background-border-color);
+  border-bottom: 1px solid var(--background-border-color);
   color: $darker-text-color;
   font-size: 13px;
 
@@ -12679,20 +12724,26 @@ div.compose-panel .account__bio {
   }
 }
 
+/* Reads as a band between the groups rather than a line of text: tinted
+   background, and shallower than the rows so it stays subordinate to them. */
 .scheduled-statuses__day {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 12px 16px 6px;
-  color: $darker-text-color;
+  gap: 4px;
+  padding: 8px 16px;
+  background: var(--surface-variant-active-background-color);
+  border-bottom: 1px solid var(--background-border-color);
   font-size: 13px;
   font-weight: 600;
-  background: var(--surface-background-color);
 
+  &__date {
+    color: $highlight-text-color;
+  }
+
+  /* Plain text colour so the tally reads as a separate fact from the date. */
   &__count {
+    color: $primary-text-color;
     font-weight: 400;
-    opacity: 0.8;
   }
 }
 
@@ -12747,10 +12798,6 @@ div.compose-panel .account__bio {
       height: 16px;
     }
 
-    &__relative {
-      color: $darker-text-color;
-    }
-
     &__tag {
       border: 1px solid var(--background-border-color);
       border-radius: 4px;
@@ -12776,16 +12823,14 @@ div.compose-panel .account__bio {
     font-size: 13px;
   }
 
+  /* One line: the queue is for scanning what is due, not for reading the posts. */
   &__preview {
     color: $primary-text-color;
     font-size: 15px;
     line-height: 20px;
-    white-space: pre-wrap;
-    overflow-wrap: break-word;
-    display: -webkit-box;
-    -webkit-line-clamp: 4;
-    -webkit-box-orient: vertical;
+    white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   &__media {

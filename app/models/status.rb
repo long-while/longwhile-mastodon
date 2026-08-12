@@ -46,6 +46,12 @@ class Status < ApplicationRecord
 
   MEDIA_ATTACHMENTS_LIMIT = 4
 
+  # Direct messages are a conversation, not something posted to a profile, so
+  # they stay out of the visible post count. `tootctl cache recount statuses`
+  # has always counted it this way (not_direct_visibility); only the live
+  # counter disagreed. Set COUNT_DIRECT_STATUSES=true to include them.
+  COUNT_DIRECT_STATUSES = ENV['COUNT_DIRECT_STATUSES'] == 'true'
+
   QUOTE_APPROVAL_POLICY_FLAGS = {
     unknown: (1 << 0),
     public: (1 << 1),
@@ -470,6 +476,8 @@ class Status < ApplicationRecord
   end
 
   def increment_counter_caches
+    return if uncounted?
+
     account&.increment_count!(:statuses_count)
     reblog&.increment_count!(:reblogs_count) if reblog?
     thread&.increment_count!(:replies_count) if in_reply_to_id.present?
@@ -477,10 +485,18 @@ class Status < ApplicationRecord
 
   def decrement_counter_caches
     return if new_record?
+    # Symmetrical with increment_counter_caches: a post that never raised the
+    # counter must not lower it. Visibility cannot change after creation, so the
+    # two calls always agree.
+    return if uncounted?
 
     account&.decrement_count!(:statuses_count)
     reblog&.decrement_count!(:reblogs_count) if reblog?
     thread&.decrement_count!(:replies_count) if in_reply_to_id.present?
+  end
+
+  def uncounted?
+    direct_visibility? && !COUNT_DIRECT_STATUSES
   end
 
   def trigger_create_webhooks

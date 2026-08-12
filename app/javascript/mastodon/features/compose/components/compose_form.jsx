@@ -1,9 +1,10 @@
 import PropTypes from 'prop-types';
-import { createRef } from 'react';
+import { createRef, Fragment } from 'react';
 
-import { defineMessages, injectIntl } from 'react-intl';
+import { defineMessages, injectIntl, FormattedMessage } from 'react-intl';
 
 import classNames from 'classnames';
+import { Link } from 'react-router-dom';
 
 import ImmutablePropTypes from 'react-immutable-proptypes';
 import ImmutablePureComponent from 'react-immutable-pure-component';
@@ -50,6 +51,7 @@ class ComposeForm extends ImmutablePureComponent {
   static propTypes = {
     intl: PropTypes.object.isRequired,
     text: PropTypes.string.isRequired,
+    replyMentions: ImmutablePropTypes.list,
     suggestions: ImmutablePropTypes.list,
     spoiler: PropTypes.bool,
     privacy: PropTypes.string,
@@ -104,8 +106,17 @@ class ComposeForm extends ImmutablePureComponent {
     }
   };
 
+  // The handles live outside the box but still go out with the post, so they
+  // have to be counted or the server would reject a status the counter called
+  // short enough.
+  replyMentionsPrefix = () => {
+    const mentions = this.props.replyMentions;
+
+    return mentions && !mentions.isEmpty() ? `${mentions.map(acct => `@${acct}`).join(' ')} ` : '';
+  };
+
   getFulltextForCharacterCounting = () => {
-    return [this.props.spoiler? this.props.spoilerText: '', countableText(this.props.text)].join('');
+    return [this.props.spoiler? this.props.spoilerText: '', countableText(this.replyMentionsPrefix() + this.props.text)].join('');
   };
 
   canSubmit = () => {
@@ -251,6 +262,26 @@ class ComposeForm extends ImmutablePureComponent {
         <ReplyIndicator />
         {!withoutNavigation && <NavigationBar />}
         <Warning />
+
+        {/* Sits above the box rather than inside it: this names who the reply
+            goes to, it is not part of what is being written. Keeping it out
+            also leaves the box its own background and rounded top corners. */}
+        {this.props.replyMentions && !this.props.replyMentions.isEmpty() && (
+          <div className='compose-form__reply-mentions'>
+            <FormattedMessage
+              id='compose_form.replying_to'
+              defaultMessage='Replying to {mentions}'
+              values={{
+                mentions: this.props.replyMentions.map((acct, index) => (
+                  <Fragment key={acct}>
+                    {index > 0 && ' '}
+                    <Link to={`/@${acct}`}>@{acct}</Link>
+                  </Fragment>
+                )).toArray(),
+              }}
+            />
+          </div>
+        )}
 
         <div className={classNames('compose-form__highlightable', { active: highlighted })} ref={this.setRef}>
           <div className='compose-form__scrollable'>

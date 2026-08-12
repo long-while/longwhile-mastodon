@@ -1,6 +1,7 @@
 import { defineMessages } from 'react-intl';
 
 import axios from 'axios';
+import { List as ImmutableList } from 'immutable';
 import { throttle } from 'lodash';
 
 import api from 'mastodon/api';
@@ -221,15 +222,29 @@ export function setComposeToScheduledStatus(scheduledStatus) {
   };
 }
 
+// The handles a reply has to carry are held beside the text, not in it, so the
+// box shows only what the user typed. They go back on the front here, which is
+// the one place that decides what actually gets posted.
+const withReplyMentions = (state, text) => {
+  const mentions = state.getIn(['compose', 'reply_mentions'], ImmutableList());
+
+  if (mentions.isEmpty()) {
+    return text;
+  }
+
+  return `${mentions.map(acct => `@${acct}`).join(' ')} ${text}`;
+};
+
 export function submitCompose() {
   return function (dispatch, getState) {
-    const status   = getState().getIn(['compose', 'text'], '');
+    const text     = getState().getIn(['compose', 'text'], '');
+    const status   = withReplyMentions(getState(), text);
     const media    = getState().getIn(['compose', 'media_attachments']);
     const statusId = getState().getIn(['compose', 'id'], null);
     const scheduledAt = getState().getIn(['compose', 'scheduled_at'], null);
     const scheduledStatusId = getState().getIn(['compose', 'scheduled_status_id'], null);
 
-    if ((!status || !status.length) && media.size === 0) {
+    if ((!text || !text.length) && media.size === 0) {
       return;
     }
 
@@ -333,7 +348,7 @@ function submitScheduledCompose() {
     const isUpdate = scheduledStatusId !== null;
 
     const data = {
-      status: compose.get('text', ''),
+      status: withReplyMentions(getState(), compose.get('text', '')),
       in_reply_to_id: compose.get('in_reply_to', null),
       media_ids: media.map(item => item.get('id')).toArray(),
       sensitive: compose.get('sensitive'),

@@ -48,8 +48,9 @@ const dayKey = (isoString) => {
 // scroll bookkeeping props, which React would reject on a DOM element.
 const DaySeparator = ({ label, count }) => (
   <div className='scheduled-statuses__day'>
-    <span>{label}</span>
+    <span className='scheduled-statuses__day__date'>{label}</span>
     <span className='scheduled-statuses__day__count'>
+      {'· '}
       <FormattedMessage
         id='scheduled_statuses.day_count'
         defaultMessage='{count, plural, one {# post} other {# posts}}'
@@ -299,7 +300,6 @@ const ScheduledStatuses = ({ multiColumn }) => {
         title={intl.formatMessage(messages.title)}
         onClick={handleHeaderClick}
         multiColumn={multiColumn}
-        showBackButton
         appendContent={headerContent}
       />
 

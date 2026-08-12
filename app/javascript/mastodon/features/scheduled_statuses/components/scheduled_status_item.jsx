@@ -10,17 +10,15 @@ import { useDispatch } from 'react-redux';
 
 import MoreHorizIcon from '@/material-icons/400-24px/more_horiz.svg?react';
 import WarningIcon from '@/material-icons/400-24px/warning.svg?react';
-import ClockFiveIcon from '@/styles/bird-theme-svg/clock-five.svg?react';
 import { setComposeToScheduledStatus } from 'mastodon/actions/compose';
 import { openModal } from 'mastodon/actions/modal';
 import { deleteScheduledStatus, updateScheduledStatus } from 'mastodon/actions/scheduled_statuses';
 import { CheckBox } from 'mastodon/components/check_box';
 import { Dropdown } from 'mastodon/components/dropdown_menu';
 import { Icon } from 'mastodon/components/icon';
-import { RelativeTimestamp } from 'mastodon/components/relative_timestamp';
 import { VisibilityIcon } from 'mastodon/components/visibility_icon';
 import { scheduledStatusMinimumOffset } from 'mastodon/initial_state';
-import { earliestScheduledAt, formatScheduledAtLabel, toOffsetISOString } from 'mastodon/utils/scheduled_at';
+import { earliestScheduledAt, toOffsetISOString } from 'mastodon/utils/scheduled_at';
 
 const messages = defineMessages({
   more: { id: 'status.more', defaultMessage: 'More' },
@@ -123,8 +121,13 @@ export const ScheduledStatusItem = ({ scheduledStatus, showCheckbox, checked, on
 
       <div className='scheduled-status__body'>
         <div className='scheduled-status__meta'>
-          <Icon id='clock-o' icon={ClockFiveIcon} />
-          <time dateTime={scheduledAt}>{formatScheduledAtLabel(intl, scheduledAt)}</time>
+          {/* The day and weekday are already on the group header above, so the
+              row only needs the time of day. */}
+          <time dateTime={scheduledAt}>
+            {intl.formatTime(scheduledAt, { hour: 'numeric', minute: '2-digit' })}
+          </time>
+
+          <VisibilityIcon visibility={visibility} />
 
           {/* A past time must never read as "soon", which is what the relative
               timestamp would say once the moment has gone by. */}
@@ -142,14 +145,6 @@ export const ScheduledStatusItem = ({ scheduledStatus, showCheckbox, checked, on
               <FormattedMessage id='scheduled_statuses.stalled' defaultMessage='Delayed' />
             </span>
           )}
-
-          {!failedAt && !isPublishing && !isStuck && (
-            <span className='scheduled-status__meta__relative'>
-              <RelativeTimestamp timestamp={scheduledAt} futureDate short={false} />
-            </span>
-          )}
-
-          <VisibilityIcon visibility={visibility} />
 
           {isReply && (
             <span className='scheduled-status__meta__tag'>

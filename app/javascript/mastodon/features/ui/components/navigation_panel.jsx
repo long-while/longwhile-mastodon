@@ -29,8 +29,6 @@ import PendingMentionsIcon from '@/styles/bird-theme-svg/messages.svg?react';
 import PublicIcon from '@/material-icons/400-24px/public.svg?react';
 import SearchIcon from '@/material-icons/400-24px/search.svg?react';
 import SettingsIcon from '@/material-icons/400-24px/settings.svg?react';
-import StarActiveIcon from '@/material-icons/400-24px/star-fill.svg?react';
-import StarIcon from '@/material-icons/400-24px/star.svg?react';
 import { Icon } from 'mastodon/components/icon';
 import { IconWithBadge } from 'mastodon/components/icon_with_badge';
 import { WordmarkLogo } from 'mastodon/components/logo';
@@ -56,7 +54,6 @@ const messages = defineMessages({
   firehose: { id: 'column.firehose', defaultMessage: 'Live feeds' },
   direct: { id: 'navigation_bar.direct', defaultMessage: 'Private mentions' },
   pendingMentions: { id: 'navigation_bar.pending-mentions', defaultMessage: 'Awaiting reply' },
-  favourites: { id: 'navigation_bar.favourites', defaultMessage: 'Favorites' },
   bookmarks: { id: 'navigation_bar.bookmarks', defaultMessage: 'Bookmarks' },
   scheduledStatuses: { id: 'navigation_bar.scheduled_statuses', defaultMessage: 'Scheduled posts' },
   scheduledStatusesFailed: { id: 'navigation_bar.scheduled_statuses_failed', defaultMessage: 'Scheduled posts (failed)' },
@@ -262,7 +259,6 @@ class NavigationPanel extends Component {
     const directLabel = intl.formatMessage(messages.direct);
     const pendingMentionsLabel = intl.formatMessage(messages.pendingMentions);
     const bookmarksLabel = intl.formatMessage(messages.bookmarks);
-    const favouritesLabel = intl.formatMessage(messages.favourites);
     const preferencesLabel = intl.formatMessage(messages.preferences);
     const listsLabel = intl.formatMessage(messages.lists);
 
@@ -279,10 +275,9 @@ class NavigationPanel extends Component {
         <NotificationsLink />
         <ColumnLink transparent to='/pending-mentions' icon='pending' iconComponent={PendingMentionsIcon} activeIconComponent={PendingMentionsActiveIcon} text={pendingMentionsLabel} />
         <ColumnLink transparent to='/conversations' icon='at' iconComponent={AlternateEmailIcon} text={directLabel} />
-        <ColumnLink transparent to='/bookmarks' icon='bookmarks' iconComponent={BookmarksIcon} activeIconComponent={BookmarksActiveIcon} text={bookmarksLabel} />
-        <ColumnLink transparent to='/favourites' icon='star' iconComponent={StarIcon} activeIconComponent={StarActiveIcon} text={favouritesLabel} />
-        <ColumnLink transparent to='/lists' icon='list-ul' iconComponent={ListAltIcon} activeIconComponent={ListAltActiveIcon} text={listsLabel} />
         <ScheduledStatusesLink />
+        <ColumnLink transparent to='/bookmarks' icon='bookmarks' iconComponent={BookmarksIcon} activeIconComponent={BookmarksActiveIcon} text={bookmarksLabel} />
+        <ColumnLink transparent to='/lists' icon='list-ul' iconComponent={ListAltIcon} activeIconComponent={ListAltActiveIcon} text={listsLabel} />
         <ColumnLink transparent href={settingsHref} icon='cog' iconComponent={SettingsIcon} text={preferencesLabel} />
         {includeAccountSwitcher && <AccountSwitcherMenuItem />}
       </>
