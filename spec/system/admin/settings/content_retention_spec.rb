@@ -12,7 +12,7 @@ RSpec.describe 'Admin::Settings::ContentRetention' do
     expect(page)
       .to have_title(I18n.t('admin.settings.content_retention.title'))
 
-    fill_in media_cache_retention_period_field,
+    fill_in backups_retention_period_field,
             with: '2'
 
     click_on submit_button
@@ -21,7 +21,7 @@ RSpec.describe 'Admin::Settings::ContentRetention' do
       .to have_content(success_message)
   end
 
-  def media_cache_retention_period_field
-    form_label 'form_admin_settings.media_cache_retention_period'
+  def backups_retention_period_field
+    form_label 'form_admin_settings.backups_retention_period'
   end
 end

@@ -1,8 +1,9 @@
 - content_for :page_title do
   = t('filters.new.title')
 
-= simple_form_for @filter, url: filters_path do |f|
+- content_for :heading_actions do
+  = button_tag t('filters.new.save'), class: 'button', form: 'new_custom_filter'
+
+= simple_form_for @filter, url: filters_path, html: { id: 'new_custom_filter' } do |f|
   = render 'filter_fields', f: f
 
-  .actions
-    = f.button :button, t('filters.new.save'), type: :submit

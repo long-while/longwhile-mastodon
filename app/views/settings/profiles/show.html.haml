@@ -1,9 +1,10 @@
 - content_for :page_title do
-  = t('settings.edit_profile')
+  = t('settings.profile')
 
-- content_for :heading do
-  %h2= t('settings.profile')
-  = render partial: 'settings/shared/profile_navigation'
+- content_for :heading_actions do
+  = button_tag t('generic.save_changes'), class: 'button', form: 'edit_profile'
+
+.flash-message= t('edit_profile.followers_only_notice')
 
 = simple_form_for @account, url: settings_profile_path, html: { id: :edit_profile } do |f|
   = render 'shared/error_messages', object: @account
@@ -21,44 +22,38 @@
     .fields-row__column.fields-group.fields-row__column-6
       .input.with_block_label
         %label= t('simple_form.labels.defaults.fields')
-        %span.hint= t('simple_form.hints.account.fields')
 
         = f.simple_fields_for :fields do |fields_f|
           .row
             = fields_f.input :name, placeholder: t('simple_form.labels.account.fields.name'), input_html: { maxlength: Account::Field::MAX_CHARACTERS_LOCAL }
             = fields_f.input :value, placeholder: t('simple_form.labels.account.fields.value'), input_html: { maxlength: Account::Field::MAX_CHARACTERS_LOCAL }
 
-  .fields-row
-    .fields-row__column.fields-row__column-6
-      .fields-group
-        = f.input :avatar,
-                  hint: t('simple_form.hints.defaults.avatar', dimensions: Account::Avatar::AVATAR_GEOMETRY, size: number_to_human_size(Account::Avatar::AVATAR_LIMIT)),
-                  input_html: { accept: Account::Avatar::AVATAR_IMAGE_MIME_TYPES.join(',') },
-                  wrapper: :with_block_label
-
-    .fields-row__column.fields-row__column-6
-      .fields-group
-        = image_tag @account.avatar.url, class: 'fields-group__thumbnail', id: 'account_avatar-preview'
+  .image-picker
+    .image-picker__item
+      %span.image-picker__caption= t('simple_form.labels.defaults.avatar')
+      .image-picker__slot
+        %label.image-picker__frame.image-picker__frame--avatar
+          = image_tag @account.avatar.url, class: 'image-picker__img', id: 'account_avatar-preview'
+          %span.image-picker__overlay
+            = material_symbol 'photo_camera'
+          = f.file_field :avatar, accept: Account::Avatar::AVATAR_IMAGE_MIME_TYPES.join(','), class: 'image-picker__input'
         - if @account.avatar.present?
-          = link_to settings_profile_picture_path('avatar'), data: { method: :delete }, class: 'link-button link-button--destructive' do
-            = material_symbol 'delete'
-            = t('generic.delete')
+          = link_to settings_profile_picture_path('avatar'), data: { method: :delete }, class: 'image-picker__remove', title: t('generic.delete'), 'aria-label': t('generic.delete') do
+            = material_symbol 'close'
 
-  .fields-row
-    .fields-row__column.fields-row__column-6
-      .fields-group
-        = f.input :header,
-                  hint: t('simple_form.hints.defaults.header', dimensions: Account::Header::HEADER_GEOMETRY, size: number_to_human_size(Account::Header::HEADER_LIMIT)),
-                  input_html: { accept: Account::Header::HEADER_IMAGE_MIME_TYPES.join(',') },
-                  wrapper: :with_block_label
-
-    .fields-row__column.fields-row__column-6
-      .fields-group
-        = image_tag @account.header.url, class: 'fields-group__thumbnail', id: 'account_header-preview'
+    .image-picker__item
+      %span.image-picker__caption= t('simple_form.labels.defaults.header')
+      .image-picker__slot
+        %label.image-picker__frame.image-picker__frame--header
+          = image_tag @account.header.url, class: 'image-picker__img', id: 'account_header-preview'
+          %span.image-picker__overlay
+            = material_symbol 'photo_camera'
+          = f.file_field :header, accept: Account::Header::HEADER_IMAGE_MIME_TYPES.join(','), class: 'image-picker__input'
         - if @account.header.present?
-          = link_to settings_profile_picture_path('header'), data: { method: :delete }, class: 'link-button link-button--destructive' do
-            = material_symbol 'delete'
-            = t('generic.delete')
+          = link_to settings_profile_picture_path('header'), data: { method: :delete }, class: 'image-picker__remove', title: t('generic.delete'), 'aria-label': t('generic.delete') do
+            = material_symbol 'close'
+
+  %p.image-picker__hint= t('simple_form.hints.defaults.avatar', size: number_to_human_size(Account::Avatar::AVATAR_LIMIT))
 
   %h4= t('edit_profile.other')
 
@@ -69,8 +64,7 @@
               label: t('simple_form.labels.defaults.private_account'),
               hint: t('simple_form.hints.defaults.private_account_html')
 
-  .fields-group
-    = f.input :bot, as: :boolean, wrapper: :with_label, hint: t('simple_form.hints.defaults.bot')
+  = f.simple_fields_for :settings, current_user.settings do |ff|
+    .fields-group
+      = ff.input :dm_read_receipts, wrapper: :with_label
 
-  .actions
-    = f.button :button, t('generic.save_changes'), type: :submit

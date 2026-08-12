@@ -174,7 +174,7 @@ en:
       suspended: Suspended
       suspension_irreversible: The data of this account has been irreversibly deleted. You can unsuspend the account to make it usable but it will not recover any data it previously had.
       suspension_reversible_hint_html: The account has been suspended, and the data will be fully removed on %{date}. Until then, the account can be restored without any ill effects. If you wish to remove all of the account's data immediately, you can do so below.
-      title: Accounts
+      title: Member Management
       unblock_email: Unblock email address
       unblocked_email_msg: Successfully unblocked %{username}'s email address
       unconfirmed_email: Unconfirmed email
@@ -1017,7 +1017,7 @@ en:
       published_on_html: Published on %{date}
       save_draft: Save draft
       title: Terms of Service
-    title: Administration
+    title: Operations
     trends:
       allow: Allow
       approved: Approved
@@ -1147,33 +1147,15 @@ en:
     new_software_updates:
       body: New Mastodon versions have been released, you may want to update!
       subject: New Mastodon versions are available for %{instance}!
-    new_trends:
-      body: 'The following items need a review before they can be displayed publicly:'
-      new_trending_links:
-        title: Trending links
-      new_trending_statuses:
-        title: Trending posts
-      new_trending_tags:
-        title: Trending hashtags
-      subject: New trends up for review on %{instance}
-  aliases:
-    add_new: Create alias
-    created_msg: Successfully created a new alias. You can now initiate the move from the old account.
-    deleted_msg: Successfully removed the alias. Moving from that account to this one will no longer be possible.
-    empty: You have no aliases.
-    hint_html: If you want to move from another account to this one, here you can create an alias, which is required before you can proceed with moving followers from the old account to this one. This action by itself is <strong>harmless and reversible</strong>. <strong>The account migration is initiated from the old account</strong>.
-    remove: Unlink alias
   appearance:
-    advanced_web_interface: Advanced web interface
-    advanced_web_interface_hint: 'If you want to make use of your whole screen width, advanced web interface allows you to configure many different columns to see as much information at the same time as you want: Home, notifications, federated timeline, any number of lists and hashtags.'
-    animations_and_accessibility: Animations and accessibility
-    confirmation_dialogs: Confirmation dialogs
+    advanced_web_interface_hint: Splits the screen into several columns.
     discovery: Discovery
     localization:
       body: Mastodon is translated by volunteers.
       guide_link: https://crowdin.com/project/mastodon
       guide_link_text: Everyone can contribute.
-    sensitive_content: Sensitive content
+    motion: Motion
+    viewing: Viewing
   application_mailer:
     notification_preferences: Change email preferences
     salutation: "%{name},"
@@ -1221,8 +1203,7 @@ en:
     log_in_with: Log in with
     login: Log in
     logout: Logout
-    migrate_account: Move to a different account
-    migrate_account_html: If you wish to redirect this account to a different one, you can <a href="%{path}">configure it here</a>.
+    my_data: Your data
     or_log_in_with: Or log in with
     progress:
       confirm: Confirm email
@@ -1368,6 +1349,7 @@ en:
     title_removed: "%{name} removed the conversation title."
   edit_profile:
     basic_information: Basic information
+    followers_only_notice: Posts on this server are visible to your followers only.
     hint_html: "<strong>Customize what people see on your public profile and next to your posts.</strong> Other people are more likely to follow you back and interact with you when you have a filled out profile and a profile picture."
     other: Other
   errors:
@@ -1399,7 +1381,6 @@ en:
     blocks: You block
     bookmarks: Bookmarks
     csv: CSV
-    domain_blocks: Domain blocks
     lists: Lists
     mutes: You mute
     storage: Media storage
@@ -1420,14 +1401,14 @@ en:
       keywords: Keywords
       statuses: Individual posts
       statuses_hint_html: This filter applies to select individual posts regardless of whether they match the keywords below. <a href="%{path}">Review or remove posts from the filter</a>.
-      title: Edit filter
+      title: Edit word
     errors:
       deprecated_api_multiple_keywords: These parameters cannot be changed from this application because they apply to more than one filter keyword. Use a more recent application or the web interface.
       invalid_context: None or invalid context supplied
     index:
       contexts: Filters in %{contexts}
       delete: Delete
-      empty: You have no filters.
+      empty: You have no muted words.
       expires_in: Expires in %{distance}
       expires_on: Expires on %{date}
       keywords:
@@ -1439,12 +1420,12 @@ en:
       statuses_long:
         one: "%{count} individual post hidden"
         other: "%{count} individual posts hidden"
-      title: Filters
+      title: Muted words
     new:
-      save: Save new filter
-      title: Add new filter
+      save: Save
+      title: Add word
     statuses:
-      back_to_filter: Back to filter
+      back_to_filter: Back to muted words
       batch:
         remove: Remove from filter
       index:
@@ -1589,10 +1570,10 @@ en:
       sign_in_token: email security code
       webauthn: security keys
     description_html: If you see activity that you don't recognize, consider changing your password and enabling two-factor authentication.
-    empty: No authentication history available
+    empty: No sign-ins recorded
     failed_sign_in_html: Failed sign-in attempt with %{method} from %{ip} (%{browser})
     successful_sign_in_html: Successful sign-in with %{method} from %{ip} (%{browser})
-    title: Authentication history
+    title: Sign-in history
   mail_subscriptions:
     unsubscribe:
       action: Yes, unsubscribe
@@ -1645,8 +1626,6 @@ en:
       only_redirect_html: Alternatively, you can <a href="%{path}">only put up a redirect on your profile</a>.
       other_data: No other data will be moved automatically
       redirect: Your current account's profile will be updated with a redirect notice and be excluded from searches
-  moderation:
-    title: Moderation
   move_handler:
     carry_blocks_over_text: This user moved from %{acct}, which you had blocked.
     carry_mutes_over_text: This user moved from %{acct}, which you had muted.
@@ -1689,8 +1668,9 @@ en:
       subject: "%{name} edited a post"
   notifications:
     administration_emails: Admin email notifications
-    email_events: Events for email notifications
-    email_events_hint: 'Select events that you want to receive notifications for:'
+    email_events: Send me email about
+    policy_title: Notifications from people you do not know
+    web_column_hint: Which kinds of notifications appear in your list is set from the gear icon on the notifications screen.
   number:
     human:
       decimal_units:
@@ -1837,43 +1817,22 @@ en:
       windows_phone: Windows Phone
     revoke: Revoke
     revoke_success: Session successfully revoked
-    title: Sessions
-    view_authentication_history: View authentication history of your account
+    title: Signed-in devices
+    view_authentication_history: View sign-in history
   settings:
     account: Account
     account_settings: Account settings
-    aliases: Account aliases
-    appearance: Appearance
-    authorized_apps: Authorized apps
     back: Back to Mastodon
     delete: Account deletion
-    development: Development
-    edit_profile: Edit profile
-    export: Export
-    featured_tags: Featured hashtags
-    import: Import
-    import_and_export: Import and export
-    migrate: Account migration
-    notifications: Email notifications
-    preferences: Preferences
-    profile: Public profile
-    relationships: Follows and followers
-    severed_relationships: Severed relationships
-    statuses_cleanup: Automated post deletion
+    development: Apps you made
+    export: Download your data
+    notifications: Notifications
+    preferences: Display
+    profile: Profile
+    statuses_cleanup: Delete old posts
     strikes: Moderation strikes
     two_factor_authentication: Two-factor Auth
     webauthn_authentication: Security keys
-  severed_relationships:
-    download: Download (%{count})
-    event_type:
-      account_suspension: Account suspension (%{target_name})
-      domain_block: Server suspension (%{target_name})
-      user_domain_block: You blocked %{target_name}
-    lost_followers: Lost followers
-    lost_follows: Lost follows
-    preamble: You may lose follows and followers when you block a domain or when your moderators decide to suspend a remote server. When that happens, you will be able to download lists of severed relationships, to be inspected and possibly imported on another server.
-    purged: Information about this server has been purged by your server's administrators.
-    type: Event
   statuses:
     attached:
       audio:
@@ -1918,23 +1877,10 @@ en:
     enabled: Automatically delete old posts
     enabled_hint: Automatically deletes your posts once they reach a specified age threshold, unless they match one of the exceptions below
     exceptions: Exceptions
-    explanation: Because deleting posts is an expensive operation, this is done slowly over time when the server is not otherwise busy. For this reason, your posts may be deleted a while after they reach the age threshold.
-    ignore_favs: Ignore favorites
-    ignore_reblogs: Ignore boosts
-    interaction_exceptions: Exceptions based on interactions
-    interaction_exceptions_explanation: Note that there is no guarantee for posts to be deleted if they go below the favorite or boost threshold after having once gone over them.
-    keep_direct: Keep direct messages
-    keep_direct_hint: Doesn't delete any of your direct messages
-    keep_media: Keep posts with media attachments
-    keep_media_hint: Doesn't delete any of your posts that have media attachments
-    keep_pinned: Keep pinned posts
-    keep_pinned_hint: Doesn't delete any of your pinned posts
-    keep_polls: Keep polls
-    keep_polls_hint: Doesn't delete any of your polls
-    keep_self_bookmark: Keep posts you bookmarked
-    keep_self_bookmark_hint: Doesn't delete your own posts if you have bookmarked them
-    keep_self_fav: Keep posts you favorited
-    keep_self_fav_hint: Doesn't delete your own posts if you have favorited them
+    explanation: Deletion may take a few extra days after the cutoff.
+    keep_direct: Chat messages
+    keep_media: Posts with photos or video
+    keep_pinned: Pinned posts
     min_age:
       '1209600': 2 weeks
       '15778476': 6 months
@@ -1945,10 +1891,6 @@ en:
       '63113904': 2 years
       '7889238': 3 months
     min_age_label: Age threshold
-    min_favs: Keep posts favorited at least
-    min_favs_hint: Doesn't delete any of your posts that has received at least this number of favorites. Leave blank to delete posts regardless of their number of favorites
-    min_reblogs: Keep posts boosted at least
-    min_reblogs_hint: Doesn't delete any of your posts that has been boosted at least this number of times. Leave blank to delete posts regardless of their number of boosts
   stream_entries:
     sensitive_content: Sensitive content
   strikes:
@@ -2119,14 +2061,6 @@ en:
     role_requirement: Your role requires you to set up two-factor authentication before you can continue.
     seamless_external_login: You are logged in via an external service, so password and email settings are not available.
     signed_in_as: 'Signed in as:'
-  verification:
-    extra_instructions_html: <strong>Tip:</strong> The link on your website can be invisible. The important part is <code>rel="me"</code> which prevents impersonation on websites with user-generated content. You can even use a <code>link</code> tag in the header of the page instead of <code>a</code>, but the HTML must be accessible without executing JavaScript.
-    here_is_how: Here's how
-    hint_html: "<strong>Verifying your identity on Mastodon is for everyone.</strong> Based on open web standards, now and forever free. All you need is a personal website that people recognize you by. When you link to this website from your profile, we will check that the website links back to your profile and show a visual indicator on it."
-    instructions_html: Copy and paste the code below into the HTML of your website. Then add the address of your website into one of the extra fields on your profile from the "Edit profile" tab and save changes.
-    verification: Verification
-    verified_links: Your verified links
-    website_verification: Website verification
   webauthn_credentials:
     add: Add new security key
     create:

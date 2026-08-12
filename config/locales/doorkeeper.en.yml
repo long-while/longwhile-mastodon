@@ -73,6 +73,7 @@ en:
       index:
         authorized_at: Authorized on %{date}
         description_html: These are applications that can access your account using the API. If there are applications you do not recognize here, or an application is misbehaving, you can revoke its access.
+        empty: No apps have access to your account.
         last_used_at: Last used on %{date}
         never_used: Never used
         scopes: Permissions

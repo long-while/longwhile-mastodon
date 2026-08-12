@@ -186,36 +186,7 @@ namespace :admin do
 
   resources :roles, except: [:show]
   resources :account_moderation_notes, only: [:create, :destroy]
-  resource :follow_recommendations, only: [:show, :update]
   resources :tags, only: [:index, :show, :update]
-
-  namespace :trends do
-    resources :links, only: [:index] do
-      collection do
-        post :batch
-      end
-    end
-
-    resources :tags, only: [:index] do
-      collection do
-        post :batch
-      end
-    end
-
-    resources :statuses, only: [:index] do
-      collection do
-        post :batch
-      end
-    end
-
-    namespace :links do
-      resources :preview_card_providers, only: [:index], path: :publishers do
-        collection do
-          post :batch
-        end
-      end
-    end
-  end
 
   namespace :disputes do
     resources :appeals, only: [:index] do

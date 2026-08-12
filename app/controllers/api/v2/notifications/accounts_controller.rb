@@ -21,7 +21,7 @@ class Api::V2::Notifications::AccountsController < Api::BaseController
     @paginated_notifications = begin
       current_account
         .notifications
-        .without_suspended
+        .without_unavailable
         .where(group_key: params[:notification_group_key])
         .includes(from_account: [:account_stat, :user])
         .paginate_by_max_id(

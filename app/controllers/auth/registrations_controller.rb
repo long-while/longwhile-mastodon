@@ -52,7 +52,7 @@ class Auth::RegistrationsController < Devise::RegistrationsController
   def build_resource(hash = nil)
     super
 
-    resource.locale                 = I18n.locale
+    resource.locale                 = I18n.default_locale
     resource.invite_code            = @invite&.code if resource.invite_code.blank?
     resource.registration_form_time = session[:registration_form_time]
     resource.sign_up_ip             = request.remote_ip

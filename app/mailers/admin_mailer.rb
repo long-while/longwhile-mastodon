@@ -37,16 +37,6 @@ class AdminMailer < ApplicationMailer
     end
   end
 
-  def new_trends(links, tags, statuses)
-    @links                  = links
-    @tags                   = tags
-    @statuses               = statuses
-
-    locale_for_account(@me) do
-      mail subject: default_i18n_subject(instance: @instance)
-    end
-  end
-
   def new_software_updates
     @software_updates = SoftwareUpdate.by_version
 

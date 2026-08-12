@@ -172,7 +172,7 @@ ko:
       suspended: 정지 됨
       suspension_irreversible: 이 계정의 데이터는 복구할 수 없도록 삭제되었습니다. 계정을 정지 해제함으로서 계정을 다시 사용 가능하게 할 수 있지만 이전에 삭제한 어떤 데이터도 복구되지 않습니다.
       suspension_reversible_hint_html: 계정이 정지되었습니다, 그리고 %{date}에 데이터가 완전히 삭제될 것입니다. 그 때까지는 어떤 안 좋은 효과 없이 계정이 복구 될 수 있습니다. 만약 지금 당장 계정의 모든 데이터를 삭제하고 싶다면, 아래에서 행할 수 있습니다.
-      title: 계정
+      title: 서버원 관리
       unblock_email: 이메일 차단 해제하기
       unblocked_email_msg: "%{username}의 이메일 주소를 성공적으로 차단 해제했습니다"
       unconfirmed_email: 확인되지 않은 이메일 주소
@@ -1004,7 +1004,7 @@ ko:
       published_on_html: "%{date}에 게시됨"
       save_draft: 초안 저장
       title: 이용 약관
-    title: 관리
+    title: 운영
     trends:
       allow: 허용
       approved: 승인됨
@@ -1130,33 +1130,15 @@ ko:
     new_software_updates:
       body: 새 마스토돈 버전이 릴리스되었습니다. 업데이트 할 수 있습니다!
       subject: "%{instance}에 대해 새 마스토돈 버전이 사용 가능합니다!"
-    new_trends:
-      body: '아래에 있는 항목들은 공개적으로 보여지기 전에 검토를 거쳐야 합니다:'
-      new_trending_links:
-        title: 유행하는 링크
-      new_trending_statuses:
-        title: 유행하는 게시물
-      new_trending_tags:
-        title: 유행하는 해시태그
-      subject: 새 트렌드가 %{instance}에서 심사 대기 중입니다
-  aliases:
-    add_new: 별칭 만들기
-    created_msg: 새 별칭이 성공적으로 만들어졌습니다. 이제 기존 계정에서 이주를 시작할 수 있습니다.
-    deleted_msg: 성공적으로 별칭을 삭제했습니다. 해당 계정에서 이 계정으로의 이주는 더이상 가능하지 않습니다.
-    empty: 별칭이 없습니다.
-    hint_html: 다른 계정에서 이 계정으로 옮기길 원하는 경우, 여기에서 별칭을 만들 수 있습니다, 기존 계정의 팔로워를 이쪽으로 옮기고 싶은 경우 필요한 과정입니다. 이 행동 자체는 <strong>해롭지 않고 되돌리기가 가능합니다</strong>.<strong>계정 이주는 이전 계정에서 착수하게 됩니다</strong>
-    remove: 별칭 연결 끊기
   appearance:
-    advanced_web_interface: 고급 웹 인터페이스
-    advanced_web_interface_hint: '트윗덱처럼 여러 컬럼을 보여줍니다.'
-    animations_and_accessibility: 애니메이션과 접근성
-    confirmation_dialogs: 확인 대화상자
+    advanced_web_interface_hint: 화면을 여러 칼럼으로 나눠 보여줍니다.
     discovery: 발견하기
     localization:
       body: 마스토돈은 자원봉사자들에 의해 번역되었습니다.
       guide_link: https://crowdin.com/project/mastodon
       guide_link_text: 누구나 기여할 수 있습니다.
-    sensitive_content: 민감한 내용
+    motion: 움직임
+    viewing: 보기
   application_mailer:
     notification_preferences: 이메일 설정 변경
     salutation: "%{name} 님,"
@@ -1204,8 +1186,7 @@ ko:
     log_in_with: 다음으로 로그인
     login: 로그인
     logout: 로그아웃
-    migrate_account: 계정 옮기기
-    migrate_account_html: 이 계정을 다른 계정으로 리디렉션 하길 원하는 경우 <a href="%{path}">여기</a>에서 설정할 수 있습니다.
+    my_data: 내 데이터
     or_log_in_with: 다른 방법으로 로그인 하려면
     progress:
       confirm: 이메일 확인
@@ -1351,6 +1332,7 @@ ko:
     title_removed: "%{name} 님이 대화 제목을 지웠습니다."
   edit_profile:
     basic_information: 기본 정보
+    followers_only_notice: 이 서버에 게시하는 모든 글은 내 팔로워에게만 보입니다.
     hint_html: "<strong>사람들이 공개 프로필을 보고서 게시물을 볼 때를 위한 프로필을 꾸밉니다.</strong> 프로필과 프로필 사진을 채우면 다른 사람들이 나를 팔로우하고 나와 교류할 기회가 더 많아집니다."
     other: 기타
   errors:
@@ -1382,7 +1364,6 @@ ko:
     blocks: 차단
     bookmarks: 북마크
     csv: CSV
-    domain_blocks: 도메인 차단
     lists: 리스트
     mutes: 뮤트
     storage: 미디어
@@ -1403,14 +1384,14 @@ ko:
       keywords: 키워드
       statuses: 개별 게시물
       statuses_hint_html: 이 필터는 아래의 키워드에 매칭되는지 여부와 관계 없이 몇몇개의 게시물들에 별개로 적용되었습니다. <a href="%{path}">검토하거나 필터에서 삭제하세요</a>
-      title: 필터 편집
+      title: 단어 수정
     errors:
       deprecated_api_multiple_keywords: 이 파라미터들은 하나를 초과하는 필터 키워드에 적용되기 때문에 이 응용프로그램에서 수정될 수 없습니다. 더 최신의 응용프로그램이나 웹 인터페이스를 사용하세요.
       invalid_context: 컨텍스트가 없거나 올바르지 않습니다
     index:
       contexts: "%{contexts}에 대한 필터"
       delete: 삭제
-      empty: 필터가 없습니다.
+      empty: 등록한 단어가 없습니다.
       expires_in: "%{distance} 안에 만료됨"
       expires_on: "%{date}에 만료됨"
       keywords:
@@ -1419,12 +1400,12 @@ ko:
         other: "%{count}개의 게시물"
       statuses_long:
         other: "%{count}개의 개별적인 게시물 숨겨짐"
-      title: 필터
+      title: 뮤트한 단어
     new:
-      save: 새 필터 저장
-      title: 필터 추가
+      save: 저장
+      title: 단어 추가
     statuses:
-      back_to_filter: 필터로 돌아가기
+      back_to_filter: 뮤트한 단어로 돌아가기
       batch:
         remove: 필터에서 제거
       index:
@@ -1552,10 +1533,10 @@ ko:
       sign_in_token: 이메일 보안 코드
       webauthn: 보안 키
     description_html: 확인되지 않은 활동이 보인다면, 암호를 바꾸거나 2단계 인증을 활성화 하는 것을 고려해 보세요.
-    empty: 인증 이력이 존재하지 않습니다
+    empty: 로그인 기록이 없습니다
     failed_sign_in_html: 실패한 로그인 시도 %{method} %{ip} (%{browser})
     successful_sign_in_html: 성공한 로그인 시도 %{method} %{ip} (%{browser})
-    title: 인증 이력
+    title: 로그인 기록
   mail_subscriptions:
     unsubscribe:
       action: 네, 구독 취소합니다
@@ -1608,8 +1589,6 @@ ko:
       only_redirect_html: 대신, <a href="%{path}">프로필에 리디렉션만 표시</a>할 수도 있습니다.
       other_data: 다른 어떤 데이터도 자동적으로 옮겨지지 않을 것입니다
       redirect: 현재 계정 프로필은 리다이렉트 알림과 함께 업데이트 되며 검색에서 제외 됩니다
-  moderation:
-    title: 중재
   move_handler:
     carry_blocks_over_text: 이 사용자는 예전에 차단한 %{acct}에서 이주 했습니다.
     carry_mutes_over_text: 이 사용자는 예전에 뮤트한 %{acct}에서 이주 했습니다.
@@ -1652,8 +1631,9 @@ ko:
       subject: "%{name} 님이 게시물을 수정했습니다"
   notifications:
     administration_emails: 관리자 이메일 알림
-    email_events: 이메일 알림에 대한 이벤트
-    email_events_hint: '알림 받을 이벤트를 선택해주세요:'
+    email_events: 메일로 받을 것
+    policy_title: 모르는 사람의 알림
+    web_column_hint: 알림 목록에 어떤 종류를 보일지는 알림 화면의 톱니바퀴에서 정합니다.
   number:
     human:
       decimal_units:
@@ -1799,43 +1779,22 @@ ko:
       windows_phone: 윈도우 폰
     revoke: 취소
     revoke_success: 세션을 성공적으로 취소하였습니다
-    title: 세션
-    view_authentication_history: 내 계정에 대한 인증 이력 보기
+    title: 로그인 중인 기기
+    view_authentication_history: 로그인 기록 보기
   settings:
     account: 계정
     account_settings: 계정 설정
-    aliases: 계정 별명
-    appearance: 외관
-    authorized_apps: 승인된 애플리케이션
     back: 마스토돈으로 돌아가기
     delete: 계정 삭제
     development: 개발
-    edit_profile: 프로필 편집
-    export: 내보내기
-    featured_tags: 추천 해시태그
-    import: 데이터 가져오기
-    import_and_export: 가져오기 & 내보내기
-    migrate: 계정 이동
-    notifications: 이메일 알림
-    preferences: 환경설정
-    profile: 공개 프로필
-    relationships: 팔로잉과 팔로워
-    severed_relationships: 단절된 관계들
-    statuses_cleanup: 게시물 자동 삭제
+    export: 데이터 내려받기
+    notifications: 알림
+    preferences: 화면
+    profile: 프로필
+    statuses_cleanup: 오래된 게시물 자동 삭제
     strikes: 중재 기록
     two_factor_authentication: 2단계 인증
     webauthn_authentication: 보안 키
-  severed_relationships:
-    download: 다운로드 (%{count})
-    event_type:
-      account_suspension: 계정 정지 (%{target_name})
-      domain_block: 서버 정지 (%{target_name})
-      user_domain_block: 내가 %{target_name}을 차단했습니다
-    lost_followers: 잃은 팔로워
-    lost_follows: 잃은 팔로우
-    preamble: 내가 도메인을 차단하거나 중재진이 다른 서버를 정지하기로 결정했다면 내 팔로우와 팔로워를 잃게 됩니다. 그런 일이 일어났다면 그로 인해 단절된 관계들의 목록을 다운로드 받아 확인하고 다른 서버에서 불러올 수 있습니다.
-    purged: 이 서버에 대한 정보는 관리자에 의해 제거되었습니다.
-    type: 이벤트
   statuses:
     attached:
       audio:
@@ -1872,23 +1831,10 @@ ko:
     enabled: 오래된 게시물 자동 삭제
     enabled_hint: 아래의 예외 목록에 해당하지 않는다면, 명시된 기한 이후 당신의 게시물을 자동으로 삭제합니다
     exceptions: 예외
-    explanation: 게시물 삭제는 많은 성능이 필요하기 때문에, 서버에서 바쁘지 않을 때 시간을 들여서 천천히 진행합니다. 이런 이유로, 당신의 게시물은 아마도 정해진 기간보다 좀 더 시간이 지난 이후에 삭제될 것입니다.
-    ignore_favs: 마음에 들어요 무시
-    ignore_reblogs: 재게시 무시
-    interaction_exceptions: 상호작용에 기반한 예외들
-    interaction_exceptions_explanation: 마음에 들어요나 재게시 수가 설정한 값을 넘은 후 다시 낮아진 경우에는 게시물이 삭제되는 것을 보장하지 못합니다.
-    keep_direct: 다이렉트 메시지 유지
-    keep_direct_hint: 다이렉트 메시지를 삭제하지 않습니다
-    keep_media: 미디어가 있는 게시물 유지
-    keep_media_hint: 미디어가 첨부된 게시물을 삭제하지 않습니다
-    keep_pinned: 고정된 게시물 유지
-    keep_pinned_hint: 고정 게시물을 삭제하지 않습니다
-    keep_polls: 설문 유지
-    keep_polls_hint: 설문을 삭제하지 않습니다
-    keep_self_bookmark: 북마크한 게시물 유지
-    keep_self_bookmark_hint: 북마크한 본인의 게시물을 삭제하지 않습니다
-    keep_self_fav: 내가 마음에 들어한 게시물 유지
-    keep_self_fav_hint: 스스로 마음에 들어요를 누른 본인의 게시물을 삭제하지 않습니다
+    explanation: 실제 삭제는 기한이 지난 뒤 며칠 더 걸릴 수 있습니다.
+    keep_direct: 채팅 메시지
+    keep_media: 사진·영상이 붙은 글
+    keep_pinned: 고정한 글
     min_age:
       '1209600': 2 주
       '15778476': 6 개월
@@ -1899,10 +1845,6 @@ ko:
       '63113904': 2 년
       '7889238': 3 개월
     min_age_label: 기한
-    min_favs: 해당 횟수 이상 마음에 들어요된 게시물 유지
-    min_favs_hint: 이 횟수 이상의 마음에 들어요가 된 게시물은 삭제하지 않습니다. 마음에 들어요 수와 관계없이 게시물을 지우고 싶다면 공백으로 두세요
-    min_reblogs: 해당 횟수 이상 재게시된 게시물 유지
-    min_reblogs_hint: 이 횟수 이상의 재게시가 된 게시물은 삭제하지 않습니다. 재게시 수와 관계없이 게시물을 지우고 싶다면 공백으로 두세요
   stream_entries:
     sensitive_content: 민감한 내용
   strikes:
@@ -2067,14 +2009,6 @@ ko:
     role_requirement: 계속하려면 역할에 따라 2단계 인증을 먼저 설정해야 합니다.
     seamless_external_login: 외부 서비스를 이용해 로그인했으므로 이메일과 암호는 설정할 수 없습니다.
     signed_in_as: '다음과 같이 로그인 중:'
-  verification:
-    extra_instructions_html: <strong>팁:</strong> 웹사이트에 안 보이는 링크로 삽입할 수 있습니다. 중요한 것은 나를 도용하는 것을 방지하는 <code>rel="me"</code> 부분입니다. 심지어 <code>a</code> 대신 <code>link</code>태그를 페이지 헤더에 넣는 것으로 대체할 수도 있습니다. 하지만 HTML 코드는 자바스크립트 실행 없이 접근이 가능해야 합니다.
-    here_is_how: 사용방법
-    hint_html: "<strong>내 신분을 모두에게 증명하세요.</strong> 영원히 무료로 쓸 수 있는 웹 표준을 기반으로 합니다. 나를 확인할 수 있는 개인 웹사이트가 필요한 전부입니다. 이 웹사이트 링크를 프로필에 추가하면 우리는 그 웹사이트가 이 계정으로 역링크를 걸었는지 확인하고 프로필에 잘 보이는 마크를 보여줄 것입니다."
-    instructions_html: 웹사이트에 아래 코드를 복사해 붙여 넣으세요. 그리고 "프로필 수정" 탭에서 그 웹사이트 주소를 프로필의 추가 필드 중 하나에 넣고 변경사항을 저장하세요.
-    verification: 검증
-    verified_links: 인증된 링크들
-    website_verification: 웹사이트 인증
   webauthn_credentials:
     add: 보안 키 추가
     create:

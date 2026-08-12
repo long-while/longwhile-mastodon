@@ -85,16 +85,16 @@ $content-width: 840px;
 
     .logo {
       display: block;
-      margin-left: 20px;     // 왼쪽 정렬
-      margin-right: auto; // 오른쪽 여백 자동
+      margin-left: 20px;
+      margin-right: auto;
       margin-top: 20px;
       height: 180px;
     }
 
     .logo--wordmark {
       display: block;
-      margin: 0;          // 상하좌우 마진 제거
-      width: auto;        // 너비는 원본 이미지 비율 유지
+      margin: 0;
+      width: auto;
       height: 100px;
     }
 
@@ -2023,5 +2023,165 @@ a.sparkline {
     .dot-indicator__indicator {
       background-color: $valid-value-color;
     }
+  }
+}
+
+.image-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-start;
+  margin-bottom: 10px;
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  &__caption {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+    color: $primary-text-color;
+  }
+
+  &__slot {
+    position: relative;
+    display: inline-block;
+  }
+
+  &__frame {
+    display: block;
+    position: relative;
+    box-sizing: border-box;
+    cursor: pointer;
+    overflow: hidden;
+    background: darken($ui-base-color, 4%);
+
+    &--avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: var(--avatar-border-radius, 8px);
+    }
+
+    &--header {
+      height: 80px;
+      aspect-ratio: 3 / 1;
+      border-radius: 8px;
+    }
+  }
+
+  &__input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    font-size: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  &__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &__overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba($black, 0.45);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+
+    .icon {
+      width: 20px;
+      height: 20px;
+      color: $white;
+    }
+  }
+
+  &__frame:hover &__overlay,
+  &__frame:focus-within &__overlay {
+    opacity: 1;
+  }
+
+  &__frame--empty &__overlay {
+    opacity: 1;
+    background: transparent;
+
+    .icon {
+      color: $darker-text-color;
+    }
+  }
+
+  &__frame:focus-within {
+    outline: 2px solid $ui-highlight-color;
+    outline-offset: 2px;
+  }
+
+  &__remove {
+    position: absolute;
+    top: -6px;
+    inset-inline-end: -6px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba($black, 0.65);
+    color: $white;
+    opacity: 0;
+    transition: opacity 0.15s ease, background-color 0.15s ease;
+
+    &:hover,
+    &:focus {
+      background: $error-red;
+      opacity: 1;
+    }
+
+    .icon {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  &__slot:hover &__remove,
+  &__slot:focus-within &__remove {
+    opacity: 1;
+  }
+
+  @media (hover: none) {
+    &__remove {
+      opacity: 1;
+    }
+  }
+}
+
+.image-picker__hint {
+  color: $darker-text-color;
+  font-size: 14px;
+  margin-bottom: 30px;
+}
+
+body .image-picker {
+  .icon {
+    background-image: none !important;
+    mask-image: none !important;
+    -webkit-mask-image: none !important;
+  }
+
+  .icon path {
+    display: block;
   }
 }

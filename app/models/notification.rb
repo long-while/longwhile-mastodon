@@ -113,6 +113,7 @@ class Notification < ApplicationRecord
   validates :type, inclusion: { in: TYPES }
 
   scope :without_suspended, -> { joins(:from_account).merge(Account.without_suspended) }
+  scope :without_unavailable, -> { joins(:from_account).merge(Account.without_unavailable) }
 
   def type
     @type ||= (super || LEGACY_TYPE_CLASS_MAP[activity_type]).to_sym
@@ -149,7 +150,7 @@ class Notification < ApplicationRecord
         scope.merge!(where(filtered: false)) unless include_filtered || from_account_id.present?
         scope.merge!(where(from_account_id: from_account_id)) if from_account_id.present?
         scope.merge!(where(type: requested_types)) unless requested_types.size == TYPES.size
-      end.without_direct_messages
+      end.without_direct_messages.without_unavailable
     end
 
     # @_longwhile custom feature
