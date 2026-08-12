@@ -21,7 +21,6 @@
     .fields-row__column.fields-group.fields-row__column-6
       .input.with_block_label
         %label= t('simple_form.labels.defaults.fields')
-        %span.hint= t('simple_form.hints.account.fields')
 
         = f.simple_fields_for :fields do |fields_f|
           .row
@@ -68,9 +67,6 @@
               wrapper: :with_label,
               label: t('simple_form.labels.defaults.private_account'),
               hint: t('simple_form.hints.defaults.private_account_html')
-
-  .fields-group
-    = f.input :bot, as: :boolean, wrapper: :with_label, hint: t('simple_form.hints.defaults.bot')
 
   .actions
     = f.button :button, t('generic.save_changes'), type: :submit

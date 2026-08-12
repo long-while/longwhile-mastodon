@@ -8,21 +8,9 @@
 = simple_form_for @account, url: settings_privacy_path do |f|
   = render 'shared/error_messages', object: @account
 
-  %h4= t('privacy.search')
-
-  .fields-group
-    = f.input :indexable, as: :boolean, wrapper: :with_label
-
-  = f.simple_fields_for :settings, current_user.settings do |ff|
-    .fields-group
-      = ff.input :indexable, wrapper: :with_label
-
   %h4= t('privacy.privacy')
 
   = f.simple_fields_for :settings, current_user.settings do |ff|
-    .fields-group
-      = ff.input :show_application, wrapper: :with_label
-
     .fields-group
       = ff.input :dm_read_receipts, wrapper: :with_label
 

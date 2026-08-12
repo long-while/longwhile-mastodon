@@ -12,13 +12,6 @@ namespace :settings do
     resource :notifications, only: [:show, :update]
   end
 
-  resources :imports, only: [:index, :show, :destroy, :create] do
-    member do
-      post :confirm
-      get :failures
-    end
-  end
-
   resource :export, only: [:show, :create]
 
   namespace :exports, constraints: { format: :csv } do
@@ -26,7 +19,6 @@ namespace :settings do
     resources :blocks, only: :index, controller: :blocked_accounts
     resources :mutes, only: :index, controller: :muted_accounts
     resources :lists, only: :index
-    resources :domain_blocks, only: :index, controller: :blocked_domains
     resources :bookmarks, only: :index
   end
 
@@ -58,15 +50,8 @@ namespace :settings do
   end
 
   resource :delete, only: [:show, :destroy]
-  resource :migration, only: [:show, :create]
-  resource :verification, only: [:show, :update]
   resource :privacy, only: [:show, :update], controller: 'privacy'
 
-  namespace :migration do
-    resource :redirect, only: [:new, :create, :destroy]
-  end
-
-  resources :aliases, only: [:index, :create, :destroy]
   resources :sessions, only: [:destroy]
   resources :featured_tags, only: [:index, :create, :destroy]
   resources :login_activities, only: [:index]

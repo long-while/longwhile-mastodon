@@ -14,15 +14,13 @@ RSpec.describe 'Settings preferences appearance page' do
       .to have_private_cache_control
 
     select 'contrast', from: theme_selection_field
-    check confirm_reblog_field
     uncheck confirm_delete_field
 
     expect { save_changes }
       .to change { user.reload.settings.theme }.to('contrast')
-      .and change { user.reload.settings['web.reblog_modal'] }.to(true)
       .and change { user.reload.settings['web.delete_modal'] }.to(false)
     expect(page)
-      .to have_title(I18n.t('settings.appearance'))
+      .to have_title(I18n.t('settings.preferences'))
   end
 
   def save_changes
@@ -31,10 +29,6 @@ RSpec.describe 'Settings preferences appearance page' do
 
   def confirm_delete_field
     form_label('defaults.setting_delete_modal')
-  end
-
-  def confirm_reblog_field
-    form_label('defaults.setting_boost_modal')
   end
 
   def theme_selection_field

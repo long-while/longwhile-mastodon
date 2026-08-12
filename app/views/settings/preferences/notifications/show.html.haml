@@ -9,8 +9,6 @@
 
   %h4= t 'notifications.email_events'
 
-  %p.hint= t 'notifications.email_events_hint'
-
   = f.simple_fields_for :settings, current_user.settings do |ff|
     .fields-group
       = ff.input :'notification_emails.follow', wrapper: :with_label, label: I18n.t('simple_form.labels.notification_emails.follow')
@@ -18,9 +16,6 @@
       = ff.input :'notification_emails.reblog', wrapper: :with_label, label: I18n.t('simple_form.labels.notification_emails.reblog')
       = ff.input :'notification_emails.favourite', wrapper: :with_label, label: I18n.t('simple_form.labels.notification_emails.favourite')
       = ff.input :'notification_emails.mention', wrapper: :with_label, label: I18n.t('simple_form.labels.notification_emails.mention')
-
-    .fields-group
-      = ff.input :always_send_emails, wrapper: :with_label, label: I18n.t('simple_form.labels.defaults.setting_always_send_emails'), hint: I18n.t('simple_form.hints.defaults.setting_always_send_emails')
 
     - if current_user.can?(:manage_reports, :manage_appeals, :manage_users, :manage_taxonomies) || (SoftwareUpdate.check_enabled? && current_user.can?(:view_devops))
       %h4= t 'notifications.administration_emails'

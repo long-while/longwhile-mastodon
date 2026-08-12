@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 
-import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
+import { defineMessages, useIntl } from 'react-intl';
 
 import classNames from 'classnames';
 
@@ -28,7 +28,6 @@ export const RelationshipsSeveranceEvent = ({ type, target, followingCount, foll
 
       <div className='notification-group__main'>
         <p>{intl.formatMessage(messages[type], { from: <strong>{domain}</strong>, target: <strong>{target}</strong>, followingCount, followersCount })}</p>
-        <a href='/severed_relationships' target='_blank' rel='noopener' className='link-button'><FormattedMessage id='notification.relationships_severance_event.learn_more' defaultMessage='Learn more' /></a>
       </div>
     </div>
   );
