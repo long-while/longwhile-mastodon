@@ -7,11 +7,31 @@ RSpec.describe ScheduledStatus do
 
   describe 'validations' do
     context 'when scheduled_at is less than minimum offset' do
-      subject { Fabricate.build(:scheduled_status, scheduled_at: 4.minutes.from_now, account: account) }
+      subject { Fabricate.build(:scheduled_status, scheduled_at: (described_class::MINIMUM_OFFSET - 1.second).from_now, account: account) }
 
       it 'is not valid', :aggregate_failures do
         expect(subject).to_not be_valid
         expect(subject.errors[:scheduled_at]).to include(I18n.t('scheduled_statuses.too_soon'))
+      end
+    end
+
+    context 'when scheduled_at is just past the minimum offset' do
+      subject { Fabricate.build(:scheduled_status, scheduled_at: (described_class::MINIMUM_OFFSET + 1.minute).from_now, account: account) }
+
+      it 'is valid' do
+        expect(subject).to be_valid
+      end
+    end
+
+    context 'when an existing record sits at the total limit' do
+      subject { Fabricate(:scheduled_status, account: account) }
+
+      before do
+        stub_const('ScheduledStatus::TOTAL_LIMIT', 1)
+      end
+
+      it 'can still be rescheduled' do
+        expect(subject.update(scheduled_at: 30.hours.from_now)).to be true
       end
     end
 

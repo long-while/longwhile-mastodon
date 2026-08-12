@@ -91,6 +91,7 @@ class Status extends ImmutablePureComponent {
     previousId: PropTypes.string,
     nextInReplyToId: PropTypes.string,
     rootId: PropTypes.string,
+    hideAuthor: PropTypes.bool,
     onClick: PropTypes.func,
     onReply: PropTypes.func,
     onFavourite: PropTypes.func,
@@ -140,6 +141,7 @@ class Status extends ImmutablePureComponent {
     'hidden',
     'unread',
     'pictureInPicture',
+    'hideAuthor',
   ];
 
   state = {
@@ -372,7 +374,7 @@ class Status extends ImmutablePureComponent {
   };
 
   render () {
-    const { intl, hidden, featured, unfocusable, unread, showThread, scrollKey, pictureInPicture, previousId, nextInReplyToId, rootId, skipPrepend, avatarSize = 46 } = this.props;
+    const { intl, hidden, featured, unfocusable, unread, showThread, scrollKey, pictureInPicture, previousId, nextInReplyToId, rootId, hideAuthor, skipPrepend, avatarSize = 46 } = this.props;
 
     let { status, account, ...other } = this.props;
 
@@ -538,12 +540,14 @@ class Status extends ImmutablePureComponent {
 
     const {statusContentProps, hashtagBar} = getHashtagBarForStatus(status);
 
+    const authorHidden = !!hideAuthor && !account;
+
     return (
       <HotKeys handlers={handlers} tabIndex={unfocusable ? null : -1}>
         <div className={classNames('status__wrapper', `status__wrapper-${status.get('visibility')}`, { 'status__wrapper-reply': !!status.get('in_reply_to_id'), unread, focusable: !this.props.muted })} tabIndex={this.props.muted || unfocusable ? null : 0} data-featured={featured ? 'true' : null} aria-label={textForScreenReader(intl, status, rebloggedByText)} ref={this.handleRef} data-nosnippet={status.getIn(['account', 'noindex'], true) || undefined}>
           {!skipPrepend && prepend}
 
-          <div className={classNames('status', `status-${status.get('visibility')}`, { 'status-reply': !!status.get('in_reply_to_id'), 'status--in-thread': !!rootId, 'status--first-in-thread': previousId && (!connectUp || connectToRoot), muted: this.props.muted })} data-id={status.get('id')}>
+          <div className={classNames('status', `status-${status.get('visibility')}`, { 'status-reply': !!status.get('in_reply_to_id'), 'status--in-thread': !!rootId, 'status--first-in-thread': previousId && (!connectUp || connectToRoot), 'status--author-hidden': authorHidden, muted: this.props.muted })} data-id={status.get('id')}>
             {(connectReply || connectUp || connectToRoot) && <div className={classNames('status__line', { 'status__line--full': connectReply, 'status__line--first': !status.get('in_reply_to_id') && !connectToRoot })} />}
 
             <div onClick={this.handleHeaderClick} onAuxClick={this.handleHeaderClick} className='status__info'>
@@ -552,13 +556,15 @@ class Status extends ImmutablePureComponent {
                 <RelativeTimestamp timestamp={status.get('created_at')} />{status.get('edited_at') && <abbr title={intl.formatMessage(messages.edited, { date: intl.formatDate(status.get('edited_at'), { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }) })}> *</abbr>}
               </Link>
 
-              <Link to={`/@${status.getIn(['account', 'acct'])}`} title={status.getIn(['account', 'acct'])} data-hover-card-account={status.getIn(['account', 'id'])} className='status__display-name'>
-                <div className='status__avatar'>
-                  {statusAvatar}
-                </div>
+              {!authorHidden && (
+                <Link to={`/@${status.getIn(['account', 'acct'])}`} title={status.getIn(['account', 'acct'])} data-hover-card-account={status.getIn(['account', 'id'])} className='status__display-name'>
+                  <div className='status__avatar'>
+                    {statusAvatar}
+                  </div>
 
-                <DisplayName account={status.get('account')} />
-              </Link>
+                  <DisplayName account={status.get('account')} />
+                </Link>
+              )}
             </div>
 
             {matchedFilters && <FilterWarning title={matchedFilters.join(', ')} expanded={this.state.showDespiteFilter} onClick={this.handleFilterToggle} />}

@@ -13,7 +13,7 @@
   :listened_queues_only: true
   :schedule:
     scheduled_statuses_scheduler:
-      every: '5m'
+      every: '1m'
       class: Scheduler::ScheduledStatusesScheduler
       queue: scheduler
     trends_refresh_scheduler:

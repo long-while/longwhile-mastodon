@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_06_19_120000) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_07_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -981,6 +981,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_06_19_120000) do
     t.bigint "account_id", null: false
     t.datetime "scheduled_at", precision: nil
     t.jsonb "params"
+    t.datetime "publishing_at"
+    t.datetime "failed_at"
+    t.string "last_error"
     t.index ["account_id"], name: "index_scheduled_statuses_on_account_id"
     t.index ["scheduled_at"], name: "index_scheduled_statuses_on_scheduled_at"
   end

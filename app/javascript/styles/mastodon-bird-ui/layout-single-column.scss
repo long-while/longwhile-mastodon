@@ -3989,6 +3989,16 @@ body .compose-form .compose-form__uploads {
   mask-image: url('./bird-theme-svg/messages-fill.svg');
 }
 
+/* Scheduled posts icon */
+.layout-single-column .column-link .icon-clock-o {
+  mask-image: url('./bird-theme-svg/calendar-clock.svg');
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  background-color: var(--color-column-link);
+  background-image: none;
+}
+
 /* Preferences icon */
 .layout-single-column .column-link .icon-cog {
   --size-icon: 20px;
@@ -4015,6 +4025,8 @@ body .compose-form .compose-form__uploads {
 .layout-single-column .column-link:not(.active):focus-visible .icon-bookmarks,
 .layout-single-column .column-link:not(.active):hover .icon-pending,
 .layout-single-column .column-link:not(.active):focus-visible .icon-pending,
+.layout-single-column .column-link:not(.active):hover .icon-clock-o,
+.layout-single-column .column-link:not(.active):focus-visible .icon-clock-o,
 .layout-single-column .column-link:not(.active):hover .icon-star,
 .layout-single-column .column-link:not(.active):focus-visible .icon-star,
 .layout-single-column .column-link:not(.active):hover .icon-cog,

@@ -23,6 +23,7 @@ import ListAltIcon from '@/material-icons/400-24px/list_alt.svg?react';
 import AdministrationIcon from '@/material-icons/400-24px/manufacturing.svg?react';
 import NotificationsActiveIcon from '@/material-icons/400-24px/notifications-fill.svg?react';
 import NotificationsIcon from '@/material-icons/400-24px/notifications.svg?react';
+import ScheduledStatusesIcon from '@/styles/bird-theme-svg/calendar-clock.svg?react';
 import PendingMentionsActiveIcon from '@/styles/bird-theme-svg/messages-fill.svg?react';
 import PendingMentionsIcon from '@/styles/bird-theme-svg/messages.svg?react';
 import PublicIcon from '@/material-icons/400-24px/public.svg?react';
@@ -57,6 +58,8 @@ const messages = defineMessages({
   pendingMentions: { id: 'navigation_bar.pending-mentions', defaultMessage: 'Awaiting reply' },
   favourites: { id: 'navigation_bar.favourites', defaultMessage: 'Favorites' },
   bookmarks: { id: 'navigation_bar.bookmarks', defaultMessage: 'Bookmarks' },
+  scheduledStatuses: { id: 'navigation_bar.scheduled_statuses', defaultMessage: 'Scheduled posts' },
+  scheduledStatusesFailed: { id: 'navigation_bar.scheduled_statuses_failed', defaultMessage: 'Scheduled posts (failed)' },
   lists: { id: 'navigation_bar.lists', defaultMessage: 'Lists' },
   preferences: { id: 'navigation_bar.preferences', defaultMessage: 'Preferences' },
   administration: { id: 'navigation_bar.administration', defaultMessage: 'Administration' },
@@ -144,6 +147,26 @@ const NotificationsLink = () => {
       to='/notifications'
       icon={<IconWithBadge id='bell' icon={NotificationsIcon} count={count} className='column-link__icon' />}
       activeIcon={<IconWithBadge id='bell' icon={NotificationsActiveIcon} count={count} className='column-link__icon' />}
+      text={label}
+    />
+  );
+};
+
+// Shows how many posts are waiting, so the queue is not something the user has
+// to remember to go and check. A failed publication raises the red issue dot —
+// without it, a post that never went out would be silently invisible.
+const ScheduledStatusesLink = () => {
+  const count = useSelector(state => state.getIn(['scheduled_statuses', 'usage', 'total'], 0));
+  const failed = useSelector(state => state.getIn(['scheduled_statuses', 'usage', 'failed'], 0));
+  const intl = useIntl();
+  const label = intl.formatMessage(failed > 0 ? messages.scheduledStatusesFailed : messages.scheduledStatuses);
+
+  return (
+    <ColumnLink
+      key='scheduled_statuses'
+      transparent
+      to='/scheduled_statuses'
+      icon={<IconWithBadge id='clock-o' icon={ScheduledStatusesIcon} count={count} issueBadge={failed > 0} className='column-link__icon' />}
       text={label}
     />
   );
@@ -260,6 +283,7 @@ class NavigationPanel extends Component {
         <ColumnLink transparent to='/bookmarks' icon='bookmarks' iconComponent={BookmarksIcon} activeIconComponent={BookmarksActiveIcon} text={bookmarksLabel} />
         <ColumnLink transparent to='/favourites' icon='star' iconComponent={StarIcon} activeIconComponent={StarActiveIcon} text={favouritesLabel} />
         <ColumnLink transparent to='/lists' icon='list-ul' iconComponent={ListAltIcon} activeIconComponent={ListAltActiveIcon} text={listsLabel} />
+        <ScheduledStatusesLink />
         <ColumnLink transparent href={settingsHref} icon='cog' iconComponent={SettingsIcon} text={preferencesLabel} />
         {includeAccountSwitcher && <AccountSwitcherMenuItem />}
       </>

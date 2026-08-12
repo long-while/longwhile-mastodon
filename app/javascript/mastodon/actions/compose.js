@@ -12,6 +12,7 @@ import { showAlert, showAlertForError } from './alerts';
 import { useEmoji } from './emojis';
 import { importFetchedAccounts, importFetchedStatus } from './importer';
 import { openModal } from './modal';
+import { fetchScheduledStatusesUsage, removeScheduledStatus, upsertScheduledStatus } from './scheduled_statuses';
 import { updateTimeline } from './timelines';
 
 /** @type {AbortController | undefined} */
@@ -81,12 +82,21 @@ export const COMPOSE_CHANGE_MEDIA_ORDER       = 'COMPOSE_CHANGE_MEDIA_ORDER';
 export const COMPOSE_SET_STATUS = 'COMPOSE_SET_STATUS';
 export const COMPOSE_FOCUS = 'COMPOSE_FOCUS';
 
+export const COMPOSE_SCHEDULE_SET   = 'COMPOSE_SCHEDULE_SET';
+export const COMPOSE_SCHEDULE_CLEAR = 'COMPOSE_SCHEDULE_CLEAR';
+export const COMPOSE_SET_SCHEDULED_STATUS = 'COMPOSE_SET_SCHEDULED_STATUS';
+export const COMPOSE_SCHEDULE_DETACH = 'COMPOSE_SCHEDULE_DETACH';
+
 const messages = defineMessages({
   uploadErrorLimit: { id: 'upload_error.limit', defaultMessage: 'File upload limit exceeded.' },
   uploadErrorPoll:  { id: 'upload_error.poll', defaultMessage: 'File upload not allowed with polls.' },
   open: { id: 'compose.published.open', defaultMessage: 'Open' },
   published: { id: 'compose.published.body', defaultMessage: 'Post published.' },
   saved: { id: 'compose.saved.body', defaultMessage: 'Post saved.' },
+  scheduled: { id: 'compose.scheduled.body', defaultMessage: 'Post scheduled.' },
+  scheduledUpdated: { id: 'compose.scheduled.updated', defaultMessage: 'Scheduled post updated.' },
+  viewScheduled: { id: 'compose.scheduled.view', defaultMessage: 'View' },
+  scheduledGone: { id: 'scheduled_statuses.gone', defaultMessage: 'That scheduled post was already published or removed.' },
 });
 
 export const ensureComposeIsVisible = (getState) => {
@@ -183,13 +193,49 @@ export function directCompose(account) {
   };
 }
 
+export function setComposeSchedule(scheduledAt) {
+  return {
+    type: COMPOSE_SCHEDULE_SET,
+    scheduledAt,
+  };
+}
+
+export function clearComposeSchedule() {
+  return {
+    type: COMPOSE_SCHEDULE_CLEAR,
+  };
+}
+
+/**
+ * Restores a scheduled status into the compose form so its body can be edited.
+ * Submitting afterwards issues a PUT instead of a POST.
+ */
+export function setComposeToScheduledStatus(scheduledStatus) {
+  return (dispatch, getState) => {
+    dispatch({
+      type: COMPOSE_SET_SCHEDULED_STATUS,
+      scheduledStatus,
+    });
+
+    ensureComposeIsVisible(getState);
+  };
+}
+
 export function submitCompose() {
   return function (dispatch, getState) {
     const status   = getState().getIn(['compose', 'text'], '');
     const media    = getState().getIn(['compose', 'media_attachments']);
     const statusId = getState().getIn(['compose', 'id'], null);
+    const scheduledAt = getState().getIn(['compose', 'scheduled_at'], null);
+    const scheduledStatusId = getState().getIn(['compose', 'scheduled_status_id'], null);
 
     if ((!status || !status.length) && media.size === 0) {
+      return;
+    }
+
+    // Editing an already-published post always goes through the status API.
+    if (statusId === null && (scheduledAt || scheduledStatusId)) {
+      dispatch(submitScheduledCompose());
       return;
     }
 
@@ -273,6 +319,78 @@ export function submitCompose() {
     }).catch(function (error) {
       dispatch(submitComposeFail(error));
     });
+  };
+}
+
+// Scheduling goes down a separate path: the response is a ScheduledStatus, not
+// a Status, so none of the timeline insertion below applies to it.
+function submitScheduledCompose() {
+  return function (dispatch, getState) {
+    const compose = getState().get('compose');
+    const media = compose.get('media_attachments');
+    const scheduledAt = compose.get('scheduled_at', null);
+    const scheduledStatusId = compose.get('scheduled_status_id', null);
+    const isUpdate = scheduledStatusId !== null;
+
+    const data = {
+      status: compose.get('text', ''),
+      in_reply_to_id: compose.get('in_reply_to', null),
+      media_ids: media.map(item => item.get('id')).toArray(),
+      sensitive: compose.get('sensitive'),
+      spoiler_text: compose.get('spoiler') ? compose.get('spoiler_text', '') : '',
+      visibility: compose.get('privacy'),
+      poll: compose.get('poll', null)?.toJS() ?? null,
+      language: compose.get('language'),
+    };
+
+    if (scheduledAt) {
+      data.scheduled_at = scheduledAt;
+    }
+
+    dispatch(submitComposeRequest());
+
+    api().request({
+      url: isUpdate ? `/api/v1/scheduled_statuses/${scheduledStatusId}` : '/api/v1/statuses',
+      method: isUpdate ? 'put' : 'post',
+      data,
+      headers: isUpdate ? {} : { 'Idempotency-Key': compose.get('idempotencyKey') },
+    }).then(response => {
+      if ((browserHistory.location.pathname === '/publish' || browserHistory.location.pathname === '/statuses/new') && window.history.state) {
+        browserHistory.goBack();
+      }
+
+      dispatch(upsertScheduledStatus(response.data));
+      dispatch(fetchScheduledStatusesUsage());
+      dispatch(submitComposeSuccess({ ...response.data }));
+
+      dispatch(showAlert({
+        message: isUpdate ? messages.scheduledUpdated : messages.scheduled,
+        action: messages.viewScheduled,
+        dismissAfter: 10000,
+        onClick: () => browserHistory.push('/scheduled_statuses'),
+      }));
+    }).catch(error => {
+      dispatch(submitComposeFail(error));
+
+      // The record published (or was removed elsewhere) while it was being
+      // edited. Keep what the user typed, detach it from the dead record, and
+      // let a second press create a fresh scheduled post.
+      if (isUpdate && error.response?.status === 404) {
+        dispatch(removeScheduledStatus(scheduledStatusId));
+        dispatch(detachScheduledStatus());
+        dispatch(showAlert({ message: messages.scheduledGone }));
+        return;
+      }
+
+      dispatch(showAlertForError(error));
+    });
+  };
+}
+
+/** Forgets which scheduled record the composer was editing, keeping the draft. */
+export function detachScheduledStatus() {
+  return {
+    type: COMPOSE_SCHEDULE_DETACH,
   };
 }
 

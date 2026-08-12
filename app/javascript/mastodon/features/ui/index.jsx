@@ -15,6 +15,7 @@ import { focusApp, unfocusApp, changeLayout } from 'mastodon/actions/app';
 import { synchronouslySubmitMarkers, submitMarkers, fetchMarkers } from 'mastodon/actions/markers';
 import { fetchNotifications } from 'mastodon/actions/notification_groups';
 import { INTRODUCTION_VERSION } from 'mastodon/actions/onboarding';
+import { fetchScheduledStatusesUsage } from 'mastodon/actions/scheduled_statuses';
 import { AlertsController } from 'mastodon/components/alerts_controller';
 import { HoverCardController } from 'mastodon/components/hover_card_controller';
 import { PictureInPicture } from 'mastodon/features/picture_in_picture';
@@ -57,6 +58,7 @@ import {
   FavouritedStatuses,
   BookmarkedStatuses,
   PendingMentions,
+  ScheduledStatuses,
   FollowedTags,
   LinkTimeline,
   ListTimeline,
@@ -228,6 +230,7 @@ class SwitchingColumnsArea extends PureComponent {
             <WrappedRoute path='/notifications/requests' component={NotificationRequests} content={children} exact />
             <WrappedRoute path='/notifications/requests/:id' component={NotificationRequest} content={children} exact />
             <WrappedRoute path='/pending-mentions' component={PendingMentions} content={children} />
+            <WrappedRoute path='/scheduled_statuses' component={ScheduledStatuses} content={children} />
             <WrappedRoute path='/favourites' component={FavouritedStatuses} content={children} />
 
             <WrappedRoute path='/bookmarks' component={BookmarkedStatuses} content={children} />
@@ -312,6 +315,12 @@ class UI extends PureComponent {
   handleWindowFocus = () => {
     this.props.dispatch(focusApp());
     this.props.dispatch(submitMarkers({ immediate: true }));
+
+    // Scheduled posts publish (or fail) while the tab sits in the background,
+    // so refresh the counters here rather than polling on a timer.
+    if (this.props.identity.signedIn) {
+      this.props.dispatch(fetchScheduledStatusesUsage());
+    }
   };
 
   handleWindowBlur = () => {
@@ -431,6 +440,7 @@ class UI extends PureComponent {
       this.props.dispatch(expandHomeTimeline());
       this.props.dispatch(fetchNotifications());
       this.props.dispatch(fetchServerTranslationLanguages());
+      this.props.dispatch(fetchScheduledStatusesUsage());
 
       setTimeout(() => this.props.dispatch(fetchServer()), 3000);
     }

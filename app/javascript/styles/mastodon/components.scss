@@ -1212,12 +1212,11 @@ body>[data-popper-placement] {
     font-size: 14px;
     line-height: 20px;
     letter-spacing: 0.25px;
-    display: -webkit-box;
-    -webkit-line-clamp: 4;
-    -webkit-box-orient: vertical;
+    display: block;
     padding: 0;
-    max-height: 4 * 20px;
-    overflow: hidden;
+    max-height: 20em;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     color: $darker-text-color;
   }
 
@@ -1554,6 +1553,28 @@ body>[data-popper-placement] {
 
   &--first-in-thread {
     border-top: 1px solid var(--background-border-color);
+  }
+
+  &--author-hidden {
+    .status__info {
+      justify-content: flex-end;
+    }
+
+    .status__relative-time {
+      height: auto;
+    }
+
+    .status__line {
+      height: 16px + 22px + 10px;
+
+      &--full {
+        height: 100%;
+
+        &::before {
+          display: none;
+        }
+      }
+    }
   }
 
   &__line {
@@ -4771,8 +4792,8 @@ a.status-card {
   cursor: pointer;
   font-size: 16px;
   padding: 0 15px;
-  background: transparent; // 이 줄 추가
-  background-color: transparent; // 이 줄도 추가
+  background: transparent;
+  background-color: transparent;
 
   &:last-child {
     border-start-end-radius: 4px;
@@ -11467,15 +11488,12 @@ noscript {
   }
 }
 
-// 팔로우/팔로워 목록에서 팔로워 수 대신 바이오 표시
 .scrollable .account {
 
-  // 팔로워 수 영역 숨기기
   .account__details {
     display: none;
   }
 
-  // 바이오를 같은 자리에 같은 스타일로 표시
   .account__bio {
     display: flex !important;
     flex-wrap: wrap;
@@ -12107,4 +12125,473 @@ div.compose-panel .account__bio {
 
 .navigation-panel__spacer {
   display: none;
+}
+
+
+/* Scheduled posts — composer clock button, schedule dialog, and queue list.
+   Colours go through the theme-aware custom properties rather than
+   lighten()/darken() of $ui-base-color: the light themes start from a near-white
+   base, where lighten() saturates to white and borders disappear. */
+
+.compose-form__schedule-button-icon.active {
+  color: $highlight-text-color;
+}
+
+/* The toolbar sizes every icon to 20px; this glyph is visually heavier than the
+   others at that size, so it is pulled back a little. */
+.compose-form__buttons .icon-button.compose-form__schedule-button-icon .icon {
+  width: 17px;
+  height: 17px;
+}
+
+.schedule-indicator {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 4px 4px 0 0;
+  background: var(--surface-background-color);
+  border-bottom: 1px solid var(--background-border-color);
+  flex: 0 0 auto;
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__note {
+    color: $darker-text-color;
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  &__summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1 1 auto;
+    min-width: 0;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    color: $secondary-text-color;
+    font-size: 14px;
+    line-height: 20px;
+    text-align: start;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      color: $primary-text-color;
+      text-decoration: underline;
+    }
+
+    .icon {
+      width: 18px;
+      height: 18px;
+      color: $highlight-text-color;
+      flex: 0 0 auto;
+    }
+
+    &__text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &__relative {
+      color: $darker-text-color;
+      font-size: 12px;
+      flex: 0 0 auto;
+    }
+  }
+
+  &__cancel {
+    display: flex;
+
+    .icon {
+      width: 18px;
+      height: 18px;
+    }
+  }
+}
+
+/* Backdrop mirrors the account switcher's manage dialog: the accent colour muted
+   into near-black, then made mostly transparent. Reached through :has() because
+   ModalRoot renders the overlay as a sibling of the modal, not a parent. */
+.modal-root:has(.schedule-modal) .modal-root__overlay {
+  opacity: 1;
+  background: color-mix(in srgb,
+      color-mix(in srgb,
+        var(--schedule-modal-accent, #{$ui-highlight-color}) 40%,
+        #1a1a1a 60%),
+      transparent 80%);
+}
+
+/* A deliberately light dialog in every theme, so the colours are stated outright
+   rather than taken from the theme variables. */
+.schedule-modal {
+  --schedule-modal-background: #fff;
+  --schedule-modal-accent: #{$ui-highlight-color};
+  --schedule-modal-text: #1a1a1a;
+  --schedule-modal-muted: rgba(26, 26, 26, 0.6);
+  --schedule-modal-border: rgba(26, 26, 26, 0.14);
+
+  width: min(420px, calc(100vw - 32px));
+  flex-direction: column;
+  background: var(--schedule-modal-background);
+  color: var(--schedule-modal-text);
+  border: 1px solid var(--schedule-modal-border);
+  border-radius: 28px;
+  box-shadow: none;
+  overflow: hidden;
+  max-height: min(82vh, 680px);
+
+  @media screen and (width <= $mobile-breakpoint) {
+    border-radius: 28px 28px 0 0;
+    border-bottom: 0;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 24px 12px;
+
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--schedule-modal-text);
+    }
+
+    &__close {
+      flex: 0 0 auto;
+      color: var(--schedule-modal-muted);
+
+      &:hover,
+      &:focus-visible {
+        color: var(--schedule-modal-text);
+      }
+    }
+  }
+
+  &__body {
+    padding: 4px 24px 22px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  &__summary {
+    color: var(--schedule-modal-muted);
+    font-size: 13px;
+    line-height: 18px;
+    min-height: 18px;
+  }
+
+  &__error {
+    color: $error-value-color;
+    font-size: 13px;
+    line-height: 18px;
+  }
+
+  &__row {
+    font-size: 16px;
+    line-height: 36px;
+    color: var(--schedule-modal-text);
+    word-spacing: 2px;
+  }
+
+  &__select,
+  &__number {
+    display: inline-block;
+    vertical-align: middle;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--schedule-modal-border);
+    background: var(--schedule-modal-background);
+    color: var(--schedule-modal-text);
+    font-size: 16px;
+    font-family: inherit;
+    line-height: 1.2;
+
+    &:focus-visible {
+      outline: none;
+      border-color: var(--schedule-modal-accent);
+    }
+  }
+
+  &__number {
+    width: 3.2em;
+    text-align: center;
+  }
+
+  &__weekday {
+    color: var(--schedule-modal-muted);
+    font-size: 15px;
+  }
+
+  &__time-zone {
+    color: var(--schedule-modal-muted);
+    font-size: 13px;
+  }
+
+  &__hint {
+    color: var(--schedule-modal-muted);
+    font-size: 12px;
+    line-height: 18px;
+
+    &--warning {
+      color: $passive-text-color;
+    }
+  }
+
+  /* Matches the account switcher's primary footer button. */
+  &__confirm {
+    width: 100%;
+    margin-top: 6px;
+    border: 0;
+    border-radius: 999px;
+    padding: 12px 18px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    background: var(--button-primary-bg, #2eb2ff);
+    color: #fff;
+
+    &:hover:not(:disabled),
+    &:focus-visible:not(:disabled) {
+      background: color-mix(in srgb,
+          var(--button-primary-bg, #2eb2ff) 93%,
+          #000 7%);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+  }
+
+  &__clear {
+    width: 100%;
+    border: 0;
+    background: none;
+    border-radius: 999px;
+    padding: 8px 18px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--schedule-modal-muted);
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--schedule-modal-text);
+    }
+  }
+
+  &__footer {
+    padding: 12px 24px 18px;
+    border-top: 1px solid var(--schedule-modal-border);
+
+    a {
+      color: var(--schedule-modal-accent);
+      font-size: 14px;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
+/* Sits inside the column header (see ColumnHeader appendContent) so the bulk
+   actions stay put while a long queue scrolls. */
+.scheduled-statuses__summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--background-border-color);
+  color: $darker-text-color;
+  font-size: 13px;
+
+  .spacer {
+    flex: 1 1 auto;
+  }
+
+  &__checkbox {
+    display: flex;
+    align-items: center;
+  }
+
+  &__failed {
+    color: $error-value-color;
+  }
+}
+
+.scheduled-statuses__day {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 16px 6px;
+  color: $darker-text-color;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--surface-background-color);
+
+  &__count {
+    font-weight: 400;
+    opacity: 0.8;
+  }
+}
+
+.scheduled-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--background-border-color);
+
+  &--failed {
+    border-inline-start: 3px solid $error-value-color;
+  }
+
+  &__checkbox {
+    padding-top: 2px;
+  }
+
+  &__body {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    color: $secondary-text-color;
+    font-size: 13px;
+
+    .icon {
+      width: 16px;
+      height: 16px;
+    }
+
+    &__relative {
+      color: $darker-text-color;
+    }
+
+    &__tag {
+      border: 1px solid var(--background-border-color);
+      border-radius: 4px;
+      padding: 0 4px;
+      font-size: 11px;
+      color: $darker-text-color;
+
+      &--active {
+        border-color: $highlight-text-color;
+        color: $highlight-text-color;
+      }
+
+      &--warning {
+        border-color: $passive-text-color;
+        color: $passive-text-color;
+        cursor: help;
+      }
+    }
+  }
+
+  &__spoiler {
+    color: $darker-text-color;
+    font-size: 13px;
+  }
+
+  &__preview {
+    color: $primary-text-color;
+    font-size: 15px;
+    line-height: 20px;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  &__media {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+
+    img {
+      width: 56px;
+      height: 56px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+
+    &__placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      border-radius: 4px;
+      border: 1px solid var(--background-border-color);
+      color: $darker-text-color;
+      font-size: 11px;
+    }
+  }
+
+  &__failure {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 4px;
+    background: rgba($error-value-color, 0.1);
+    color: $primary-text-color;
+    font-size: 13px;
+
+    .icon {
+      width: 18px;
+      height: 18px;
+      color: $error-value-color;
+      flex: 0 0 auto;
+    }
+
+    &__body {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    &__reason {
+      color: $darker-text-color;
+      overflow-wrap: break-word;
+    }
+
+    &__actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 2px;
+    }
+  }
+
+  &__actions {
+    flex: 0 0 auto;
+  }
 }

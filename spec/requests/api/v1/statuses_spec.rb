@@ -232,8 +232,8 @@ RSpec.describe '/api/v1/statuses' do
           expect { subject }.to change { account.scheduled_statuses.count }.from(0).to(1)
         end
 
-        context 'when the scheduling time is less than 5 minutes' do
-          let(:params) { { status: 'Hello world', scheduled_at: 4.minutes.from_now } }
+        context 'when the scheduling time is below the minimum offset' do
+          let(:params) { { status: 'Hello world', scheduled_at: (ScheduledStatus::MINIMUM_OFFSET - 1.second).from_now } }
 
           it 'does not create a scheduled status', :aggregate_failures do
             subject

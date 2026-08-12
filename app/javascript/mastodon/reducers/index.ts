@@ -33,6 +33,7 @@ import { pictureInPictureReducer } from './picture_in_picture';
 import { pollsReducer } from './polls';
 import push_notifications from './push_notifications';
 import { relationshipsReducer } from './relationships';
+import { scheduledStatusesReducer } from './scheduled_statuses';
 import { searchReducer } from './search';
 import server from './server';
 import settings from './settings';
@@ -82,6 +83,7 @@ const reducers = {
   notificationRequests: notificationRequestsReducer,
   multiAccount: multiAccountReducer,
   navigation: navigationReducer,
+  scheduled_statuses: scheduledStatusesReducer,
 };
 
 // We want the root state to be an ImmutableRecord, which is an object with a defined list of keys,

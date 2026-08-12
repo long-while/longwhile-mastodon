@@ -63,7 +63,7 @@ RSpec.describe PostStatusService do
     end
 
     context 'when scheduled_at is less than min offset' do
-      let(:invalid_scheduled_time) { 4.minutes.from_now }
+      let(:invalid_scheduled_time) { (ScheduledStatus::MINIMUM_OFFSET - 1.second).from_now }
 
       it 'raises invalid record error' do
         expect do
