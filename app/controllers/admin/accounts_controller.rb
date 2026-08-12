@@ -135,7 +135,7 @@ module Admin
       redirect_to admin_account_path(@account.id), notice: I18n.t('admin.accounts.unblocked_email_msg', username: @account.acct)
     end
 
-    # ─── @_longwhile custom feature / 한참(longwhile) 제작 기능 — 관리자 프로텍트(잠금) 계정 토글 ───
+    # ─── @_longwhile custom feature
     # 사용·재사용 시 서버 내 출처 표기 필수 / Credit required to use or reuse:
     #   Twitter/X @_longwhile · Crepe https://kre.pe/QTRx
     def toggle_protect
@@ -144,7 +144,6 @@ module Admin
       enabling = !@account.locked?
 
       @account.update!(locked: enabling, hide_collections: enabling)
-      @account.user&.update!(settings_attributes: { default_privacy: enabling ? 'private' : 'unlisted' })
 
       reject_pending_follow_requests! unless enabling
 
@@ -152,7 +151,7 @@ module Admin
       ActivityPub::UpdateDistributionWorker.perform_in(ActivityPub::UpdateDistributionWorker::DEBOUNCE_DELAY, @account.id)
 
       redirect_to admin_account_path(@account.id),
-                  notice: enabling ? '프로텍트 계정으로 설정되었습니다.' : '프로텍트 계정 설정이 해제되었습니다.'
+                  notice: enabling ? '팔로우 승인제로 설정되었습니다.' : '팔로우 승인제가 해제되었습니다.'
     end
 
     private

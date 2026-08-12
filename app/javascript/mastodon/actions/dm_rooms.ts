@@ -1,5 +1,7 @@
 // @_longwhile custom feature
 
+import { createAction } from '@reduxjs/toolkit';
+
 import {
   apiCreateDmRoom,
   apiSendDmMessage,
@@ -8,17 +10,44 @@ import {
   apiGetDmRoomStatuses,
   apiLeaveDmRoom,
   apiMarkDmRoomRead,
+  apiSetDmRoomTitle,
 } from 'mastodon/api/dm_rooms';
-import { createDataLoadingThunk } from 'mastodon/store/typed_functions';
+import {
+  selectDmRoomMessages,
+  selectDmRooms,
+} from 'mastodon/features/messages/selectors';
+import {
+  createDataLoadingThunk,
+  createThunk,
+} from 'mastodon/store/typed_functions';
 
 import { importFetchedAccounts, importFetchedStatuses } from './importer';
 
 const nextLinkOf = (links: { refs: { rel: string; uri: string }[] }) =>
   links.refs.find((link) => link.rel === 'next')?.uri;
 
+export const setActiveDmRoom = createAction<{ roomId?: string }>(
+  'dm_rooms/set_active',
+);
+
+export const setDmStreamConnected = createAction<{ connected: boolean }>(
+  'dm_rooms/set_stream_connected',
+);
+
+export const updateDmReadState = createAction<{
+  roomId: string;
+  accountId: string;
+  lastReadStatusId: string;
+}>('dm_rooms/update_read_state');
+
+export const discardDmMessage = createAction<{
+  roomId: string;
+  localId: string;
+}>('dm_messages/discard');
+
 export const fetchDmRooms = createDataLoadingThunk(
   'dm_rooms/fetch',
-  async ({ url }: { url?: string } = {}) => {
+  async ({ url }: { url?: string; refresh?: boolean } = {}) => {
     const { rooms, links } = await apiGetDmRooms(url);
 
     return { rooms, next: nextLinkOf(links) };
@@ -28,6 +57,7 @@ export const fetchDmRooms = createDataLoadingThunk(
 
     return { rooms, next };
   },
+  { useLoadingBar: false },
 );
 
 export const fetchDmRoom = createDataLoadingThunk(
@@ -59,6 +89,12 @@ export const leaveDmRoom = createDataLoadingThunk(
   },
 );
 
+export const setDmRoomTitle = createDataLoadingThunk(
+  'dm_rooms/set_title',
+  ({ roomId, title }: { roomId: string; title: string }) =>
+    apiSetDmRoomTitle(roomId, title),
+);
+
 export const markDmRoomRead = createDataLoadingThunk(
   'dm_rooms/read',
   ({ roomId, statusId }: { roomId: string; statusId?: string }) =>
@@ -74,6 +110,7 @@ export const sendDmMessage = createDataLoadingThunk(
     recipientAccts,
     recipientIds,
     mediaIds,
+    idempotencyKey,
   }: {
     roomId: string;
     text: string;
@@ -81,6 +118,10 @@ export const sendDmMessage = createDataLoadingThunk(
     recipientAccts: string[];
     recipientIds: string[];
     mediaIds?: string[];
+
+    localId: string;
+    idempotencyKey: string;
+    createdAt: string;
   }) =>
     apiSendDmMessage({
       text,
@@ -88,6 +129,7 @@ export const sendDmMessage = createDataLoadingThunk(
       recipientAccts,
       recipientIds,
       mediaIds,
+      idempotencyKey,
     }),
   (status, { dispatch, actionArg }) => {
     dispatch(importFetchedStatuses([status]));
@@ -120,4 +162,32 @@ export const fetchDmRoomStatuses = createDataLoadingThunk(
     };
   },
   { useLoadingBar: false },
+);
+
+const STREAM_REFRESH_DELAY = 400;
+
+let streamRefreshTimer: ReturnType<typeof setTimeout> | undefined;
+
+export const dmChatStreamUpdate = createThunk(
+  'dm_rooms/stream_update',
+  (_arg, { dispatch, getState }) => {
+    if (streamRefreshTimer) clearTimeout(streamRefreshTimer);
+
+    streamRefreshTimer = setTimeout(() => {
+      streamRefreshTimer = undefined;
+
+      void dispatch(fetchDmRooms({ refresh: true }));
+
+      const state: unknown = getState();
+      const roomId = selectDmRooms(state).activeRoomId;
+
+      if (!roomId) return;
+
+      const ids = selectDmRoomMessages(state, roomId)?.statusIds ?? [];
+
+      void dispatch(
+        fetchDmRoomStatuses({ roomId, sinceId: ids[ids.length - 1] }),
+      );
+    }, STREAM_REFRESH_DELAY);
+  },
 );

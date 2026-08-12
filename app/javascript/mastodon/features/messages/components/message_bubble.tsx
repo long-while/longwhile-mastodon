@@ -9,7 +9,6 @@ import classNames from 'classnames';
 import type { List as ImmutableList, Map as ImmutableMap } from 'immutable';
 
 import { openModal } from 'mastodon/actions/modal';
-import { Avatar } from 'mastodon/components/avatar';
 import { ContentWarning } from 'mastodon/components/content_warning';
 import MediaGalleryRaw from 'mastodon/components/media_gallery';
 import StatusContentRaw from 'mastodon/components/status_content';
@@ -20,7 +19,6 @@ import { stripLeadingMentions } from 'mastodon/utils/strip_leading_mentions';
 import { selectMessageAccount } from '../selectors';
 
 import { MessageMenu } from './message_menu';
-import { MessageQuote } from './message_quote';
 
 const StatusContent = StatusContentRaw as unknown as React.ComponentType<{
   status: Status;
@@ -39,6 +37,9 @@ const messages = defineMessages({
     id: 'messages.audio_attachment',
     defaultMessage: 'Audio attachment',
   },
+  read: { id: 'messages.read', defaultMessage: 'Read' },
+
+  readBy: { id: 'messages.read_by', defaultMessage: 'Read {count}' },
 });
 
 interface Props {
@@ -47,31 +48,36 @@ interface Props {
   memberUrls: Set<string>;
 
   isMine: boolean;
+
+  isRead?: boolean;
+
+  readByCount?: number;
+
   isFirstInGroup: boolean;
+
   isLastInGroup: boolean;
+
+  isSenderChanged: boolean;
+
   showTimestamp: boolean;
 
   showSenderName: boolean;
 
-  quotedId?: string;
-  quoted?: Status;
-
-  onReply: (statusId: string) => void;
-  onNavigateToQuoted?: (statusId: string) => void;
+  readOnly?: boolean;
 }
 
 export const MessageBubble: React.FC<Props> = ({
   status,
   memberUrls,
   isMine,
+  isRead = false,
+  readByCount = 0,
   isFirstInGroup,
   isLastInGroup,
+  isSenderChanged,
   showTimestamp,
   showSenderName,
-  quotedId,
-  quoted,
-  onReply,
-  onNavigateToQuoted,
+  readOnly = false,
 }) => {
   const intl = useIntl();
   const dispatch = useAppDispatch();
@@ -131,6 +137,18 @@ export const MessageBubble: React.FC<Props> = ({
   const hasText = Boolean(contentHtml && contentHtml.trim() !== '');
   const showBody = !hasWarning || expanded;
 
+  const createdAt = status.get('created_at') as string;
+  const fullTime = intl.formatDate(createdAt, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+
+  const showRead = isMine && !readOnly && isRead;
+
   return (
     <div
       id={`dm-message-${status.get('id') as string}`}
@@ -139,6 +157,7 @@ export const MessageBubble: React.FC<Props> = ({
         'dm-message--theirs': !isMine,
         'dm-message--first': isFirstInGroup,
         'dm-message--last': isLastInGroup,
+        'dm-message--sender-changed': isSenderChanged,
       })}
     >
       <span className='dm-message__sr-label'>
@@ -156,26 +175,11 @@ export const MessageBubble: React.FC<Props> = ({
         )}
       </span>
 
-      {!isMine && (
-        <div className='dm-message__avatar'>
-          {isLastInGroup && account && <Avatar account={account} size={32} />}
-        </div>
-      )}
-
-      <div className='dm-message__body'>
-        {showSenderName && isFirstInGroup && !isMine && account && (
+      <div className='dm-message__body' title={fullTime}>
+        {showSenderName && isFirstInGroup && (readOnly || !isMine) && account && (
           <span className='dm-message__sender'>
             {account.display_name || account.username}
           </span>
-        )}
-
-        {quotedId && (
-          <MessageQuote
-            quotedId={quotedId}
-            quoted={quoted}
-            memberUrls={memberUrls}
-            onNavigate={onNavigateToQuoted}
-          />
         )}
 
         {hasWarning && (
@@ -188,7 +192,9 @@ export const MessageBubble: React.FC<Props> = ({
 
         {showBody && hasText && (
           <div className='dm-message__bubble'>
-            <StatusContent status={status} statusContent={contentHtml} />
+            <div className='dm-message__bubble__text'>
+              <StatusContent status={status} statusContent={contentHtml} />
+            </div>
           </div>
         )}
 
@@ -221,28 +227,40 @@ export const MessageBubble: React.FC<Props> = ({
           </div>
         )}
 
-        {showTimestamp && (
-          <time
-            className='dm-message__time'
-            dateTime={status.get('created_at') as string}
-          >
-            <FormattedTime
-              value={status.get('created_at') as string}
-              hour='numeric'
-              minute='2-digit'
-            />
-          </time>
-        )}
       </div>
 
-      <MessageMenu
-        statusId={statusId}
-        accountId={accountId}
-        accountAcct={account?.acct}
-        isMine={isMine}
-        contentHtml={showBody ? contentHtml : undefined}
-        onReply={onReply}
-      />
+      <div className='dm-message__aside'>
+      {(showTimestamp || showRead) && (
+        <div className='dm-message__meta'>
+          {showRead && (
+            <span className='dm-message__read'>
+              {readByCount > 1
+                ? intl.formatMessage(messages.readBy, { count: readByCount })
+                : intl.formatMessage(messages.read)}
+            </span>
+          )}
+
+          {showTimestamp && (
+            <time className='dm-message__time' dateTime={createdAt} title={fullTime}>
+              <FormattedTime
+                value={createdAt}
+                hour='2-digit'
+                minute='2-digit'
+                hour12={false}
+              />
+            </time>
+          )}
+        </div>
+      )}
+
+        {!readOnly && (
+          <MessageMenu
+            statusId={statusId}
+            isMine={isMine}
+            contentHtml={contentHtml}
+          />
+        )}
+      </div>
     </div>
   );
 };

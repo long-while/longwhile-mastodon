@@ -13,40 +13,27 @@ import { unescapeHTML } from 'mastodon/utils/html';
 
 const messages = defineMessages({
   more: { id: 'status.more', defaultMessage: 'More' },
-  reply: { id: 'status.reply', defaultMessage: 'Reply' },
   copy: { id: 'messages.menu.copy', defaultMessage: 'Copy text' },
-  open: { id: 'messages.menu.open', defaultMessage: 'View original post' },
-  delete: { id: 'status.delete', defaultMessage: 'Delete' },
-  report: { id: 'status.report', defaultMessage: 'Report @{name}' },
+  deleteForEveryone: {
+    id: 'messages.menu.delete_for_everyone',
+    defaultMessage: 'Delete for everyone',
+  },
 });
 
 interface Props {
   statusId: string;
-
-  accountId?: string;
-  accountAcct?: string;
-
   isMine: boolean;
 
   contentHtml?: string;
-
-  onReply: (statusId: string) => void;
 }
 
 export const MessageMenu: React.FC<Props> = ({
   statusId,
-  accountId,
-  accountAcct,
   isMine,
   contentHtml,
-  onReply,
 }) => {
   const intl = useIntl();
   const dispatch = useAppDispatch();
-
-  const handleReply = useCallback(() => {
-    onReply(statusId);
-  }, [onReply, statusId]);
 
   const handleCopy = useCallback(() => {
     const text = contentHtml ? unescapeHTML(contentHtml) : '';
@@ -56,7 +43,7 @@ export const MessageMenu: React.FC<Props> = ({
     void navigator.clipboard.writeText(text).catch(() => undefined);
   }, [contentHtml]);
 
-  const handleDelete = useCallback(() => {
+  const handleDeleteForEveryone = useCallback(() => {
     dispatch(
       openModal({
         modalType: 'CONFIRM_DELETE_STATUS',
@@ -65,62 +52,26 @@ export const MessageMenu: React.FC<Props> = ({
     );
   }, [dispatch, statusId]);
 
-  const handleReport = useCallback(() => {
-    if (!accountId) return;
-
-    dispatch(
-      openModal({
-        modalType: 'REPORT',
-        modalProps: { accountId, statusId },
-      }),
-    );
-  }, [accountId, dispatch, statusId]);
-
   const items = useMemo(() => {
-    const menu: MenuItem[] = [
-      { text: intl.formatMessage(messages.reply), action: handleReply },
-    ];
-
-    if (contentHtml) {
-      menu.push({ text: intl.formatMessage(messages.copy), action: handleCopy });
-    }
-
-    if (accountAcct) {
-      menu.push({
-        text: intl.formatMessage(messages.open),
-        to: `/@${accountAcct}/${statusId}`,
-      });
-    }
-
-    menu.push(null);
+    const menu: MenuItem[] = [];
 
     if (isMine) {
       menu.push({
-        text: intl.formatMessage(messages.delete),
-        action: handleDelete,
+        text: intl.formatMessage(messages.deleteForEveryone),
+        action: handleDeleteForEveryone,
         dangerous: true,
       });
-    } else if (accountId) {
+    } else if (contentHtml?.trim()) {
       menu.push({
-        text: intl.formatMessage(messages.report, { name: accountAcct ?? '' }),
-        action: handleReport,
-        dangerous: true,
+        text: intl.formatMessage(messages.copy),
+        action: handleCopy,
       });
     }
 
     return menu;
-  }, [
-    accountAcct,
-    accountId,
-    contentHtml,
-    handleCopy,
-    handleDelete,
-    handleReply,
-    handleReport,
-    intl,
-    isMine,
-    statusId,
-  ]);
+  }, [contentHtml, handleCopy, handleDeleteForEveryone, intl, isMine]);
+
+  if (items.length === 0) return null;
 
   return (
     <div className='dm-message__menu'>

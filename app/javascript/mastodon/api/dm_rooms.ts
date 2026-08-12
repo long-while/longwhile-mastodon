@@ -1,6 +1,7 @@
 // @_longwhile custom feature
 
 import api, {
+  apiRequest,
   apiRequestGet,
   apiRequestPost,
   apiRequestDelete,
@@ -30,28 +31,43 @@ export const apiCreateDmRoom = (accountIds: string[]) =>
 export const apiLeaveDmRoom = (roomId: string) =>
   apiRequestDelete(`v1/dm_rooms/${roomId}`);
 
+export const apiSetDmRoomTitle = (roomId: string, title: string) =>
+  apiRequest<ApiDmRoomJSON>('PATCH', `v1/dm_rooms/${roomId}/title`, {
+    data: { title },
+  });
+
 export const apiMarkDmRoomRead = (roomId: string, statusId?: string) =>
   apiRequestPost<ApiDmRoomJSON>(
     `v1/dm_rooms/${roomId}/read`,
     statusId ? { status_id: statusId } : {},
   );
 
-export const apiSendDmMessage = (params: {
+export const apiSendDmMessage = async (params: {
   text: string;
   inReplyToId?: string;
   recipientAccts: string[];
   recipientIds: string[];
   mediaIds?: string[];
+  idempotencyKey?: string;
 }) => {
   const mentions = params.recipientAccts.map((acct) => `@${acct}`).join(' ');
 
-  return apiRequestPost<ApiStatusJSON>('v1/statuses', {
-    status: [mentions, params.text].filter(Boolean).join(' '),
-    visibility: 'direct',
-    in_reply_to_id: params.inReplyToId,
-    allowed_mentions: params.recipientIds,
-    media_ids: params.mediaIds?.length ? params.mediaIds : undefined,
+  const response = await api().request<ApiStatusJSON>({
+    method: 'POST',
+    url: '/api/v1/statuses',
+    headers: params.idempotencyKey
+      ? { 'Idempotency-Key': params.idempotencyKey }
+      : undefined,
+    data: {
+      status: [mentions, params.text].filter(Boolean).join(' '),
+      visibility: 'direct',
+      in_reply_to_id: params.inReplyToId,
+      allowed_mentions: params.recipientIds,
+      media_ids: params.mediaIds?.length ? params.mediaIds : undefined,
+    },
   });
+
+  return response.data;
 };
 
 export const apiGetDmRoomStatuses = async (

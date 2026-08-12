@@ -4,9 +4,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
 
+import classNames from 'classnames';
+
 import { isCancel } from 'axios';
 import { useDebouncedCallback } from 'use-debounce';
 
+import CheckIcon from '@/material-icons/400-24px/check.svg?react';
 import CloseIcon from '@/material-icons/400-24px/close.svg?react';
 import { createDmRoom } from 'mastodon/actions/dm_rooms';
 import { importFetchedAccounts } from 'mastodon/actions/importer';
@@ -14,7 +17,7 @@ import { apiRequest } from 'mastodon/api';
 import type { ApiAccountJSON } from 'mastodon/api_types/accounts';
 import type { ApiDmRoomJSON } from 'mastodon/api_types/dm_rooms';
 import { Avatar } from 'mastodon/components/avatar';
-import { DisplayName } from 'mastodon/components/display_name';
+import { Icon } from 'mastodon/components/icon';
 import { IconButton } from 'mastodon/components/icon_button';
 import { LoadingIndicator } from 'mastodon/components/loading_indicator';
 import { me } from 'mastodon/initial_state';
@@ -28,15 +31,20 @@ const messages = defineMessages({
     id: 'messages.new.search',
     defaultMessage: 'Search for someone',
   },
+  remove: {
+    id: 'messages.new.remove',
+    defaultMessage: 'Remove {name}',
+  },
 });
 
-const SEARCH_LIMIT = 10;
+const SEARCH_LIMIT = 12;
 
 const RecipientRow: React.FC<{
   accountId: string;
   disabled: boolean;
+  selected: boolean;
   onSelect: (accountId: string) => void;
-}> = ({ accountId, disabled, onSelect }) => {
+}> = ({ accountId, disabled, selected, onSelect }) => {
   const account = useAppSelector((state) =>
     selectMessageAccount(state, accountId),
   );
@@ -50,15 +58,64 @@ const RecipientRow: React.FC<{
   return (
     <button
       type='button'
-      className='dm-recipient__row'
+      className={classNames('dm-recipient__cell', {
+        'dm-recipient__cell--selected': selected,
+      })}
+      aria-pressed={selected}
       disabled={disabled}
       onClick={handleClick}
     >
-      <Avatar account={account} size={36} />
+      <span className='dm-recipient__cell__figure'>
+        <Avatar account={account} size={56} />
 
-      <div className='dm-recipient__row__name'>
-        <DisplayName account={account} />
-      </div>
+        {selected && (
+          <span className='dm-recipient__cell__check' aria-hidden='true'>
+            <Icon id='check' icon={CheckIcon} />
+          </span>
+        )}
+      </span>
+
+      <span className='dm-recipient__cell__name'>
+        {account.display_name.length > 0
+          ? account.display_name
+          : account.username}
+      </span>
+
+      <span className='dm-recipient__cell__handle'>@{account.acct}</span>
+    </button>
+  );
+};
+
+const RecipientChip: React.FC<{
+  accountId: string;
+  disabled: boolean;
+  onRemove: (accountId: string) => void;
+}> = ({ accountId, disabled, onRemove }) => {
+  const intl = useIntl();
+  const account = useAppSelector((state) =>
+    selectMessageAccount(state, accountId),
+  );
+
+  const handleClick = useCallback(() => {
+    onRemove(accountId);
+  }, [accountId, onRemove]);
+
+  if (!account) return null;
+
+  const name =
+    account.display_name.length > 0 ? account.display_name : account.username;
+
+  return (
+    <button
+      type='button'
+      className='dm-recipient__chip'
+      disabled={disabled}
+      aria-label={intl.formatMessage(messages.remove, { name })}
+      onClick={handleClick}
+    >
+      <Avatar account={account} size={20} />
+      <span className='dm-recipient__chip__name'>{name}</span>
+      <Icon id='times' icon={CloseIcon} />
     </button>
   );
 };
@@ -75,7 +132,11 @@ const DmRecipientModal: React.FC<{
   const [isSearching, setIsSearching] = useState(false);
   const [searched, setSearched] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const [pendingId, setPendingId] = useState<string | null>(null);
+
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isCreating, setIsCreating] = useState(false);
+
+  const [multiSelect, setMultiSelect] = useState(false);
 
   const requestRef = useRef<AbortController | null>(null);
   const searchInput = useRef<HTMLInputElement>(null);
@@ -150,14 +211,14 @@ const DmRecipientModal: React.FC<{
     [runSearch],
   );
 
-  const handleSelect = useCallback(
-    (accountId: string) => {
-      if (pendingId) return;
+  const createRoom = useCallback(
+    (ids: string[]) => {
+      if (isCreating || ids.length === 0) return;
 
-      setPendingId(accountId);
+      setIsCreating(true);
 
       const pending = dispatch(
-        createDmRoom({ accountIds: [accountId] }),
+        createDmRoom({ accountIds: ids }),
       ) as unknown as Promise<{
         meta: { requestStatus: string };
         payload?: ApiDmRoomJSON;
@@ -170,14 +231,47 @@ const DmRecipientModal: React.FC<{
           onCreated(result.payload.id);
           onClose();
         } else {
-          setPendingId(null);
+          setIsCreating(false);
         }
 
         return result;
       });
     },
-    [dispatch, onClose, onCreated, pendingId],
+    [dispatch, isCreating, onClose, onCreated],
   );
+
+  const handleSelect = useCallback(
+    (accountId: string) => {
+      if (isCreating) return;
+
+      if (!multiSelect) {
+        createRoom([accountId]);
+        return;
+      }
+
+      setSelectedIds((current) =>
+        current.includes(accountId)
+          ? current.filter((id) => id !== accountId)
+          : [...current, accountId],
+      );
+    },
+    [createRoom, isCreating, multiSelect],
+  );
+
+  const handleToggleMulti = useCallback(() => {
+    setMultiSelect((current) => {
+      if (current) setSelectedIds([]);
+      return !current;
+    });
+  }, []);
+
+  const handleDeselect = useCallback((accountId: string) => {
+    setSelectedIds((current) => current.filter((id) => id !== accountId));
+  }, []);
+
+  const handleStart = useCallback(() => {
+    createRoom(selectedIds);
+  }, [createRoom, selectedIds]);
 
   const handleSearchKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -186,14 +280,20 @@ const DmRecipientModal: React.FC<{
 
       if (event.key !== 'Enter') return;
 
+      event.preventDefault();
+
+      if (multiSelect && selectedIds.length > 0) {
+        handleStart();
+        return;
+      }
+
       const first = accountIds[0];
 
       if (!first) return;
 
-      event.preventDefault();
       handleSelect(first);
     },
-    [accountIds, handleSelect],
+    [accountIds, handleSelect, handleStart, multiSelect, selectedIds.length],
   );
 
   const isEmpty =
@@ -228,8 +328,38 @@ const DmRecipientModal: React.FC<{
           />
         </div>
 
+        <div className='dm-recipient__mode'>
+          <button
+            type='button'
+            className={classNames('dm-recipient__mode__toggle', {
+              'dm-recipient__mode__toggle--on': multiSelect,
+            })}
+            aria-pressed={multiSelect}
+            disabled={isCreating}
+            onClick={handleToggleMulti}
+          >
+            <FormattedMessage
+              id='messages.new.multi_select'
+              defaultMessage='Message several people'
+            />
+          </button>
+        </div>
+
+        {selectedIds.length > 0 && (
+          <div className='dm-recipient__chips'>
+            {selectedIds.map((accountId) => (
+              <RecipientChip
+                key={accountId}
+                accountId={accountId}
+                disabled={isCreating}
+                onRemove={handleDeselect}
+              />
+            ))}
+          </div>
+        )}
+
         <div className='dm-recipient__results' role='status'>
-          {(isSearching || pendingId !== null) && accountIds.length === 0 && (
+          {(isSearching || isCreating) && accountIds.length === 0 && (
             <LoadingIndicator />
           )}
 
@@ -251,15 +381,37 @@ const DmRecipientModal: React.FC<{
             </p>
           )}
 
-          {accountIds.map((accountId) => (
-            <RecipientRow
-              key={accountId}
-              accountId={accountId}
-              disabled={pendingId !== null}
-              onSelect={handleSelect}
-            />
-          ))}
+          {accountIds.length > 0 && (
+            <div className='dm-recipient__grid'>
+              {accountIds.map((accountId) => (
+                <RecipientRow
+                  key={accountId}
+                  accountId={accountId}
+                  disabled={isCreating}
+                  selected={selectedIds.includes(accountId)}
+                  onSelect={handleSelect}
+                />
+              ))}
+            </div>
+          )}
         </div>
+
+        {selectedIds.length > 0 && (
+          <div className='dm-recipient__actions'>
+            <button
+              type='button'
+              className='button dm-recipient__start'
+              disabled={isCreating}
+              onClick={handleStart}
+            >
+              <FormattedMessage
+                id='messages.new.start'
+                defaultMessage='Start conversation ({count})'
+                values={{ count: selectedIds.length }}
+              />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

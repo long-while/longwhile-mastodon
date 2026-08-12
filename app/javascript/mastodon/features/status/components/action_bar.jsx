@@ -288,7 +288,7 @@ class ActionBar extends PureComponent {
       replyIconComponent = ReplyAllIcon;
     }
 
-    const reblogPrivate = status.getIn(['account', 'id']) === me && status.get('visibility') === 'private';
+    const reblogPrivate = status.get('visibility') === 'private';
 
     let reblogTitle, reblogIconComponent;
 

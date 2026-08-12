@@ -36,7 +36,6 @@ import { RelativeTimestamp } from './relative_timestamp';
 import StatusActionBar from './status_action_bar';
 import StatusContent from './status_content';
 import { StatusThreadLabel } from './status_thread_label';
-import { VisibilityIcon } from './visibility_icon';
 
 const domParser = new DOMParser();
 
@@ -548,7 +547,6 @@ class Status extends ImmutablePureComponent {
 
             <div onClick={this.handleHeaderClick} onAuxClick={this.handleHeaderClick} className='status__info'>
               <Link to={`/@${status.getIn(['account', 'acct'])}/${status.get('id')}`} className='status__relative-time'>
-                <span className='status__visibility-icon'><VisibilityIcon visibility={status.get('visibility')} /></span>
                 <RelativeTimestamp timestamp={status.get('created_at')} />{status.get('edited_at') && <abbr title={intl.formatMessage(messages.edited, { date: intl.formatDate(status.get('edited_at'), { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }) })}> *</abbr>}
               </Link>
 

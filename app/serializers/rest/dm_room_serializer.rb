@@ -3,7 +3,7 @@
 # @_longwhile custom feature
 class REST::DmRoomSerializer < ActiveModel::Serializer
   attributes :id, :unread_count, :root_status_id, :last_read_status_id,
-             :is_group, :is_local, :title
+             :is_group, :is_local, :title, :participant_read_states
 
   has_many :other_accounts, key: :accounts, serializer: REST::AccountSerializer
   has_one :last_status, serializer: REST::StatusSerializer
@@ -34,6 +34,10 @@ class REST::DmRoomSerializer < ActiveModel::Serializer
 
   def other_accounts
     object.other_accounts(current_account)
+  end
+
+  def participant_read_states
+    object.participant_read_states_for(current_account)
   end
 
   private

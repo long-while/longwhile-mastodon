@@ -21,7 +21,7 @@ export function normalizeFilterResult(result) {
   return normalResult;
 }
 
-export function normalizeStatus(status, normalOldStatus) {
+export function normalizeStatus(status, normalOldStatus, expandContentWarnings = false) {
   const normalStatus   = { ...status };
   normalStatus.account = status.account.id;
 
@@ -76,7 +76,7 @@ export function normalizeStatus(status, normalOldStatus) {
     normalStatus.search_index = domParser.parseFromString(searchContent, 'text/html').documentElement.textContent;
     normalStatus.contentHtml  = emojify(normalStatus.content, emojiMap);
     normalStatus.spoilerHtml  = emojify(escapeTextContentForBrowser(spoilerText), emojiMap);
-    normalStatus.hidden       = expandSpoilers ? false : spoilerText.length > 0 || normalStatus.sensitive;
+    normalStatus.hidden       = (expandSpoilers || expandContentWarnings) ? false : spoilerText.length > 0 || normalStatus.sensitive;
 
     if (normalStatus.url && !(normalStatus.url.startsWith('http://') || normalStatus.url.startsWith('https://'))) {
       normalStatus.url = null;

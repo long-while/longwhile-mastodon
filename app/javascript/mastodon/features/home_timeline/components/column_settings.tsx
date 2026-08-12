@@ -7,6 +7,7 @@ import { useCallback } from 'react';
 
 import { FormattedMessage } from 'react-intl';
 
+import { setExpandContentWarnings } from 'mastodon/actions/statuses';
 import { useAppSelector, useAppDispatch } from 'mastodon/store';
 
 import { changeSetting } from '../../../actions/settings';
@@ -15,10 +16,21 @@ import SettingToggle from '../../notifications/components/setting_toggle';
 export const ColumnSettings: React.FC = () => {
   const settings = useAppSelector((state) => state.settings.get('home'));
 
+  const contentWarningSettings = useAppSelector((state) =>
+    state.settings.get('content_warnings'),
+  );
+
   const dispatch = useAppDispatch();
   const onChange = useCallback(
     (key: string[], checked: boolean) => {
       dispatch(changeSetting(['home', ...key], checked));
+    },
+    [dispatch],
+  );
+
+  const onChangeExpandContentWarnings = useCallback(
+    (_key: string[], checked: boolean) => {
+      dispatch(setExpandContentWarnings(checked));
     },
     [dispatch],
   );
@@ -49,6 +61,20 @@ export const ColumnSettings: React.FC = () => {
               <FormattedMessage
                 id='home.column_settings.show_replies'
                 defaultMessage='Show replies'
+              />
+            }
+          />
+
+          <SettingToggle
+            prefix='home_timeline'
+            settings={contentWarningSettings}
+            settingPath={['expand_all']}
+            defaultValue={false}
+            onChange={onChangeExpandContentWarnings}
+            label={
+              <FormattedMessage
+                id='home.column_settings.expand_content_warnings'
+                defaultMessage='Expand all content warnings'
               />
             }
           />

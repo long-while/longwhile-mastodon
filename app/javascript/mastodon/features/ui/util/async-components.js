@@ -114,8 +114,8 @@ export function Messages() {
   return import('../../messages');
 }
 
-export function MessageRoom() {
-  return import('../../messages/room');
+export function AdminMessages() {
+  return import('../../messages/admin');
 }
 
 export function DmRecipientModal() {

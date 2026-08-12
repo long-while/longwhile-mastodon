@@ -7,13 +7,11 @@ $white: #ffffff; // White
 $red-600: #b7253d !default; // Deep Carmine
 $red-500: #df405a !default; // Cerise
 
-//수정해야 하는 색상 - 수정
-$long-while-600: #007acc; // 설정창 버튼 눌렸을때
-$long-while-500: #1d9bf0; // 설정창 기본. 좌측 목록 현재선택도 이색깔
+$long-while-600: #1d9bf0;
+$long-while-500: #1d9bf0;
 $long-while-400: #1d9bf0; // focus visible
-$long-while-300: #1d9bf0; // 밝은 색상?
+$long-while-300: #1d9bf0;
 
-// 계정 스위처 "기존 계정 추가" 버튼 글자색 (라이트 테마는 $longwhile-500로 오버라이드)
 $account-switcher-add-text-color: $long-while-500 !default;
 
 $grey-600: hsl(215, 10%, 63%); // Trout
@@ -28,14 +26,11 @@ $error-color: $error-red !default;
 
 $red-bookmark: $warning-red;
 
-// 여기 수정
-// Values from the classic Mastodon UI
-$classic-base-color: hsl(240, 7%, 14%); // 배경 색상
-$classic-primary-color: hsl(216, 23%, 76%); // 설정창 좀 어두운 색상 (좌측 목록 등), 
-$classic-secondary-color: hsl(0, 15%, 95%); // 설정창 밝은색
+$classic-base-color: hsl(240, 7%, 14%);
+$classic-primary-color: hsl(216, 23%, 76%);
+$classic-secondary-color: hsl(0, 15%, 95%);
 $classic-highlight-color: $long-while-500;
 
-// 부스트 아이콘 등 색상
 $ui-base-lighter-color: hsl(213, 12%, 71%) !default;
 
 // Variables for defaults in UI

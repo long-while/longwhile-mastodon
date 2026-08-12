@@ -78,6 +78,6 @@ class FeaturedTag < ApplicationRecord
   end
 
   def visible_tagged_account_statuses
-    account.statuses.distributable_visibility.tagged_with(tag)
+    account.statuses.not_direct_visibility.tagged_with(tag)
   end
 end

@@ -13,6 +13,8 @@ class StatusPolicy < ApplicationPolicy
     return false if author.unavailable? && !author.anonymized?
     return true if administrator?
 
+    return false if record.reblog? && !owned? && !reblogged_status_visible?
+
     if requires_mention?
       owned? || mention_exists?
     elsif private?
@@ -23,7 +25,7 @@ class StatusPolicy < ApplicationPolicy
   end
 
   def reblog?
-    !author.anonymized? && !requires_mention? && (!private? || owned?) && show? && !blocking_author?
+    !author.anonymized? && !requires_mention? && show? && !blocking_author?
   end
 
   def favourite?
@@ -44,6 +46,13 @@ class StatusPolicy < ApplicationPolicy
 
   def requires_mention?
     record.direct_visibility? || record.limited_visibility?
+  end
+
+  def reblogged_status_visible?
+    original = record.reblog
+    return false if original.nil?
+
+    StatusPolicy.new(current_account, original, @preloaded_relations).show?
   end
 
   def owned?

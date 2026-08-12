@@ -1,5 +1,7 @@
 // @_longwhile custom feature
 
+import { isTitleEvent } from './title_event';
+
 export interface PreviewSource {
   content: string;
   spoilerText: string;
@@ -71,6 +73,14 @@ export const previewText = (
   }
 
   if (!source) return labels.empty;
+
+  if (isTitleEvent(source.spoilerText)) {
+    const notice = stripLeadingMentionNodes(source.content)
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    return notice || labels.empty;
+  }
 
   const body = source.spoilerText.trim()
     ? labels.contentWarning(source.spoilerText.trim())

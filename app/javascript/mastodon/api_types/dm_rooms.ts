@@ -13,7 +13,14 @@ export interface ApiDmRoomJSON {
 
   last_read_status_id: string | null;
 
+  participant_read_states?: ApiDmReadStateJSON[];
+
   is_group: boolean;
   is_local: boolean;
   title: string | null;
+}
+
+export interface ApiDmReadStateJSON {
+  account_id: string;
+  last_read_status_id: string;
 }

@@ -2,14 +2,14 @@
 
 export const GROUP_WINDOW_MS = 3 * 60 * 1000;
 
-export const TIME_GAP_MS = 10 * 60 * 1000;
-
 export interface GroupableMessage {
   id: string;
   accountId: string;
   createdAt: string;
 
   quotesAnotherMessage: boolean;
+
+  standalone?: boolean;
 }
 
 export interface PositionedMessage<T extends GroupableMessage> {
@@ -18,6 +18,8 @@ export interface PositionedMessage<T extends GroupableMessage> {
   isLastInGroup: boolean;
 
   showTimestamp: boolean;
+
+  isSenderChanged: boolean;
 }
 
 export interface MessageGroup<T extends GroupableMessage> {
@@ -63,13 +65,16 @@ export const groupMessages = <T extends GroupableMessage>(
       previous !== undefined &&
       group.accountId === message.accountId &&
       at - timeOf(previous.message) <= GROUP_WINDOW_MS &&
-      !message.quotesAnotherMessage;
+      !message.quotesAnotherMessage &&
+      !message.standalone &&
+      !previous.message.standalone;
 
     const entry: PositionedMessage<T> = {
       message,
       isFirstInGroup: !continuesGroup,
       isLastInGroup: true,
       showTimestamp: false,
+      isSenderChanged: false,
     };
 
     if (continuesGroup) {
@@ -85,24 +90,33 @@ export const groupMessages = <T extends GroupableMessage>(
   });
 
   markTimestamps(sections);
+  markSenderChanges(sections);
 
   return sections;
 };
 
-const markTimestamps = <T extends GroupableMessage>(
+const markSenderChanges = <T extends GroupableMessage>(
   sections: DateSection<T>[],
 ) => {
   const groups = sections.flatMap((section) => section.groups);
 
   groups.forEach((group, index) => {
-    const last = group.messages.at(-1);
-    if (!last) return;
+    const first = group.messages[0];
+    const previous = groups[index - 1];
 
-    const nextGroup = groups[index + 1];
-    const nextFirst = nextGroup?.messages[0];
+    if (first && previous) {
+      first.isSenderChanged = previous.accountId !== group.accountId;
+    }
+  });
+};
 
-    last.showTimestamp =
-      !nextFirst ||
-      timeOf(nextFirst.message) - timeOf(last.message) >= TIME_GAP_MS;
+const markTimestamps = <T extends GroupableMessage>(
+  sections: DateSection<T>[],
+) => {
+  sections.forEach((section) => {
+    section.groups.forEach((group) => {
+      const last = group.messages.at(-1);
+      if (last) last.showTimestamp = true;
+    });
   });
 };

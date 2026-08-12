@@ -4,10 +4,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { defineMessages, useIntl } from 'react-intl';
 
-import AttachmentIcon from '@/material-icons/400-24px/add_photo_alternate.svg?react';
-import SendIcon from '@/material-icons/400-24px/arrow_right_alt.svg?react';
+import AttachmentIcon from '@/images/compose-form-photo.svg?react';
+import SendIcon from '@/images/send-fill.svg?react';
 import { Icon } from 'mastodon/components/icon';
 
+import { useSendOnEnter } from '../util/use_send_on_enter';
 import type { Upload } from '../util/use_uploads';
 
 const messages = defineMessages({
@@ -16,10 +17,6 @@ const messages = defineMessages({
     defaultMessage: 'Write a message…',
   },
   send: { id: 'messages.composer.send', defaultMessage: 'Send' },
-  cancelReply: {
-    id: 'messages.composer.cancel_reply',
-    defaultMessage: 'Cancel reply',
-  },
   attach: { id: 'messages.composer.attach', defaultMessage: 'Add media' },
   removeAttachment: {
     id: 'messages.composer.remove_attachment',
@@ -113,9 +110,6 @@ interface Props {
 
   reservedCharacters?: number;
 
-  replyPreview?: React.ReactNode;
-  onCancelReply?: () => void;
-
   uploads?: Upload[];
   canAttach?: boolean;
   isUploading?: boolean;
@@ -123,8 +117,6 @@ interface Props {
   isSending?: boolean;
   onAttach?: (files: FileList) => void;
   onRemoveAttachment?: (localId: string) => void;
-
-  focusToken?: number;
 
   value: string;
   onChange: (value: string) => void;
@@ -135,15 +127,12 @@ export const Composer: React.FC<Props> = ({
   disabled = false,
   disabledReason,
   reservedCharacters = 0,
-  replyPreview,
-  onCancelReply,
   uploads = [],
   canAttach = false,
   isUploading = false,
   isSending = false,
   onAttach,
   onRemoveAttachment,
-  focusToken = 0,
   value,
   onChange,
   onSubmit,
@@ -154,16 +143,17 @@ export const Composer: React.FC<Props> = ({
 
   const [isComposing, setIsComposing] = useState(false);
 
+  const sendOnEnter = useSendOnEnter();
+
   const remaining = MAX_CHARACTERS - reservedCharacters - value.length;
   const tooLong   = remaining < 0;
 
   const hasReadyMedia = uploads.some((upload) => upload.state === 'done');
+
+  const hasContent = value.trim() !== '' || hasReadyMedia;
+
   const canSubmit =
-    !disabled &&
-    !tooLong &&
-    !isUploading &&
-    !isSending &&
-    (value.trim() !== '' || hasReadyMedia);
+    !disabled && !tooLong && !isUploading && !isSending && hasContent;
 
   useEffect(() => {
     const node = textarea.current;
@@ -171,16 +161,15 @@ export const Composer: React.FC<Props> = ({
 
     node.style.height = 'auto';
 
-    const lineHeight = parseFloat(getComputedStyle(node).lineHeight || '20');
-    const maxHeight  = lineHeight * MAX_ROWS;
+    const style = getComputedStyle(node);
+    const lineHeight = parseFloat(style.lineHeight || '24');
+    const verticalPadding =
+      parseFloat(style.paddingTop || '0') + parseFloat(style.paddingBottom || '0');
+    const maxHeight = lineHeight * MAX_ROWS + verticalPadding;
 
     node.style.height    = `${Math.min(node.scrollHeight, maxHeight)}px`;
     node.style.overflowY = node.scrollHeight > maxHeight ? 'auto' : 'hidden';
   }, [value]);
-
-  useEffect(() => {
-    if (focusToken > 0) textarea.current?.focus();
-  }, [focusToken]);
 
   const handleChange = useCallback(
     (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -203,18 +192,23 @@ export const Composer: React.FC<Props> = ({
         return;
       }
 
-      if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        handleSubmit();
+      if (event.key === 'Enter') {
+        if (event.ctrlKey || event.metaKey) {
+          event.preventDefault();
+          handleSubmit();
+          return;
+        }
+
+        if (sendOnEnter && !event.shiftKey) {
+          event.preventDefault();
+          handleSubmit();
+        }
+
         return;
       }
 
-      if (event.key === 'Escape' && onCancelReply) {
-        event.preventDefault();
-        onCancelReply();
-      }
     },
-    [handleSubmit, isComposing, onCancelReply],
+    [handleSubmit, isComposing, sendOnEnter],
   );
 
   const handleAttachClick = useCallback(() => {
@@ -248,22 +242,6 @@ export const Composer: React.FC<Props> = ({
     <div className='dm-composer'>
       {disabledReason && (
         <p className='dm-composer__notice'>{disabledReason}</p>
-      )}
-
-      {replyPreview && (
-        <div className='dm-composer__reply'>
-          <div className='dm-composer__reply__body'>{replyPreview}</div>
-
-          <button
-            type='button'
-            className='dm-composer__reply__cancel'
-            title={intl.formatMessage(messages.cancelReply)}
-            aria-label={intl.formatMessage(messages.cancelReply)}
-            onClick={onCancelReply}
-          >
-            ×
-          </button>
-        </div>
       )}
 
       {uploads.length > 0 && (
@@ -307,33 +285,36 @@ export const Composer: React.FC<Props> = ({
           </>
         )}
 
-        <textarea
-          ref={textarea}
-          className='dm-composer__textarea'
-          value={value}
-          rows={1}
-          disabled={disabled}
-          placeholder={intl.formatMessage(messages.placeholder)}
-          aria-label={intl.formatMessage(messages.placeholder)}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          onBlur={handleBlur}
-          onCompositionStart={handleCompositionStart}
-          onCompositionEnd={handleCompositionEnd}
-        />
+        <div className='dm-composer__field'>
+          <textarea
+            ref={textarea}
+            className='dm-composer__textarea'
+            value={value}
+            rows={1}
+            disabled={disabled}
+            placeholder={intl.formatMessage(messages.placeholder)}
+            aria-label={intl.formatMessage(messages.placeholder)}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            onBlur={handleBlur}
+            onCompositionStart={handleCompositionStart}
+            onCompositionEnd={handleCompositionEnd}
+          />
 
-        {remaining <= COUNTER_THRESHOLD && (
-          <span
-            className={
-              tooLong
-                ? 'dm-composer__counter dm-composer__counter--over'
-                : 'dm-composer__counter'
-            }
-            aria-label={intl.formatMessage(messages.remaining, { count: remaining })}
-          >
-            {remaining}
-          </span>
-        )}
+          {remaining <= COUNTER_THRESHOLD && (
+            <span
+              className={
+                tooLong
+                  ? 'dm-composer__counter dm-composer__counter--over'
+                  : 'dm-composer__counter'
+              }
+              aria-label={intl.formatMessage(messages.remaining, { count: remaining })}
+              role='status'
+            >
+              {remaining}
+            </span>
+          )}
+        </div>
 
         <button
           type='button'

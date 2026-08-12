@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 
 import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
 
@@ -7,10 +7,8 @@ import classNames from 'classnames';
 import RepeatIcon from '@/material-icons/400-24px/repeat.svg?react';
 import { Button } from 'mastodon/components/button';
 import { Icon } from 'mastodon/components/icon';
-import PrivacyDropdown from 'mastodon/features/compose/components/privacy_dropdown';
 import { EmbeddedStatus } from 'mastodon/features/notifications_v2/components/embedded_status';
 import type { Status, StatusVisibility } from 'mastodon/models/status';
-import { useAppSelector } from 'mastodon/store';
 
 const messages = defineMessages({
   cancel_reblog: {
@@ -27,34 +25,16 @@ export const BoostModal: React.FC<{
 }> = ({ status, onReblog, onClose }) => {
   const intl = useIntl();
 
-  const defaultPrivacy = useAppSelector(
-    (state) => state.compose.get('default_privacy') as StatusVisibility,
-  );
-
   const statusId = status.get('id') as string;
-  const statusVisibility = status.get('visibility') as StatusVisibility;
-
-  const [privacy, setPrivacy] = useState<StatusVisibility>(
-    statusVisibility === 'private' ? 'private' : defaultPrivacy,
-  );
-
-  const onPrivacyChange = useCallback((value: StatusVisibility) => {
-    setPrivacy(value);
-  }, []);
 
   const handleReblog = useCallback(() => {
-    onReblog(status, privacy);
+    onReblog(status, 'private');
     onClose();
-  }, [onClose, onReblog, status, privacy]);
+  }, [onClose, onReblog, status]);
 
   const handleCancel = useCallback(() => {
     onClose();
   }, [onClose]);
-
-  const findContainer = useCallback(
-    () => document.getElementsByClassName('modal-root__container')[0],
-    [],
-  );
 
   return (
     <div className='modal-root__modal safety-action-modal'>
@@ -101,16 +81,6 @@ export const BoostModal: React.FC<{
 
       <div className={classNames('safety-action-modal__bottom')}>
         <div className='safety-action-modal__actions'>
-          {!status.get('reblogged') && (
-            <PrivacyDropdown
-              noDirect
-              value={privacy}
-              container={findContainer}
-              onChange={onPrivacyChange}
-              disabled={statusVisibility === 'private'}
-            />
-          )}
-
           <div className='spacer' />
 
           <button onClick={handleCancel} className='link-button'>

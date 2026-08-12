@@ -8,12 +8,14 @@ import { RESET_ALL } from '../actions/store';
 import { accountsReducer } from './accounts';
 import { accountsFamiliarFollowersReducer } from './accounts_familiar_followers';
 import { accountsMapReducer } from './accounts_map';
+import { adminDmRoomsReducer } from './admin_dm_rooms';
 import { alertsReducer } from './alerts';
 import announcements from './announcements';
 import { composeReducer } from './compose';
 import { contextsReducer } from './contexts';
 import conversations from './conversations';
 import custom_emojis from './custom_emojis';
+import { dmDraftsReducer } from './dm_drafts';
 import { dmMessagesReducer } from './dm_messages';
 import { dmRoomsReducer } from './dm_rooms';
 import { dropdownMenuReducer } from './dropdown_menu';
@@ -88,6 +90,8 @@ const reducers = {
   scheduled_statuses: scheduledStatusesReducer,
   dmRooms: dmRoomsReducer,
   dmMessages: dmMessagesReducer,
+  dmDrafts: dmDraftsReducer,
+  adminDmRooms: adminDmRoomsReducer,
 };
 
 // We want the root state to be an ImmutableRecord, which is an object with a defined list of keys,

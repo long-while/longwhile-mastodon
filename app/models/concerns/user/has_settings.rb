@@ -104,7 +104,7 @@ module User::HasSettings
   end
 
   def setting_default_privacy
-    settings['default_privacy'] || (account.locked? ? 'private' : 'unlisted')
+    account.announcement_account? ? 'unlisted' : 'private'
   end
 
   def allows_report_emails?

@@ -20,9 +20,10 @@ class DmRoomRead < ApplicationRecord
   belongs_to :last_read_status, class_name: 'Status', optional: true
 
   def advance_to!(status_id)
-    return if status_id.blank?
-    return if last_read_status_id.present? && last_read_status_id >= status_id.to_i
+    return false if status_id.blank?
+    return false if last_read_status_id.present? && last_read_status_id >= status_id.to_i
 
     update!(last_read_status_id: status_id, read_at: Time.now.utc)
+    true
   end
 end

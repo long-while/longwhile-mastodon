@@ -16,6 +16,8 @@
 
 # @_longwhile custom feature
 class DmRoom < ApplicationRecord
+  include Redisable
+
   has_many :dm_room_members, dependent: :destroy
   has_many :dm_room_reads, dependent: :destroy
   has_many :members, through: :dm_room_members, source: :account
@@ -27,6 +29,10 @@ class DmRoom < ApplicationRecord
   validates :participant_key, presence: true
 
   STATUS_SCAN_LIMIT = 200
+
+  TITLE_MAX_LENGTH = 100
+
+  TITLE_EVENT_PREFIX = 'conversation:title_changed:'
 
   scope :visible_to, lambda { |account|
     joins(:dm_room_members).merge(DmRoomMember.visible.where(account_id: account.id))
@@ -205,5 +211,94 @@ class DmRoom < ApplicationRecord
     legacy = AccountConversation.where(account_id: account.id, conversation_id: conversations.select(:id))
 
     legacy.exists? && !legacy.exists?(unread: true)
+  end
+
+  def participant_read_states_for(account)
+    return [] unless read_receipts_enabled?(account)
+
+    dm_room_reads.filter_map do |cursor|
+      next if cursor.account_id == account.id
+      next if cursor.last_read_status_id.blank?
+
+      member = members.detect { |candidate| candidate.id == cursor.account_id }
+
+      next if member.nil?
+      next unless read_receipts_enabled?(member)
+
+      {
+        account_id: cursor.account_id.to_s,
+        last_read_status_id: cursor.last_read_status_id.to_s,
+      }
+    end
+  end
+
+  def broadcast_read!(reader)
+    return unless read_receipts_enabled?(reader)
+
+    cursor = dm_room_reads.find_by(account_id: reader.id)
+    return if cursor&.last_read_status_id.blank?
+
+    message = Oj.dump(
+      event: :'dm.read',
+      payload: {
+        dm_room_id: id.to_s,
+        account_id: reader.id.to_s,
+        last_read_status_id: cursor.last_read_status_id.to_s,
+      }
+    )
+
+    members.each do |member|
+      next if member.id == reader.id
+      next unless read_receipts_enabled?(member)
+
+      redis.publish("timeline:direct:#{member.id}", message)
+    end
+  end
+
+  def change_title!(author, new_title)
+    normalized = new_title.to_s.strip.presence
+
+    return false if normalized == title
+
+    update!(title: normalized)
+    post_title_event!(author, normalized)
+
+    true
+  end
+
+  private
+
+  def post_title_event!(author, new_title)
+    handles = other_accounts(author).map { |account| "@#{account.acct}" }.join(' ')
+
+    body = if new_title
+             I18n.t('dm_rooms.title_changed', name: author_name(author), title: new_title)
+           else
+             I18n.t('dm_rooms.title_removed', name: author_name(author))
+           end
+
+    PostStatusService.new.call(
+      author,
+      text: [handles, body].compact_blank.join(' '),
+      visibility: :direct,
+      spoiler_text: TITLE_EVENT_PREFIX,
+      thread: root_status,
+
+      with_rate_limit: true
+    )
+  rescue Mastodon::RateLimitExceededError,
+         Mastodon::ValidationError,
+         PostStatusService::UnexpectedMentionsError,
+         ActiveRecord::RecordInvalid => e
+    Rails.logger.warn { "dm_room #{id}: title event not posted (#{e.class})" }
+    nil
+  end
+
+  def author_name(author)
+    author.display_name.presence || author.username
+  end
+
+  def read_receipts_enabled?(account)
+    account.user&.settings&.[]('dm_read_receipts') == true
   end
 end

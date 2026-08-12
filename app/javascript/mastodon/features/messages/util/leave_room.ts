@@ -3,6 +3,7 @@
 import type { IntlShape } from 'react-intl';
 import { defineMessages } from 'react-intl';
 
+import { saveDmDraft } from 'mastodon/actions/dm_drafts';
 import { leaveDmRoom } from 'mastodon/actions/dm_rooms';
 import { openModal } from 'mastodon/actions/modal';
 import type { AppDispatch } from 'mastodon/store';
@@ -38,6 +39,8 @@ export const confirmLeaveRoom = (
         confirm: intl.formatMessage(messages.confirm),
         onConfirm: () => {
           void dispatch(leaveDmRoom({ roomId }));
+
+          void dispatch(saveDmDraft({ roomId, text: '' }));
           onLeft?.();
         },
       },

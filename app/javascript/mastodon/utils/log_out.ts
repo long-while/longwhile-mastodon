@@ -1,7 +1,10 @@
 import api from 'mastodon/api';
 import { MULTI_ACCOUNT_REQUEST_TIMEOUT } from 'mastodon/api/multi_accounts_constants';
+import { clearDrafts } from 'mastodon/features/messages/util/drafts';
 
 export async function logOut() {
+  clearDrafts();
+
   try {
     const response = await api(false).delete<{ redirect_to?: string }>(
       '/auth/sign_out',

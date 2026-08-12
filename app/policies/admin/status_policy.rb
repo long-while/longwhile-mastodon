@@ -30,7 +30,11 @@ class Admin::StatusPolicy < ApplicationPolicy
   private
 
   def eligible_to_show?
-    record.distributable? || record.reported? || viewable_through_normal_policy?
+    record.distributable? || record.reported? || moderatable? || viewable_through_normal_policy?
+  end
+
+  def moderatable?
+    !record.direct_visibility? && !record.limited_visibility?
   end
 
   def viewable_through_normal_policy?

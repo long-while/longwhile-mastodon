@@ -33,6 +33,7 @@ export const DateDivider: React.FC<Props> = ({ date }) => {
         }
         month='long'
         day='numeric'
+        weekday='short'
       />
     );
   }

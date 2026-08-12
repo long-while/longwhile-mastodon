@@ -85,6 +85,8 @@ namespace :api, format: false do
     resources :dm_rooms, only: [:index, :show, :create, :destroy] do
       member do
         post :read
+
+        patch :title
       end
 
       resources :statuses, only: [:index], controller: 'dm_rooms/statuses'
@@ -264,6 +266,11 @@ namespace :api, format: false do
     end
 
     namespace :admin do
+      # @_longwhile custom feature
+      resources :dm_rooms, only: [:index, :show] do
+        resources :statuses, only: [:index], controller: 'dm_rooms/statuses'
+      end
+
       resources :accounts, only: [:index, :show, :destroy] do
         member do
           post :enable

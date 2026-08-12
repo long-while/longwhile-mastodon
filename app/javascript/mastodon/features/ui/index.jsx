@@ -60,7 +60,7 @@ import {
   BookmarkedStatuses,
   PendingMentions,
   Messages,
-  MessageRoom,
+  AdminMessages,
   ScheduledStatuses,
   FollowedTags,
   LinkTimeline,
@@ -233,8 +233,8 @@ class SwitchingColumnsArea extends PureComponent {
             <WrappedRoute path='/notifications/requests' component={NotificationRequests} content={children} exact />
             <WrappedRoute path='/notifications/requests/:id' component={NotificationRequest} content={children} exact />
             <WrappedRoute path='/pending-mentions' component={PendingMentions} content={children} />
-            <WrappedRoute path='/messages' component={Messages} content={children} exact />
-            <WrappedRoute path='/messages/:roomId' component={MessageRoom} content={children} />
+            <WrappedRoute path='/messages/all' component={AdminMessages} content={children} />
+            <WrappedRoute path='/messages' component={Messages} content={children} />
             <WrappedRoute path='/scheduled_statuses' component={ScheduledStatuses} content={children} />
             <WrappedRoute path='/favourites' component={FavouritedStatuses} content={children} />
 

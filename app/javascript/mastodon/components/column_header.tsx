@@ -58,9 +58,6 @@ const BackButton: React.FC<{
         icon={ArrowBackIcon}
         className='column-back-button__icon'
       />
-      {!onlyIcon && (
-        <FormattedMessage id='column_back_button.label' defaultMessage='Back' />
-      )}
     </button>
   );
 };

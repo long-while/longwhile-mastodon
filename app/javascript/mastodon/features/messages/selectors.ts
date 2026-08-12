@@ -4,6 +4,8 @@ import type { Map as ImmutableMap } from 'immutable';
 
 import type { Account } from 'mastodon/models/account';
 import type { Status } from 'mastodon/models/status';
+import type { AdminDmRoomsState } from 'mastodon/reducers/admin_dm_rooms';
+import type { DmDraftsState } from 'mastodon/reducers/dm_drafts';
 import type {
   DmMessagesState,
   DmRoomMessages,
@@ -13,6 +15,7 @@ import type { DmRoomsState } from 'mastodon/reducers/dm_rooms';
 interface DmChatState {
   dmRooms: DmRoomsState;
   dmMessages: DmMessagesState;
+  dmDrafts: DmDraftsState;
   accounts: ImmutableMap<string, Account>;
   statuses: ImmutableMap<string, Status>;
 }
@@ -31,11 +34,18 @@ export const selectDmRoomMessages = (
 ): DmRoomMessages | undefined =>
   roomId ? asDmChatState(state).dmMessages[roomId] : undefined;
 
+export const selectDmDrafts = (state: unknown): DmDraftsState =>
+  asDmChatState(state).dmDrafts;
+
 export const selectMessageAccount = (
   state: unknown,
   accountId: string | undefined,
 ): Account | undefined =>
   accountId ? asDmChatState(state).accounts.get(accountId) : undefined;
+
+export const selectMessageAccountsMap = (
+  state: unknown,
+): ImmutableMap<string, Account> => asDmChatState(state).accounts;
 
 export const selectMessageStatuses = (
   state: unknown,
@@ -58,3 +68,14 @@ export const selectMaxMediaAttachments = (state: unknown): number => {
     ? value
     : DEFAULT_MAX_MEDIA_ATTACHMENTS;
 };
+
+export const selectAdminDmRooms = (state: unknown): AdminDmRoomsState =>
+  (state as { adminDmRooms: AdminDmRoomsState }).adminDmRooms;
+
+export const selectAdminDmRoom = (state: unknown, roomId: string | undefined) =>
+  roomId ? selectAdminDmRooms(state).rooms[roomId] : undefined;
+
+export const selectAdminDmRoomMessages = (
+  state: unknown,
+  roomId: string | undefined,
+) => (roomId ? selectAdminDmRooms(state).messages[roomId] : undefined);

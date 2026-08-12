@@ -16,7 +16,6 @@ import { deleteScheduledStatus, updateScheduledStatus } from 'mastodon/actions/s
 import { CheckBox } from 'mastodon/components/check_box';
 import { Dropdown } from 'mastodon/components/dropdown_menu';
 import { Icon } from 'mastodon/components/icon';
-import { VisibilityIcon } from 'mastodon/components/visibility_icon';
 import { scheduledStatusMinimumOffset } from 'mastodon/initial_state';
 import { earliestScheduledAt, toOffsetISOString } from 'mastodon/utils/scheduled_at';
 
@@ -49,7 +48,6 @@ export const ScheduledStatusItem = ({ scheduledStatus, showCheckbox, checked, on
 
   const text = params.get('text') || '';
   const spoilerText = params.get('spoiler_text') || '';
-  const visibility = params.get('visibility') || 'public';
   const isReply = !!params.get('in_reply_to_id');
   const hasPoll = !!params.get('poll');
 
@@ -126,8 +124,6 @@ export const ScheduledStatusItem = ({ scheduledStatus, showCheckbox, checked, on
           <time dateTime={scheduledAt}>
             {intl.formatTime(scheduledAt, { hour: 'numeric', minute: '2-digit' })}
           </time>
-
-          <VisibilityIcon visibility={visibility} />
 
           {/* A past time must never read as "soon", which is what the relative
               timestamp would say once the moment has gone by. */}

@@ -487,7 +487,7 @@ class Status < ApplicationRecord
   end
 
   def update_statistics
-    return unless distributable?
+    return if direct_visibility? || limited_visibility?
 
     ActivityTracker.increment('activity:statuses:local')
   end

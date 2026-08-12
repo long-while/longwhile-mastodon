@@ -88,7 +88,7 @@ describe('groupMessages', () => {
     expect(sections).toHaveLength(2);
   });
 
-  it('shows a timestamp only when the next group is far away', () => {
+  it('shows a timestamp on the last message of every group', () => {
     const sections = groupMessages([
       message('1', 'a', '2026-08-10T10:00:00Z'),
       message('2', 'b', '2026-08-10T10:00:30Z'),
@@ -97,9 +97,49 @@ describe('groupMessages', () => {
 
     const groups = sections[0]?.groups ?? [];
 
-    expect(groups[0]?.messages[0]?.showTimestamp).toBe(false);
+    expect(groups[0]?.messages[0]?.showTimestamp).toBe(true);
     expect(groups[1]?.messages[0]?.showTimestamp).toBe(true);
     expect(groups[2]?.messages[0]?.showTimestamp).toBe(true);
+  });
+
+  it('shows a timestamp only on the last message within a group', () => {
+    const sections = groupMessages([
+      message('1', 'a', '2026-08-10T10:00:00Z'),
+      message('2', 'a', '2026-08-10T10:00:30Z'),
+      message('3', 'a', '2026-08-10T10:01:00Z'),
+    ]);
+
+    const entries = sections[0]?.groups[0]?.messages ?? [];
+
+    expect(entries.map((entry) => entry.showTimestamp)).toEqual([
+      false,
+      false,
+      true,
+    ]);
+  });
+
+  it('marks whether a group started because the sender changed', () => {
+    const sections = groupMessages([
+      message('1', 'a', '2026-08-10T10:00:00Z'),
+      message('2', 'b', '2026-08-10T10:00:30Z'),
+      message('3', 'b', '2026-08-10T11:00:00Z'),
+    ]);
+
+    const groups = sections[0]?.groups ?? [];
+
+    expect(groups[0]?.messages[0]?.isSenderChanged).toBe(false);
+    expect(groups[1]?.messages[0]?.isSenderChanged).toBe(true);
+    expect(groups[2]?.messages[0]?.isSenderChanged).toBe(false);
+  });
+
+  it('compares across date sections', () => {
+    const sections = groupMessages([
+      message('1', 'a', '2026-08-10T14:00:00Z'),
+      message('2', 'b', '2026-08-12T14:00:00Z'),
+    ]);
+
+    expect(sections).toHaveLength(2);
+    expect(sections[1]?.groups[0]?.messages[0]?.isSenderChanged).toBe(true);
   });
 
   it('regroups the whole list when older messages are prepended', () => {
@@ -119,5 +159,44 @@ describe('groupMessages', () => {
     const entries = after[0]?.groups[0]?.messages ?? [];
     expect(entries).toHaveLength(3);
     expect(entries[1]?.isFirstInGroup).toBe(false);
+  });
+
+  describe('standalone messages', () => {
+    const standalone = (
+      id: string,
+      accountId: string,
+      iso: string,
+    ): GroupableMessage => ({
+      ...message(id, accountId, iso),
+      standalone: true,
+    });
+
+    it('does not join the group before it', () => {
+      const sections = groupMessages([
+        message('1', 'a', '2026-08-10T10:00:00Z'),
+        standalone('2', 'a', '2026-08-10T10:00:30Z'),
+      ]);
+
+      expect(sections[0]?.groups).toHaveLength(2);
+    });
+
+    it('does not let the next message join it', () => {
+      const sections = groupMessages([
+        standalone('1', 'a', '2026-08-10T10:00:00Z'),
+        message('2', 'a', '2026-08-10T10:00:30Z'),
+      ]);
+
+      expect(sections[0]?.groups).toHaveLength(2);
+    });
+
+    it('splits a run of same-author messages into three groups', () => {
+      const sections = groupMessages([
+        message('1', 'a', '2026-08-10T10:00:00Z'),
+        standalone('2', 'a', '2026-08-10T10:00:30Z'),
+        message('3', 'a', '2026-08-10T10:01:00Z'),
+      ]);
+
+      expect(sections[0]?.groups).toHaveLength(3);
+    });
   });
 });

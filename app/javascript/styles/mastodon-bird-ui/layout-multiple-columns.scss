@@ -26,7 +26,7 @@ body.layout-multiple-columns {
   --size-avatar: 48px;
   --size-avatar-small: 32px;
   --width-main-panel: 600px;
-  --width-side-panel: 260px;
+  --width-side-panel: 240px;
   --width-column: 380px;
   --border-radius: 16px;
   --border-radius-badges: 4px;
@@ -144,7 +144,7 @@ body.layout-multiple-columns {
 /* Color variables cascade from `body.theme-*` defined in single-col. */
 body.layout-multiple-columns {
     --width-main-panel: 500px;
-    --width-side-panel: 265px;
+    --width-side-panel: 240px;
 }
 }
 
@@ -726,10 +726,8 @@ body.embed .status__content a,
   color: var(--color-accent);
 }
 
-/* Toggles etc. */
 .layout-multiple-columns .search-results__header,
-.layout-multiple-columns .drawer__inner,
-.layout-multiple-columns .react-toggle .react-toggle-track {
+.layout-multiple-columns .drawer__inner {
   background-color: var(--color-bg);
 }
 
@@ -1542,7 +1540,7 @@ body.embed .detailed-status__link > .icon-reply + span::after,
 body.embed .detailed-status__link > .icon-retweet + span::after,
 .layout-multiple-columns .detailed-status__link > .icon-retweet + span::after {
   color: var(--color-dim);
-  content: '부스트';
+  content: '재게시';
   font-weight: var(--font-weight-semibold);
 }
 
@@ -2178,19 +2176,16 @@ body.embed .detailed-status__meta .detailed-status__link .icon-retweet,
 
 /* Search */
 .layout-multiple-columns .search .search__icon .icon-search {
-  mask-image: var(--icon-search);
-  -webkit-mask-image: var(--icon-search);
-  mask-size: contain;
-  -webkit-mask-size: contain;
+  mask-image: url('./bird-theme-svg/search.svg');
+  -webkit-mask-image: url('./bird-theme-svg/search.svg');
+  mask-size: 20px;
+  -webkit-mask-size: 20px;
   mask-repeat: no-repeat;
   -webkit-mask-repeat: no-repeat;
   mask-position: center;
   -webkit-mask-position: center;
-  background-color: var(--color-fg);
+  background-color: currentColor;
   background-image: none;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: 20px;
   display: inline-block;
   height: 24px;
   width: 24px;
@@ -3436,6 +3431,42 @@ body .compose-form .compose-form__uploads {
   -webkit-mask-image: url('./bird-theme-svg/bookmark-fill.svg');
 }
 
+.layout-multiple-columns .column-link .icon-follow-requests {
+  mask-image: url('./bird-theme-svg/user-add.svg');
+  -webkit-mask-image: url('./bird-theme-svg/user-add.svg');
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-position: center;
+  background-color: var(--color-column-link);
+  background-image: none;
+}
+
+.layout-multiple-columns .column-link.active .icon-follow-requests {
+  mask-image: url('./bird-theme-svg/user-add-fill.svg');
+  -webkit-mask-image: url('./bird-theme-svg/user-add-fill.svg');
+}
+
+.layout-multiple-columns .column-link .icon-messages {
+  mask-image: url('./bird-theme-svg/envelope.svg');
+  -webkit-mask-image: url('./bird-theme-svg/envelope.svg');
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-position: center;
+  background-color: var(--color-column-link);
+  background-image: none;
+}
+
+.layout-multiple-columns .column-link.active .icon-messages {
+  mask-image: url('./bird-theme-svg/envelope-fill.svg');
+  -webkit-mask-image: url('./bird-theme-svg/envelope-fill.svg');
+}
+
 /* Pending mentions icon */
 .layout-multiple-columns .column-link .icon-pending {
   mask-image: url('./bird-theme-svg/messages.svg');
@@ -4247,28 +4278,36 @@ body .compose-form .compose-form__uploads {
     order: 5;
   }
 
-  .layout-multiple-columns .column-link[href="/conversations"] {
+  .layout-multiple-columns .column-link[href="/messages/all"] {
     order: 6;
   }
 
-  .layout-multiple-columns .column-link[href="/scheduled_statuses"] {
+  .layout-multiple-columns .column-link[href="/conversations"] {
     order: 7;
   }
 
-  .layout-multiple-columns .column-link[href="/bookmarks"] {
+  .layout-multiple-columns .column-link[href="/scheduled_statuses"] {
     order: 8;
   }
 
-  .layout-multiple-columns .column-link[href="/lists"] {
+  .layout-multiple-columns .column-link[href="/bookmarks"] {
     order: 9;
   }
 
-  .layout-multiple-columns .column-link[href*="/settings"] {
+  .layout-multiple-columns .column-link[href="/lists"] {
     order: 10;
   }
 
-  .layout-multiple-columns .navigation-panel .navigation-panel__account-switcher {
+  .layout-multiple-columns .column-link[href*="/settings"] {
     order: 11;
+  }
+
+  .layout-multiple-columns .navigation-panel .navigation-panel__account-switcher {
+    order: 12;
+  }
+
+  .layout-multiple-columns .navigation-panel .column-link[href="/follow_requests"] {
+    order: 13;
   }
 }
 
@@ -5537,4 +5576,21 @@ div[tabindex="-1"] + div[tabindex="-1"] > .status__wrapper > .status-reply.statu
 /* Remove follow suggestions */
 .inline-follow-suggestions {
   display: none;
+}
+.layout-multiple-columns .column-link .icon-messages-all {
+  mask-image: url('./bird-theme-svg/envelopes.svg');
+  -webkit-mask-image: url('./bird-theme-svg/envelopes.svg');
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-position: center;
+  background-color: var(--color-column-link);
+  background-image: none;
+}
+
+.layout-multiple-columns .column-link.active .icon-messages-all {
+  mask-image: url('./bird-theme-svg/envelopes-fill.svg');
+  -webkit-mask-image: url('./bird-theme-svg/envelopes-fill.svg');
 }

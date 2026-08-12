@@ -17,6 +17,11 @@ const messages = defineMessages({
   follow: { id: 'account.follow', defaultMessage: 'Follow' },
   followBack: { id: 'account.follow_back', defaultMessage: 'Follow back' },
   editProfile: { id: 'account.edit_profile', defaultMessage: 'Edit profile' },
+  pending: { id: 'account.follow_pending', defaultMessage: 'Pending' },
+  pendingHint: {
+    id: 'account.requested',
+    defaultMessage: 'Awaiting approval. Click to cancel follow request',
+  },
 });
 
 export const FollowButton: React.FC<{
@@ -32,7 +37,9 @@ export const FollowButton: React.FC<{
   const relationship = useAppSelector((state) =>
     accountId ? state.relationships.get(accountId) : undefined,
   );
-  const following = relationship?.following || relationship?.requested;
+  const isFollowing = Boolean(relationship?.following);
+  const requested = Boolean(relationship?.requested);
+  const following = isFollowing || requested;
 
   useEffect(() => {
     if (accountId && signedIn) {
@@ -75,7 +82,9 @@ export const FollowButton: React.FC<{
     label = intl.formatMessage(messages.editProfile);
   } else if (!relationship) {
     label = <LoadingIndicator />;
-  } else if (relationship.following || relationship.requested) {
+  } else if (requested) {
+    label = intl.formatMessage(messages.pending);
+  } else if (isFollowing) {
     label = intl.formatMessage(messages.unfollow);
   } else if (relationship.followed_by) {
     label = intl.formatMessage(messages.followBack);
@@ -101,6 +110,7 @@ export const FollowButton: React.FC<{
   return (
     <Button
       onClick={handleClick}
+      title={requested ? intl.formatMessage(messages.pendingHint) : undefined}
       disabled={
         relationship?.blocked_by ||
         relationship?.blocking ||
@@ -109,7 +119,9 @@ export const FollowButton: React.FC<{
       }
       secondary={following}
       compact={compact}
-      className={following ? 'button--destructive' : undefined}
+      className={
+        isFollowing && !requested ? 'button--destructive' : undefined
+      }
     >
       {label}
     </Button>

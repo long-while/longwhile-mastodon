@@ -1,6 +1,6 @@
 // @_longwhile custom feature
 
-import { useCallback } from 'react';
+import { useMemo } from 'react';
 
 import { defineMessages, useIntl } from 'react-intl';
 
@@ -9,14 +9,14 @@ import { Link } from 'react-router-dom';
 
 import GroupIcon from '@/material-icons/400-24px/group.svg?react';
 import type { ApiDmRoomJSON } from 'mastodon/api_types/dm_rooms';
-import { Avatar } from 'mastodon/components/avatar';
 import { Icon } from 'mastodon/components/icon';
 import { useAppSelector } from 'mastodon/store';
 
 import { selectMessageAccount } from '../selectors';
-import { fallbackPathFor, opensInChat } from '../util/group_fallback';
 import { previewText } from '../util/preview_text';
 import { relativeTimeLabel } from '../util/relative_time';
+
+import { RoomAvatar } from './room_avatar';
 
 const messages = defineMessages({
   photo: { id: 'messages.preview.photo', defaultMessage: 'Photo' },
@@ -31,7 +31,6 @@ const messages = defineMessages({
   fromMe: { id: 'messages.preview.from_me', defaultMessage: 'You: {body}' },
   draft: { id: 'messages.preview.draft', defaultMessage: 'Draft: {body}' },
   group: { id: 'messages.group_conversation', defaultMessage: 'Group conversation' },
-  leave: { id: 'messages.leave', defaultMessage: 'Leave conversation' },
 });
 
 interface Props {
@@ -39,7 +38,8 @@ interface Props {
   myAccountId: string;
   isActive?: boolean;
   draft?: string;
-  onLeave?: (roomId: string) => void;
+
+  to?: string;
 }
 
 export const RoomListItem: React.FC<Props> = ({
@@ -47,22 +47,18 @@ export const RoomListItem: React.FC<Props> = ({
   myAccountId,
   isActive = false,
   draft,
-  onLeave,
+  to,
 }) => {
   const intl = useIntl();
-
-  const handleLeave = useCallback(
-    (event: React.MouseEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
-      onLeave?.(room.id);
-    },
-    [onLeave, room.id],
-  );
 
   const otherId = room.accounts[0]?.id;
   const account = useAppSelector((state) =>
     selectMessageAccount(state, otherId),
+  );
+
+  const memberIds = useMemo(
+    () => room.accounts.map((entry) => entry.id),
+    [room.accounts],
   );
 
   const title =
@@ -100,15 +96,17 @@ export const RoomListItem: React.FC<Props> = ({
 
   return (
     <Link
-      to={fallbackPathFor(room)}
+      to={to ?? `/messages/${room.id}`}
       className={classNames('dm-room-item', {
         'dm-room-item--active': isActive,
         'dm-room-item--unread': unread,
+
+        'dm-room-item--draft': Boolean(draft?.trim()),
       })}
     >
       <div className='dm-room-item__avatar'>
-        {account && <Avatar account={account} size={48} />}
-        {!opensInChat(room) && (
+        <RoomAvatar accountIds={memberIds} size={48} />
+        {room.is_group && (
           <Icon
             id='group'
             icon={GroupIcon}
@@ -133,18 +131,6 @@ export const RoomListItem: React.FC<Props> = ({
           )}
         </div>
       </div>
-
-      {onLeave && (
-        <button
-          type='button'
-          className='dm-room-item__leave'
-          onClick={handleLeave}
-          title={intl.formatMessage(messages.leave)}
-          aria-label={intl.formatMessage(messages.leave)}
-        >
-          ×
-        </button>
-      )}
     </Link>
   );
 };

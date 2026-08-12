@@ -128,7 +128,7 @@ ko:
         bookmarks: 북마크
         conversations: 대화
         crypto: 종단간 암호화
-        favourites: 즐겨찾기
+        favourites: 마음에 들어요
         filters: 필터
         follow: 팔로우, 뮤트와 차단
         follows: 팔로우
@@ -173,7 +173,7 @@ ko:
       read:accounts: 계정 정보 보기
       read:blocks: 차단 보기
       read:bookmarks: 내 북마크 보기
-      read:favourites: 즐겨찾기 보기
+      read:favourites: 마음에 들어요 보기
       read:filters: 필터 보기
       read:follows: 팔로우 보기
       read:lists: 리스트 보기
@@ -187,7 +187,7 @@ ko:
       write:blocks: 계정 및 도메인 차단
       write:bookmarks: 게시물을 북마크에 넣기
       write:conversations: 뮤트 및 대화 삭제
-      write:favourites: 게시물 즐겨찾기
+      write:favourites: 게시물 마음에 들어요
       write:filters: 필터 만들기
       write:follows: 사람을 팔로우
       write:lists: 리스트 만들기

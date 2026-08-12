@@ -11,12 +11,23 @@
   --modal-background-variant-color: #{rgba($ui-base-color, 0.7)};
   --modal-border-color: #{rgba(lighten($ui-base-color, 4%), 1)};
   --background-border-color: #{lighten($ui-base-color, 4%)};
+
+  --color-border: var(--background-border-color);
+
+  --color-dim: #{$darker-text-color};
   --background-filter: blur(10px) saturate(180%) contrast(75%) brightness(70%);
   --background-color: #{darken($ui-base-color, 8%)};
   --background-color-tint: #{rgba(darken($ui-base-color, 8%), 0.9)};
   --surface-background-color: #{darken($ui-base-color, 4%)};
   --surface-variant-background-color: #{$ui-base-color};
   --surface-variant-active-background-color: #{lighten($ui-base-color, 4%)};
+
+  --color-recieve-message-text: #{$primary-text-color};
+  --color-recieve-message-background: #{$ui-base-color};
+  --color-sent-message-text: #{$white};
+  --color-sent-message-background: #{$long-while-600};
+
+  --color-hover-message-list-background: #{color.scale($ui-base-color, $lightness: 4%)};
   --color-noti-hover: #{color.adjust($ui-base-color, $alpha: -0.5)};
   --avatar-border-radius: 8px;
   --media-outline-color: #{rgba(#fcf8ff, 0.15)};

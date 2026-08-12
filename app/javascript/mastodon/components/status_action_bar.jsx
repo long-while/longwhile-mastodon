@@ -73,6 +73,8 @@ const mapStateToProps = (state, { status }) => ({
   relationship: state.getIn(['relationships', status.getIn(['account', 'id'])]),
 });
 
+const countOrNone = (count) => (count > 0 ? count : undefined);
+
 class StatusActionBar extends ImmutablePureComponent {
   static propTypes = {
     identity: identityContextPropShape,
@@ -99,7 +101,6 @@ class StatusActionBar extends ImmutablePureComponent {
     onAddFilter: PropTypes.func,
     onInteractionModal: PropTypes.func,
     withDismiss: PropTypes.bool,
-    withCounters: PropTypes.bool,
     scrollKey: PropTypes.string,
     intl: PropTypes.object.isRequired,
     ...WithRouterPropTypes,
@@ -241,7 +242,7 @@ class StatusActionBar extends ImmutablePureComponent {
   };
 
   render () {
-    const { status, relationship, intl, withDismiss, withCounters, scrollKey } = this.props;
+    const { status, relationship, intl, withDismiss, scrollKey } = this.props;
     const { signedIn, permissions } = this.props.identity;
 
     const publicStatus       = ['public', 'unlisted'].includes(status.get('visibility'));
@@ -351,7 +352,7 @@ class StatusActionBar extends ImmutablePureComponent {
       replyTitle = intl.formatMessage(messages.replyAll);
     }
 
-    const reblogPrivate = status.getIn(['account', 'id']) === me && status.get('visibility') === 'private';
+    const reblogPrivate = status.get('visibility') === 'private';
 
     let reblogTitle, reblogIconComponent;
 
@@ -377,13 +378,13 @@ class StatusActionBar extends ImmutablePureComponent {
     return (
       <div className='status__action-bar'>
         <div className='status__action-bar__button-wrapper'>
-          <IconButton className='status__action-bar__button' title={replyTitle} icon={isReply ? 'reply' : replyIcon} iconComponent={isReply ? ReplyIcon : replyIconComponent} onClick={this.handleReplyClick} counter={status.get('replies_count')} />
+          <IconButton className='status__action-bar__button' title={replyTitle} icon={isReply ? 'reply' : replyIcon} iconComponent={isReply ? ReplyIcon : replyIconComponent} onClick={this.handleReplyClick} counter={countOrNone(status.get('replies_count'))} />
         </div>
         <div className='status__action-bar__button-wrapper'>
-          <IconButton className={classNames('status__action-bar__button', { reblogPrivate })} disabled={!publicStatus && !reblogPrivate} active={status.get('reblogged')} title={reblogTitle} icon='retweet' iconComponent={reblogIconComponent} onClick={this.handleReblogClick} counter={withCounters ? status.get('reblogs_count') : undefined} />
+          <IconButton className={classNames('status__action-bar__button', { reblogPrivate })} disabled={!publicStatus && !reblogPrivate} active={status.get('reblogged')} title={reblogTitle} icon='retweet' iconComponent={reblogIconComponent} onClick={this.handleReblogClick} counter={countOrNone(status.get('reblogs_count'))} />
         </div>
         <div className='status__action-bar__button-wrapper'>
-          <IconButton className='status__action-bar__button star-icon' animate active={status.get('favourited')} title={favouriteTitle} icon='star' iconComponent={status.get('favourited') ? StarIcon : StarBorderIcon} onClick={this.handleFavouriteClick} counter={withCounters ? status.get('favourites_count') : undefined} />
+          <IconButton className='status__action-bar__button star-icon' animate active={status.get('favourited')} title={favouriteTitle} icon='star' iconComponent={status.get('favourited') ? StarIcon : StarBorderIcon} onClick={this.handleFavouriteClick} counter={countOrNone(status.get('favourites_count'))} />
         </div>
         <div className='status__action-bar__button-wrapper'>
           <IconButton className='status__action-bar__button bookmark-icon' disabled={!signedIn} active={status.get('bookmarked')} title={bookmarkTitle} icon='bookmark' iconComponent={status.get('bookmarked') ? BookmarkIcon : BookmarkBorderIcon} onClick={this.handleBookmarkClick} />

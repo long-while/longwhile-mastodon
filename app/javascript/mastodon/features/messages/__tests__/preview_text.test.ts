@@ -98,4 +98,31 @@ describe('previewText', () => {
   it('falls back to the empty label for a message with nothing in it', () => {
     expect(previewText(source({ content: '' }), labels)).toBe('메시지 없음');
   });
+
+  describe('title change notices', () => {
+    const titleEvent = (content: string) =>
+      source({
+        content,
+        spoilerText: 'conversation:title_changed:',
+      });
+
+    it('shows the body instead of the marker', () => {
+      expect(
+        previewText(
+          titleEvent('<p>한참 님이 대화 제목을 &#39;작전 회의&#39; 으로 바꿨습니다.</p>'),
+          labels,
+        ),
+      ).toBe("한참 님이 대화 제목을 '작전 회의' 으로 바꿨습니다.");
+    });
+
+    it('never leaks the marker through the content warning label', () => {
+      expect(previewText(titleEvent('<p>제목이 바뀌었습니다.</p>'), labels)).not.toContain(
+        'conversation:title_changed:',
+      );
+    });
+
+    it('falls back to the empty label when the body is missing', () => {
+      expect(previewText(titleEvent(''), labels)).toBe('메시지 없음');
+    });
+  });
 });

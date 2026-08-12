@@ -11,9 +11,9 @@ class Api::V1::DmRoomsController < Api::BaseController
   REPAIR_LIMIT = 10
 
   before_action -> { doorkeeper_authorize! :read, :'read:statuses' }, only: [:index, :show]
-  before_action -> { doorkeeper_authorize! :write, :'write:conversations' }, only: [:create, :destroy, :read]
+  before_action -> { doorkeeper_authorize! :write, :'write:conversations' }, only: [:create, :destroy, :read, :title]
   before_action :require_user!
-  before_action :set_room, only: [:show, :destroy, :read]
+  before_action :set_room, only: [:show, :destroy, :read, :title]
 
   after_action :insert_pagination_headers, only: :index
 
@@ -48,10 +48,22 @@ class Api::V1::DmRoomsController < Api::BaseController
     target_id = params[:status_id].presence
     raise Mastodon::ValidationError, I18n.t('dm_rooms.errors.unknown_status') if target_id.present? && !@room.visible_statuses_for(current_account).exists?(id: target_id)
 
-    cursor = DmRoomRead.create_or_find_by!(dm_room_id: @room.id, account_id: current_account.id)
-    cursor.advance_to!(target_id || @room.last_status_id)
+    cursor   = DmRoomRead.create_or_find_by!(dm_room_id: @room.id, account_id: current_account.id)
+    advanced = cursor.advance_to!(target_id || @room.last_status_id)
 
     mark_legacy_conversations_read!
+
+    @room.broadcast_read!(current_account) if advanced
+
+    render json: @room.reload, serializer: REST::DmRoomSerializer, current_account: current_account
+  end
+
+  def title
+    new_title = params[:title].to_s.strip
+
+    raise Mastodon::ValidationError, I18n.t('dm_rooms.errors.title_too_long', max: DmRoom::TITLE_MAX_LENGTH) if new_title.length > DmRoom::TITLE_MAX_LENGTH
+
+    @room.change_title!(current_account, new_title)
 
     render json: @room.reload, serializer: REST::DmRoomSerializer, current_account: current_account
   end

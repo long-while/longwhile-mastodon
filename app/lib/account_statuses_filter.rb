@@ -55,7 +55,6 @@ class AccountStatusesFilter
   # If you use or reuse this feature, you must credit the author on your server.
   #   Twitter/X : @_longwhile  ·  https://twitter.com/_longwhile  /  Crepe : https://kre.pe/QTRx
   # ═══════════════════════════════════════════════════════════════════════════
-  # Admin / Owner 역할 보유자: 대상 계정의 모든 가시범위(direct/private 포함) 조회 허용
   def administrator?
     current_account&.user&.can?(:administrator, :manage_roles)
   end
@@ -81,15 +80,23 @@ class AccountStatusesFilter
           # to re-use those scopes in our case.
           .where(reblog: { accounts: { domain: nil } }).or(scope.where.not(reblog: { accounts: { domain: current_account.excluded_from_timeline_domains } }))
           .where.not(reblog: { account_id: current_account.excluded_from_timeline_account_ids })
+          .where(reblog: { account_id: reblog_visible_author_ids })
       )
   end
 
+  def reblog_visible_author_ids
+    Account
+      .where(id: Follow.where(account_id: current_account.id).select(:target_account_id))
+      .or(Account.where(id: current_account.id))
+      .select(:id)
+  end
+
   def direct_scope
-    Status.with_direct_visibility
+    Status.direct_visibility
   end
 
   def no_direct_scope
-    Status.without_direct_visibility
+    Status.not_direct_visibility
   end
 
   def only_media_scope

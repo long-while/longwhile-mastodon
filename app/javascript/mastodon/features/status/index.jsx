@@ -14,9 +14,6 @@ import { connect } from 'react-redux';
 
 import { HotKeys } from 'react-hotkeys';
 
-import VisibilityIcon from '@/material-icons/400-24px/visibility.svg?react';
-import VisibilityOffIcon from '@/material-icons/400-24px/visibility_off.svg?react';
-import { Icon } from 'mastodon/components/icon';
 import { LoadingIndicator } from 'mastodon/components/loading_indicator';
 import { TimelineHint } from 'mastodon/components/timeline_hint';
 import ScrollContainer from 'mastodon/containers/scroll_container';
@@ -74,8 +71,6 @@ import { DetailedStatus } from './components/detailed_status';
 
 
 const messages = defineMessages({
-  revealAll: { id: 'status.show_more_all', defaultMessage: 'Show more for all' },
-  hideAll: { id: 'status.show_less_all', defaultMessage: 'Show less for all' },
   statusTitleWithAttachments: { id: 'status.title.with_attachments', defaultMessage: '{user} posted {attachmentCount, plural, one {an attachment} other {# attachments}}' },
   detailedStatus: { id: 'status.detailed_status', defaultMessage: 'Detailed conversation view' },
 });
@@ -327,17 +322,6 @@ class Status extends ImmutablePureComponent {
       this.props.dispatch(revealStatus(status.get('id')));
     } else {
       this.props.dispatch(hideStatus(status.get('id')));
-    }
-  };
-
-  handleToggleAll = () => {
-    const { status, ancestorsIds, descendantsIds } = this.props;
-    const statusIds = [status.get('id')].concat(ancestorsIds, descendantsIds);
-
-    if (status.get('hidden')) {
-      this.props.dispatch(revealStatus(statusIds));
-    } else {
-      this.props.dispatch(hideStatus(statusIds));
     }
   };
 
@@ -639,9 +623,6 @@ class Status extends ImmutablePureComponent {
         <ColumnHeader
           showBackButton
           multiColumn={multiColumn}
-          extraButton={(
-            <button type='button' className='column-header__button' title={intl.formatMessage(status.get('hidden') ? messages.revealAll : messages.hideAll)} aria-label={intl.formatMessage(status.get('hidden') ? messages.revealAll : messages.hideAll)} onClick={this.handleToggleAll}><Icon id={status.get('hidden') ? 'eye-slash' : 'eye'} icon={status.get('hidden') ? VisibilityOffIcon : VisibilityIcon} /></button>
-          )}
         />
 
         <ScrollContainer scrollKey='thread' shouldUpdateScroll={this.shouldUpdateScroll}>
