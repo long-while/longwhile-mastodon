@@ -187,7 +187,7 @@ ko:
         display_name: 이름
         email: 이메일 주소
         expires_in: 만기
-        fields: 링크
+        fields: 추가 정보
         header: 헤더 사진
         honeypot: "%{label} (채우지 마시오)"
         inbox_url: 릴레이 서버의 inbox URL
@@ -195,7 +195,7 @@ ko:
         locale: 언어
         max_uses: 사용 횟수 제한
         new_password: 새로운 암호 입력
-        note: 소개
+        note: 자기소개
         otp_attempt: 이중 인증 코드
         password: 암호
         phrase: 키워드 또는 문장
@@ -204,6 +204,7 @@ ko:
         setting_auto_play_gif: 애니메이션 GIF를 자동 재생
         setting_default_privacy: 게시물 프라이버시
         setting_default_sensitive: 미디어를 언제나 민감한 콘텐츠로 설정
+        setting_default_language: 게시물 언어
         setting_delete_modal: 게시물 삭제 전 확인창을 띄웁니다
         setting_display_media: 미디어 표시
         setting_display_media_default: 기본
@@ -332,6 +333,7 @@ ko:
         min_age: 최소 연령
       user:
         date_of_birth_1i: 일
+        time_zone: 시간대
         date_of_birth_2i: 월
         date_of_birth_3i: 년
         role: 역할

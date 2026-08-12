@@ -172,7 +172,7 @@ ko:
       suspended: 정지 됨
       suspension_irreversible: 이 계정의 데이터는 복구할 수 없도록 삭제되었습니다. 계정을 정지 해제함으로서 계정을 다시 사용 가능하게 할 수 있지만 이전에 삭제한 어떤 데이터도 복구되지 않습니다.
       suspension_reversible_hint_html: 계정이 정지되었습니다, 그리고 %{date}에 데이터가 완전히 삭제될 것입니다. 그 때까지는 어떤 안 좋은 효과 없이 계정이 복구 될 수 있습니다. 만약 지금 당장 계정의 모든 데이터를 삭제하고 싶다면, 아래에서 행할 수 있습니다.
-      title: 계정
+      title: 서버원 관리
       unblock_email: 이메일 차단 해제하기
       unblocked_email_msg: "%{username}의 이메일 주소를 성공적으로 차단 해제했습니다"
       unconfirmed_email: 확인되지 않은 이메일 주소
@@ -1004,7 +1004,7 @@ ko:
       published_on_html: "%{date}에 게시됨"
       save_draft: 초안 저장
       title: 이용 약관
-    title: 관리
+    title: 운영
     trends:
       allow: 허용
       approved: 승인됨
@@ -1130,15 +1130,6 @@ ko:
     new_software_updates:
       body: 새 마스토돈 버전이 릴리스되었습니다. 업데이트 할 수 있습니다!
       subject: "%{instance}에 대해 새 마스토돈 버전이 사용 가능합니다!"
-    new_trends:
-      body: '아래에 있는 항목들은 공개적으로 보여지기 전에 검토를 거쳐야 합니다:'
-      new_trending_links:
-        title: 유행하는 링크
-      new_trending_statuses:
-        title: 유행하는 게시물
-      new_trending_tags:
-        title: 유행하는 해시태그
-      subject: 새 트렌드가 %{instance}에서 심사 대기 중입니다
   appearance:
     advanced_web_interface_hint: 화면을 여러 칼럼으로 나눠 보여줍니다.
     discovery: 발견하기
@@ -1147,7 +1138,6 @@ ko:
       guide_link: https://crowdin.com/project/mastodon
       guide_link_text: 누구나 기여할 수 있습니다.
     motion: 움직임
-    theme: 테마
     viewing: 보기
   application_mailer:
     notification_preferences: 이메일 설정 변경
@@ -1342,7 +1332,7 @@ ko:
     title_removed: "%{name} 님이 대화 제목을 지웠습니다."
   edit_profile:
     basic_information: 기본 정보
-    followers_only_notice: 이 서버의 글은 모두 팔로워에게만 보입니다.
+    followers_only_notice: 이 서버에 게시하는 모든 글은 내 팔로워에게만 보입니다.
     hint_html: "<strong>사람들이 공개 프로필을 보고서 게시물을 볼 때를 위한 프로필을 꾸밉니다.</strong> 프로필과 프로필 사진을 채우면 다른 사람들이 나를 팔로우하고 나와 교류할 기회가 더 많아집니다."
     other: 기타
   errors:
@@ -1410,12 +1400,12 @@ ko:
         other: "%{count}개의 게시물"
       statuses_long:
         other: "%{count}개의 개별적인 게시물 숨겨짐"
-      title: 안 볼 단어
+      title: 뮤트한 단어
     new:
       save: 저장
       title: 단어 추가
     statuses:
-      back_to_filter: 안 볼 단어로 돌아가기
+      back_to_filter: 뮤트한 단어로 돌아가기
       batch:
         remove: 필터에서 제거
       index:
@@ -1599,8 +1589,6 @@ ko:
       only_redirect_html: 대신, <a href="%{path}">프로필에 리디렉션만 표시</a>할 수도 있습니다.
       other_data: 다른 어떤 데이터도 자동적으로 옮겨지지 않을 것입니다
       redirect: 현재 계정 프로필은 리다이렉트 알림과 함께 업데이트 되며 검색에서 제외 됩니다
-  moderation:
-    title: 중재
   move_handler:
     carry_blocks_over_text: 이 사용자는 예전에 차단한 %{acct}에서 이주 했습니다.
     carry_mutes_over_text: 이 사용자는 예전에 뮤트한 %{acct}에서 이주 했습니다.
@@ -1796,17 +1784,14 @@ ko:
   settings:
     account: 계정
     account_settings: 계정 설정
-    authorized_apps: 연결된 앱
     back: 마스토돈으로 돌아가기
     delete: 계정 삭제
-    development: 내가 만든 앱
-    edit_profile: 프로필
+    development: 개발
     export: 데이터 내려받기
-    featured_tags: 추천 해시태그
     notifications: 알림
     preferences: 화면
     profile: 프로필
-    statuses_cleanup: 옛 글 자동 삭제
+    statuses_cleanup: 오래된 게시물 자동 삭제
     strikes: 중재 기록
     two_factor_authentication: 2단계 인증
     webauthn_authentication: 보안 키

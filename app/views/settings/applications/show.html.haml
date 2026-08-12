@@ -1,6 +1,9 @@
 - content_for :page_title do
   = t('doorkeeper.applications.show.title', name: @application.name)
 
+- content_for :heading_actions do
+  = button_tag t('generic.save_changes'), class: 'button', form: 'edit_application'
+
 %p.hint= t('applications.warning')
 
 .table-wrapper
@@ -24,8 +27,6 @@
 
 %hr/
 
-= simple_form_for @application, url: settings_application_path(@application) do |form|
+= simple_form_for @application, url: settings_application_path(@application), html: { id: 'edit_application' } do |form|
   = render form
 
-  .actions
-    = form.button :button, t('generic.save_changes'), type: :submit

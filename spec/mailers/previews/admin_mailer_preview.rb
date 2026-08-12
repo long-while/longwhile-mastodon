@@ -18,11 +18,6 @@ class AdminMailerPreview < ActionMailer::Preview
     AdminMailer.with(recipient: Account.first).new_pending_account(User.pending.first)
   end
 
-  # Preview this email at http://localhost:3000/rails/mailers/admin_mailer/new_trends
-  def new_trends
-    AdminMailer.with(recipient: Account.first).new_trends(PreviewCard.joins(:trend).limit(3), Tag.limit(3), Status.joins(:trend).where(reblog_of_id: nil).limit(3))
-  end
-
   # Preview this email at http://localhost:3000/rails/mailers/admin_mailer/new_software_updates
   def new_software_updates
     AdminMailer.with(recipient: Account.first).new_software_updates

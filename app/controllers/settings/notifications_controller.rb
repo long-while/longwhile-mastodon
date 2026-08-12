@@ -24,6 +24,12 @@ class Settings::NotificationsController < Settings::PreferencesBaseController
     @policy = NotificationPolicy.find_or_initialize_by(account: current_account)
   end
 
+  def user_params
+    return {} if params[:user].blank?
+
+    super
+  end
+
   def policy_params
     return {} if params[:notification_policy].blank?
 

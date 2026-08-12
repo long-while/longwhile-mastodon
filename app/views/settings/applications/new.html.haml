@@ -1,8 +1,9 @@
 - content_for :page_title do
   = t('doorkeeper.applications.new.title')
 
-= simple_form_for @application, url: settings_applications_path do |form|
+- content_for :heading_actions do
+  = button_tag t('doorkeeper.applications.buttons.submit'), class: 'button', form: 'new_application'
+
+= simple_form_for @application, url: settings_applications_path, html: { id: 'new_application' } do |form|
   = render form
 
-  .actions
-    = form.button :button, t('doorkeeper.applications.buttons.submit'), type: :submit

@@ -174,7 +174,7 @@ en:
       suspended: Suspended
       suspension_irreversible: The data of this account has been irreversibly deleted. You can unsuspend the account to make it usable but it will not recover any data it previously had.
       suspension_reversible_hint_html: The account has been suspended, and the data will be fully removed on %{date}. Until then, the account can be restored without any ill effects. If you wish to remove all of the account's data immediately, you can do so below.
-      title: Accounts
+      title: Member Management
       unblock_email: Unblock email address
       unblocked_email_msg: Successfully unblocked %{username}'s email address
       unconfirmed_email: Unconfirmed email
@@ -1017,7 +1017,7 @@ en:
       published_on_html: Published on %{date}
       save_draft: Save draft
       title: Terms of Service
-    title: Administration
+    title: Operations
     trends:
       allow: Allow
       approved: Approved
@@ -1147,15 +1147,6 @@ en:
     new_software_updates:
       body: New Mastodon versions have been released, you may want to update!
       subject: New Mastodon versions are available for %{instance}!
-    new_trends:
-      body: 'The following items need a review before they can be displayed publicly:'
-      new_trending_links:
-        title: Trending links
-      new_trending_statuses:
-        title: Trending posts
-      new_trending_tags:
-        title: Trending hashtags
-      subject: New trends up for review on %{instance}
   appearance:
     advanced_web_interface_hint: Splits the screen into several columns.
     discovery: Discovery
@@ -1164,7 +1155,6 @@ en:
       guide_link: https://crowdin.com/project/mastodon
       guide_link_text: Everyone can contribute.
     motion: Motion
-    theme: Theme
     viewing: Viewing
   application_mailer:
     notification_preferences: Change email preferences
@@ -1636,8 +1626,6 @@ en:
       only_redirect_html: Alternatively, you can <a href="%{path}">only put up a redirect on your profile</a>.
       other_data: No other data will be moved automatically
       redirect: Your current account's profile will be updated with a redirect notice and be excluded from searches
-  moderation:
-    title: Moderation
   move_handler:
     carry_blocks_over_text: This user moved from %{acct}, which you had blocked.
     carry_mutes_over_text: This user moved from %{acct}, which you had muted.
@@ -1834,13 +1822,10 @@ en:
   settings:
     account: Account
     account_settings: Account settings
-    authorized_apps: Connected apps
     back: Back to Mastodon
     delete: Account deletion
     development: Apps you made
-    edit_profile: Profile
     export: Download your data
-    featured_tags: Featured hashtags
     notifications: Notifications
     preferences: Display
     profile: Profile

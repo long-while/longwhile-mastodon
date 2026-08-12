@@ -1,0 +1,12 @@
+.image-picker__item
+  %span.image-picker__caption= t("simple_form.labels.form_admin_settings.#{attribute}")
+  .image-picker__slot
+    %label.image-picker__frame{ class: ["image-picker__frame--#{defined?(frame) ? frame : 'avatar'}", ('image-picker__frame--empty' if preview_url.blank?)] }
+      - if preview_url.present?
+        = image_tag preview_url, class: 'image-picker__img'
+      %span.image-picker__overlay
+        = material_symbol 'photo_camera'
+      = f.file_field attribute, accept: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].join(','), class: 'image-picker__input'
+    - if upload&.persisted?
+      = link_to admin_site_upload_path(upload), data: { method: :delete }, class: 'image-picker__remove', title: t('admin.site_uploads.delete'), 'aria-label': t('admin.site_uploads.delete') do
+        = material_symbol 'close'

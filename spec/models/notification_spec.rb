@@ -321,6 +321,22 @@ RSpec.describe Notification do
       end
     end
   end
+  describe '.browserable with a departed sender' do
+    let(:receiver) { Fabricate(:account) }
+    let(:departed) { Fabricate(:account, anonymized_at: Time.now.utc, display_name: Account::ANONYMIZED_DISPLAY_NAME) }
+    let(:present) { Fabricate(:account) }
+
+    before do
+      Fabricate(:notification, account: receiver, from_account: departed, activity: Fabricate(:follow, account: departed, target_account: receiver), type: :follow)
+      Fabricate(:notification, account: receiver, from_account: present, activity: Fabricate(:follow, account: present, target_account: receiver), type: :follow)
+    end
+
+    it 'leaves out notifications from an anonymized account' do
+      expect(receiver.notifications.browserable.map(&:from_account))
+        .to contain_exactly(present)
+    end
+  end
+
 end
 
 RSpec::Matchers.define :have_loaded_association do |association|

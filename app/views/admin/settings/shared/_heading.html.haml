@@ -1,0 +1,7 @@
+.content__heading__row
+  %h2= t('admin.settings.title')
+
+  .content__heading__actions
+    = button_tag t('generic.save_changes'), class: 'button', form: 'edit_admin_settings'
+
+= render partial: 'admin/settings/shared/links'

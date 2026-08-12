@@ -192,7 +192,7 @@ en:
         display_name: Name
         email: E-mail address
         expires_in: Expire after
-        fields: Links
+        fields: Extra info
         header: Header picture
         honeypot: "%{label} (do not fill in)"
         inbox_url: URL of the relay inbox
@@ -210,6 +210,7 @@ en:
         setting_default_privacy: Posting privacy
         setting_default_quote_policy: Who can quote
         setting_default_sensitive: Always mark media as sensitive
+        setting_default_language: Posting language
         setting_delete_modal: Show confirmation dialog before deleting a post
         setting_advanced_layout: Enable advanced web interface
         setting_display_media: Media display
@@ -337,6 +338,7 @@ en:
         min_age: Minimum age
       user:
         date_of_birth_1i: Day
+        time_zone: Time zone
         date_of_birth_2i: Month
         date_of_birth_3i: Year
         role: Role

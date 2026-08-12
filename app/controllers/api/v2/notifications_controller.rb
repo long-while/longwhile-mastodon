@@ -46,7 +46,7 @@ class Api::V2::NotificationsController < Api::BaseController
   end
 
   def show
-    @notification = current_account.notifications.without_suspended.by_group_key(params[:group_key]).take!
+    @notification = current_account.notifications.without_unavailable.by_group_key(params[:group_key]).take!
     presenter = GroupedNotificationsPresenter.new(NotificationGroup.from_notifications([@notification]))
     render json: presenter, serializer: REST::DedupNotificationGroupSerializer
   end

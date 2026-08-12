@@ -52,6 +52,5 @@ namespace :settings do
   resource :delete, only: [:show, :destroy]
 
   resources :sessions, only: [:destroy]
-  resources :featured_tags, only: [:index, :create, :destroy]
   resources :login_activities, only: [:index]
 end
