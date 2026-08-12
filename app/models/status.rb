@@ -164,6 +164,8 @@ class Status < ApplicationRecord
   # the `dependent: destroy` callbacks remove relevant records
   before_destroy :unlink_from_conversations!, prepend: true
 
+  after_destroy :rewind_dm_room!, if: :direct_visibility?
+
   cache_associated :application,
                    :media_attachments,
                    :conversation,
@@ -194,6 +196,13 @@ class Status < ApplicationRecord
 
   def cache_key
     "v3:#{super}"
+  end
+
+  # @_longwhile custom feature
+  def rate_limiter(by, options = {})
+    return super if defined?(@rate_limiter) || !direct_visibility?
+
+    super(by, options.merge(family: :direct_statuses))
   end
 
   def to_log_human_identifier
@@ -406,6 +415,14 @@ class Status < ApplicationRecord
     discard_time = Time.current
     Status.unscoped.where(reblog_of_id: id, deleted_at: [nil, deleted_at]).in_batches.update_all(deleted_at: discard_time) unless reblog?
     update_attribute(:deleted_at, discard_time)
+
+    rewind_dm_room! if direct_visibility?
+  end
+
+  def rewind_dm_room!
+    return unless Mastodon::DmChat.enabled?
+
+    conversation&.dm_room&.rewind_last_status!
   end
 
   def unlink_from_conversations!
@@ -470,7 +487,7 @@ class Status < ApplicationRecord
   end
 
   def update_statistics
-    return unless distributable?
+    return if direct_visibility? || limited_visibility?
 
     ActivityTracker.increment('activity:statuses:local')
   end

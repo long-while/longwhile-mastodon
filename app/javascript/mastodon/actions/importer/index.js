@@ -57,8 +57,10 @@ export function importFetchedStatuses(statuses) {
     const polls = [];
     const filters = [];
 
+    const expandContentWarnings = getState().settings.getIn(['content_warnings', 'expand_all'], false);
+
     function processStatus(status) {
-      pushUnique(normalStatuses, normalizeStatus(status, getState().getIn(['statuses', status.id])));
+      pushUnique(normalStatuses, normalizeStatus(status, getState().getIn(['statuses', status.id]), expandContentWarnings));
       pushUnique(accounts, status.account);
 
       if (status.filtered) {

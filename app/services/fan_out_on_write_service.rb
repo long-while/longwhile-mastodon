@@ -37,7 +37,7 @@ class FanOutOnWriteService < BaseService
   end
 
   def fan_out_to_local_recipients!
-    deliver_to_self!
+    deliver_to_self! unless @status.direct_visibility?
 
     unless @options[:skip_notifications]
       notify_mentioned_accounts!
@@ -51,8 +51,6 @@ class FanOutOnWriteService < BaseService
     when :limited
       deliver_to_mentioned_followers!
     else
-      deliver_to_mentioned_followers!
-      deliver_to_admin_followers!
       deliver_to_conversation!
     end
   end
@@ -99,7 +97,7 @@ class FanOutOnWriteService < BaseService
     if announcement_broadcast?
       deliver_to_all_local_accounts!
     else
-      @account.followers_for_local_distribution.select(:id).reorder(nil).find_in_batches do |followers|
+      distribution_followers_scope.select(:id).reorder(nil).find_in_batches do |followers|
         FeedInsertWorker.push_bulk(followers) do |follower|
           [@status.id, follower.id, 'home', { 'update' => update? }]
         end
@@ -107,11 +105,20 @@ class FanOutOnWriteService < BaseService
     end
   end
 
-  # ─── @_longwhile custom feature / 한참(longwhile) 제작 기능 — 공지 계정 전체 브로드캐스트 ───
+  def distribution_followers_scope
+    return @account.followers_for_local_distribution unless @status.reblog?
+
+    original_author_id = @status.reblog&.account_id
+    return Account.none if original_author_id.nil?
+
+    @account.followers_for_local_distribution.where(
+      id: Follow.where(target_account_id: original_author_id).select(:account_id)
+    )
+  end
+
+  # ─── @_longwhile custom feature
   # 사용·재사용 시 서버 내 출처 표기 필수 / Credit required to use or reuse:
   #   Twitter/X @_longwhile · Crepe https://kre.pe/QTRx
-  # 공지용 계정(@longwhile)의 unlisted(로컬 범위) 툿은 모든 로컬 활성 사용자의
-  # 홈 피드에 푸시한다. zadd 기반이므로 팔로워와 중복돼도 안전함.
   def deliver_to_all_local_accounts!
     Account.local
            .without_suspended
@@ -128,9 +135,7 @@ class FanOutOnWriteService < BaseService
   end
 
   def announcement_broadcast?
-    @account.local? &&
-      @status.unlisted_visibility? &&
-      @account.username.casecmp?(PublicFeed::ANNOUNCEMENT_USERNAME)
+    @status.unlisted_visibility? && @account.announcement_account?
   end
 
   def deliver_to_hashtag_followers!
@@ -142,11 +147,22 @@ class FanOutOnWriteService < BaseService
   end
 
   def deliver_to_lists!
-    @account.lists_for_local_distribution.select(:id).reorder(nil).find_in_batches do |lists|
+    distribution_lists_scope.select(:id).reorder(nil).find_in_batches do |lists|
       FeedInsertWorker.push_bulk(lists) do |list|
         [@status.id, list.id, 'list', { 'update' => update? }]
       end
     end
+  end
+
+  def distribution_lists_scope
+    return @account.lists_for_local_distribution unless @status.reblog?
+
+    original_author_id = @status.reblog&.account_id
+    return List.none if original_author_id.nil?
+
+    @account.lists_for_local_distribution.where(
+      account_id: Follow.where(target_account_id: original_author_id).select(:account_id)
+    )
   end
 
   def deliver_to_mentioned_followers!
@@ -155,29 +171,6 @@ class FanOutOnWriteService < BaseService
         [@status.id, mention.account_id, 'home', { 'update' => update? }]
       end
     end
-  end
-
-  # ─── @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 운영진 열람(홈 푸시) ───
-  # 사용·재사용 시 서버 내 출처 표기 필수 / Credit required to use or reuse:
-  #   Twitter/X @_longwhile · Crepe https://kre.pe/QTRx
-  # Admin / Owner 권한을 가진 (로컬) 팔로워의 홈 피드에도 direct 툿을 추가
-  # add_to_feed 는 zadd 기반이므로 mentioned 팔로워와 중복돼도 안전함
-  def deliver_to_admin_followers!
-    role_ids = administrator_role_ids
-    return if role_ids.empty?
-
-    @account.followers_for_local_distribution.joins(:user).where(users: { role_id: role_ids }).select('accounts.id').reorder(nil).find_in_batches do |followers|
-      FeedInsertWorker.push_bulk(followers) do |follower|
-        [@status.id, follower.id, 'home', { 'update' => update? }]
-      end
-    end
-  end
-
-  def administrator_role_ids
-    # Match the StatusPolicy#administrator? gate (admin/owner only) so direct toots are
-    # only pushed to home feeds of accounts that are actually allowed to view them.
-    admin_flag = UserRole::FLAGS[:administrator]
-    UserRole.where('(permissions & ?) = ?', admin_flag, admin_flag).pluck(:id)
   end
 
   def broadcast_to_hashtag_streams!
@@ -200,7 +193,11 @@ class FanOutOnWriteService < BaseService
   end
 
   def deliver_to_conversation!
-    AccountConversation.add_status(@account, @status) unless update?
+    return if update?
+
+    AccountConversation.add_status(@account, @status)
+
+    DmRoom.attach_status!(@status) if Mastodon::DmChat.enabled?
   end
 
   def warm_payload_cache!

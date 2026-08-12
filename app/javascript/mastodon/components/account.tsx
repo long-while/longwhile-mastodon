@@ -5,8 +5,8 @@ import { defineMessages, useIntl, FormattedMessage } from 'react-intl';
 import classNames from 'classnames';
 import { Link } from 'react-router-dom';
 
-import LockIcon from '@/material-icons/400-24px/lock.svg?react';
 import MoreHorizIcon from '@/material-icons/400-24px/more_horiz.svg?react';
+import LockIcon from '@/styles/bird-theme-svg/lock-fill.svg?react';
 import {
   blockAccount,
   unblockAccount,
@@ -160,6 +160,15 @@ export const Account: React.FC<{
     );
   }
 
+  const lockedIcon: React.ReactNode = account?.locked ? (
+    <Icon
+      id='lock'
+      icon={LockIcon}
+      className='account__locked-icon'
+      title={intl.formatMessage(messages.account_locked)}
+    />
+  ) : null;
+
   let button: React.ReactNode, dropdown: React.ReactNode;
 
   if (menu.length > 0) {
@@ -234,15 +243,7 @@ export const Account: React.FC<{
             {/* @_longwhile custom feature / 한참(longwhile) 제작 기능 — 프로텍트(잠금) 계정 표시 아이콘.
                 사용·재사용 시 서버 내 출처 표기 필수 / Credit required: Twitter/X @_longwhile · Crepe https://kre.pe/QTRx */}
             <div className='account__display-name-row'>
-              <DisplayName account={account} />
-              {account?.locked && (
-                <Icon
-                  id='lock'
-                  icon={LockIcon}
-                  className='account__locked-icon'
-                  title={intl.formatMessage(messages.account_locked)}
-                />
-              )}
+              <DisplayName account={account} afterName={lockedIcon} />
             </div>
 
             {!minimal && (
@@ -261,7 +262,6 @@ export const Account: React.FC<{
               </div>
             )}
 
-            {/* 바이오를 account__contents 안으로 이동 */}
             {account?.note && (
               <div className="account__bio" dangerouslySetInnerHTML={{ __html: account.note }} />
             )}

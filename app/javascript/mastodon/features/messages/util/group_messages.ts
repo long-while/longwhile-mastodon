@@ -1,0 +1,122 @@
+// @_longwhile custom feature
+
+export const GROUP_WINDOW_MS = 3 * 60 * 1000;
+
+export interface GroupableMessage {
+  id: string;
+  accountId: string;
+  createdAt: string;
+
+  quotesAnotherMessage: boolean;
+
+  standalone?: boolean;
+}
+
+export interface PositionedMessage<T extends GroupableMessage> {
+  message: T;
+  isFirstInGroup: boolean;
+  isLastInGroup: boolean;
+
+  showTimestamp: boolean;
+
+  isSenderChanged: boolean;
+}
+
+export interface MessageGroup<T extends GroupableMessage> {
+  key: string;
+  accountId: string;
+  messages: PositionedMessage<T>[];
+}
+
+export interface DateSection<T extends GroupableMessage> {
+  key: string;
+
+  date: Date;
+  groups: MessageGroup<T>[];
+}
+
+const startOfLocalDay = (value: Date) =>
+  new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime();
+
+const timeOf = (message: GroupableMessage) =>
+  new Date(message.createdAt).getTime();
+
+export const groupMessages = <T extends GroupableMessage>(
+  messages: T[],
+): DateSection<T>[] => {
+  const sections: DateSection<T>[] = [];
+
+  messages.forEach((message) => {
+    const at  = timeOf(message);
+    const day = startOfLocalDay(new Date(at));
+
+    let section = sections.at(-1);
+
+    if (!section || startOfLocalDay(section.date) !== day) {
+      section = { key: `date-${day}`, date: new Date(at), groups: [] };
+      sections.push(section);
+    }
+
+    const group    = section.groups.at(-1);
+    const previous = group?.messages.at(-1);
+
+    const continuesGroup =
+      group !== undefined &&
+      previous !== undefined &&
+      group.accountId === message.accountId &&
+      at - timeOf(previous.message) <= GROUP_WINDOW_MS &&
+      !message.quotesAnotherMessage &&
+      !message.standalone &&
+      !previous.message.standalone;
+
+    const entry: PositionedMessage<T> = {
+      message,
+      isFirstInGroup: !continuesGroup,
+      isLastInGroup: true,
+      showTimestamp: false,
+      isSenderChanged: false,
+    };
+
+    if (continuesGroup) {
+      previous.isLastInGroup = false;
+      group.messages.push(entry);
+    } else {
+      section.groups.push({
+        key: `group-${message.id}`,
+        accountId: message.accountId,
+        messages: [entry],
+      });
+    }
+  });
+
+  markTimestamps(sections);
+  markSenderChanges(sections);
+
+  return sections;
+};
+
+const markSenderChanges = <T extends GroupableMessage>(
+  sections: DateSection<T>[],
+) => {
+  const groups = sections.flatMap((section) => section.groups);
+
+  groups.forEach((group, index) => {
+    const first = group.messages[0];
+    const previous = groups[index - 1];
+
+    if (first && previous) {
+      first.isSenderChanged = previous.accountId !== group.accountId;
+    }
+  });
+};
+
+const markTimestamps = <T extends GroupableMessage>(
+  sections: DateSection<T>[],
+) => {
+  sections.forEach((section) => {
+    section.groups.forEach((group) => {
+      const last = group.messages.at(-1);
+      if (last) last.showTimestamp = true;
+    });
+  });
+};

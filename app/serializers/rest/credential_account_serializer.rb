@@ -19,6 +19,8 @@ class REST::CredentialAccountSerializer < REST::AccountSerializer
       discoverable: object.discoverable,
       indexable: object.indexable,
       attribution_domains: object.attribution_domains,
+
+      dm_read_receipts: user.settings['dm_read_receipts'],
     }
   end
 

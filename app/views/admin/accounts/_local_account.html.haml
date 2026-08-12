@@ -19,11 +19,11 @@
     = table_link_to 'contact_mail', t('admin.accounts.change_role.label'), admin_user_role_path(account.user) if can?(:change_role, account.user)
 - if can?(:toggle_protect, account)
   %tr
-    %th 프로텍트
-    %td= account.locked? ? '설정됨' : '설정되지 않음'
+    %th 팔로우 승인제
+    %td= account.locked? ? '켜짐 (승인 필요)' : '꺼짐 (바로 팔로우)'
     %td
       = table_link_to(account.locked? ? 'lock_open' : 'lock',
-                      account.locked? ? '공개 계정으로 전환하기' : '프로텍트 계정으로 전환하기',
+                      account.locked? ? '승인 없이 팔로우 받기' : '팔로우를 승인제로 하기',
                       toggle_protect_admin_account_path(account.id),
                       method: :post,
                       data: { confirm: t('admin.accounts.are_you_sure') })

@@ -26,7 +26,6 @@ import { IconLogo } from 'mastodon/components/logo';
 import MediaGallery from 'mastodon/components/media_gallery';
 import { PictureInPicturePlaceholder } from 'mastodon/components/picture_in_picture_placeholder';
 import StatusContent from 'mastodon/components/status_content';
-import { VisibilityIcon } from 'mastodon/components/visibility_icon';
 import { Audio } from 'mastodon/features/audio';
 import scheduleIdleTask from 'mastodon/features/ui/util/schedule_idle_task';
 import { Video } from 'mastodon/features/video';
@@ -250,13 +249,7 @@ export const DetailedStatus: React.FC<{
     );
   }
 
-  const visibilityLink = (
-    <>
-      ·<VisibilityIcon visibility={status.get('visibility')} />
-    </>
-  );
-
-  if (['private', 'direct'].includes(status.get('visibility') as string)) {
+  if (['direct', 'limited'].includes(status.get('visibility') as string)) {
     reblogLink = '';
   } else {
     reblogLink = (
@@ -394,7 +387,6 @@ export const DetailedStatus: React.FC<{
               />
             </a>
 
-            {visibilityLink}
             {applicationLink}
           </div>
 

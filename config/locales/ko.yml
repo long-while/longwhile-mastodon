@@ -241,7 +241,7 @@ ko:
         sensitive_account: 당신의 계정의 미디어를 민감함으로 표시
         silence_account: 계정 제한
         suspend_account: 계정 정지
-        toggle_protect_account: 프로텍트 설정 전환
+        toggle_protect_account: 팔로우 승인제 전환
         unassigned_report: 신고 맡기 취소
         unblock_email_account: 이메일 주소 차단 해제
         unsensitive_account: 당신의 계정의 미디어를 민감함으로 표시하지 않음
@@ -755,8 +755,8 @@ ko:
       privileges:
         administrator: 관리자
         administrator_description: 이 권한을 가진 사용자는 모든 권한을 우회합니다
-        can_be_private_account: 비공개 계정 설정
-        can_be_private_account_description: 사용자가 자신의 계정을 비공개(팔로워 전용)로 전환할 수 있도록 허용
+        can_be_private_account: 팔로우 승인제 설정
+        can_be_private_account_description: 사용자가 자신의 팔로우를 승인제로 바꿀 수 있도록 허용 (게시물은 이 설정과 무관하게 언제나 팔로워 전용)
         delete_user_data: 사용자 데이터 삭제
         delete_user_data_description: 사용자가 다른 사용자의 데이터를 지체 없이 삭제할 수 있도록 허용
         invite_users: 사용자 초대
@@ -880,7 +880,7 @@ ko:
         report: 신고
       contents: 내용
       deleted: 삭제됨
-      favourites: 즐겨찾기
+      favourites: 마음에 들어요
       history: 버전 이력
       in_reply_to: '회신 대상:'
       language: 언어
@@ -1044,7 +1044,7 @@ ko:
         confirm_allow_account: 정말로 선택된 계정들을 허용하시겠습니까?
         confirm_disallow: 정말로 선택된 게시물들을 금지하시겠습니까?
         confirm_disallow_account: 정말로 선택된 계정들을 금지하시겠습니까?
-        description_html: 여러분의 서버가 알기로 현재 많은 수의 공유와 즐겨찾기가 되고 있는 게시물들입니다. 새로운 사용자나 돌아오는 사용자들이 팔로우 할 사람들을 찾는 데 도움이 될 수 있습니다. 작성자를 승인하고, 작성자가 그들의 계정이 다른 계정에게 탐색되도록 설정하지 않는 한 게시물들은 공개적으로 표시되지 않습니다. 또한 각각의 게시물을 별개로 거절할 수도 있습니다.
+        description_html: 여러분의 서버가 알기로 현재 많은 수의 공유와 마음에 들어요가 되고 있는 게시물들입니다. 새로운 사용자나 돌아오는 사용자들이 팔로우 할 사람들을 찾는 데 도움이 될 수 있습니다. 작성자를 승인하고, 작성자가 그들의 계정이 다른 계정에게 탐색되도록 설정하지 않는 한 게시물들은 공개적으로 표시되지 않습니다. 또한 각각의 게시물을 별개로 거절할 수도 있습니다.
         disallow: 게시물 비허용
         disallow_account: 작성자 금지
         no_status_selected: 아무 것도 선택 되지 않아 어떤 유행중인 게시물도 바뀌지 않았습니다
@@ -1335,6 +1335,20 @@ ko:
       your_appeal_approved: 소명이 받아들여졌습니다
       your_appeal_pending: 소명을 제출했습니다
       your_appeal_rejected: 소명이 기각되었습니다
+  dm_rooms:
+    errors:
+      last_members: 대화에는 두 명 이상이 남아 있어야 합니다.
+      no_recipients: 메시지를 보낼 상대를 한 명 이상 선택해 주세요.
+      nickname_too_long: 별명은 %{max}자를 넘을 수 없습니다.
+      room_exists: 그 조합의 대화가 이미 있습니다. 그 대화를 열어 주세요.
+      too_many_recipients: 한 대화에는 최대 %{max}명까지 초대할 수 있습니다.
+      title_too_long: 대화 제목은 %{max}자를 넘을 수 없습니다.
+      unknown_recipients: 선택한 계정 중 찾을 수 없는 계정이 있습니다.
+      unknown_status: 이 대화에 없는 메시지입니다.
+    member_added: "%{name} 님이 %{targets} 님을 초대했습니다."
+    member_removed: "%{name} 님이 %{targets} 님을 내보냈습니다."
+    title_changed: "%{name} 님이 대화 제목을 '%{title}' 으로 바꿨습니다."
+    title_removed: "%{name} 님이 대화 제목을 지웠습니다."
   edit_profile:
     basic_information: 기본 정보
     hint_html: "<strong>사람들이 공개 프로필을 보고서 게시물을 볼 때를 위한 프로필을 꾸밉니다.</strong> 프로필과 프로필 사진을 채우면 다른 사람들이 나를 팔로우하고 나와 교류할 기회가 더 많아집니다."
@@ -1549,11 +1563,11 @@ ko:
       confirmation_html: 정말로 %{domain}에서 %{email}로 보내는 마스토돈의 %{type}에 대한 구독을 취소하시겠습니까? 언제든지 <a href="%{settings_path}">이메일 알림 설정</a>에서 다시 구독할 수 있습니다.
       emails:
         notification_emails:
-          favourite: 즐겨찾기 알림 이메일
+          favourite: 마음에 들어요 알림 이메일
           follow: 팔로우 알림 이메일
           follow_request: 팔로우 요청 이메일
           mention: 멘션 알림 이메일
-          reblog: 부스트 알림 이메일
+          reblog: 재게시 알림 이메일
       resubscribe_html: 만약 실수로 구독 취소를 했다면 <a href="%{settings_path}">이메일 알림 설정</a>에서 다시 구독할 수 있습니다.
       success_html: 이제 더이상 %{domain}의 마스토돈에서 %{email}로 %{type} 알림을 보내지 않습니다.
       title: 구독 취소
@@ -1611,7 +1625,7 @@ ko:
     favourite:
       body: '당신의 게시물을 %{name} 님이 마음에 들어했습니다:'
       subject: "%{name} 님이 내 게시물을 마음에 들어했습니다"
-      title: 새 즐겨찾기
+      title: 새 마음에 들어요
     follow:
       body: "%{name} 님이 나를 팔로우했습니다!"
       subject: "%{name} 님이 나를 팔로우했습니다"
@@ -1629,9 +1643,9 @@ ko:
     poll:
       subject: "%{name}의 설문이 종료됨"
     reblog:
-      body: '당신의 게시물을 %{name} 님이 부스트 했습니다:'
-      subject: "%{name} 님이 내 게시물을 부스트 했습니다"
-      title: 새 부스트
+      body: '당신의 게시물을 %{name} 님이 재게시 했습니다:'
+      subject: "%{name} 님이 내 게시물을 재게시 했습니다"
+      title: 새 재게시
     status:
       subject: "%{name} 님이 방금 게시물을 올렸습니다"
     update:
@@ -1831,7 +1845,7 @@ ko:
         other: "%{count}장의 이미지"
       video:
         other: "%{count} 개의 영상"
-    boosted_from_html: "%{acct_link}의 글을 부스트"
+    boosted_from_html: "%{acct_link}의 글을 재게시"
     content_warning: '열람 주의: %{warning}'
     default_language: 화면 표시 언어와 동일하게
     disallowed_hashtags:
@@ -1844,7 +1858,7 @@ ko:
       direct: 멘션된 사용자들에게만 보이는 게시물은 고정될 수 없습니다
       limit: 이미 너무 많은 게시물을 고정했습니다
       ownership: 다른 사람의 게시물은 고정될 수 없습니다
-      reblog: 부스트는 고정될 수 없습니다
+      reblog: 재게시는 고정될 수 없습니다
     title: '%{name}: "%{quote}"'
     visibilities:
       direct: DM
@@ -1859,10 +1873,10 @@ ko:
     enabled_hint: 아래의 예외 목록에 해당하지 않는다면, 명시된 기한 이후 당신의 게시물을 자동으로 삭제합니다
     exceptions: 예외
     explanation: 게시물 삭제는 많은 성능이 필요하기 때문에, 서버에서 바쁘지 않을 때 시간을 들여서 천천히 진행합니다. 이런 이유로, 당신의 게시물은 아마도 정해진 기간보다 좀 더 시간이 지난 이후에 삭제될 것입니다.
-    ignore_favs: 즐겨찾기 무시
-    ignore_reblogs: 부스트 무시
+    ignore_favs: 마음에 들어요 무시
+    ignore_reblogs: 재게시 무시
     interaction_exceptions: 상호작용에 기반한 예외들
-    interaction_exceptions_explanation: 즐겨찾기나 부스트 수가 설정한 값을 넘은 후 다시 낮아진 경우에는 게시물이 삭제되는 것을 보장하지 못합니다.
+    interaction_exceptions_explanation: 마음에 들어요나 재게시 수가 설정한 값을 넘은 후 다시 낮아진 경우에는 게시물이 삭제되는 것을 보장하지 못합니다.
     keep_direct: 다이렉트 메시지 유지
     keep_direct_hint: 다이렉트 메시지를 삭제하지 않습니다
     keep_media: 미디어가 있는 게시물 유지
@@ -1873,8 +1887,8 @@ ko:
     keep_polls_hint: 설문을 삭제하지 않습니다
     keep_self_bookmark: 북마크한 게시물 유지
     keep_self_bookmark_hint: 북마크한 본인의 게시물을 삭제하지 않습니다
-    keep_self_fav: 내가 즐겨찾기한 게시물 유지
-    keep_self_fav_hint: 스스로 즐겨찾기를 누른 본인의 게시물을 삭제하지 않습니다
+    keep_self_fav: 내가 마음에 들어한 게시물 유지
+    keep_self_fav_hint: 스스로 마음에 들어요를 누른 본인의 게시물을 삭제하지 않습니다
     min_age:
       '1209600': 2 주
       '15778476': 6 개월
@@ -1885,10 +1899,10 @@ ko:
       '63113904': 2 년
       '7889238': 3 개월
     min_age_label: 기한
-    min_favs: 해당 횟수 이상 즐겨찾기된 게시물 유지
-    min_favs_hint: 이 횟수 이상의 즐겨찾기가 된 게시물은 삭제하지 않습니다. 즐겨찾기 수와 관계없이 게시물을 지우고 싶다면 공백으로 두세요
-    min_reblogs: 해당 횟수 이상 부스트된 게시물 유지
-    min_reblogs_hint: 이 횟수 이상의 부스트가 된 게시물은 삭제하지 않습니다. 부스트 수와 관계없이 게시물을 지우고 싶다면 공백으로 두세요
+    min_favs: 해당 횟수 이상 마음에 들어요된 게시물 유지
+    min_favs_hint: 이 횟수 이상의 마음에 들어요가 된 게시물은 삭제하지 않습니다. 마음에 들어요 수와 관계없이 게시물을 지우고 싶다면 공백으로 두세요
+    min_reblogs: 해당 횟수 이상 재게시된 게시물 유지
+    min_reblogs_hint: 이 횟수 이상의 재게시가 된 게시물은 삭제하지 않습니다. 재게시 수와 관계없이 게시물을 지우고 싶다면 공백으로 두세요
   stream_entries:
     sensitive_content: 민감한 내용
   strikes:

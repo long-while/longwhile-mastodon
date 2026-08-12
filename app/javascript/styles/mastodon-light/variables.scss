@@ -8,18 +8,17 @@
 $black: #000000; // Black
 $white: #ffffff; // White
 
-//수정
-$longwhile-600: #007acc; // 설정창 버튼 눌렸을때
-$longwhile-500: #1d9bf0; // 설정창 기본. 좌측 목록 현재선택도 이색깔
+$longwhile-600: #1d9bf0;
+$longwhile-500: #1d9bf0;
 $longwhile-400: #1d9bf0; // focus visible
-$longwhile-300: #1d9bf0; // 밝은 색상?
+$longwhile-300: #1d9bf0;
 
 $grey-600: hsl(215, 10%, 63%); // Trout
 $grey-100: hsl(209, 41%, 90%); // Topaz
 
 $classic-base-color: hsl(208, 15%, 19%);
 
-$classic-secondary-color: hsl(0, 0%, 100%); // 수정. 전체배경색
+$classic-secondary-color: hsl(0, 0%, 100%);
 
 $classic-highlight-color: $longwhile-500;
 
@@ -33,7 +32,7 @@ $classic-highlight-color: $longwhile-500;
 
   $ui-base-color: $classic-secondary-color,
 
-  $ui-base-lighter-color: hsl(206, 41%, 85%), // 수정
+  $ui-base-lighter-color: hsl(206, 41%, 85%),
 
   $ui-secondary-color: $classic-base-color,
 

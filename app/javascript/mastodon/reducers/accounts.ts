@@ -59,7 +59,8 @@ export const accountsReducer: Reducer<typeof initialState> = (
     return normalizeAccounts(state, action.payload.accounts);
   else if (
     followAccountSuccess.match(action) &&
-    !action.payload.alreadyFollowing
+    !action.payload.alreadyFollowing &&
+    action.payload.relationship.following
   ) {
     return state
       .update(action.payload.relationship.id, (account) =>

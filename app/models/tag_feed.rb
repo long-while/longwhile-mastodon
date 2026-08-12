@@ -38,6 +38,10 @@ class TagFeed < PublicFeed
 
   private
 
+  def exclude_mentioning_statuses?
+    false
+  end
+
   def tagged_with_any_scope
     Status.group(:id).tagged_with(tags_for(Array(@tag.name) | Array(options[:any])))
   end

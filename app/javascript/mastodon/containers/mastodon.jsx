@@ -46,7 +46,8 @@ export default class Mastodon extends PureComponent {
 
     const accountId = state.getIn(['meta', 'me']);
     const disabledAccountId = state.getIn(['meta', 'disabled_account_id']);
-    const permissions = state.getIn(['role', 'permissions']) ?? 0;
+    const permissions =
+      state.getIn(['role', 'permissions']) ?? initialState.role?.permissions ?? 0;
     const signedIn = !!accountId;
 
     if (

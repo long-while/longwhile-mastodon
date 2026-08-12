@@ -39,7 +39,7 @@ class AccountStatusesFilter
     return Status.none if account.unavailable?
 
     if anonymous?
-      account.statuses.distributable_visibility
+      account.statuses.where(visibility: :public)
     elsif author? || administrator?
       account.statuses.all # NOTE: #merge! does not work without the #all
     elsif blocked?
@@ -55,7 +55,6 @@ class AccountStatusesFilter
   # If you use or reuse this feature, you must credit the author on your server.
   #   Twitter/X : @_longwhile  ·  https://twitter.com/_longwhile  /  Crepe : https://kre.pe/QTRx
   # ═══════════════════════════════════════════════════════════════════════════
-  # Admin / Owner 역할 보유자: 대상 계정의 모든 가시범위(direct/private 포함) 조회 허용
   def administrator?
     current_account&.user&.can?(:administrator, :manage_roles)
   end
@@ -63,7 +62,7 @@ class AccountStatusesFilter
   def filtered_scope
     scope = account.statuses.left_outer_joins(:mentions)
 
-    scope.merge!(scope.where(visibility: follower? ? %i(public unlisted private) : %i(public unlisted)).or(scope.where(mentions: { account_id: current_account.id })).group(Status.arel_table[:id]))
+    scope.merge!(scope.where(visibility: follower? ? %i(public unlisted private) : %i(public)).or(scope.where(mentions: { account_id: current_account.id })).group(Status.arel_table[:id]))
     scope.merge!(filtered_reblogs_scope) if reblogs_may_occur?
 
     scope
@@ -81,15 +80,23 @@ class AccountStatusesFilter
           # to re-use those scopes in our case.
           .where(reblog: { accounts: { domain: nil } }).or(scope.where.not(reblog: { accounts: { domain: current_account.excluded_from_timeline_domains } }))
           .where.not(reblog: { account_id: current_account.excluded_from_timeline_account_ids })
+          .where(reblog: { account_id: reblog_visible_author_ids })
       )
   end
 
+  def reblog_visible_author_ids
+    Account
+      .where(id: Follow.where(account_id: current_account.id).select(:target_account_id))
+      .or(Account.where(id: current_account.id))
+      .select(:id)
+  end
+
   def direct_scope
-    Status.with_direct_visibility
+    Status.direct_visibility
   end
 
   def no_direct_scope
-    Status.without_direct_visibility
+    Status.not_direct_visibility
   end
 
   def only_media_scope

@@ -19,7 +19,7 @@ class ProcessHashtagsService < BaseService
   end
 
   def update_featured_tags!
-    return unless @status.distributable?
+    return if @status.direct_visibility? || @status.limited_visibility?
 
     added_tags = @current_tags - @previous_tags
 

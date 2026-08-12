@@ -119,6 +119,7 @@ class NotifyService < BaseService
       blocked ||= @recipient.blocking?(@sender)
       blocked ||= @recipient.muting_notifications?(@sender)
       blocked ||= conversation_muted?
+      blocked ||= dm_room_event? if message?
       blocked ||= blocked_mention? if message?
 
       return true if blocked
@@ -136,6 +137,11 @@ class NotifyService < BaseService
 
     def blocked_mention?
       FeedManager.instance.filter?(:mentions, @notification.target_status, @recipient)
+    end
+
+    # @_longwhile custom feature
+    def dm_room_event?
+      @notification.target_status&.spoiler_text&.start_with?(DmRoom::TITLE_EVENT_PREFIX) || false
     end
 
     def from_self?
@@ -216,6 +222,12 @@ class NotifyService < BaseService
 
     # For certain conditions we don't need to create a notification at all
     return if drop?
+
+    # @_longwhile custom feature
+    if direct_message?
+      push_to_conversation! unless filter?
+      return
+    end
 
     @notification.filtered = filter?
     @notification.set_group_key!

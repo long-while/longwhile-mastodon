@@ -4,6 +4,8 @@ class PostStatusService < BaseService
   include Redisable
   include LanguagesHelper
 
+  PERMITTED_VISIBILITIES = %i(private direct).freeze
+
   class UnexpectedMentionsError < StandardError
     attr_reader :accounts
 
@@ -69,12 +71,19 @@ class PostStatusService < BaseService
     @sensitive    = (@options[:sensitive].nil? ? @account.user&.setting_default_sensitive : @options[:sensitive]) || @options[:spoiler_text].present?
     @text         = @options.delete(:spoiler_text) if @text.blank? && @options[:spoiler_text].present?
     @visibility   = @options[:visibility] || @account.user&.setting_default_privacy
-    @visibility   = :unlisted if @visibility&.to_sym == :public && @account.silenced?
-    @visibility   = :unlisted if @visibility&.to_sym == :public
+    @visibility   = :private unless permitted_visibility?(@visibility)
     @scheduled_at = @options[:scheduled_at]&.to_datetime
     @scheduled_at = nil if scheduled_in_the_past?
   rescue ArgumentError
     raise ActiveRecord::RecordInvalid
+  end
+
+  def permitted_visibility?(visibility)
+    symbol = visibility&.to_sym
+
+    return true if PostStatusService::PERMITTED_VISIBILITIES.include?(symbol)
+
+    symbol == :unlisted && @account.announcement_account?
   end
 
   def process_status!
@@ -147,6 +156,16 @@ class PostStatusService < BaseService
     DistributionWorker.perform_async(@status.id)
     ActivityPub::DistributionWorker.perform_async(@status.id)
     PollExpirationNotifyWorker.perform_at(@status.poll.expires_at, @status.poll.id) if @status.poll
+
+    attach_to_dm_room!
+  end
+
+  def attach_to_dm_room!
+    return unless Mastodon::DmChat.enabled?
+
+    DmRoom.attach_status!(@status)
+  rescue => e
+    Rails.logger.error { "DmRoom.attach_status! failed for status #{@status.id}: #{e.class} #{e.message}" }
   end
 
   def validate_media!

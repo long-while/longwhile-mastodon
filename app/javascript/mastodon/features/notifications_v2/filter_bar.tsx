@@ -8,8 +8,7 @@ import InsertChartIcon from '@/material-icons/400-24px/insert_chart.svg?react';
 import PersonAddIcon from '@/material-icons/400-24px/person_add.svg?react';
 import RepeatIcon from '@/material-icons/400-24px/repeat.svg?react';
 import StarIcon from '@/material-icons/400-24px/star.svg?react';
-import MailIcon from '@/material-icons/400-24px/mail.svg?react'; 
-import AlternateEmailIcon from '@/material-icons/400-24px/alternate_email.svg?react'; // 멘션용 @ 아이콘 추가
+import AlternateEmailIcon from '@/material-icons/400-24px/alternate_email.svg?react';
 import { setNotificationsFilter } from 'mastodon/actions/notification_groups';
 import { Icon } from 'mastodon/components/icon';
 import {
@@ -20,7 +19,6 @@ import { useAppDispatch, useAppSelector } from 'mastodon/store';
 
 const tooltips = defineMessages({
   mentions: { id: 'notifications.filter.mentions', defaultMessage: 'Mentions' },
-  direct: { id: 'notifications.filter.directmessages', defaultMessage: 'DM' },
   favourites: {
     id: 'notifications.filter.favourites',
     defaultMessage: 'Favorites',
@@ -87,14 +85,6 @@ export const FilterBar: React.FC = () => {
         </BarButton>
         <BarButton
           selectedFilter={selectedFilter}
-          type='direct'
-          key='direct'
-          title={intl.formatMessage(tooltips.direct)}
-        >
-          <Icon id='envelope-o' icon={MailIcon} />
-        </BarButton>
-        <BarButton
-          selectedFilter={selectedFilter}
           type='favourite'
           key='favourite'
           title={intl.formatMessage(tooltips.favourites)}
@@ -148,17 +138,6 @@ export const FilterBar: React.FC = () => {
           <FormattedMessage
             id='notifications.filter.noti_mention'
             defaultMessage='Mentions'
-          />
-        </BarButton>
-        <BarButton
-          selectedFilter={selectedFilter}
-          type='noti_dm'
-          key='noti_dm'
-          title={intl.formatMessage(tooltips.direct)}
-        >
-          <FormattedMessage
-            id='notifications.filter.noti_dm'
-            defaultMessage='DM'
           />
         </BarButton>
       </div>

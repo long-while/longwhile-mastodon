@@ -10,7 +10,7 @@ import ImmutablePropTypes from 'react-immutable-proptypes';
 import { supportsPassiveEvents } from 'detect-passive-events';
 import Overlay from 'react-overlays/Overlay';
 
-import MoodIcon from '@/material-icons/400-20px/mood.svg?react';
+import SmileIcon from '@/styles/bird-theme-svg/compose-form-smile.svg?react';
 import { IconButton } from 'mastodon/components/icon_button';
 
 import { buildCustomEmojis, categoriesFromEmojis } from '../../emoji/emoji';
@@ -388,7 +388,8 @@ class EmojiPickerDropdown extends PureComponent {
           title={title}
           aria-expanded={active}
           active={active}
-          iconComponent={MoodIcon}
+          icon='smile-o'
+          iconComponent={SmileIcon}
           onClick={this.onToggle}
           inverted
         />

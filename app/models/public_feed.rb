@@ -9,7 +9,6 @@ class PublicFeed
   #   Twitter/X : @_longwhile  ·  https://twitter.com/_longwhile
   #   Crepe     : https://kre.pe/QTRx
   # ═══════════════════════════════════════════════════════════════════════════
-  # 공지용 계정: 해당 계정의 unlisted(로컬 범위) 툿은 팔로우 여부와 무관하게 노출됨
   ANNOUNCEMENT_USERNAME = 'longwhile'
 
   # @param [Account] account
@@ -87,43 +86,73 @@ class PublicFeed
     administrator? ? administrator_public_scope(base_scope) : standard_public_scope(base_scope)
   end
 
-  # 일반 사용자: 팔로우 중 + 본인 계정 + 공지용 계정(@longwhile)의 툿 노출
-  # - 비잠금(언프로텍트) 작성자: unlisted 만
-  # - 잠금(프로텍트) 작성자: unlisted + private
-  #   (본인의 private 도 본인 계정이 잠금 상태일 때만 자연스럽게 노출됨)
-  # 공지용 계정의 unlisted(로컬 범위) 툿은 팔로우 여부와 무관하게 항상 노출됨
-  # enum 키가 사라지면 fetch가 즉시 KeyError로 실패 → 마이그레이션 누락을 빠르게 감지
-  def standard_public_scope(base_scope)
-    followed_ids = Follow.where(account_id: account.id).select(:target_account_id)
-    visible_account_ids = [account.id, self.class.announcement_account_id].compact
+  WITHOUT_MENTIONS_SQL = <<~SQL.squish
+    NOT EXISTS (
+      SELECT 1 FROM mentions
+      WHERE mentions.silent = FALSE
+        AND (mentions.status_id = statuses.id OR mentions.status_id = statuses.reblog_of_id)
+    )
+  SQL
 
-    base_scope
-      .where('statuses.account_id IN (?) OR statuses.account_id IN (?)', followed_ids, visible_account_ids)
-      .where(
-        '(statuses.visibility = ?) OR (statuses.visibility = ? AND accounts.locked = TRUE)',
-        Status.visibilities.fetch('unlisted'),
-        Status.visibilities.fetch('private')
-      )
+  def standard_public_scope(base_scope)
+    scope = visible_authors_scope(base_scope)
+            .where(
+              visibility: [Status.visibilities.fetch('private'), Status.visibilities.fetch('unlisted')]
+            )
+            .where(reblog_author_visible_sql)
+
+    exclude_mentioning_statuses? ? scope.where(WITHOUT_MENTIONS_SQL) : scope
   end
 
-  # Admin / Owner: 팔로우 중 + 본인 계정 + 공지용 계정(@longwhile)의 툿 노출 (감시 목적)
-  # - 비잠금 작성자: unlisted + direct
-  # - 잠금(프로텍트) 작성자: unlisted + private + direct
-  # - 본인이 멘션된 툿은 제외 (이미 멘션/알림 타임라인에서 확인 가능)
   def administrator_public_scope(base_scope)
-    followed_ids       = Follow.where(account_id: account.id).select(:target_account_id)
-    mentioned_ids      = Mention.where(account_id: account.id).select(:status_id)
-    visible_account_ids = [account.id, self.class.announcement_account_id].compact
+    mentioned_ids = Mention.where(account_id: account.id).select(:status_id)
 
+    scope = visible_authors_scope(base_scope)
+            .where(
+              visibility: [
+                Status.visibilities.fetch('private'),
+                Status.visibilities.fetch('unlisted'),
+              ]
+            )
+            .where.not(id: mentioned_ids)
+
+    exclude_mentioning_statuses? ? scope.where(WITHOUT_MENTIONS_SQL) : scope
+  end
+
+  def exclude_mentioning_statuses?
+    true
+  end
+
+  def visible_authors_scope(base_scope)
     base_scope
-      .where('statuses.account_id IN (?) OR statuses.account_id IN (?)', followed_ids, visible_account_ids)
-      .where(
-        '(statuses.visibility IN (?, ?)) OR (statuses.visibility = ? AND accounts.locked = TRUE)',
-        Status.visibilities.fetch('unlisted'),
-        Status.visibilities.fetch('direct'),
-        Status.visibilities.fetch('private')
-      )
-      .where.not(id: mentioned_ids)
+      .where(account_id: followed_ids)
+      .or(base_scope.where(account_id: visible_account_ids))
+  end
+
+  def reblog_author_visible_sql
+    <<~SQL.squish
+      (statuses.reblog_of_id IS NULL OR EXISTS (
+        SELECT 1 FROM statuses AS reblogged_statuses
+        WHERE reblogged_statuses.id = statuses.reblog_of_id
+          AND reblogged_statuses.account_id IN (#{visible_author_ids_sql})
+      ))
+    SQL
+  end
+
+  def visible_author_ids_sql
+    Account
+      .where(id: followed_ids)
+      .or(Account.where(id: visible_account_ids))
+      .select(:id)
+      .to_sql
+  end
+
+  def followed_ids
+    @followed_ids ||= Follow.where(account_id: account.id).select(:target_account_id)
+  end
+
+  def visible_account_ids
+    @visible_account_ids ||= [account.id, self.class.announcement_account_id].compact
   end
 
   def administrator?

@@ -83,7 +83,7 @@ const initialState = ImmutableMap({
   poll: null,
   suggestion_token: null,
   suggestions: ImmutableList(),
-  default_privacy: 'public',
+  default_privacy: 'private',
   default_sensitive: false,
   default_language: 'en',
   resetFileKey: Math.floor((Math.random() * 0x10000)),

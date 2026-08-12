@@ -14,7 +14,6 @@ import MediaModal from 'mastodon/features/ui/components/media_modal';
 import { Video } from 'mastodon/features/video';
 import { IntlProvider } from 'mastodon/locales';
 import { createPollFromServerJSON } from 'mastodon/models/poll';
-import { getScrollbarWidth } from 'mastodon/utils/scrollbar';
 
 const MEDIA_COMPONENTS = { MediaGallery, Video, Card, Poll, Hashtag, Audio };
 
@@ -35,7 +34,6 @@ export default class MediaContainer extends PureComponent {
 
   handleOpenMedia = (media, index, lang) => {
     document.body.classList.add('with-modals--active');
-    document.documentElement.style.marginRight = `${getScrollbarWidth()}px`;
 
     this.setState({ media, index, lang });
   };
@@ -46,14 +44,12 @@ export default class MediaContainer extends PureComponent {
     const mediaList = fromJS(media);
 
     document.body.classList.add('with-modals--active');
-    document.documentElement.style.marginRight = `${getScrollbarWidth()}px`;
 
     this.setState({ media: mediaList, lang, options });
   };
 
   handleCloseMedia = () => {
     document.body.classList.remove('with-modals--active');
-    document.documentElement.style.marginRight = '0';
 
     this.setState({
       media: null,

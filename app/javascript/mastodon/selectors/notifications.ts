@@ -14,11 +14,9 @@ import {
 
 type StatusesMap = ImmutableMap<string, ImmutableMap<string, unknown>>;
 
-// ─── @_longwhile custom feature / 한참(longwhile) 제작 기능 — 답장할 멘션(답변 대기) 로직 ───
+// ─── @_longwhile custom feature
 // 사용·재사용 시 서버 내 출처 표기 필수 / Credit required to use or reuse:
 //   Twitter/X @_longwhile · Crepe https://kre.pe/QTRx
-// "답변 대기" 탭: 비공개 범위 멘션 + 아직 누구도 답글 안 단 것 + 내가 즐겨찾기 안 한 것.
-// status가 아직 로드 안 된 경우엔 안전하게 표시 (놓치는 것보다 노출이 낫다).
 const isAwaitingReply = (
   group: NotificationGroup,
   statuses: StatusesMap,
@@ -68,7 +66,6 @@ const filterNotificationsByAllowedTypes = (
     );
   }
 
-  // Awaiting-reply tab: 비공개 범위 멘션, 아직 답글 0개, 내가 즐겨찾기 안 한 것
   if (allowedType === 'noti_pending') {
     return notifications.filter(
       (g) => g.type === 'gap' || isAwaitingReply(g, statuses),
@@ -84,7 +81,6 @@ const filterNotificationsByAllowedTypes = (
 const selectStatusesMap = (state: RootState) =>
   state.statuses as unknown as StatusesMap;
 
-// 전용 페이지 (/pending-mentions) 용 selector. active filter와 무관하게 항상 noti_pending 조건 적용.
 export const selectPendingMentionGroups = createSelector(
   [
     (state: RootState) =>

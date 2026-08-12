@@ -21,7 +21,7 @@ module Status::Visibility
 
   class_methods do
     def selectable_visibilities
-      visibilities.keys - %w(direct limited)
+      %w(private)
     end
   end
 
@@ -43,6 +43,6 @@ module Status::Visibility
   end
 
   def visibility_from_account
-    account.locked? ? :private : :public
+    :private
   end
 end

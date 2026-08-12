@@ -1,5 +1,6 @@
 // @ts-check
 
+import { dmChatEnabled, me } from '../initial_state';
 import { getLocale } from '../locales';
 import { connectStream } from '../stream';
 
@@ -10,6 +11,7 @@ import {
   deleteAnnouncement,
 } from './announcements';
 import { updateConversations } from './conversations';
+import { dmChatStreamUpdate, dmMessageReceived, setDmStreamConnected, updateDmReadState } from './dm_rooms';
 import { processNewNotificationForGroups, refreshStaleNotificationGroups, pollRecentNotifications as pollRecentGroupNotifications } from './notification_groups';
 import { updateNotifications } from './notifications';
 import { updateStatus } from './statuses';
@@ -32,16 +34,6 @@ import {
 const randomUpTo = max =>
   Math.floor(Math.random() * Math.floor(max));
 
-/**
- * @param {string} timelineId
- * @param {string} channelName
- * @param {Object.<string, string>} params
- * @param {Object} options
- * @param {function(Function, Function): Promise<void>} [options.fallback]
- * @param {function(): void} [options.fillGaps]
- * @param {function(object): boolean} [options.accept]
- * @returns {function(): void}
- */
 export const connectTimelineStream = (timelineId, channelName, params = {}, options = {}) => {
   const { messages } = getLocale();
 
@@ -86,6 +78,10 @@ export const connectTimelineStream = (timelineId, channelName, params = {}, opti
       },
 
       onReceive(data) {
+        if (options.updatesOnly && data.event !== 'update') {
+          return;
+        }
+
         switch (data.event) {
         case 'update':
           // @ts-expect-error
@@ -110,10 +106,22 @@ export const connectTimelineStream = (timelineId, channelName, params = {}, opti
           dispatch(refreshStaleNotificationGroups());
           break;
         }
-        case 'conversation':
+        case 'conversation': {
           // @ts-expect-error
-          dispatch(updateConversations(JSON.parse(data.payload)));
+          const conversation = JSON.parse(data.payload);
+
+          dispatch(updateConversations(conversation));
+
+          if (dmChatEnabled) {
+            dispatch(dmChatStreamUpdate());
+
+            if (conversation?.last_status?.account?.id !== me) {
+              dispatch(dmMessageReceived());
+            }
+          }
+
           break;
+        }
         case 'announcement':
           // @ts-expect-error
           dispatch(updateAnnouncements(JSON.parse(data.payload)));
@@ -173,12 +181,46 @@ export const connectUserStream = () => (dispatch, getState) => {
 };
 
 /**
+ * @param {object} status
+ * @param {Object} options
+ * @param {boolean} [options.onlyMedia]
+ * @returns {boolean}
+ */
+const acceptsIntoPublicTootTimeline = (status, { onlyMedia }) => {
+  if (status.mentions?.length) return false;
+  if (status.reblog?.mentions?.length) return false;
+
+  if (status.in_reply_to_id && status.in_reply_to_account_id !== status.account?.id) return false;
+
+  if (onlyMedia && !status.media_attachments?.length) return false;
+
+  return true;
+};
+
+/**
+ * @param {string} timelineId
+ * @param {Object} options
+ * @param {boolean} [options.onlyMedia]
+ * @param {function(): object} options.fillGaps
+ * @returns {function(): void}
+ */
+const connectPublicTootStream = (timelineId, { onlyMedia, fillGaps }) =>
+  connectTimelineStream(timelineId, 'user', {}, {
+    fillGaps,
+    updatesOnly: true,
+    accept: status => acceptsIntoPublicTootTimeline(status, { onlyMedia }),
+  });
+
+/**
  * @param {Object} options
  * @param {boolean} [options.onlyMedia]
  * @returns {function(): void}
  */
 export const connectCommunityStream = ({ onlyMedia } = {}) =>
-  connectTimelineStream(`community${onlyMedia ? ':media' : ''}`, `public:local${onlyMedia ? ':media' : ''}`, {}, { fillGaps: () => (fillCommunityTimelineGaps({ onlyMedia })) });
+  connectPublicTootStream(`community${onlyMedia ? ':media' : ''}`, {
+    onlyMedia,
+    fillGaps: () => fillCommunityTimelineGaps({ onlyMedia }),
+  });
 
 /**
  * @param {Object} options
@@ -186,8 +228,18 @@ export const connectCommunityStream = ({ onlyMedia } = {}) =>
  * @param {boolean} [options.onlyRemote]
  * @returns {function(): void}
  */
-export const connectPublicStream = ({ onlyMedia, onlyRemote } = {}) =>
-  connectTimelineStream(`public${onlyRemote ? ':remote' : ''}${onlyMedia ? ':media' : ''}`, `public${onlyRemote ? ':remote' : ''}${onlyMedia ? ':media' : ''}`, {}, { fillGaps: () => fillPublicTimelineGaps({ onlyMedia, onlyRemote }) });
+export const connectPublicStream = ({ onlyMedia, onlyRemote } = {}) => {
+  const timelineId = `public${onlyRemote ? ':remote' : ''}${onlyMedia ? ':media' : ''}`;
+
+  if (onlyRemote) {
+    return connectTimelineStream(timelineId, timelineId, {}, { fillGaps: () => fillPublicTimelineGaps({ onlyMedia, onlyRemote }) });
+  }
+
+  return connectPublicTootStream(timelineId, {
+    onlyMedia,
+    fillGaps: () => fillPublicTimelineGaps({ onlyMedia }),
+  });
+};
 
 /**
  * @param {string} columnId
@@ -204,6 +256,55 @@ export const connectHashtagStream = (columnId, tagName, onlyLocal, accept) =>
  */
 export const connectDirectStream = () =>
   connectTimelineStream('direct', 'direct');
+
+// ─── @_longwhile custom feature
+/**
+ * @returns {function(): void}
+ */
+export const connectDmChatStream = () =>
+  connectStream('direct', {}, (dispatch) => ({
+    onConnect() {
+      dispatch(setDmStreamConnected({ connected: true }));
+
+      dispatch(dmChatStreamUpdate());
+    },
+
+    onDisconnect() {
+      dispatch(setDmStreamConnected({ connected: false }));
+    },
+
+    onReceive(data) {
+      switch (data.event) {
+      case 'update':
+        dispatch(dmChatStreamUpdate());
+        break;
+      case 'status.update':
+        // @ts-expect-error
+        dispatch(updateStatus(JSON.parse(data.payload)));
+        break;
+      case 'delete':
+        dispatch(deleteFromTimelines(data.payload));
+        break;
+      case 'conversation':
+        // @ts-expect-error
+        dispatch(updateConversations(JSON.parse(data.payload)));
+
+        dispatch(dmChatStreamUpdate());
+        break;
+      case 'dm.read': {
+        // @ts-expect-error
+        const read = JSON.parse(data.payload);
+
+        dispatch(updateDmReadState({
+          roomId: read.dm_room_id,
+          accountId: read.account_id,
+          lastReadStatusId: read.last_read_status_id,
+        }));
+        break;
+      }
+      }
+    },
+  }));
 
 /**
  * @param {string} listId

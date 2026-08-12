@@ -110,6 +110,22 @@ export function PendingMentions() {
   return import('../../pending-mentions');
 }
 
+export function Messages() {
+  return import('../../messages');
+}
+
+export function AdminMessages() {
+  return import('../../messages/admin');
+}
+
+export function DmRecipientModal() {
+  return import('../../messages/recipient_modal');
+}
+
+export function DmMemberModal() {
+  return import('../../messages/member_modal');
+}
+
 export function ScheduledStatuses() {
   return import('../../scheduled_statuses');
 }

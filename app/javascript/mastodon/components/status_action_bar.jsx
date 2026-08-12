@@ -39,7 +39,6 @@ const messages = defineMessages({
   mute: { id: 'account.mute', defaultMessage: 'Mute @{name}' },
   block: { id: 'account.block', defaultMessage: 'Block @{name}' },
   reply: { id: 'status.reply', defaultMessage: 'Reply' },
-  share: { id: 'status.share', defaultMessage: 'Share' },
   more: { id: 'status.more', defaultMessage: 'More' },
   replyAll: { id: 'status.replyAll', defaultMessage: 'Reply to thread' },
   reblog: { id: 'status.reblog', defaultMessage: 'Boost' },
@@ -50,13 +49,11 @@ const messages = defineMessages({
   removeFavourite: { id: 'status.remove_favourite', defaultMessage: 'Remove from favorites' },
   bookmark: { id: 'status.bookmark', defaultMessage: 'Bookmark' },
   removeBookmark: { id: 'status.remove_bookmark', defaultMessage: 'Remove bookmark' },
-  open: { id: 'status.open', defaultMessage: 'Expand this status' },
   report: { id: 'status.report', defaultMessage: 'Report @{name}' },
   muteConversation: { id: 'status.mute_conversation', defaultMessage: 'Mute conversation' },
   unmuteConversation: { id: 'status.unmute_conversation', defaultMessage: 'Unmute conversation' },
   pin: { id: 'status.pin', defaultMessage: 'Pin on profile' },
   unpin: { id: 'status.unpin', defaultMessage: 'Unpin from profile' },
-  embed: { id: 'status.embed', defaultMessage: 'Get embed code' },
   admin_account: { id: 'status.admin_account', defaultMessage: 'Open moderation interface for @{name}' },
   admin_status: { id: 'status.admin_status', defaultMessage: 'Open this post in the moderation interface' },
   admin_domain: { id: 'status.admin_domain', defaultMessage: 'Open moderation interface for {domain}' },
@@ -72,6 +69,8 @@ const messages = defineMessages({
 const mapStateToProps = (state, { status }) => ({
   relationship: state.getIn(['relationships', status.getIn(['account', 'id'])]),
 });
+
+const countOrNone = (count) => (count > 0 ? count : undefined);
 
 class StatusActionBar extends ImmutablePureComponent {
   static propTypes = {
@@ -91,7 +90,6 @@ class StatusActionBar extends ImmutablePureComponent {
     onBlockDomain: PropTypes.func,
     onUnblockDomain: PropTypes.func,
     onReport: PropTypes.func,
-    onEmbed: PropTypes.func,
     onMuteConversation: PropTypes.func,
     onPin: PropTypes.func,
     onBookmark: PropTypes.func,
@@ -99,7 +97,6 @@ class StatusActionBar extends ImmutablePureComponent {
     onAddFilter: PropTypes.func,
     onInteractionModal: PropTypes.func,
     withDismiss: PropTypes.bool,
-    withCounters: PropTypes.bool,
     scrollKey: PropTypes.string,
     intl: PropTypes.object.isRequired,
     ...WithRouterPropTypes,
@@ -121,14 +118,6 @@ class StatusActionBar extends ImmutablePureComponent {
     } else {
       this.props.onInteractionModal('reply', this.props.status);
     }
-  };
-
-  handleShareClick = () => {
-    navigator.share({
-      url: this.props.status.get('url'),
-    }).catch((e) => {
-      if (e.name !== 'AbortError') console.error(e);
-    });
   };
 
   handleFavouriteClick = () => {
@@ -215,14 +204,6 @@ class StatusActionBar extends ImmutablePureComponent {
     onUnblockDomain(account.get('acct').split('@')[1]);
   };
 
-  handleOpen = () => {
-    this.props.history.push(`/@${this.props.status.getIn(['account', 'acct'])}/${this.props.status.get('id')}`);
-  };
-
-  handleEmbed = () => {
-    this.props.onEmbed(this.props.status);
-  };
-
   handleReport = () => {
     this.props.onReport(this.props.status);
   };
@@ -241,7 +222,7 @@ class StatusActionBar extends ImmutablePureComponent {
   };
 
   render () {
-    const { status, relationship, intl, withDismiss, withCounters, scrollKey } = this.props;
+    const { status, relationship, intl, withDismiss, scrollKey } = this.props;
     const { signedIn, permissions } = this.props.identity;
 
     const publicStatus       = ['public', 'unlisted'].includes(status.get('visibility'));
@@ -253,21 +234,11 @@ class StatusActionBar extends ImmutablePureComponent {
 
     let menu = [];
 
-    menu.push({ text: intl.formatMessage(messages.open), action: this.handleOpen });
-
     if (publicStatus && isRemote) {
       menu.push({ text: intl.formatMessage(messages.openOriginalPage), href: status.get('url') });
     }
 
     menu.push({ text: intl.formatMessage(messages.copy), action: this.handleCopy });
-
-    if (publicStatus && 'share' in navigator) {
-      menu.push({ text: intl.formatMessage(messages.share), action: this.handleShareClick });
-    }
-
-    if (publicStatus && !isRemote) {
-      menu.push({ text: intl.formatMessage(messages.embed), action: this.handleEmbed });
-    }
 
     if (signedIn) {
       menu.push(null);
@@ -351,7 +322,7 @@ class StatusActionBar extends ImmutablePureComponent {
       replyTitle = intl.formatMessage(messages.replyAll);
     }
 
-    const reblogPrivate = status.getIn(['account', 'id']) === me && status.get('visibility') === 'private';
+    const reblogPrivate = status.get('visibility') === 'private';
 
     let reblogTitle, reblogIconComponent;
 
@@ -377,13 +348,13 @@ class StatusActionBar extends ImmutablePureComponent {
     return (
       <div className='status__action-bar'>
         <div className='status__action-bar__button-wrapper'>
-          <IconButton className='status__action-bar__button' title={replyTitle} icon={isReply ? 'reply' : replyIcon} iconComponent={isReply ? ReplyIcon : replyIconComponent} onClick={this.handleReplyClick} counter={status.get('replies_count')} />
+          <IconButton className='status__action-bar__button' title={replyTitle} icon={isReply ? 'reply' : replyIcon} iconComponent={isReply ? ReplyIcon : replyIconComponent} onClick={this.handleReplyClick} counter={countOrNone(status.get('replies_count'))} />
         </div>
         <div className='status__action-bar__button-wrapper'>
-          <IconButton className={classNames('status__action-bar__button', { reblogPrivate })} disabled={!publicStatus && !reblogPrivate} active={status.get('reblogged')} title={reblogTitle} icon='retweet' iconComponent={reblogIconComponent} onClick={this.handleReblogClick} counter={withCounters ? status.get('reblogs_count') : undefined} />
+          <IconButton className={classNames('status__action-bar__button', { reblogPrivate })} disabled={!publicStatus && !reblogPrivate} active={status.get('reblogged')} title={reblogTitle} icon='retweet' iconComponent={reblogIconComponent} onClick={this.handleReblogClick} counter={countOrNone(status.get('reblogs_count'))} />
         </div>
         <div className='status__action-bar__button-wrapper'>
-          <IconButton className='status__action-bar__button star-icon' animate active={status.get('favourited')} title={favouriteTitle} icon='star' iconComponent={status.get('favourited') ? StarIcon : StarBorderIcon} onClick={this.handleFavouriteClick} counter={withCounters ? status.get('favourites_count') : undefined} />
+          <IconButton className='status__action-bar__button star-icon' animate active={status.get('favourited')} title={favouriteTitle} icon='star' iconComponent={status.get('favourited') ? StarIcon : StarBorderIcon} onClick={this.handleFavouriteClick} counter={countOrNone(status.get('favourites_count'))} />
         </div>
         <div className='status__action-bar__button-wrapper'>
           <IconButton className='status__action-bar__button bookmark-icon' disabled={!signedIn} active={status.get('bookmarked')} title={bookmarkTitle} icon='bookmark' iconComponent={status.get('bookmarked') ? BookmarkIcon : BookmarkBorderIcon} onClick={this.handleBookmarkClick} />

@@ -188,6 +188,8 @@ class FeedManager
     from_account.statuses.select(:id, :reblog_of_id).where(id: timeline_status_ids).reorder(nil).find_each do |status|
       remove_from_feed(:home, into_account.id, status, aggregate_reblogs: into_account.user&.aggregates_reblogs?)
     end
+
+    unmerge_reblogs_of_account!(:home, into_account.id, from_account, timeline_status_ids)
   end
 
   # Remove an account's statuses from a list feed
@@ -201,6 +203,23 @@ class FeedManager
     from_account.statuses.select(:id, :reblog_of_id).where(id: timeline_status_ids).reorder(nil).find_each do |status|
       remove_from_feed(:list, list.id, status, aggregate_reblogs: list.account.user&.aggregates_reblogs?)
     end
+  end
+
+  def unmerge_reblogs_of_account!(timeline_type, id, from_account, timeline_status_ids)
+    return if timeline_status_ids.empty?
+
+    timeline_key = key(timeline_type, id)
+    reblog_key   = key(timeline_type, id, 'reblogs')
+
+    Status
+      .where(id: timeline_status_ids, reblog_of_id: from_account.statuses.select(:id))
+      .reorder(nil)
+      .pluck(:id, :reblog_of_id)
+      .each do |reblog_id, original_id|
+        redis.del(key(timeline_type, id, "reblogs:#{original_id}"))
+        redis.zrem(reblog_key, original_id)
+        redis.zrem(timeline_key, reblog_id)
+      end
   end
 
   # Remove a tag's statuses from a home feed
@@ -448,6 +467,8 @@ class FeedManager
   # @param [Hash] crutches
   # @return [void|Symbol] nil, :skip_home, or :filter
   def filter_from_home(status, receiver_id, crutches, timeline_type = :home)
+    return :filter    if status.direct_visibility?
+
     return            if receiver_id == status.account_id
     return :filter    if status.reblog? && status.reblog.blank?
     return :filter    if status.reply? && (status.in_reply_to_id.nil? || status.in_reply_to_account_id.nil?)
@@ -473,6 +494,8 @@ class FeedManager
       should_filter   = crutches[:hiding_reblogs][status.account_id]                                                             # if the reblogger's reblogs are suppressed
       should_filter ||= crutches[:blocked_by][status.reblog.account_id]                                                          # or if the author of the reblogged status is blocking me
       should_filter ||= crutches[:domain_blocking][status.reblog.account.domain]                                                 # or the author's domain is blocked
+      should_filter ||= !crutches[:following_reblogged_authors][status.reblog.account_id] &&
+                        receiver_id != status.reblog.account_id
     else
       should_filter = false
     end
@@ -649,8 +672,16 @@ class FeedManager
     crutches[:domain_blocking]      = AccountDomainBlock.where(account_id: receiver_id, domain: statuses.flat_map { |s| [s.account.domain, s.reblog&.account&.domain] }.compact).pluck(:domain).index_with(true)
     crutches[:blocked_by]           = Block.where(target_account_id: receiver_id, account_id: statuses.map { |s| [s.account_id, s.reblog&.account_id] }.flatten.compact).pluck(:account_id).index_with(true)
     crutches[:exclusive_list_users] = crutches_exclusive_list_users(receiver_id, statuses) if list.blank?
+    crutches[:following_reblogged_authors] = crutches_following_reblogged_authors(receiver_id, statuses)
 
     crutches
+  end
+
+  def crutches_following_reblogged_authors(recipient_id, statuses)
+    Follow
+      .where(account_id: recipient_id, target_account_id: statuses.filter_map { |s| s.reblog&.account_id })
+      .pluck(:target_account_id)
+      .index_with(true)
   end
 
   def crutches_exclusive_list_users(recipient_id, statuses)
@@ -682,10 +713,9 @@ class FeedManager
   # If you use or reuse this feature, you must credit the author on your server.
   #   Twitter/X : @_longwhile  ·  https://twitter.com/_longwhile  /  Crepe : https://kre.pe/QTRx
   # ═══════════════════════════════════════════════════════════════════════════
-  # Admin / Owner 수신자는 팔로우 중인 계정의 direct 까지 홈 피드로 받음
   def home_visibility_scope_for(receiver)
     if receiver.user&.can?(:administrator, :manage_roles)
-      Status.where(visibility: %i(unlisted private direct))
+      Status.where(visibility: %i(unlisted private))
     else
       Status.list_eligible_visibility
     end

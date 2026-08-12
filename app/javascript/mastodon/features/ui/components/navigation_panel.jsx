@@ -24,18 +24,24 @@ import AdministrationIcon from '@/material-icons/400-24px/manufacturing.svg?reac
 import NotificationsActiveIcon from '@/material-icons/400-24px/notifications-fill.svg?react';
 import NotificationsIcon from '@/material-icons/400-24px/notifications.svg?react';
 import ScheduledStatusesIcon from '@/styles/bird-theme-svg/calendar-clock.svg?react';
+import FollowRequestsActiveIcon from '@/styles/bird-theme-svg/user-add-fill.svg?react';
+import FollowRequestsIcon from '@/styles/bird-theme-svg/user-add.svg?react';
 import PendingMentionsActiveIcon from '@/styles/bird-theme-svg/messages-fill.svg?react';
+import MailIcon from '@/material-icons/400-24px/mail.svg?react';
 import PendingMentionsIcon from '@/styles/bird-theme-svg/messages.svg?react';
 import PublicIcon from '@/material-icons/400-24px/public.svg?react';
 import SearchIcon from '@/material-icons/400-24px/search.svg?react';
 import SettingsIcon from '@/material-icons/400-24px/settings.svg?react';
+import { fetchFollowRequests } from 'mastodon/actions/accounts';
+import { fetchDmRooms } from 'mastodon/actions/dm_rooms';
 import { Icon } from 'mastodon/components/icon';
 import { IconWithBadge } from 'mastodon/components/icon_with_badge';
 import { WordmarkLogo } from 'mastodon/components/logo';
 import { NavigationPortal } from 'mastodon/components/navigation_portal';
 import { identityContextPropShape, withIdentity } from 'mastodon/identity_context';
-import { timelinePreview, trendsEnabled } from 'mastodon/initial_state';
-import { canManageReports, canViewAdminDashboard } from 'mastodon/permissions';
+import { timelinePreview, trendsEnabled, dmChatEnabled } from 'mastodon/initial_state';
+import { canManageDirectMessages } from 'mastodon/permissions';
+import { selectUnreadDmCount } from 'mastodon/features/messages/selectors';
 import { selectUnreadNotificationGroupsCount } from 'mastodon/selectors/notifications';
 
 import { AccountSwitcher } from './account_switcher';
@@ -47,6 +53,20 @@ import { connect } from 'react-redux';
 import { Avatar } from 'mastodon/components/avatar';
 import { me } from 'mastodon/initial_state';
 
+const MessagesAllIcon = PendingMentionsIcon;
+const MessagesAllActiveIcon = PendingMentionsActiveIcon;
+
+const isAllMessagesPathname = (pathname) =>
+  pathname === '/messages/all' || pathname.startsWith('/messages/all/');
+
+const isMessagesAllPath = (_match, location) =>
+  isAllMessagesPathname(location.pathname);
+
+const isMessagesPath = (_match, location) =>
+  !isAllMessagesPathname(location.pathname) &&
+  (location.pathname === '/messages' ||
+    location.pathname.startsWith('/messages/'));
+
 const messages = defineMessages({
   home: { id: 'tabs_bar.home', defaultMessage: 'Home' },
   notifications: { id: 'tabs_bar.notifications', defaultMessage: 'Notifications' },
@@ -54,6 +74,8 @@ const messages = defineMessages({
   firehose: { id: 'column.firehose', defaultMessage: 'Live feeds' },
   direct: { id: 'navigation_bar.direct', defaultMessage: 'Private mentions' },
   pendingMentions: { id: 'navigation_bar.pending-mentions', defaultMessage: 'Awaiting reply' },
+  messages: { id: 'navigation_bar.messages', defaultMessage: 'Messages' },
+  messagesAll: { id: 'navigation_bar.messages_all', defaultMessage: 'All messages' },
   bookmarks: { id: 'navigation_bar.bookmarks', defaultMessage: 'Bookmarks' },
   scheduledStatuses: { id: 'navigation_bar.scheduled_statuses', defaultMessage: 'Scheduled posts' },
   scheduledStatusesFailed: { id: 'navigation_bar.scheduled_statuses_failed', defaultMessage: 'Scheduled posts (failed)' },
@@ -145,6 +167,53 @@ const NotificationsLink = () => {
       icon={<IconWithBadge id='bell' icon={NotificationsIcon} count={count} className='column-link__icon' />}
       activeIcon={<IconWithBadge id='bell' icon={NotificationsActiveIcon} count={count} className='column-link__icon' />}
       text={label}
+    />
+  );
+};
+
+const MessagesLink = () => {
+  const dispatch = useDispatch();
+  const count = useSelector(selectUnreadDmCount);
+  const intl = useIntl();
+  const label = intl.formatMessage(messages.messages);
+
+  useEffect(() => {
+    dispatch(fetchDmRooms());
+  }, [dispatch]);
+
+  return (
+    <ColumnLink
+      key='messages'
+      transparent
+      to='/messages'
+      isActive={isMessagesPath}
+      icon={<IconWithBadge id='messages' icon={MailIcon} count={count} className='column-link__icon' />}
+      text={label}
+    />
+  );
+};
+
+const FollowRequestsLink = () => {
+  const dispatch = useDispatch();
+  const count = useSelector(state => state.getIn(['user_lists', 'follow_requests', 'items'])?.size ?? 0);
+  const intl = useIntl();
+
+  useEffect(() => {
+    dispatch(fetchFollowRequests());
+  }, [dispatch]);
+
+  if (count < 1) {
+    return null;
+  }
+
+  return (
+    <ColumnLink
+      key='follow_requests'
+      transparent
+      to='/follow_requests'
+      icon={<IconWithBadge id='follow-requests' icon={FollowRequestsIcon} count={count} className='column-link__icon' />}
+      activeIcon={<IconWithBadge id='follow-requests' icon={FollowRequestsActiveIcon} count={count} className='column-link__icon' />}
+      text={intl.formatMessage(messages.followRequests)}
     />
   );
 };
@@ -253,6 +322,7 @@ class NavigationPanel extends Component {
     );
   }
   renderSignedInLinks = (intl, includeAccountSwitcher = true) => {
+    const { permissions } = this.props.identity;
 
     const homeLabel = intl.formatMessage(messages.home);
     const publicLabel = intl.formatMessage(messages.firehose);
@@ -274,11 +344,19 @@ class NavigationPanel extends Component {
         <ColumnLink transparent to='/public' isActive={this.isFirehoseActive} icon='globe' iconComponent={PublicIcon} text={publicLabel} />
         <NotificationsLink />
         <ColumnLink transparent to='/pending-mentions' icon='pending' iconComponent={PendingMentionsIcon} activeIconComponent={PendingMentionsActiveIcon} text={pendingMentionsLabel} />
-        <ColumnLink transparent to='/conversations' icon='at' iconComponent={AlternateEmailIcon} text={directLabel} />
+        {dmChatEnabled ? (
+          <MessagesLink />
+        ) : (
+          <ColumnLink transparent to='/conversations' icon='at' iconComponent={AlternateEmailIcon} text={directLabel} />
+        )}
+        {dmChatEnabled && canManageDirectMessages(permissions) && (
+          <ColumnLink transparent to='/messages/all' isActive={isMessagesAllPath} icon='messages-all' iconComponent={MessagesAllIcon} activeIconComponent={MessagesAllActiveIcon} text={intl.formatMessage(messages.messagesAll)} />
+        )}
         <ScheduledStatusesLink />
         <ColumnLink transparent to='/bookmarks' icon='bookmarks' iconComponent={BookmarksIcon} activeIconComponent={BookmarksActiveIcon} text={bookmarksLabel} />
         <ColumnLink transparent to='/lists' icon='list-ul' iconComponent={ListAltIcon} activeIconComponent={ListAltActiveIcon} text={listsLabel} />
         <ColumnLink transparent href={settingsHref} icon='cog' iconComponent={SettingsIcon} text={preferencesLabel} />
+        <FollowRequestsLink />
         {includeAccountSwitcher && <AccountSwitcherMenuItem />}
       </>
     );

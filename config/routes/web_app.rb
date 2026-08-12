@@ -20,6 +20,8 @@
   /keyboard-shortcuts
   /links/(*any)
   /lists/(*any)
+  /messages
+  /messages/(*any)
   /mutes
   /notifications_v2/(*any)
   /notifications/(*any)

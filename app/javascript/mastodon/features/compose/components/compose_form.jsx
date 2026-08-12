@@ -18,7 +18,6 @@ import AutosuggestTextarea from '../../../components/autosuggest_textarea';
 import { Button } from '../../../components/button';
 import EmojiPickerDropdown from '../containers/emoji_picker_dropdown_container';
 import PollButtonContainer from '../containers/poll_button_container';
-import PrivacyDropdownContainer from '../containers/privacy_dropdown_container';
 import SpoilerButtonContainer from '../containers/spoiler_button_container';
 import UploadButtonContainer from '../containers/upload_button_container';
 import { countableText } from '../util/counter';
@@ -341,9 +340,9 @@ class ComposeForm extends ImmutablePureComponent {
                 <UploadButtonContainer />
                 <PollButtonContainer />
                 <SpoilerButtonContainer />
+                <EmojiPickerDropdown onPickEmoji={this.handleEmojiPick} />
                 {/* Already-published posts cannot be scheduled. */}
                 <ScheduleButton disabled={this.props.isEditing} />
-                <PrivacyDropdownContainer hideLabel disabled={this.props.isEditing} />
                 <CharacterCounter max={maxChars} text={this.getFulltextForCharacterCounting()} />
               </div>
 

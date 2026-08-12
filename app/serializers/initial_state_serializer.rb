@@ -114,6 +114,7 @@ class InitialStateSerializer < ActiveModel::Serializer
       scheduled_status_minimum_offset: ScheduledStatus::MINIMUM_OFFSET.to_i,
       scheduled_status_total_limit: ScheduledStatus::TOTAL_LIMIT,
       scheduled_status_daily_limit: ScheduledStatus::DAILY_LIMIT,
+      dm_chat_enabled: Mastodon::DmChat.enabled?,
     }
   end
 

@@ -81,6 +81,27 @@ namespace :api, format: false do
       end
     end
 
+    # @_longwhile custom feature
+    resources :dm_rooms, only: [:index, :show, :create, :destroy] do
+      member do
+        post :read
+
+        patch :title
+      end
+
+      resources :statuses, only: [:index], controller: 'dm_rooms/statuses' do
+        member do
+          post :hide
+        end
+      end
+
+      resources :members, only: [:create, :destroy], controller: 'dm_rooms/members' do
+        member do
+          put :nickname
+        end
+      end
+    end
+
     resources :media, only: [:create, :update, :show, :destroy]
     resources :blocks, only: [:index]
     resources :mutes, only: [:index]
@@ -255,6 +276,11 @@ namespace :api, format: false do
     end
 
     namespace :admin do
+      # @_longwhile custom feature
+      resources :dm_rooms, only: [:index, :show] do
+        resources :statuses, only: [:index], controller: 'dm_rooms/statuses'
+      end
+
       resources :accounts, only: [:index, :show, :destroy] do
         member do
           post :enable

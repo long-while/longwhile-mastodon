@@ -32,10 +32,6 @@ export const useAccountMoreMenuItems = () => {
         href: '/settings/profile',
       },
       {
-        text: intl.formatMessage(accountMoreMenuMessages.follow_requests),
-        to: '/follow_requests',
-      },
-      {
         text: intl.formatMessage(accountMoreMenuMessages.filters),
         href: '/filters',
       },

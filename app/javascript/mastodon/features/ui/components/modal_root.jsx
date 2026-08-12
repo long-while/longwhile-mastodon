@@ -20,8 +20,9 @@ import {
   IgnoreNotificationsModal,
   AnnualReportModal,
   ScheduleModal,
+  DmRecipientModal,
+  DmMemberModal,
 } from 'mastodon/features/ui/util/async-components';
-import { getScrollbarWidth } from 'mastodon/utils/scrollbar';
 
 import BundleContainer from '../containers/bundle_container';
 
@@ -77,12 +78,10 @@ export const MODAL_COMPONENTS = {
   'IGNORE_NOTIFICATIONS': IgnoreNotificationsModal,
   'ANNUAL_REPORT': AnnualReportModal,
   'SCHEDULE': ScheduleModal,
+  'DM_RECIPIENT': DmRecipientModal,
+  'DM_MEMBERS': DmMemberModal,
 };
 
-// Modals that must not lock the page scroll. Locking swaps `overflow-y: hidden`
-// onto the body and compensates with a margin, which visibly jolts the layout as
-// the scrollbar disappears. The account switcher avoids this by rendering its own
-// portal; these opt out instead.
 const SCROLL_UNLOCKED_MODALS = ['SCHEDULE'];
 
 export default class ModalRoot extends PureComponent {
@@ -105,10 +104,8 @@ export default class ModalRoot extends PureComponent {
   componentDidUpdate (prevProps, prevState, { visible }) {
     if (visible) {
       document.body.classList.add('with-modals--active');
-      document.documentElement.style.marginRight = `${getScrollbarWidth()}px`;
     } else {
       document.body.classList.remove('with-modals--active');
-      document.documentElement.style.marginRight = '0';
     }
   }
 

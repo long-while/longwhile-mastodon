@@ -4,6 +4,7 @@ import api from '../api';
 
 import { ensureComposeIsVisible, setComposeToStatus } from './compose';
 import { importFetchedStatus, importFetchedStatuses, importFetchedAccount } from './importer';
+import { changeSetting } from './settings';
 import { fetchContext } from './statuses_typed';
 import { deleteFromTimelines } from './timelines';
 
@@ -264,6 +265,21 @@ export function revealStatus(ids) {
   return {
     type: STATUS_REVEAL,
     ids,
+  };
+}
+
+// ─── @_longwhile custom feature
+export function setExpandContentWarnings(expand) {
+  return (dispatch, getState) => {
+    dispatch(changeSetting(['content_warnings', 'expand_all'], expand));
+
+    const ids = getState().statuses.keySeq().toArray();
+
+    if (ids.length === 0) {
+      return;
+    }
+
+    dispatch(expand ? revealStatus(ids) : hideStatus(ids));
   };
 }
 

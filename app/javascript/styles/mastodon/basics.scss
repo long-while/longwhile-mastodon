@@ -9,6 +9,10 @@
   @return '%23' + unquote($color);
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   font-family: $font-sans-serif, sans-serif;
   background: var(--background-color);

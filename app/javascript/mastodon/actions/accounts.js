@@ -1,3 +1,5 @@
+import { defineMessages } from 'react-intl';
+
 import { browserHistory } from 'mastodon/components/router';
 import { debounceWithDispatchAndArguments } from 'mastodon/utils/debounce';
 
@@ -13,7 +15,16 @@ import {
   pinAccountSuccess, unpinAccountSuccess,
   fetchRelationshipsSuccess,
 } from './accounts_typed';
+import { showAlert } from './alerts';
 import { importFetchedAccount, importFetchedAccounts } from './importer';
+
+const messages = defineMessages({
+  followRequestSent: {
+    id: 'account.follow_request_sent',
+    defaultMessage:
+      'Follow request sent to {name}. Waiting for approval.',
+  },
+});
 
 export const ACCOUNT_FETCH_REQUEST = 'ACCOUNT_FETCH_REQUEST';
 export const ACCOUNT_FETCH_SUCCESS = 'ACCOUNT_FETCH_SUCCESS';
@@ -158,6 +169,15 @@ export function followAccount(id, options = { reblogs: true }) {
 
     api().post(`/api/v1/accounts/${id}/follow`, options).then(response => {
       dispatch(followAccountSuccess({relationship: response.data, alreadyFollowing}));
+
+      if (response.data.requested && !response.data.following) {
+        const acct = getState().getIn(['accounts', id, 'acct']);
+
+        dispatch(showAlert({
+          message: messages.followRequestSent,
+          values: { name: acct ? `@${acct}` : '' },
+        }));
+      }
     }).catch(error => {
       dispatch(followAccountFail({ id, error, locked }));
     });

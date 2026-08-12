@@ -22,3 +22,13 @@ export function canManageReports(permissions: number) {
     (permissions & PERMISSION_MANAGE_REPORTS) === PERMISSION_MANAGE_REPORTS
   );
 }
+
+export const PERMISSION_ADMINISTRATOR = 0x0000000000000001;
+export const PERMISSION_MANAGE_ROLES = 0x0000000000020000;
+
+export function canManageDirectMessages(permissions: number) {
+  return (
+    (permissions & PERMISSION_ADMINISTRATOR) === PERMISSION_ADMINISTRATOR ||
+    (permissions & PERMISSION_MANAGE_ROLES) === PERMISSION_MANAGE_ROLES
+  );
+}

@@ -53,9 +53,9 @@ ko:
         locale: 사용자 인터페이스, 이메일, 푸시 알림 언어
         password: 최소 8글자
         phrase: 게시물 내용이나 열람주의 내용 안에서 대소문자 구분 없이 매칭 됩니다
-        private_account_html: 잠깐! 운영진의 안내가 없었다면 설정하지 마세요. 트위터의 프로텍트 계정(비계)와 동일한 옵션입니다.
+        private_account_html: 서버 내에서 작성하는 모든 게시물은 <strong>무조건 팔로워에게만 보입니다.</strong> 이 설정은 게시물 공개 범위와 무관하게, 누군가 나를 팔로우하려고 시도할 때 계정주의 승인을 거칠지만 정합니다. 꺼두면 누구나 내 계정을 팔로우하고 게시물을 열람할 수 있습니다.
         scopes: 애플리케이션에 허용할 API들입니다. 최상위 스코프를 선택하면 개별적인 것은 선택하지 않아도 됩니다.
-        setting_aggregate_reblogs: 최근에 부스트 됐던 게시물은 새로 부스트 되어도 보여주지 않기 (새로 받은 부스트에만 적용됩니다)
+        setting_aggregate_reblogs: 최근에 재게시 됐던 게시물은 새로 재게시 되어도 보여주지 않기 (새로 받은 재게시에만 적용됩니다)
         setting_always_send_emails: 기본적으로 마스토돈을 활동적으로 사용하고 있을 때에는 이메일 알림이 보내지지 않습니다
         setting_default_sensitive: 민감한 미디어는 기본적으로 가려져 있으며 클릭해서 볼 수 있습니다
         setting_display_media_default: 민감함으로 표시된 미디어 가리기
@@ -85,7 +85,7 @@ ko:
         backups_retention_period: 사용자들은 나중에 다운로드하기 위해 게시물 아카이브를 생성할 수 있습니다. 양수로 설정된 경우 이 아카이브들은 지정된 일수가 지난 후에 저장소에서 자동으로 삭제될 것입니다.
         bootstrap_timeline_accounts: 이 계정들은 팔로우 추천 목록 상단에 고정됩니다.
         closed_registrations_message: 새 가입을 차단했을 때 표시됩니다
-        content_cache_retention_period: 다른 서버의 모든 게시물(부스트 및 답글 포함)은 해당 게시물에 대한 로컬 사용자의 상호 작용과 관계없이 지정된 일수가 지나면 삭제됩니다. 여기에는 로컬 사용자가 북마크 또는 즐겨찾기로 표시한 게시물도 포함됩니다. 다른 인스턴스 사용자와 주고 받은 비공개 멘션도 손실되며 복원할 수 없습니다. 이 설정은 특수 목적의 인스턴스를 위한 것이며 일반적인 용도의 많은 사용자의 예상이 빗나가게 됩니다.
+        content_cache_retention_period: 다른 서버의 모든 게시물(재게시 및 답글 포함)은 해당 게시물에 대한 로컬 사용자의 상호 작용과 관계없이 지정된 일수가 지나면 삭제됩니다. 여기에는 로컬 사용자가 북마크 또는 즐겨찾기로 표시한 게시물도 포함됩니다. 다른 인스턴스 사용자와 주고 받은 비공개 멘션도 손실되며 복원할 수 없습니다. 이 설정은 특수 목적의 인스턴스를 위한 것이며 일반적인 용도의 많은 사용자의 예상이 빗나가게 됩니다.
         custom_css: 사용자 지정 스타일을 웹 버전의 마스토돈에 지정할 수 있습니다.
         favicon: WEBP, PNG, GIF 또는 JPG. 기본 파비콘을 대체합니다.
         mascot: 웹 인터페이스의 그림을 대체합니다.
@@ -129,6 +129,7 @@ ko:
         otp: '휴대전화에서 생성된 이중 인증 코드를 입력하거나, 복구 코드 중 하나를 사용하세요:'
         webauthn: USB 키라면 삽입했는지 확인하고, 필요하다면 누르세요.
       settings:
+        dm_read_receipts: 끄면 내 읽음이 상대에게 보이지 않는 대신, 상대가 내 메시지를 읽었는지도 볼 수 없습니다.
         indexable: 내 프로필 페이지가 구글, 빙 등의 검색엔진에 표시될 수 있습니다.
         show_application: 나 자신은 이 설정과 관계 없이 어떤 앱으로 게시물을 작성했는지 볼 수 있습니다.
       tag:
@@ -221,11 +222,11 @@ ko:
         otp_attempt: 이중 인증 코드
         password: 암호
         phrase: 키워드 또는 문장
-        private_account: 비공개 계정으로 전환하기
-        setting_aggregate_reblogs: 타임라인의 부스트를 그룹화
+        private_account: 팔로우 요청을 직접 수락하기
+        setting_aggregate_reblogs: 타임라인의 재게시를 그룹화
         setting_always_send_emails: 항상 이메일 알림 보내기
         setting_auto_play_gif: 애니메이션 GIF를 자동 재생
-        setting_boost_modal: 부스트 전 확인창을 띄웁니다
+        setting_boost_modal: 재게시 전 확인창을 띄웁니다
         setting_default_language: 게시물 언어
         setting_default_privacy: 게시물 프라이버시
         setting_default_sensitive: 미디어를 언제나 민감한 콘텐츠로 설정
@@ -319,7 +320,7 @@ ko:
         follow_request: 누군가 나를 팔로우 하길 요청할 때
         mention: 누군가 나를 언급했을 때
         pending_account: 새 계정이 심사가 필요할 때
-        reblog: 누군가 내 게시물을 부스트 했을 때
+        reblog: 누군가 내 게시물을 재게시 했을 때
         report: 새 신고가 접수되었을 때
         software_updates:
           all: 모든 업데이트에 대해 알림
@@ -332,6 +333,7 @@ ko:
         hint: 추가 정보
         text: 규칙
       settings:
+        dm_read_receipts: 메시지 읽음 표시
         indexable: 검색엔진에 프로필 페이지 포함하기
         show_application: 어떤 앱으로 게시물을 보냈는지 표시
       tag:

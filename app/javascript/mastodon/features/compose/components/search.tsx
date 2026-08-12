@@ -14,7 +14,7 @@ import { isFulfilled } from '@reduxjs/toolkit';
 
 import CancelIcon from '@/material-icons/400-24px/cancel-fill.svg?react';
 import CloseIcon from '@/material-icons/400-24px/close.svg?react';
-import SearchIcon from '@/material-icons/400-24px/search.svg?react';
+import SearchIcon from '@/images/search.svg?react';
 import {
   clickSearchResult,
   forgetSearchResult,

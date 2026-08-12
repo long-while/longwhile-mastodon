@@ -13,24 +13,29 @@ module Admin
   class DirectMessagesController < BaseController
     PER_PAGE = 40
 
+    helper_method :direct_message_filter_params
+
     def index
       authorize [:admin, :direct_message], :index?
 
-      @direct_messages = filtered_direct_messages.page(params[:page]).per(PER_PAGE)
+      @direct_messages = filtered_direct_messages.page(params[:page]).per(PER_PAGE).without_count
     end
 
     private
 
+    def direct_message_filter_params
+      params.slice(:q, :exclude_mentioning).permit(:q, :exclude_mentioning).to_h.compact_blank
+    end
+
     def filtered_direct_messages
       scope = Status.where(visibility: :direct)
                     .includes(:account, :mentioned_accounts)
-                    .order(id: :desc)
+                    .reorder(id: :desc)
 
       scope = apply_search(scope)
       apply_exclude_mentioning(scope)
     end
 
-    # 발신자 username 또는 본문 텍스트로 검색.
     def apply_search(scope)
       return scope if params[:q].blank?
 
@@ -41,12 +46,10 @@ module Admin
         .where('statuses.text ILIKE :term OR accounts.username ILIKE :term', term: term)
     end
 
-    # ILIKE 와일드카드(%, _)와 이스케이프 문자(\)를 무력화. 값 자체는 바인드 파라미터로 전달.
     def escape_like(value)
       value.gsub(/[\\%_]/) { |char| "\\#{char}" }
     end
 
-    # 지정한 (운영자) 로컬 계정이 멘션된 DM을 제외 → 규칙 위반 DM만 노출.
     def apply_exclude_mentioning(scope)
       usernames = parse_usernames(params[:exclude_mentioning])
       return scope if usernames.empty?
@@ -66,7 +69,7 @@ module Admin
       value
         .split(/[\s,]+/)
         .map { |name| name.delete_prefix('@').strip.downcase }
-        .reject(&:blank?)
+        .compact_blank
         .uniq
     end
   end

@@ -4,23 +4,23 @@ import { defineMessages, useIntl, FormattedMessage } from 'react-intl';
 
 import classNames from 'classnames';
 import { Helmet } from 'react-helmet';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useHistory } from 'react-router-dom';
 
+import DotsIcon from '@/images/action-bar-dots.svg?react';
+import NotificationsActiveIcon from '@/images/bell-fill.svg?react';
+import NotificationsIcon from '@/images/bell.svg?react';
+import ChatIcon from '@/images/envelope.svg?react';
 import CheckIcon from '@/material-icons/400-24px/check.svg?react';
-import LockIcon from '@/material-icons/400-24px/lock.svg?react';
-import MoreHorizIcon from '@/material-icons/400-24px/more_horiz.svg?react';
-import NotificationsIcon from '@/material-icons/400-24px/notifications.svg?react';
-import NotificationsActiveIcon from '@/material-icons/400-24px/notifications_active-fill.svg?react';
+import LockIcon from '@/styles/bird-theme-svg/lock-fill.svg?react';
 import {
   followAccount,
   unblockAccount,
   unmuteAccount,
-  pinAccount,
-  unpinAccount,
   removeAccountFromFollowers,
 } from 'mastodon/actions/accounts';
 import { initBlockModal } from 'mastodon/actions/blocks';
-import { mentionCompose, directCompose } from 'mastodon/actions/compose';
+import { mentionCompose } from 'mastodon/actions/compose';
+import { createDmRoom } from 'mastodon/actions/dm_rooms';
 import {
   initDomainBlockModal,
   unblockDomain,
@@ -47,7 +47,12 @@ import AccountNoteContainer from 'mastodon/features/account/containers/account_n
 import FollowRequestNoteContainer from 'mastodon/features/account/containers/follow_request_note_container';
 import { useLinks } from 'mastodon/hooks/useLinks';
 import { useIdentity } from 'mastodon/identity_context';
-import { autoPlayGif, me, domain as localDomain } from 'mastodon/initial_state';
+import {
+  autoPlayGif,
+  me,
+  domain as localDomain,
+  dmChatEnabled,
+} from 'mastodon/initial_state';
 import type { Account } from 'mastodon/models/account';
 import type { MenuItem } from 'mastodon/models/dropdown_menu';
 import {
@@ -73,8 +78,8 @@ const messages = defineMessages({
     defaultMessage:
       'This account privacy status is set to locked. The owner manually reviews who can follow them.',
   },
+  chat: { id: 'account.chat', defaultMessage: 'Message @{name}' },
   mention: { id: 'account.mention', defaultMessage: 'Mention @{name}' },
-  direct: { id: 'account.direct', defaultMessage: 'Privately mention @{name}' },
   unmute: { id: 'account.unmute', defaultMessage: 'Unmute @{name}' },
   block: { id: 'account.block', defaultMessage: 'Block @{name}' },
   mute: { id: 'account.mute', defaultMessage: 'Mute @{name}' },
@@ -124,11 +129,6 @@ const messages = defineMessages({
     defaultMessage: 'Blocked domains',
   },
   mutes: { id: 'navigation_bar.mutes', defaultMessage: 'Muted users' },
-  endorse: { id: 'account.endorse', defaultMessage: 'Feature on profile' },
-  unendorse: {
-    id: 'account.unendorse',
-    defaultMessage: "Don't feature on profile",
-  },
   add_or_remove_from_list: {
     id: 'account.add_or_remove_from_list',
     defaultMessage: 'Add or Remove from lists',
@@ -140,10 +140,6 @@ const messages = defineMessages({
   admin_domain: {
     id: 'status.admin_domain',
     defaultMessage: 'Open moderation interface for {domain}',
-  },
-  languages: {
-    id: 'account.languages',
-    defaultMessage: 'Change subscribed languages',
   },
   openOriginalPage: {
     id: 'account.open_original_page',
@@ -193,6 +189,7 @@ export const AccountHeader: React.FC<{
   hideTabs?: boolean;
 }> = ({ accountId, hideTabs }) => {
   const dispatch = useAppDispatch();
+  const history = useHistory();
   const intl = useIntl();
   const { signedIn, permissions } = useIdentity();
   const account = useAppSelector((state) => state.accounts.get(accountId));
@@ -222,14 +219,6 @@ export const AccountHeader: React.FC<{
     dispatch(mentionCompose(account));
   }, [dispatch, account]);
 
-  const handleDirect = useCallback(() => {
-    if (!account) {
-      return;
-    }
-
-    dispatch(directCompose(account));
-  }, [dispatch, account]);
-
   const handleReport = useCallback(() => {
     if (!account) {
       return;
@@ -249,6 +238,23 @@ export const AccountHeader: React.FC<{
       dispatch(followAccount(account.id, { reblogs: true }));
     }
   }, [dispatch, account, relationship]);
+
+  const handleChat = useCallback(() => {
+    const pending = dispatch(
+      createDmRoom({ accountIds: [accountId] }),
+    ) as unknown as Promise<{
+      meta: { requestStatus: string };
+      payload?: { id: string };
+    }>;
+
+    void pending.then((result) => {
+      if (result.meta.requestStatus === 'fulfilled' && result.payload) {
+        history.push(`/messages/${result.payload.id}`);
+      }
+
+      return result;
+    });
+  }, [accountId, dispatch, history]);
 
   const handleNotifyToggle = useCallback(() => {
     if (!account) {
@@ -296,18 +302,6 @@ export const AccountHeader: React.FC<{
     dispatch(unblockDomain(domain));
   }, [dispatch, account]);
 
-  const handleEndorseToggle = useCallback(() => {
-    if (!account) {
-      return;
-    }
-
-    if (relationship?.endorsed) {
-      dispatch(unpinAccount(account.id));
-    } else {
-      dispatch(pinAccount(account.id));
-    }
-  }, [dispatch, account, relationship]);
-
   const handleAddToList = useCallback(() => {
     if (!account) {
       return;
@@ -316,21 +310,6 @@ export const AccountHeader: React.FC<{
     dispatch(
       openModal({
         modalType: 'LIST_ADDER',
-        modalProps: {
-          accountId: account.id,
-        },
-      }),
-    );
-  }, [dispatch, account]);
-
-  const handleChangeLanguages = useCallback(() => {
-    if (!account) {
-      return;
-    }
-
-    dispatch(
-      openModal({
-        modalType: 'SUBSCRIBED_LANGUAGES',
         modalProps: {
           accountId: account.id,
         },
@@ -412,12 +391,6 @@ export const AccountHeader: React.FC<{
         }),
         action: handleMention,
       });
-      arr.push({
-        text: intl.formatMessage(messages.direct, {
-          name: account.username,
-        }),
-        action: handleDirect,
-      });
       arr.push(null);
     }
 
@@ -478,19 +451,9 @@ export const AccountHeader: React.FC<{
             });
           }
 
-          arr.push({
-            text: intl.formatMessage(messages.languages),
-            action: handleChangeLanguages,
-          });
           arr.push(null);
         }
 
-        arr.push({
-          text: intl.formatMessage(
-            relationship.endorsed ? messages.unendorse : messages.endorse,
-          ),
-          action: handleEndorseToggle,
-        });
         arr.push({
           text: intl.formatMessage(messages.add_or_remove_from_list),
           action: handleAddToList,
@@ -641,9 +604,6 @@ export const AccountHeader: React.FC<{
     handleAddToList,
     handleBlock,
     handleBlockDomain,
-    handleChangeLanguages,
-    handleDirect,
-    handleEndorseToggle,
     handleMention,
     handleMute,
     handleReblogToggle,
@@ -722,6 +682,19 @@ export const AccountHeader: React.FC<{
     }
   }
 
+  let chatBtn: React.ReactNode;
+
+  if (dmChatEnabled && signedIn && accountId !== me) {
+    chatBtn = (
+      <IconButton
+        icon='envelope'
+        iconComponent={ChatIcon}
+        title={intl.formatMessage(messages.chat, { name: account.username })}
+        onClick={handleChat}
+      />
+    );
+  }
+
   if (relationship?.requested || relationship?.following) {
     bellBtn = (
       <IconButton
@@ -763,6 +736,7 @@ export const AccountHeader: React.FC<{
       <Icon
         id='lock'
         icon={LockIcon}
+        className='account__locked-icon'
         title={intl.formatMessage(messages.account_locked)}
       />
     );
@@ -815,7 +789,6 @@ export const AccountHeader: React.FC<{
           )}
 
         <div className='account__header__image'>
-          <div className='account__header__info'>{info}</div>
 
           {!(suspended || hidden) && (
             <img
@@ -842,13 +815,14 @@ export const AccountHeader: React.FC<{
             </a>
 
             <div className='account__header__tabs__buttons'>
-              {!hidden && bellBtn}
               <Dropdown
                 disabled={menu.length === 0}
                 items={menu}
                 icon='ellipsis-v'
-                iconComponent={MoreHorizIcon}
+                iconComponent={DotsIcon}
               />
+              {!hidden && chatBtn}
+              {!hidden && bellBtn}
               {!hidden && actionBtn}
             </div>
           </div>
@@ -856,6 +830,7 @@ export const AccountHeader: React.FC<{
           <div className='account__header__tabs__name'>
             <h1>
               <span dangerouslySetInnerHTML={displayNameHtml} />
+              {lockedIcon}
               <small>
                 <span>
                   @{username}
@@ -866,7 +841,8 @@ export const AccountHeader: React.FC<{
                   domain={domain ?? ''}
                   isSelf={me === account.id}
                 />
-                {lockedIcon}
+
+                {info}
               </small>
             </h1>
           </div>

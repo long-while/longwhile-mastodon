@@ -20,7 +20,6 @@ import { toggleReblog, toggleFavourite } from 'mastodon/actions/interactions';
 import { openModal } from 'mastodon/actions/modal';
 import { IconButton } from 'mastodon/components/icon_button';
 import { useIdentity } from 'mastodon/identity_context';
-import { me } from 'mastodon/initial_state';
 import { useAppSelector, useAppDispatch } from 'mastodon/store';
 
 const messages = defineMessages({
@@ -159,9 +158,7 @@ export const Footer: React.FC<{
   const publicStatus = ['public', 'unlisted'].includes(
     status.get('visibility') as string,
   );
-  const reblogPrivate =
-    status.getIn(['account', 'id']) === me &&
-    status.get('visibility') === 'private';
+  const reblogPrivate = status.get('visibility') === 'private';
 
   let replyIcon, replyIconComponent, replyTitle;
 

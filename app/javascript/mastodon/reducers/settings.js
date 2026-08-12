@@ -18,6 +18,11 @@ const initialState = ImmutableMap({
     show: true,
   }),
 
+  // ─── @_longwhile custom feature
+  content_warnings: ImmutableMap({
+    expand_all: false,
+  }),
+
   home: ImmutableMap({
     shows: ImmutableMap({
       reblog: true,

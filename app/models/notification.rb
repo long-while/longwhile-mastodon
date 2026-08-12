@@ -149,7 +149,24 @@ class Notification < ApplicationRecord
         scope.merge!(where(filtered: false)) unless include_filtered || from_account_id.present?
         scope.merge!(where(from_account_id: from_account_id)) if from_account_id.present?
         scope.merge!(where(type: requested_types)) unless requested_types.size == TYPES.size
-      end
+      end.without_direct_messages
+    end
+
+    # @_longwhile custom feature
+    def without_direct_messages
+      where(
+        <<~SQL.squish,
+          NOT EXISTS (
+            SELECT 1
+              FROM mentions
+              INNER JOIN statuses ON statuses.id = mentions.status_id
+             WHERE notifications.activity_type = 'Mention'
+               AND mentions.id = notifications.activity_id
+               AND statuses.visibility = :direct
+          )
+        SQL
+        direct: Status.visibilities[:direct]
+      )
     end
 
     def preload_cache_collection_target_statuses(notifications, &_block)
