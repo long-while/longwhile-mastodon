@@ -11,6 +11,7 @@ class Settings::ProfilesController < Settings::BaseController
     toggle_changed = private_account_toggle_changed?
 
     if UpdateAccountService.new.call(@account, account_attributes(toggle_changed))
+      current_user.update!(settings_attributes: account_params[:settings]) if account_params[:settings].present?
       ActivityPub::UpdateDistributionWorker.perform_in(ActivityPub::UpdateDistributionWorker::DEBOUNCE_DELAY, @account.id)
       redirect_to settings_profile_path, notice: I18n.t('generic.changes_saved_msg')
     else
@@ -22,16 +23,17 @@ class Settings::ProfilesController < Settings::BaseController
   private
 
   def account_params
-    params.expect(account: [:display_name, :note, :avatar, :header, :bot, fields_attributes: [[:name, :value]]])
+    params.expect(account: [:display_name, :note, :avatar, :header, fields_attributes: [[:name, :value]], settings: UserSettings.keys])
   end
 
   # ─── @_longwhile custom feature
   # 사용·재사용 시 서버 내 출처 표기 필수 / Credit required to use or reuse:
   #   Twitter/X @_longwhile · Crepe https://kre.pe/QTRx
   def account_attributes(toggle_changed)
-    return account_params unless toggle_changed
+    attributes = account_params.except(:settings)
+    return attributes unless toggle_changed
 
-    account_params.merge(locked: private_account_enabled?, hide_collections: private_account_enabled?)
+    attributes.merge(locked: private_account_enabled?, hide_collections: private_account_enabled?)
   end
 
   def private_account_toggle_changed?

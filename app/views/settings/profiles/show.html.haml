@@ -3,7 +3,8 @@
 
 - content_for :heading do
   %h2= t('settings.profile')
-  = render partial: 'settings/shared/profile_navigation'
+
+.flash-message= t('edit_profile.followers_only_notice')
 
 = simple_form_for @account, url: settings_profile_path, html: { id: :edit_profile } do |f|
   = render 'shared/error_messages', object: @account
@@ -67,6 +68,10 @@
               wrapper: :with_label,
               label: t('simple_form.labels.defaults.private_account'),
               hint: t('simple_form.hints.defaults.private_account_html')
+
+  = f.simple_fields_for :settings, current_user.settings do |ff|
+    .fields-group
+      = ff.input :dm_read_receipts, wrapper: :with_label
 
   .actions
     = f.button :button, t('generic.save_changes'), type: :submit

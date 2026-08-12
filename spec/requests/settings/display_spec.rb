@@ -7,7 +7,7 @@ RSpec.describe 'Settings Preferences Appearance' do
     before { sign_in Fabricate(:user) }
 
     it 'gracefully handles invalid nested params' do
-      put settings_preferences_appearance_path(user: 'invalid')
+      put settings_display_path(user: 'invalid')
 
       expect(response)
         .to have_http_status(400)

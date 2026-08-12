@@ -73,6 +73,7 @@ ko:
       index:
         authorized_at: "%{date}에 승인됨"
         description_html: API를 통해 이 계정에 접근 가능한 애플리케이션의 목록입니다. 알 수 없는 애플리케이션이나 잘못된 행위를 하는 애플리케이션이 있다면 권한을 취소할 수 있습니다.
+        empty: 이 계정에 접근하는 앱이 없습니다.
         last_used_at: "%{date}에 마지막으로 사용됨"
         never_used: 사용되지 않음
         scopes: 권한

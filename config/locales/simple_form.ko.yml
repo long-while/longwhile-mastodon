@@ -298,6 +298,14 @@ ko:
           none: 업데이트에 대해 알리지 않기 (비추천)
           patch: 버그픽스 업데이트에 대해 알림
         trending_tag: 검토해야 할 새 유행
+      notification_policy:
+        for_new_accounts: 새로 만든 계정
+        for_not_followers: 나를 팔로우하지 않는 사람
+        for_not_following: 내가 팔로우하지 않는 사람
+        policies:
+          accept: 받기
+          drop: 안 받기
+          filter: 따로 모으기
       rule:
         hint: 추가 정보
         text: 규칙

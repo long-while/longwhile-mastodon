@@ -5,6 +5,8 @@ class Settings::ApplicationsController < Settings::BaseController
 
   def index
     @applications = current_user.applications.order(id: :desc).page(params[:page])
+    @authorized_applications = Doorkeeper::Application.authorized_for(current_user)
+    @last_used_at_by_app = current_user.applications_last_used
   end
 
   def show; end

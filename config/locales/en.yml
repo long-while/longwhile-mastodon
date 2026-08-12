@@ -1213,6 +1213,7 @@ en:
     log_in_with: Log in with
     login: Log in
     logout: Logout
+    my_data: Your data
     or_log_in_with: Or log in with
     progress:
       confirm: Confirm email
@@ -1358,6 +1359,7 @@ en:
     title_removed: "%{name} removed the conversation title."
   edit_profile:
     basic_information: Basic information
+    followers_only_notice: Posts on this server are visible to your followers only.
     hint_html: "<strong>Customize what people see on your public profile and next to your posts.</strong> Other people are more likely to follow you back and interact with you when you have a filled out profile and a profile picture."
     other: Other
   errors:
@@ -1679,6 +1681,8 @@ en:
   notifications:
     administration_emails: Admin email notifications
     email_events: Send me email about
+    policy_title: Notifications from people you do not know
+    web_column_hint: Which kinds of notifications appear in your list is set from the gear icon on the notifications screen.
   number:
     human:
       decimal_units:

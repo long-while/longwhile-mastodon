@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe Settings::Preferences::BaseController do
+RSpec.describe Settings::PreferencesBaseController do
   describe 'after_update_redirect_path' do
     it 'raises error when called' do
       expect { described_class.new.send(:after_update_redirect_path) }.to raise_error(/Override/)

@@ -12,23 +12,29 @@ SimpleNavigation::Configuration.run do |navigation|
            if: -> { Rails.configuration.x.mastodon.software_update_url.present? && current_user.can?(:view_devops) && SoftwareUpdate.urgent_pending? },
            html: { class: 'warning' }
 
-    n.item :profile, safe_join([material_symbol('person'), t('settings.profile')]), settings_profile_path, if: -> { current_user.functional? && !self_destruct }, highlights_on: %r{/settings/profile|/settings/privacy}
-
-    n.item :preferences, safe_join([material_symbol('settings'), t('settings.preferences')]), settings_preferences_appearance_path, if: -> { current_user.functional? && !self_destruct }, highlights_on: %r{/settings/preferences}
-
-    n.item :filters, safe_join([material_symbol('filter_alt'), t('filters.index.title')]), filters_path, highlights_on: %r{/filters}, if: -> { current_user.functional? && !self_destruct }
-    n.item :statuses_cleanup, safe_join([material_symbol('history'), t('settings.statuses_cleanup')]), statuses_cleanup_path, if: -> { current_user.functional_or_moved? && !self_destruct }
-
-    n.item :security, safe_join([material_symbol('account_circle'), t('settings.account')]), edit_user_registration_path do |s|
-      s.item :password, safe_join([material_symbol('lock'), t('settings.account_settings')]), edit_user_registration_path, highlights_on: %r{^/auth|/settings/delete|/settings/login_activities|^/disputes}
-      s.item :two_factor_authentication, safe_join([material_symbol('safety_check'), t('settings.two_factor_authentication')]), settings_two_factor_authentication_methods_path, highlights_on: %r{/settings/two_factor_authentication|/settings/otp_authentication|/settings/security_keys}
-      s.item :authorized_apps, safe_join([material_symbol('list_alt'), t('settings.authorized_apps')]), oauth_authorized_applications_path, if: -> { !self_destruct }
+    n.item :profile, safe_join([material_symbol('person'), t('settings.profile')]), settings_profile_path, if: -> { current_user.functional? && !self_destruct }, highlights_on: %r{/settings/profile|/settings/featured_tags} do |s|
+      s.item :edit_profile, safe_join([material_symbol('person'), t('settings.profile')]), settings_profile_path
+      s.item :featured_tags, safe_join([material_symbol('tag'), t('settings.featured_tags')]), settings_featured_tags_path
     end
 
-    n.item :data, safe_join([material_symbol('cloud_download'), t('settings.export')]), settings_export_path
+    n.item :notifications, safe_join([material_symbol('notifications'), t('settings.notifications')]), settings_notifications_path, if: -> { current_user.functional? && !self_destruct }, highlights_on: %r{/settings/notifications}
+
+    n.item :display, safe_join([material_symbol('settings'), t('settings.preferences')]), settings_display_path, if: -> { current_user.functional? && !self_destruct }, highlights_on: %r{/settings/display|/filters} do |s|
+      s.item :display_settings, safe_join([material_symbol('settings'), t('settings.preferences')]), settings_display_path
+      s.item :filters, safe_join([material_symbol('filter_alt'), t('filters.index.title')]), filters_path
+    end
+
+    n.item :security, safe_join([material_symbol('account_circle'), t('settings.account')]), edit_user_registration_path, highlights_on: %r{^/auth|/settings/delete|/settings/login_activities|/settings/two_factor_authentication|/settings/otp_authentication|/settings/security_keys|/settings/applications|/settings/export|/statuses_cleanup|^/disputes} do |s|
+      s.item :password, safe_join([material_symbol('lock'), t('settings.account_settings')]), edit_user_registration_path, highlights_on: %r{^/auth|^/disputes}
+      s.item :two_factor_authentication, safe_join([material_symbol('safety_check'), t('settings.two_factor_authentication')]), settings_two_factor_authentication_methods_path, highlights_on: %r{/settings/two_factor_authentication|/settings/otp_authentication|/settings/security_keys}
+      s.item :login_activities, safe_join([material_symbol('history'), t('login_activities.title')]), settings_login_activities_path, highlights_on: %r{/settings/login_activities}
+      s.item :authorized_apps, safe_join([material_symbol('list_alt'), t('settings.authorized_apps')]), settings_applications_path, highlights_on: %r{/settings/applications}, if: -> { !self_destruct }
+      s.item :statuses_cleanup, safe_join([material_symbol('hourglass'), t('settings.statuses_cleanup')]), statuses_cleanup_path, if: -> { current_user.functional_or_moved? && !self_destruct }
+      s.item :export, safe_join([material_symbol('cloud_download'), t('settings.export')]), settings_export_path, highlights_on: %r{/settings/export}
+      s.item :delete, safe_join([material_symbol('delete_forever'), t('settings.delete')]), settings_delete_path, highlights_on: %r{/settings/delete}
+    end
 
     n.item :user_invites, safe_join([material_symbol('person_add'), t('invites.title')]), invites_path, if: -> { current_user.can?(:invite_users) && current_user.functional? && !self_destruct }
-    n.item :development, safe_join([material_symbol('code'), t('settings.development')]), settings_applications_path, highlights_on: %r{/settings/applications}, if: -> { current_user.functional? && !self_destruct }
 
     n.item :trends, safe_join([material_symbol('trending_up'), t('admin.trends.title')]), admin_trends_statuses_path, if: -> { current_user.can?(:manage_taxonomies) && !self_destruct } do |s|
       s.item :statuses, safe_join([material_symbol('chat_bubble'), t('admin.trends.statuses.title')]), admin_trends_statuses_path, highlights_on: %r{/admin/trends/statuses}

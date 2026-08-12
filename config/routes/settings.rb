@@ -5,12 +5,12 @@ namespace :settings do
     resources :pictures, only: :destroy
   end
 
-  get :preferences, to: redirect('/settings/preferences/appearance')
+  resource :display, only: [:show, :update], controller: :display
+  resource :notifications, only: [:show, :update], controller: :notifications
 
-  namespace :preferences do
-    resource :appearance, only: [:show, :update], controller: :appearance
-    resource :notifications, only: [:show, :update]
-  end
+  get :preferences, to: redirect('/settings/display')
+  get 'preferences/appearance', to: redirect('/settings/display')
+  get 'preferences/notifications', to: redirect('/settings/notifications')
 
   resource :export, only: [:show, :create]
 
@@ -50,7 +50,6 @@ namespace :settings do
   end
 
   resource :delete, only: [:show, :destroy]
-  resource :privacy, only: [:show, :update], controller: 'privacy'
 
   resources :sessions, only: [:destroy]
   resources :featured_tags, only: [:index, :create, :destroy]

@@ -2,13 +2,13 @@
 
 require 'rails_helper'
 
-RSpec.describe 'Settings preferences appearance page' do
+RSpec.describe 'Settings display page' do
   let(:user) { Fabricate :user }
 
   before { sign_in user }
 
   it 'Views and updates user prefs' do
-    visit settings_preferences_appearance_path
+    visit settings_display_path
 
     expect(page)
       .to have_private_cache_control

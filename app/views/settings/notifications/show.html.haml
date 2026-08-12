@@ -4,8 +4,21 @@
 - content_for :heading_actions do
   = button_tag t('generic.save_changes'), class: 'button', form: 'edit_notification'
 
-= simple_form_for current_user, url: settings_preferences_notifications_path, html: { id: :edit_notification } do |f|
+= simple_form_for current_user, url: settings_notifications_path, html: { id: :edit_notification } do |f|
   = render 'shared/error_messages', object: current_user
+
+  %h4= t 'notifications.policy_title'
+
+  = simple_fields_for :notification_policy, @policy do |pf|
+    .fields-group
+      - Settings::NotificationsController::POLICY_FIELDS.each do |field|
+        = pf.input field,
+                   collection: %w(accept filter drop),
+                   hint: false,
+                   include_blank: false,
+                   label: t("simple_form.labels.notification_policy.#{field}"),
+                   label_method: ->(policy) { t("simple_form.labels.notification_policy.policies.#{policy}") },
+                   wrapper: :with_label
 
   %h4= t 'notifications.email_events'
 
@@ -35,3 +48,5 @@
                      label_method: ->(setting) { I18n.t("simple_form.labels.notification_emails.software_updates.#{setting}") },
                      label: I18n.t('simple_form.labels.notification_emails.software_updates.label'),
                      wrapper: :with_label
+
+%p.muted-hint= t('notifications.web_column_hint')

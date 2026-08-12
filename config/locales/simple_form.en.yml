@@ -304,6 +304,14 @@ en:
           none: Never notify of updates (not recommended)
           patch: Notify on bugfix updates
         trending_tag: New trend requires review
+      notification_policy:
+        for_new_accounts: New accounts
+        for_not_followers: People not following you
+        for_not_following: People you do not follow
+        policies:
+          accept: Receive
+          drop: Do not receive
+          filter: Collect separately
       rule:
         hint: Additional information
         text: Rule

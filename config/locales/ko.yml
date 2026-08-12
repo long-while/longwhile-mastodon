@@ -1196,6 +1196,7 @@ ko:
     log_in_with: 다음으로 로그인
     login: 로그인
     logout: 로그아웃
+    my_data: 내 데이터
     or_log_in_with: 다른 방법으로 로그인 하려면
     progress:
       confirm: 이메일 확인
@@ -1341,6 +1342,7 @@ ko:
     title_removed: "%{name} 님이 대화 제목을 지웠습니다."
   edit_profile:
     basic_information: 기본 정보
+    followers_only_notice: 이 서버의 글은 모두 팔로워에게만 보입니다.
     hint_html: "<strong>사람들이 공개 프로필을 보고서 게시물을 볼 때를 위한 프로필을 꾸밉니다.</strong> 프로필과 프로필 사진을 채우면 다른 사람들이 나를 팔로우하고 나와 교류할 기회가 더 많아집니다."
     other: 기타
   errors:
@@ -1642,6 +1644,8 @@ ko:
   notifications:
     administration_emails: 관리자 이메일 알림
     email_events: 메일로 받을 것
+    policy_title: 모르는 사람의 알림
+    web_column_hint: 알림 목록에 어떤 종류를 보일지는 알림 화면의 톱니바퀴에서 정합니다.
   number:
     human:
       decimal_units:

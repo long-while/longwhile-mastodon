@@ -7,7 +7,7 @@
 - else
   = render partial: 'status', locals: { user: @user, strikes: @strikes }
 
-%h3= t('auth.security')
+%h3= t('auth.login')
 
 = simple_form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put, class: 'auth_edit', novalidate: false }) do |f|
   = render 'shared/error_messages', object: resource
@@ -52,10 +52,24 @@
 
 %hr.spacer/
 
+%h3= t('auth.security')
+
 = render partial: 'sessions', object: @sessions
+
+.muted-hint
+  %ul
+    %li= link_to t('settings.two_factor_authentication'), settings_two_factor_authentication_methods_path
+    %li= link_to t('login_activities.title'), settings_login_activities_path
+    %li= link_to t('settings.authorized_apps'), settings_applications_path
 
 - unless current_account.suspended? || self_destruct?
   %hr.spacer/
 
-  %h3= t('auth.delete_account')
+  %h3= t('auth.my_data')
+
+  .muted-hint
+    %ul
+      %li= link_to t('settings.statuses_cleanup'), statuses_cleanup_path
+      %li= link_to t('settings.export'), settings_export_path
+
   %p.muted-hint= t('auth.delete_account_html', path: settings_delete_path)
