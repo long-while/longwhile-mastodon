@@ -3,6 +3,19 @@
 require 'tty-prompt'
 
 namespace :mastodon do
+  # Settings for the features built for this instance that cannot fall back to
+  # a code default.  DM chat is one: lib/mastodon/dm_chat.rb reads the variable
+  # every time it is asked, and treats anything but 'true' as off, so leaving it
+  # unset is indistinguishable from turning the feature off.
+  #
+  # Everything else the features read (DM_RATE_LIMIT, STATUS_IDS_LIMIT, the
+  # SCHEDULED_STATUS_* limits, COUNT_DIRECT_STATUSES) already defaults to the
+  # value documented in .env.production.sample, so it is only worth writing here
+  # when the instance wants something different.
+  LONGWHILE_DEFAULTS = {
+    'DM_CHAT_ENABLED' => 'true',
+  }.freeze
+
   desc 'Configure the instance for production use'
   task :setup do
     prompt = TTY::Prompt.new
@@ -351,6 +364,8 @@ namespace :mastodon do
       env['BOT_THROTTLE_API_REQUESTS_PER_PERIOD'] ||= '5000'
       env['BOT_THROTTLE_API_PERIOD'] ||= '300'
 
+      LONGWHILE_DEFAULTS.each { |key, value| env[key] ||= value }
+
       prompt.say "\n"
       prompt.say 'Saving configuration to .env.production...'
 
@@ -450,6 +465,41 @@ namespace :mastodon do
       vapid_key = Webpush.generate_key
       puts "VAPID_PRIVATE_KEY=#{vapid_key.private_key}"
       puts "VAPID_PUBLIC_KEY=#{vapid_key.public_key}"
+    end
+  end
+
+  namespace :longwhile do
+    desc 'Add any missing longwhile settings to .env.production'
+    task :env do
+      # mastodon:setup writes these, but it may only be run on a fresh install
+      # -- it rewrites .env.production from scratch, which on a running server
+      # would replace SECRET_KEY_BASE and the VAPID keys and so log everyone
+      # out.  This task exists for the upgrade path: it only appends what is
+      # missing and never touches a line that is already there.
+      env_path = Rails.root.join('.env.production')
+
+      unless env_path.exist?
+        warn "#{env_path} does not exist. Run `rails mastodon:setup` first."
+        exit 1
+      end
+
+      contents = env_path.read
+      added = LONGWHILE_DEFAULTS.reject { |key, _| contents.match?(/^\s*#{Regexp.escape(key)}=/) }
+
+      if added.empty?
+        puts 'Nothing to add; .env.production already has every longwhile setting.'
+        next
+      end
+
+      contents << "\n" unless contents.end_with?("\n")
+      contents << "\n# Added by mastodon:longwhile:env on #{Time.now.utc}\n"
+      added.each { |key, value| contents << "#{key}=#{dotenv_escape(value)}\n" }
+
+      env_path.write(contents)
+
+      added.each_key { |key| puts "added #{key}" }
+      puts "\nRestart for this to take effect:"
+      puts '  sudo systemctl restart mastodon-web mastodon-sidekiq mastodon-streaming'
     end
   end
 
