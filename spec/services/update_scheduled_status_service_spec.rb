@@ -73,6 +73,18 @@ RSpec.describe UpdateScheduledStatusService do
     end
   end
 
+  # The composer sends `poll: null` on every edit, whether or not the post ever
+  # had a poll. Passing that straight to accepts_nested_attributes_for raises
+  # ArgumentError rather than reading as "no poll".
+  describe 'a nil poll on a post that never had one' do
+    it 'is accepted' do
+      expect { subject.call(scheduled_status, text: 'after', poll: nil) }
+        .to_not raise_error
+
+      expect(scheduled_status.reload.params['text']).to eq 'after'
+    end
+  end
+
   describe 'attachments' do
     let(:stored_params) { { 'text' => '', 'visibility' => 'public' } }
     let!(:media) { Fabricate(:media_attachment, account: account, status: nil) }

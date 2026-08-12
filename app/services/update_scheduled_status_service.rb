@@ -115,7 +115,12 @@ class UpdateScheduledStatusService < BaseService
 
     params = next_params
 
-    status = @account.statuses.build(
+    # `.compact` is not cosmetic: accepts_nested_attributes_for raises
+    # "Hash expected for `poll` attributes, got NilClass" rather than treating a
+    # nil as "no poll", and the composer sends `poll: null` on every edit of a
+    # post that has no poll. PostStatusService#status_attributes compacts for
+    # the same reason.
+    status = @account.statuses.build({
       text: params[:text].to_s,
       media_attachments: @media,
       ordered_media_attachment_ids: @media.map(&:id),
@@ -124,8 +129,8 @@ class UpdateScheduledStatusService < BaseService
       sensitive: sensitive_for(params),
       spoiler_text: params[:spoiler_text].to_s,
       visibility: params[:visibility],
-      language: params[:language]
-    )
+      language: params[:language],
+    }.compact)
 
     raise ActiveRecord::RecordInvalid, status unless status.valid?
 

@@ -27,7 +27,6 @@ const Embed: React.FC<{ id: string }> = ({ id }) => {
   const pictureInPicture = useAppSelector((state) =>
     getPictureInPicture(state, { id }),
   );
-  const domain = useAppSelector((state) => state.meta.get('domain'));
   const dispatch = useAppDispatch();
   const dispatchRenderSignal = useRenderSignal();
 
@@ -51,7 +50,6 @@ const Embed: React.FC<{ id: string }> = ({ id }) => {
     <div className='embed'>
       <DetailedStatus
         status={status}
-        domain={domain}
         pictureInPicture={pictureInPicture}
         onToggleHidden={handleToggleHidden}
         withLogo

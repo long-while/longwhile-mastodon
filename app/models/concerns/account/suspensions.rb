@@ -11,7 +11,17 @@ module Account::Suspensions
   def suspended?
     suspended_at.present? && !instance_actor?
   end
-  alias unavailable? suspended?
+
+  # A deleted account whose posts were kept. It has no owner any more, so it is
+  # treated as unavailable everywhere an account can act, but its statuses stay
+  # readable — see StatusPolicy#show?.
+  def anonymized?
+    anonymized_at.present?
+  end
+
+  def unavailable?
+    suspended? || anonymized?
+  end
 
   def suspended_locally?
     suspended? && suspension_origin_local?

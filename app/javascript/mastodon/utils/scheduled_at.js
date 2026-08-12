@@ -59,6 +59,114 @@ export const dayPeriodLabel = (locale, hour24) => {
 /** Number of days in the given month. `month` is 0-indexed. */
 export const daysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
 
+/** Midnight of the given date, in the browser's time zone. */
+export const startOfDay = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+/** Whether two dates fall on the same calendar day locally. */
+export const isSameDay = (a, b) =>
+  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+
+/**
+ * Narrow weekday initials in the viewer's locale, Sunday first — the `S M T W T
+ * F S` header of the calendar. 2023-01-01 was a Sunday, so it anchors the week.
+ */
+export const weekdayInitials = (locale) => {
+  try {
+    const format = new Intl.DateTimeFormat(locale, { weekday: 'narrow' });
+    return Array.from({ length: 7 }, (_, index) => format.format(new Date(2023, 0, 1 + index)));
+  } catch {
+    return ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  }
+};
+
+/** Month and year heading of the calendar, e.g. `August 2025`. */
+export const formatMonthLabel = (intl, date) =>
+  intl.formatDate(date, { year: 'numeric', month: 'long' });
+
+/**
+ * The date text box, e.g. `2025. 8. 17.` in Korean or `8/17/2025` in English.
+ * Deliberately the locale's own numeric form so that whatever the user types
+ * back matches what they were shown.
+ */
+export const formatDateInput = (intl, date) =>
+  intl.formatDate(date, { year: 'numeric', month: 'numeric', day: 'numeric' });
+
+/**
+ * The order in which the locale writes year, month and day, so free-typed input
+ * can be read back the same way it is displayed.
+ *
+ * @returns {Array<'year'|'month'|'day'>}
+ */
+const dateFieldOrder = (locale) => {
+  try {
+    return new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'numeric', day: 'numeric' })
+      .formatToParts(new Date())
+      .filter(part => ['year', 'month', 'day'].includes(part.type))
+      .map(part => part.type);
+  } catch {
+    return ['year', 'month', 'day'];
+  }
+};
+
+/**
+ * Reads a hand-typed date. Separators are ignored entirely — only the three
+ * number groups matter — so `2025. 8. 17.`, `2025-08-17` and `2025 8 17` are all
+ * accepted in a locale that writes year first.
+ *
+ * The day is clamped to the length of the month rather than rolling over, so
+ * "February 31st" becomes the 28th instead of silently landing in March.
+ *
+ * @returns {Date|null} null when the text cannot be read as a date
+ */
+export const parseDateInput = (locale, text) => {
+  const groups = String(text).match(/\d+/g);
+
+  if (!groups || groups.length < 3) {
+    return null;
+  }
+
+  const order = dateFieldOrder(locale);
+  const values = {};
+
+  order.forEach((field, index) => {
+    values[field] = Number(groups[index]);
+  });
+
+  let { year, month, day } = values;
+
+  if ([year, month, day].some(value => !Number.isFinite(value))) {
+    return null;
+  }
+
+  // A two-digit year is the current century, matching what the box displays.
+  if (year < 100) {
+    year += Math.floor(new Date().getFullYear() / 100) * 100;
+  }
+
+  if (year < 1000 || month < 1 || month > 12 || day < 1) {
+    return null;
+  }
+
+  day = Math.min(day, daysInMonth(year, month - 1));
+
+  return new Date(year, month - 1, day);
+};
+
+/**
+ * Splits the wait until publication into days, hours and minutes for the
+ * "3 days 7 hours 5 minutes from now" line. Seconds are dropped rather than
+ * rounded so the figure never claims more time than is actually left.
+ */
+export const countdownParts = (date, from = serverNow()) => {
+  const totalMinutes = Math.max(0, Math.floor((date.getTime() - from) / 60000));
+
+  return {
+    days: Math.floor(totalMinutes / (24 * 60)),
+    hours: Math.floor((totalMinutes % (24 * 60)) / 60),
+    minutes: totalMinutes % 60,
+  };
+};
+
 /**
  * Builds a Date from select-box values, clamping the day to the selected
  * month so combinations such as February 30th cannot be produced.

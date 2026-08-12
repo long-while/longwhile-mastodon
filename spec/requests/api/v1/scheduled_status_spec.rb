@@ -140,5 +140,45 @@ RSpec.describe 'Scheduled Statuses' do
 
       expect(response).to have_http_status(422)
     end
+
+    # The web composer always sends the full body as JSON, including the keys it
+    # has nothing for: `poll: null`, `in_reply_to_id: null`, `media_ids: []`.
+    # Form-encoded params drop those, so the shape below is the only one that
+    # exercises what the UI actually posts.
+    context 'with the payload the web composer sends' do
+      it 'accepts a null poll on a post that never had one', :aggregate_failures do
+        put api_v1_scheduled_status_path(scheduled_status),
+            headers: headers,
+            params: {
+              status: 'after',
+              spoiler_text: '',
+              sensitive: false,
+              visibility: 'private',
+              language: 'ko',
+              in_reply_to_id: nil,
+              media_ids: [],
+              poll: nil,
+              scheduled_at: 30.hours.from_now.iso8601,
+            },
+            as: :json
+
+        expect(response).to have_http_status(200)
+        expect(scheduled_status.reload.params['text']).to eq 'after'
+        expect(scheduled_status.params['poll']).to be_nil
+      end
+
+      it 'still stores a poll when one is given' do
+        put api_v1_scheduled_status_path(scheduled_status),
+            headers: headers,
+            params: {
+              status: 'pick one',
+              poll: { options: %w(a b), expires_in: 3600, multiple: false },
+            },
+            as: :json
+
+        expect(response).to have_http_status(200)
+        expect(scheduled_status.reload.params.dig('poll', 'options')).to eq %w(a b)
+      end
+    end
   end
 end

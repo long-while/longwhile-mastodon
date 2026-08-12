@@ -126,4 +126,40 @@ RSpec.describe DeleteAccountService do
       end
     end
   end
+
+  describe 'anonymising instead of erasing' do
+    subject { described_class.new }
+
+    let!(:account) { Fabricate(:account) }
+    let!(:status) { Fabricate(:status, account: account, text: 'still here') }
+
+    before { subject.call(account, reserve_username: true, reserve_email: false, preserve_content: true) }
+
+    it 'keeps the posts readable under a name that says nothing', :aggregate_failures do
+      account.reload
+
+      expect(Status.find_by(id: status.id)).to_not be_nil
+      expect(account.anonymized?).to be true
+      expect(account.display_name).to eq Account::ANONYMIZED_DISPLAY_NAME
+    end
+
+    it 'does not suspend the account, which would hide those posts again', :aggregate_failures do
+      account.reload
+
+      expect(account.suspended?).to be false
+      # Still unavailable: nobody owns it any more.
+      expect(account.unavailable?).to be true
+    end
+
+    it 'shows the posts to other accounts' do
+      expect(StatusPolicy.new(Fabricate(:account), status.reload).show?).to be true
+    end
+
+    it 'refuses interaction with them', :aggregate_failures do
+      policy = StatusPolicy.new(Fabricate(:account), status.reload)
+
+      expect(policy.favourite?).to be false
+      expect(policy.reblog?).to be false
+    end
+  end
 end

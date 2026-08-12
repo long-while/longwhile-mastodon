@@ -11,7 +11,6 @@ import LockIcon from '@/material-icons/400-24px/lock.svg?react';
 import MoreHorizIcon from '@/material-icons/400-24px/more_horiz.svg?react';
 import NotificationsIcon from '@/material-icons/400-24px/notifications.svg?react';
 import NotificationsActiveIcon from '@/material-icons/400-24px/notifications_active-fill.svg?react';
-import ShareIcon from '@/material-icons/400-24px/share.svg?react';
 import {
   followAccount,
   unblockAccount,
@@ -32,7 +31,6 @@ import { initReport } from 'mastodon/actions/reports';
 import { Avatar } from 'mastodon/components/avatar';
 import { Badge, AutomatedBadge, GroupBadge } from 'mastodon/components/badge';
 import { Button } from 'mastodon/components/button';
-import { CopyIconButton } from 'mastodon/components/copy_icon_button';
 import {
   FollowersCounter,
   FollowingCounter,
@@ -81,8 +79,6 @@ const messages = defineMessages({
   block: { id: 'account.block', defaultMessage: 'Block @{name}' },
   mute: { id: 'account.mute', defaultMessage: 'Mute @{name}' },
   report: { id: 'account.report', defaultMessage: 'Report @{name}' },
-  share: { id: 'account.share', defaultMessage: "Share @{name}'s profile" },
-  copy: { id: 'account.copy', defaultMessage: 'Copy link to profile' },
   media: { id: 'account.media', defaultMessage: 'Media' },
   blockDomain: {
     id: 'account.block_domain',
@@ -367,15 +363,6 @@ export const AccountHeader: React.FC<{
     [dispatch, account],
   );
 
-  const handleShare = useCallback(() => {
-    if (!account) {
-      return;
-    }
-
-    void navigator.share({
-      url: account.url,
-    });
-  }, [account]);
 
   const handleMouseEnter = useCallback(
     ({ currentTarget }: React.MouseEvent) => {
@@ -670,8 +657,7 @@ export const AccountHeader: React.FC<{
 
   let actionBtn: React.ReactNode,
     bellBtn: React.ReactNode,
-    lockedIcon: React.ReactNode,
-    shareBtn: React.ReactNode;
+    lockedIcon: React.ReactNode;
 
   const info: React.ReactNode[] = [];
 
@@ -751,28 +737,6 @@ export const AccountHeader: React.FC<{
           { name: account.username },
         )}
         onClick={handleNotifyToggle}
-      />
-    );
-  }
-
-  if ('share' in navigator) {
-    shareBtn = (
-      <IconButton
-        className='optional'
-        icon=''
-        iconComponent={ShareIcon}
-        title={intl.formatMessage(messages.share, {
-          name: account.username,
-        })}
-        onClick={handleShare}
-      />
-    );
-  } else {
-    shareBtn = (
-      <CopyIconButton
-        className='optional'
-        title={intl.formatMessage(messages.copy)}
-        value={account.url}
       />
     );
   }
@@ -879,7 +843,6 @@ export const AccountHeader: React.FC<{
 
             <div className='account__header__tabs__buttons'>
               {!hidden && bellBtn}
-              {!hidden && shareBtn}
               <Dropdown
                 disabled={menu.length === 0}
                 items={menu}
@@ -1034,7 +997,6 @@ export const AccountHeader: React.FC<{
 
       {!(hideTabs || hidden) && (
         <div className='account__section-headline'>
-          {/* Featured 탭 제거 */}
           {/*
           <NavLink exact to={`/@${account.acct}/featured`}>
             <FormattedMessage id='account.featured' defaultMessage='Featured' />

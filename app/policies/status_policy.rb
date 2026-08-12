@@ -8,7 +8,9 @@ class StatusPolicy < ApplicationPolicy
   end
 
   def show?
-    return false if author.unavailable?
+    # An anonymised author is unavailable as a person but its posts are kept on
+    # purpose, so only a real suspension hides them.
+    return false if author.unavailable? && !author.anonymized?
     return true if administrator?
 
     if requires_mention?
@@ -21,11 +23,11 @@ class StatusPolicy < ApplicationPolicy
   end
 
   def reblog?
-    !requires_mention? && (!private? || owned?) && show? && !blocking_author?
+    !author.anonymized? && !requires_mention? && (!private? || owned?) && show? && !blocking_author?
   end
 
   def favourite?
-    show? && !blocking_author?
+    !author.anonymized? && show? && !blocking_author?
   end
 
   def destroy?

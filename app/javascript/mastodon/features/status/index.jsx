@@ -63,10 +63,9 @@ import {
 import ColumnHeader from '../../components/column_header';
 import { textForScreenReader, defaultMediaVisibility } from '../../components/status';
 import StatusContainer from '../../containers/status_container';
-import { deleteModal, me } from '../../initial_state';
+import { deleteModal } from '../../initial_state';
 import { makeGetStatus, makeGetPictureInPicture } from '../../selectors';
 import { getAncestorsIds, getDescendantsIds } from 'mastodon/selectors/contexts';
-import { getFilters } from 'mastodon/selectors/filters';
 import Column from '../ui/components/column';
 import { attachFullscreenListener, detachFullscreenListener, isFullscreen } from '../ui/util/fullscreen';
 
@@ -81,60 +80,15 @@ const messages = defineMessages({
   detailedStatus: { id: 'status.detailed_status', defaultMessage: 'Detailed conversation view' },
 });
 
-const EMPTY_IDS = [];
-
-const makeGetRepeatedAuthorIds = () => createSelector(
-  [
-    (state) => state.statuses,
-    (state) => getFilters(state, { contextType: 'thread' }),
-    (_state, { ancestorsIds }) => ancestorsIds,
-    (_state, { descendantsIds }) => descendantsIds,
-    (_state, { statusId }) => statusId,
-  ],
-  (statuses, filters, ancestorsIds, descendantsIds, statusId) => {
-    const repeatedIds = [];
-    let previousId;
-    let previousAccountId;
-
-    for (const id of [...ancestorsIds, statusId, ...descendantsIds]) {
-      const status = statuses.get(id);
-
-      if (!status || status.get('isLoading')) {
-        continue;
-      }
-
-      const accountId = status.get('account');
-
-      if (filters && accountId !== me) {
-        const isHidden = (status.get('filtered') || ImmutableList()).some(result => filters.getIn([result.get('filter'), 'filter_action']) === 'hide');
-
-        if (isHidden) {
-          continue;
-        }
-      }
-
-      if (id !== statusId && accountId === previousAccountId && status.get('in_reply_to_id') === previousId) {
-        repeatedIds.push(id);
-      }
-
-      previousId = id;
-      previousAccountId = accountId;
-    }
-
-    return repeatedIds.join(',');
-  },
-);
-
 const makeMapStateToProps = () => {
   const getStatus = makeGetStatus();
   const getPictureInPicture = makeGetPictureInPicture();
-  const getRepeatedAuthorIds = makeGetRepeatedAuthorIds();
 
   const mapStateToProps = (state, props) => {
     const status = getStatus(state, { id: props.params.statusId, contextType: 'detailed' });
 
-    let ancestorsIds = EMPTY_IDS;
-    let descendantsIds = EMPTY_IDS;
+    let ancestorsIds = [];
+    let descendantsIds = [];
 
     if (status) {
       ancestorsIds = getAncestorsIds(state, status.get('in_reply_to_id'));
@@ -146,10 +100,8 @@ const makeMapStateToProps = () => {
       status,
       ancestorsIds,
       descendantsIds,
-      repeatedAuthorIds: getRepeatedAuthorIds(state, { ancestorsIds, descendantsIds, statusId: props.params.statusId }),
       contextLoaded: !!state.contexts.loadedRoots[props.params.statusId],
       askReplyConfirmation: state.getIn(['compose', 'text']).trim().length !== 0,
-      domain: state.getIn(['meta', 'domain']),
       pictureInPicture: getPictureInPicture(state, { id: props.params.statusId }),
     };
   };
@@ -185,12 +137,10 @@ class Status extends ImmutablePureComponent {
     isLoading: PropTypes.bool,
     ancestorsIds: PropTypes.arrayOf(PropTypes.string).isRequired,
     descendantsIds: PropTypes.arrayOf(PropTypes.string).isRequired,
-    repeatedAuthorIds: PropTypes.string,
     contextLoaded: PropTypes.bool,
     intl: PropTypes.object.isRequired,
     askReplyConfirmation: PropTypes.bool,
     multiColumn: PropTypes.bool,
-    domain: PropTypes.string.isRequired,
     pictureInPicture: ImmutablePropTypes.contains({
       inUse: PropTypes.bool,
       available: PropTypes.bool,
@@ -526,8 +476,7 @@ class Status extends ImmutablePureComponent {
   }
 
   renderChildren(list, ancestors) {
-    const { params: { statusId }, repeatedAuthorIds } = this.props;
-    const repeatedAuthors = new Set(repeatedAuthorIds ? repeatedAuthorIds.split(',') : []);
+    const { params: { statusId } } = this.props;
 
     return list.map((id, i) => (
       <StatusContainer
@@ -539,7 +488,6 @@ class Status extends ImmutablePureComponent {
         previousId={i > 0 ? list[i - 1] : undefined}
         nextId={list[i + 1] || (ancestors && statusId)}
         rootId={statusId}
-        hideAuthor={repeatedAuthors.has(id)}
       />
     ));
   }
@@ -633,7 +581,7 @@ class Status extends ImmutablePureComponent {
 
   render() {
     let ancestors, descendants, remoteHint;
-    const { isLoading, status, ancestorsIds, descendantsIds, intl, domain, multiColumn, pictureInPicture } = this.props;
+    const { isLoading, status, ancestorsIds, descendantsIds, intl, multiColumn, pictureInPicture } = this.props;
     const { fullscreen } = this.state;
 
     if (isLoading) {
@@ -709,7 +657,6 @@ class Status extends ImmutablePureComponent {
                   onOpenMedia={this.handleOpenMedia}
                   onToggleHidden={this.handleToggleHidden}
                   onTranslate={this.handleTranslate}
-                  domain={domain}
                   showMedia={this.state.showMedia}
                   onToggleMediaVisibility={this.handleToggleMediaVisibility}
                   pictureInPicture={pictureInPicture}

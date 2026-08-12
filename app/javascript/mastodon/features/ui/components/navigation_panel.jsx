@@ -152,11 +152,10 @@ const NotificationsLink = () => {
   );
 };
 
-// Shows how many posts are waiting, so the queue is not something the user has
-// to remember to go and check. A failed publication raises the red issue dot —
-// without it, a post that never went out would be silently invisible.
+// No pending count: a queue that is simply waiting is not something the user has
+// to act on. A failed publication still raises the red issue dot — without it, a
+// post that never went out would be silently invisible.
 const ScheduledStatusesLink = () => {
-  const count = useSelector(state => state.getIn(['scheduled_statuses', 'usage', 'total'], 0));
   const failed = useSelector(state => state.getIn(['scheduled_statuses', 'usage', 'failed'], 0));
   const intl = useIntl();
   const label = intl.formatMessage(failed > 0 ? messages.scheduledStatusesFailed : messages.scheduledStatuses);
@@ -166,7 +165,7 @@ const ScheduledStatusesLink = () => {
       key='scheduled_statuses'
       transparent
       to='/scheduled_statuses'
-      icon={<IconWithBadge id='clock-o' icon={ScheduledStatusesIcon} count={count} issueBadge={failed > 0} className='column-link__icon' />}
+      icon={<IconWithBadge id='clock-o' icon={ScheduledStatusesIcon} count={0} issueBadge={failed > 0} className='column-link__icon' />}
       text={label}
     />
   );
