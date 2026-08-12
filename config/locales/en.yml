@@ -1354,11 +1354,16 @@ en:
       your_appeal_rejected: Your appeal has been rejected
   dm_rooms:
     errors:
+      last_members: A conversation needs at least two people.
       no_recipients: Select at least one person to message.
+      nickname_too_long: A nickname cannot be longer than %{max} characters.
+      room_exists: A conversation with those people already exists. Open that one instead.
       too_many_recipients: You can include at most %{max} other people in a conversation.
       title_too_long: A conversation title cannot be longer than %{max} characters.
       unknown_recipients: One or more of the selected accounts could not be found.
       unknown_status: That message is not part of this conversation.
+    member_added: "%{name} added %{targets}."
+    member_removed: "%{name} removed %{targets}."
     title_changed: "%{name} changed the conversation title to '%{title}'."
     title_removed: "%{name} removed the conversation title."
   edit_profile:

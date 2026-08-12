@@ -20,11 +20,14 @@ class DmRoom < ApplicationRecord
 
   has_many :dm_room_members, dependent: :destroy
   has_many :dm_room_reads, dependent: :destroy
+  has_many :dm_room_nicknames, dependent: :destroy
   has_many :members, through: :dm_room_members, source: :account
   has_many :conversations, dependent: nil, inverse_of: :dm_room
 
   belongs_to :root_status, class_name: 'Status', optional: true
   belongs_to :last_status, class_name: 'Status', optional: true
+
+  belongs_to :creator, class_name: 'Account', optional: true
 
   validates :participant_key, presence: true
 
@@ -34,12 +37,29 @@ class DmRoom < ApplicationRecord
 
   TITLE_EVENT_PREFIX = 'conversation:title_changed:'
 
+  MEMBER_EVENT_PREFIX = 'conversation:members_changed:'
+
+  MAX_MEMBERS = 20
+
+  class DuplicateRoomError < StandardError
+    attr_reader :room
+
+    def initialize(room)
+      @room = room
+      super('a room with this participant set already exists')
+    end
+  end
+
   scope :visible_to, lambda { |account|
     joins(:dm_room_members).merge(DmRoomMember.visible.where(account_id: account.id))
   }
 
   def group?
     member_count > 2
+  end
+
+  def created_by?(account)
+    creator_id.present? && creator_id == account.id
   end
 
   class << self
@@ -76,7 +96,7 @@ class DmRoom < ApplicationRecord
       Array(account_ids).compact.map(&:to_i).uniq.sort
     end
 
-    def find_or_create_for(account_ids)
+    def find_or_create_for(account_ids, creator: nil)
       ids = normalize_ids(account_ids)
       key = participant_key_for(ids)
 
@@ -85,7 +105,7 @@ class DmRoom < ApplicationRecord
 
       begin
         transaction(requires_new: true) do
-          room = create!(participant_key: key, member_count: ids.size)
+          room = create!(participant_key: key, member_count: ids.size, creator_id: creator&.id)
           ids.each { |account_id| room.dm_room_members.create!(account_id: account_id) }
           room
         end
@@ -101,7 +121,7 @@ class DmRoom < ApplicationRecord
       participant_ids = participants_for(status)
       return if participant_ids.size < 2
 
-      room = find_or_create_for(participant_ids)
+      room = find_or_create_for(participant_ids, creator: status.account)
       room.attach_conversation!(status.conversation_id)
       room.register_status!(status, resurrect: resurrect)
       room
@@ -187,9 +207,11 @@ class DmRoom < ApplicationRecord
   def visible_statuses_for(account)
     scope = Status.where(conversation_id: conversations.select(:id)).direct_visibility
 
-    scope.where(account_id: account.id).or(
+    visible = scope.where(account_id: account.id).or(
       scope.where(id: Mention.active.where(account_id: account.id).select(:status_id))
     )
+
+    visible.where.not(id: DmHiddenStatus.status_ids_for(account))
   end
 
   def other_accounts(account)
@@ -216,18 +238,15 @@ class DmRoom < ApplicationRecord
   def participant_read_states_for(account)
     return [] unless read_receipts_enabled?(account)
 
-    dm_room_reads.filter_map do |cursor|
-      next if cursor.account_id == account.id
-      next if cursor.last_read_status_id.blank?
+    cursors = dm_room_reads.index_by(&:account_id)
 
-      member = members.detect { |candidate| candidate.id == cursor.account_id }
-
-      next if member.nil?
+    members.filter_map do |member|
+      next if member.id == account.id
       next unless read_receipts_enabled?(member)
 
       {
-        account_id: cursor.account_id.to_s,
-        last_read_status_id: cursor.last_read_status_id.to_s,
+        account_id: member.id.to_s,
+        last_read_status_id: cursors[member.id]&.last_read_status_id&.to_s,
       }
     end
   end
@@ -255,6 +274,90 @@ class DmRoom < ApplicationRecord
     end
   end
 
+  def member_ids
+    dm_room_members.pluck(:account_id)
+  end
+
+  def add_members!(author, account_ids)
+    requested = self.class.normalize_ids(account_ids) - [author.id]
+    return false if requested.empty?
+
+    existing   = member_ids
+    returning  = requested & existing
+    incoming   = requested - existing
+
+    raise Mastodon::ValidationError, I18n.t('dm_rooms.errors.too_many_recipients', max: MAX_MEMBERS - 1) if (existing | requested).size > MAX_MEMBERS
+
+    if incoming.empty?
+      dm_room_members.where(account_id: returning).update_all(hidden_at: nil, updated_at: Time.now.utc)
+      return false
+    end
+
+    new_ids = self.class.normalize_ids(existing + incoming)
+    key     = self.class.participant_key_for(new_ids)
+    clash   = self.class.find_by(participant_key: key)
+
+    raise DuplicateRoomError, clash if clash && clash.id != id
+
+    transaction do
+      dm_room_members.where(account_id: returning).update_all(hidden_at: nil, updated_at: Time.now.utc) if returning.any?
+      incoming.each { |account_id| dm_room_members.create!(account_id: account_id) }
+      update!(participant_key: key, member_count: new_ids.size)
+    end
+
+    reload_members!
+    post_member_event!(author, :added, Account.where(id: incoming).to_a)
+
+    true
+  end
+
+  def remove_member!(author, target)
+    return false unless dm_room_members.exists?(account_id: target.id)
+
+    remaining = member_ids - [target.id]
+
+    raise Mastodon::ValidationError, I18n.t('dm_rooms.errors.last_members') if remaining.size < 2
+
+    key   = self.class.participant_key_for(remaining)
+    clash = self.class.find_by(participant_key: key)
+
+    raise DuplicateRoomError, clash if clash && clash.id != id
+
+    transaction do
+      dm_room_members.where(account_id: target.id).destroy_all
+
+      dm_room_reads.where(account_id: target.id).delete_all
+      dm_room_nicknames.where(account_id: target.id).delete_all
+      dm_room_nicknames.where(target_account_id: target.id).delete_all
+
+      update!(participant_key: key, member_count: remaining.size)
+    end
+
+    reload_members!
+    post_member_event!(author, :removed, [target])
+
+    true
+  end
+
+  def nicknames_for(account)
+    dm_room_nicknames
+      .where(account_id: account.id)
+      .pluck(:target_account_id, :nickname)
+      .to_h { |target_id, nickname| [target_id.to_s, nickname] }
+  end
+
+  def set_nickname!(account, target, nickname)
+    trimmed = nickname.to_s.strip
+
+    if trimmed.empty?
+      dm_room_nicknames.where(account_id: account.id, target_account_id: target.id).delete_all
+      return
+    end
+
+    record = dm_room_nicknames.create_or_find_by!(account_id: account.id, target_account_id: target.id)
+    record.update!(nickname: trimmed)
+  end
+
   def change_title!(author, new_title)
     normalized = new_title.to_s.strip.presence
 
@@ -267,6 +370,40 @@ class DmRoom < ApplicationRecord
   end
 
   private
+
+  def reload_members!
+    dm_room_members.reset
+    members.reset
+    reload
+  end
+
+  def post_member_event!(author, kind, targets)
+    return if targets.empty?
+
+    handles = other_accounts(author).map { |account| "@#{account.acct}" }.join(' ')
+    names   = targets.map { |account| author_name(account) }.join(', ')
+
+    body = I18n.t(
+      kind == :added ? 'dm_rooms.member_added' : 'dm_rooms.member_removed',
+      name: author_name(author),
+      targets: names
+    )
+
+    PostStatusService.new.call(
+      author,
+      text: [handles, body].compact_blank.join(' '),
+      visibility: :direct,
+      spoiler_text: MEMBER_EVENT_PREFIX,
+      thread: root_status,
+      with_rate_limit: true
+    )
+  rescue Mastodon::RateLimitExceededError,
+         Mastodon::ValidationError,
+         PostStatusService::UnexpectedMentionsError,
+         ActiveRecord::RecordInvalid => e
+    Rails.logger.warn { "dm_room #{id}: member event not posted (#{e.class})" }
+    nil
+  end
 
   def post_title_event!(author, new_title)
     handles = other_accounts(author).map { |account| "@#{account.acct}" }.join(' ')

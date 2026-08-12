@@ -24,11 +24,16 @@ class Api::V1::Accounts::StatusesController < Api::BaseController
 
   def preloaded_account_statuses
     preload_collection_paginated_by_id(
-      AccountStatusesFilter.new(@account, current_account, params).results,
+      AccountStatusesFilter.new(@account, current_account, filter_params).results,
       Status,
       limit_param(DEFAULT_STATUSES_LIMIT),
       params_slice(:max_id, :since_id, :min_id)
     )
+  end
+
+  # @_longwhile custom feature
+  def filter_params
+    params.merge(no_direct: true, only_direct: false)
   end
 
   def pagination_params(core_params)

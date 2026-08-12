@@ -33,6 +33,7 @@ import PublicIcon from '@/material-icons/400-24px/public.svg?react';
 import SearchIcon from '@/material-icons/400-24px/search.svg?react';
 import SettingsIcon from '@/material-icons/400-24px/settings.svg?react';
 import { fetchFollowRequests } from 'mastodon/actions/accounts';
+import { fetchDmRooms } from 'mastodon/actions/dm_rooms';
 import { Icon } from 'mastodon/components/icon';
 import { IconWithBadge } from 'mastodon/components/icon_with_badge';
 import { WordmarkLogo } from 'mastodon/components/logo';
@@ -40,6 +41,7 @@ import { NavigationPortal } from 'mastodon/components/navigation_portal';
 import { identityContextPropShape, withIdentity } from 'mastodon/identity_context';
 import { timelinePreview, trendsEnabled, dmChatEnabled } from 'mastodon/initial_state';
 import { canManageDirectMessages } from 'mastodon/permissions';
+import { selectUnreadDmCount } from 'mastodon/features/messages/selectors';
 import { selectUnreadNotificationGroupsCount } from 'mastodon/selectors/notifications';
 
 import { AccountSwitcher } from './account_switcher';
@@ -50,6 +52,20 @@ import { closeNavigation } from 'mastodon/actions/navigation';
 import { connect } from 'react-redux';
 import { Avatar } from 'mastodon/components/avatar';
 import { me } from 'mastodon/initial_state';
+
+const MessagesAllIcon = PendingMentionsIcon;
+const MessagesAllActiveIcon = PendingMentionsActiveIcon;
+
+const isAllMessagesPathname = (pathname) =>
+  pathname === '/messages/all' || pathname.startsWith('/messages/all/');
+
+const isMessagesAllPath = (_match, location) =>
+  isAllMessagesPathname(location.pathname);
+
+const isMessagesPath = (_match, location) =>
+  !isAllMessagesPathname(location.pathname) &&
+  (location.pathname === '/messages' ||
+    location.pathname.startsWith('/messages/'));
 
 const messages = defineMessages({
   home: { id: 'tabs_bar.home', defaultMessage: 'Home' },
@@ -150,6 +166,28 @@ const NotificationsLink = () => {
       to='/notifications'
       icon={<IconWithBadge id='bell' icon={NotificationsIcon} count={count} className='column-link__icon' />}
       activeIcon={<IconWithBadge id='bell' icon={NotificationsActiveIcon} count={count} className='column-link__icon' />}
+      text={label}
+    />
+  );
+};
+
+const MessagesLink = () => {
+  const dispatch = useDispatch();
+  const count = useSelector(selectUnreadDmCount);
+  const intl = useIntl();
+  const label = intl.formatMessage(messages.messages);
+
+  useEffect(() => {
+    dispatch(fetchDmRooms());
+  }, [dispatch]);
+
+  return (
+    <ColumnLink
+      key='messages'
+      transparent
+      to='/messages'
+      isActive={isMessagesPath}
+      icon={<IconWithBadge id='messages' icon={MailIcon} count={count} className='column-link__icon' />}
       text={label}
     />
   );
@@ -307,19 +345,19 @@ class NavigationPanel extends Component {
         <NotificationsLink />
         <ColumnLink transparent to='/pending-mentions' icon='pending' iconComponent={PendingMentionsIcon} activeIconComponent={PendingMentionsActiveIcon} text={pendingMentionsLabel} />
         {dmChatEnabled ? (
-          <ColumnLink transparent to='/messages' icon='messages' iconComponent={MailIcon} text={intl.formatMessage(messages.messages)} />
+          <MessagesLink />
         ) : (
           <ColumnLink transparent to='/conversations' icon='at' iconComponent={AlternateEmailIcon} text={directLabel} />
         )}
         {dmChatEnabled && canManageDirectMessages(permissions) && (
-          <ColumnLink transparent to='/messages/all' icon='messages-all' iconComponent={MailIcon} text={intl.formatMessage(messages.messagesAll)} />
+          <ColumnLink transparent to='/messages/all' isActive={isMessagesAllPath} icon='messages-all' iconComponent={MessagesAllIcon} activeIconComponent={MessagesAllActiveIcon} text={intl.formatMessage(messages.messagesAll)} />
         )}
         <ScheduledStatusesLink />
         <ColumnLink transparent to='/bookmarks' icon='bookmarks' iconComponent={BookmarksIcon} activeIconComponent={BookmarksActiveIcon} text={bookmarksLabel} />
         <ColumnLink transparent to='/lists' icon='list-ul' iconComponent={ListAltIcon} activeIconComponent={ListAltActiveIcon} text={listsLabel} />
         <ColumnLink transparent href={settingsHref} icon='cog' iconComponent={SettingsIcon} text={preferencesLabel} />
-        {includeAccountSwitcher && <AccountSwitcherMenuItem />}
         <FollowRequestsLink />
+        {includeAccountSwitcher && <AccountSwitcherMenuItem />}
       </>
     );
   };

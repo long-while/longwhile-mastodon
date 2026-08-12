@@ -3432,8 +3432,8 @@ body .compose-form .compose-form__uploads {
 }
 
 .layout-multiple-columns .column-link .icon-follow-requests {
-  mask-image: url('./bird-theme-svg/user-add.svg');
-  -webkit-mask-image: url('./bird-theme-svg/user-add.svg');
+  mask-image: url('./bird-theme-svg/follow-request.svg');
+  -webkit-mask-image: url('./bird-theme-svg/follow-request.svg');
   mask-size: contain;
   -webkit-mask-size: contain;
   mask-repeat: no-repeat;
@@ -3445,8 +3445,8 @@ body .compose-form .compose-form__uploads {
 }
 
 .layout-multiple-columns .column-link.active .icon-follow-requests {
-  mask-image: url('./bird-theme-svg/user-add-fill.svg');
-  -webkit-mask-image: url('./bird-theme-svg/user-add-fill.svg');
+  mask-image: url('./bird-theme-svg/follow-request-fill.svg');
+  -webkit-mask-image: url('./bird-theme-svg/follow-request-fill.svg');
 }
 
 .layout-multiple-columns .column-link .icon-messages {
@@ -4303,11 +4303,11 @@ body .compose-form .compose-form__uploads {
   }
 
   .layout-multiple-columns .navigation-panel .navigation-panel__account-switcher {
-    order: 12;
+    order: 13;
   }
 
   .layout-multiple-columns .navigation-panel .column-link[href="/follow_requests"] {
-    order: 13;
+    order: 12;
   }
 }
 

@@ -1,5 +1,6 @@
 // @ts-check
 
+import { dmChatEnabled, me } from '../initial_state';
 import { getLocale } from '../locales';
 import { connectStream } from '../stream';
 
@@ -10,7 +11,7 @@ import {
   deleteAnnouncement,
 } from './announcements';
 import { updateConversations } from './conversations';
-import { dmChatStreamUpdate, setDmStreamConnected, updateDmReadState } from './dm_rooms';
+import { dmChatStreamUpdate, dmMessageReceived, setDmStreamConnected, updateDmReadState } from './dm_rooms';
 import { processNewNotificationForGroups, refreshStaleNotificationGroups, pollRecentNotifications as pollRecentGroupNotifications } from './notification_groups';
 import { updateNotifications } from './notifications';
 import { updateStatus } from './statuses';
@@ -105,10 +106,22 @@ export const connectTimelineStream = (timelineId, channelName, params = {}, opti
           dispatch(refreshStaleNotificationGroups());
           break;
         }
-        case 'conversation':
+        case 'conversation': {
           // @ts-expect-error
-          dispatch(updateConversations(JSON.parse(data.payload)));
+          const conversation = JSON.parse(data.payload);
+
+          dispatch(updateConversations(conversation));
+
+          if (dmChatEnabled) {
+            dispatch(dmChatStreamUpdate());
+
+            if (conversation?.last_status?.account?.id !== me) {
+              dispatch(dmMessageReceived());
+            }
+          }
+
           break;
+        }
         case 'announcement':
           // @ts-expect-error
           dispatch(updateAnnouncements(JSON.parse(data.payload)));
@@ -275,6 +288,8 @@ export const connectDmChatStream = () =>
       case 'conversation':
         // @ts-expect-error
         dispatch(updateConversations(JSON.parse(data.payload)));
+
+        dispatch(dmChatStreamUpdate());
         break;
       case 'dm.read': {
         // @ts-expect-error

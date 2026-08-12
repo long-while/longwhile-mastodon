@@ -62,6 +62,7 @@ export const ConfirmDeleteStatusModal: React.FC<
       )}
       onConfirm={onConfirm}
       onClose={onClose}
+      dangerous
     />
   );
 };

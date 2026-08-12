@@ -39,7 +39,7 @@ class AccountStatusesFilter
     return Status.none if account.unavailable?
 
     if anonymous?
-      account.statuses.distributable_visibility
+      account.statuses.where(visibility: :public)
     elsif author? || administrator?
       account.statuses.all # NOTE: #merge! does not work without the #all
     elsif blocked?
@@ -62,7 +62,7 @@ class AccountStatusesFilter
   def filtered_scope
     scope = account.statuses.left_outer_joins(:mentions)
 
-    scope.merge!(scope.where(visibility: follower? ? %i(public unlisted private) : %i(public unlisted)).or(scope.where(mentions: { account_id: current_account.id })).group(Status.arel_table[:id]))
+    scope.merge!(scope.where(visibility: follower? ? %i(public unlisted private) : %i(public)).or(scope.where(mentions: { account_id: current_account.id })).group(Status.arel_table[:id]))
     scope.merge!(filtered_reblogs_scope) if reblogs_may_occur?
 
     scope

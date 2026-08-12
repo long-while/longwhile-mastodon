@@ -6,7 +6,7 @@ import classNames from 'classnames';
 import { Helmet } from 'react-helmet';
 import { Redirect, Route, Switch, useRouteMatch } from 'react-router-dom';
 
-import MessagesIcon from '@/material-icons/400-24px/mail.svg?react';
+import MessagesIcon from '@/styles/bird-theme-svg/envelope.svg?react';
 import { Icon } from 'mastodon/components/icon';
 import { useIdentity } from 'mastodon/identity_context';
 import { dmChatEnabled } from 'mastodon/initial_state';
@@ -31,14 +31,14 @@ const NoRoomSelected: React.FC = () => (
       <h2>
         <FormattedMessage
           id='messages.admin.pick_title'
-          defaultMessage='Pick a conversation'
+          defaultMessage='Staff-only page'
         />
       </h2>
 
       <p>
         <FormattedMessage
           id='messages.admin.pick_body'
-          defaultMessage='Conversations are read-only here.'
+          defaultMessage='Every conversation on this server appears here. To let another account see all conversations, give it the Admin role in Preferences → Administration → Roles.'
         />
       </p>
     </div>
@@ -55,7 +55,7 @@ const AdminMessages: React.FC = () => {
     signedIn &&
     canManageDirectMessages(permissions);
 
-  useMessagesLayout(allowed);
+  useMessagesLayout(allowed, Boolean(roomMatch));
 
   if (!allowed) return <Redirect to='/messages' />;
 

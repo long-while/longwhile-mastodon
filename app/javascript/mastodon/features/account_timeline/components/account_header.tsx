@@ -11,7 +11,7 @@ import NotificationsActiveIcon from '@/images/bell-fill.svg?react';
 import NotificationsIcon from '@/images/bell.svg?react';
 import ChatIcon from '@/images/envelope.svg?react';
 import CheckIcon from '@/material-icons/400-24px/check.svg?react';
-import LockIcon from '@/material-icons/400-24px/lock.svg?react';
+import LockIcon from '@/styles/bird-theme-svg/lock-fill.svg?react';
 import {
   followAccount,
   unblockAccount,
@@ -736,6 +736,7 @@ export const AccountHeader: React.FC<{
       <Icon
         id='lock'
         icon={LockIcon}
+        className='account__locked-icon'
         title={intl.formatMessage(messages.account_locked)}
       />
     );
@@ -788,7 +789,6 @@ export const AccountHeader: React.FC<{
           )}
 
         <div className='account__header__image'>
-          <div className='account__header__info'>{info}</div>
 
           {!(suspended || hidden) && (
             <img
@@ -830,6 +830,7 @@ export const AccountHeader: React.FC<{
           <div className='account__header__tabs__name'>
             <h1>
               <span dangerouslySetInnerHTML={displayNameHtml} />
+              {lockedIcon}
               <small>
                 <span>
                   @{username}
@@ -840,7 +841,8 @@ export const AccountHeader: React.FC<{
                   domain={domain ?? ''}
                   isSelf={me === account.id}
                 />
-                {lockedIcon}
+
+                {info}
               </small>
             </h1>
           </div>

@@ -7,12 +7,8 @@ import { defineMessages, useIntl } from 'react-intl';
 import classNames from 'classnames';
 import { Link } from 'react-router-dom';
 
-import GroupIcon from '@/material-icons/400-24px/group.svg?react';
 import type { ApiDmRoomJSON } from 'mastodon/api_types/dm_rooms';
-import { Icon } from 'mastodon/components/icon';
-import { useAppSelector } from 'mastodon/store';
 
-import { selectMessageAccount } from '../selectors';
 import { previewText } from '../util/preview_text';
 import { relativeTimeLabel } from '../util/relative_time';
 
@@ -30,7 +26,6 @@ const messages = defineMessages({
   },
   fromMe: { id: 'messages.preview.from_me', defaultMessage: 'You: {body}' },
   draft: { id: 'messages.preview.draft', defaultMessage: 'Draft: {body}' },
-  group: { id: 'messages.group_conversation', defaultMessage: 'Group conversation' },
 });
 
 interface Props {
@@ -50,11 +45,6 @@ export const RoomListItem: React.FC<Props> = ({
   to,
 }) => {
   const intl = useIntl();
-
-  const otherId = room.accounts[0]?.id;
-  const account = useAppSelector((state) =>
-    selectMessageAccount(state, otherId),
-  );
 
   const memberIds = useMemo(
     () => room.accounts.map((entry) => entry.id),
@@ -106,14 +96,6 @@ export const RoomListItem: React.FC<Props> = ({
     >
       <div className='dm-room-item__avatar'>
         <RoomAvatar accountIds={memberIds} size={48} />
-        {room.is_group && (
-          <Icon
-            id='group'
-            icon={GroupIcon}
-            className='dm-room-item__group-badge'
-            title={intl.formatMessage(messages.group)}
-          />
-        )}
       </div>
 
       <div className='dm-room-item__body'>

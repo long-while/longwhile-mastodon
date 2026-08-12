@@ -28,6 +28,12 @@ export const selectDmRooms = (state: unknown): DmRoomsState =>
 export const selectDmRoom = (state: unknown, roomId: string | undefined) =>
   roomId ? selectDmRooms(state).rooms[roomId] : undefined;
 
+export const selectUnreadDmCount = (state: unknown): number => {
+  const { rooms, order } = selectDmRooms(state);
+
+  return order.reduce((sum, id) => sum + (rooms[id]?.unread_count ?? 0), 0);
+};
+
 export const selectDmRoomMessages = (
   state: unknown,
   roomId: string | undefined,

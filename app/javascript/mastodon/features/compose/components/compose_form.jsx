@@ -340,6 +340,7 @@ class ComposeForm extends ImmutablePureComponent {
                 <UploadButtonContainer />
                 <PollButtonContainer />
                 <SpoilerButtonContainer />
+                <EmojiPickerDropdown onPickEmoji={this.handleEmojiPick} />
                 {/* Already-published posts cannot be scheduled. */}
                 <ScheduleButton disabled={this.props.isEditing} />
                 <CharacterCounter max={maxChars} text={this.getFulltextForCharacterCounting()} />

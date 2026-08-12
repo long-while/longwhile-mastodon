@@ -7,6 +7,7 @@ import { compareIds } from 'mastodon/features/messages/util/compare_ids';
 import {
   discardDmMessage,
   fetchDmRoomStatuses,
+  hideDmMessage,
   sendDmMessage,
 } from '../actions/dm_rooms';
 import { timelineDelete } from '../actions/timelines_typed';
@@ -135,6 +136,13 @@ export const dmMessagesReducer = createReducer(initialState, (builder) => {
       room.pending = room.pending.filter(
         (entry) => entry.localId !== payload.localId,
       );
+    })
+    .addCase(hideDmMessage.fulfilled, (state, { payload }) => {
+      const room = state[payload.roomId];
+
+      if (!room?.statusIds.includes(payload.statusId)) return;
+
+      room.statusIds = room.statusIds.filter((id) => id !== payload.statusId);
     })
     .addCase(timelineDelete, (state, { payload }) => {
       Object.values(state).forEach((room) => {

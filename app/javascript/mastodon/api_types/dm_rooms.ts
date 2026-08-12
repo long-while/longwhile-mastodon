@@ -18,9 +18,14 @@ export interface ApiDmRoomJSON {
   is_group: boolean;
   is_local: boolean;
   title: string | null;
+
+  creator_id?: string | null;
+
+  nicknames?: Record<string, string>;
 }
 
 export interface ApiDmReadStateJSON {
   account_id: string;
-  last_read_status_id: string;
+
+  last_read_status_id: string | null;
 }

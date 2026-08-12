@@ -9,6 +9,7 @@ import classNames from 'classnames';
 import type { List as ImmutableList, Map as ImmutableMap } from 'immutable';
 
 import { openModal } from 'mastodon/actions/modal';
+import { Avatar } from 'mastodon/components/avatar';
 import { ContentWarning } from 'mastodon/components/content_warning';
 import MediaGalleryRaw from 'mastodon/components/media_gallery';
 import StatusContentRaw from 'mastodon/components/status_content';
@@ -37,9 +38,10 @@ const messages = defineMessages({
     id: 'messages.audio_attachment',
     defaultMessage: 'Audio attachment',
   },
-  read: { id: 'messages.read', defaultMessage: 'Read' },
-
-  readBy: { id: 'messages.read_by', defaultMessage: 'Read {count}' },
+  unreadBy: {
+    id: 'messages.unread_by',
+    defaultMessage: '{count} have not read this',
+  },
 });
 
 interface Props {
@@ -49,9 +51,7 @@ interface Props {
 
   isMine: boolean;
 
-  isRead?: boolean;
-
-  readByCount?: number;
+  unreadBy?: number;
 
   isFirstInGroup: boolean;
 
@@ -63,6 +63,11 @@ interface Props {
 
   showSenderName: boolean;
 
+  roomId?: string;
+
+  onEdit?: (statusId: string) => void;
+  onRedraft?: (statusId: string) => void;
+
   readOnly?: boolean;
 }
 
@@ -70,13 +75,15 @@ export const MessageBubble: React.FC<Props> = ({
   status,
   memberUrls,
   isMine,
-  isRead = false,
-  readByCount = 0,
+  unreadBy = 0,
   isFirstInGroup,
   isLastInGroup,
   isSenderChanged,
   showTimestamp,
   showSenderName,
+  roomId,
+  onEdit,
+  onRedraft,
   readOnly = false,
 }) => {
   const intl = useIntl();
@@ -147,7 +154,7 @@ export const MessageBubble: React.FC<Props> = ({
     hour12: false,
   });
 
-  const showRead = isMine && !readOnly && isRead;
+  const showUnread = !readOnly && unreadBy > 0;
 
   return (
     <div
@@ -174,6 +181,12 @@ export const MessageBubble: React.FC<Props> = ({
           />
         )}
       </span>
+
+      {showSenderName && (readOnly || !isMine) && (
+        <div className='dm-message__avatar' aria-hidden='true'>
+          {isFirstInGroup && account && <Avatar account={account} size={28} />}
+        </div>
+      )}
 
       <div className='dm-message__body' title={fullTime}>
         {showSenderName && isFirstInGroup && (readOnly || !isMine) && account && (
@@ -230,13 +243,17 @@ export const MessageBubble: React.FC<Props> = ({
       </div>
 
       <div className='dm-message__aside'>
-      {(showTimestamp || showRead) && (
+      {(showTimestamp || showUnread) && (
         <div className='dm-message__meta'>
-          {showRead && (
-            <span className='dm-message__read'>
-              {readByCount > 1
-                ? intl.formatMessage(messages.readBy, { count: readByCount })
-                : intl.formatMessage(messages.read)}
+          {showUnread && (
+            <span
+              className='dm-message__unread'
+              title={intl.formatMessage(messages.unreadBy, { count: unreadBy })}
+              aria-label={intl.formatMessage(messages.unreadBy, {
+                count: unreadBy,
+              })}
+            >
+              {unreadBy}
             </span>
           )}
 
@@ -257,7 +274,10 @@ export const MessageBubble: React.FC<Props> = ({
           <MessageMenu
             statusId={statusId}
             isMine={isMine}
+            roomId={roomId}
             contentHtml={contentHtml}
+            onEdit={onEdit}
+            onRedraft={onRedraft}
           />
         )}
       </div>

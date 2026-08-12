@@ -122,6 +122,10 @@ export function DmRecipientModal() {
   return import('../../messages/recipient_modal');
 }
 
+export function DmMemberModal() {
+  return import('../../messages/member_modal');
+}
+
 export function ScheduledStatuses() {
   return import('../../scheduled_statuses');
 }

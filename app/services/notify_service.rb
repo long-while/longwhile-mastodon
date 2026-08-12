@@ -223,6 +223,12 @@ class NotifyService < BaseService
     # For certain conditions we don't need to create a notification at all
     return if drop?
 
+    # @_longwhile custom feature
+    if direct_message?
+      push_to_conversation! unless filter?
+      return
+    end
+
     @notification.filtered = filter?
     @notification.set_group_key!
     @notification.save!

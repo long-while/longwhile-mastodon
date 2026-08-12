@@ -386,6 +386,13 @@
   }
 }
 
+body .icon-button.active {
+  &:hover,
+  &:focus-visible {
+    background-color: var(--color-icon-button-hover);
+  }
+}
+
 .text-icon-button {
   color: $lighter-text-color;
   border: 0;
@@ -3138,6 +3145,48 @@ a.account__display-name {
 
   @media screen and (min-width: $no-gap-breakpoint) {
     padding: 0;
+  }
+}
+
+body .ui__navigation-bar__item:not(.ui__navigation-bar__item--menu) {
+  svg,
+  .icon-with-badge svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.ui__compose-fab {
+  position: fixed;
+  inset-inline-end: 16px;
+  inset-block-end: 70px;
+  z-index: 39;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+
+  background: var(--color-brand-longwhile, $ui-highlight-color);
+  color: $white;
+  text-decoration: none;
+
+  box-shadow: 0 2px 8px rgba($base-shadow-color, 0.3);
+
+  .icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  &:hover,
+  &:focus-visible {
+    background: var(--color-brand-longwhile-hover, $ui-highlight-color);
+  }
+
+  @media screen and (min-width: $mobile-breakpoint + 1px) {
+    display: none;
   }
 }
 
@@ -8654,30 +8703,24 @@ noscript {
   }
 
   &__account-note {
-    color: $primary-text-color;
-    font-size: 14px;
-    font-weight: 400;
-    margin-bottom: 10px;
-
-    label {
-      display: block;
-      font-size: 12px;
-      font-weight: 500;
-      color: $darker-text-color;
-      text-transform: uppercase;
-      margin-bottom: 5px;
+    &__status {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
     }
 
     textarea {
       display: block;
       box-sizing: border-box;
-      width: calc(100% + 20px);
+      width: calc(100% + 0px);
       color: $secondary-text-color;
-      background: transparent;
+      background: var(--color-bg-compose-form);
       padding: 10px;
-      margin: 0 -10px;
       font-family: inherit;
-      font-size: 14px;
+      font-size: 13px;
       resize: none;
       border: 0;
       outline: 0;
@@ -8689,7 +8732,7 @@ noscript {
       }
 
       &:focus {
-        background: $ui-base-color;
+        background: var(--color-bg-compose-form-focus);
       }
     }
   }
@@ -12523,8 +12566,11 @@ div.compose-panel .account__bio {
     line-height: 20px;
 
     &:focus-visible {
-      outline: none;
       border-color: $ui-highlight-color;
+    }
+
+    .schedule-modal &:focus-visible {
+      outline: none;
     }
   }
 
@@ -12564,10 +12610,10 @@ div.compose-panel .account__bio {
       font-size: inherit;
       line-height: inherit;
       text-align: center;
+    }
 
-      &:focus-visible {
-        outline: none;
-      }
+    #{&} &__input:focus-visible {
+      outline: none;
     }
 
     &__suffix {
@@ -12978,15 +13024,6 @@ div.compose-panel .account__bio {
     border-radius: 50%;
   }
 
-  &__group-badge {
-    position: absolute;
-    inset-inline-end: -2px;
-    bottom: -2px;
-    background: $ui-base-color;
-    border-radius: 50%;
-    padding: 1px;
-  }
-
   &__body {
     flex: 1 1 auto;
     min-width: 0;
@@ -13040,10 +13077,10 @@ div.compose-panel .account__bio {
   &__badge {
     flex: 0 0 auto;
     min-width: 20px;
-    padding: 0 6px;
+    padding: 0;
     border-radius: 10px;
     background: $highlight-text-color;
-    color: $primary-text-color;
+    color: $white;
     font-size: 12px;
     line-height: 20px;
     text-align: center;
@@ -13122,6 +13159,15 @@ div.compose-panel .account__bio {
     flex-direction: row-reverse;
   }
 
+  &__avatar {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+
+    align-self: flex-start;
+  }
+
+
   &__body {
     display: flex;
     flex-direction: column;
@@ -13194,7 +13240,10 @@ div.compose-panel .account__bio {
 
     align-self: flex-end;
     white-space: nowrap;
+  }
 
+  &--theirs &__meta {
+    align-items: flex-start;
   }
 
   &__time {
@@ -13202,9 +13251,11 @@ div.compose-panel .account__bio {
     color: var(--color-dim);
   }
 
-  &__read {
+  &__unread {
     font-size: 11px;
-    color: var(--color-dim);
+    font-weight: 600;
+    line-height: 1;
+    color: var(--color-brand-longwhile, $highlight-text-color);
   }
 
   &__sr-label {
@@ -13217,7 +13268,7 @@ div.compose-panel .account__bio {
   }
 
   &--pending &__bubble {
-    opacity: 0.85;
+    opacity: 0.6;
   }
 
   &--failed &__bubble {
@@ -13295,8 +13346,8 @@ div.compose-panel .account__bio {
 
     align-items: flex-end;
     gap: 4px;
-    padding: 7px 4px 7px 4px;
-    border-radius: 20px;
+    padding: 10px 7px;
+    border-radius: 22px;
     background: var(--color-recieve-message-background);
     overflow: hidden;
 
@@ -13321,7 +13372,7 @@ div.compose-panel .account__bio {
     background: transparent;
     color: $primary-text-color;
 
-    font-size: 15px;
+    font-size: 14px;
     line-height: 22px;
     font-family: inherit;
 
@@ -13462,31 +13513,118 @@ div.compose-panel .account__bio {
 // @_longwhile custom feature
 
 .dm-recipient {
+
+  &__header__back {
+    margin-inline-end: 4px;
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
   &__search {
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--background-border-color);
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin: 4px 16px 8px;
 
     input {
       width: 100%;
       box-sizing: border-box;
-      border: 0;
-      border-radius: 4px;
-      padding: 8px 12px;
-      background: var(--surface-variant-background-color);
+      border: 1px solid var(--color-button-border, var(--color-border));
+      border-radius: 999px;
+
+      background: var(--color-recieve-message-background);
+
+      padding: 10px 16px 10px 42px;
       color: $primary-text-color;
-      font-size: 15px;
+      font-size: 14px;
       font-family: inherit;
 
+      &::placeholder {
+        color: $darker-text-color;
+      }
+
       &:focus-visible {
-        outline: 1px solid $highlight-text-color;
+        outline: 0;
+        border-color: var(--color-sent-message-background);
       }
     }
   }
 
+  &__search__icon {
+    position: absolute;
+    inset-inline-start: 14px;
+    width: 20px;
+    height: 20px;
+    color: $darker-text-color;
+
+    pointer-events: none;
+  }
+
+  &__group-entry {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0 0 4px;
+    padding: 10px 16px;
+    border: 0;
+    background: transparent;
+    color: var(--color-sent-message-background);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: start;
+    cursor: pointer;
+
+    &:hover:not(:disabled),
+    &:focus-visible {
+      background: var(--color-recieve-message-background);
+    }
+
+    &:disabled {
+      cursor: default;
+      opacity: 0.5;
+    }
+  }
+
+  &__group-entry__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 44px;
+    height: 44px;
+
+    .icon {
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  &__picked {
+    padding: 4px 16px 12px;
+  }
+
+  &__next {
+    width: 100%;
+
+    &:disabled {
+      background: $ui-button-disabled-color;
+      cursor: default;
+    }
+  }
+
   &__results {
+    flex: 1 1 auto;
+    min-height: 0;
     max-height: 50vh;
     overflow-y: auto;
-    padding: 4px 0;
+    padding-bottom: 8px;
   }
 
   &__empty {
@@ -13495,31 +13633,92 @@ div.compose-panel .account__bio {
     padding: 24px 16px;
   }
 
+  &__list {
+    display: flex;
+    flex-direction: column;
+  }
+
   &__row {
     display: flex;
     align-items: center;
     gap: 12px;
     width: 100%;
+    box-sizing: border-box;
     padding: 8px 16px;
     background: transparent;
     border: 0;
     color: inherit;
+    font-family: inherit;
     text-align: start;
     cursor: pointer;
 
     &:hover:not(:disabled),
     &:focus-visible {
-      background: var(--surface-variant-background-color);
+      background: var(--color-recieve-message-background);
     }
 
     &:disabled {
       cursor: default;
       opacity: 0.5;
     }
+  }
 
-    &__name {
-      min-width: 0;
-      flex: 1 1 auto;
+  &__row__text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  &__row__name {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 20px;
+  }
+
+  &__row__lock {
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+    color: $darker-text-color;
+  }
+
+  &__row__handle {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 14px;
+    line-height: 18px;
+    color: $darker-text-color;
+  }
+
+  &__row__check {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--color-button-border, var(--color-border));
+    border-radius: 50%;
+
+    .icon {
+      width: 14px;
+      height: 14px;
+    }
+
+    &--on {
+      border-color: var(--color-sent-message-background);
+      background: var(--color-sent-message-background);
+      color: var(--color-sent-message-text);
     }
   }
 }
@@ -13580,8 +13779,8 @@ div.compose-panel .account__bio {
     transform: translateX(2px);
   }
 
-  &:hover &__meta,
-  &:focus-within &__meta {
+  &:hover:has(.dm-message__menu) &__meta,
+  &:focus-within:has(.dm-message__menu) &__meta {
     opacity: 0;
   }
 
@@ -13591,7 +13790,13 @@ div.compose-panel .account__bio {
   }
 }
 
-@media screen and (max-width: $mobile-breakpoint - 1px) {
+@media screen and (max-width: $mobile-breakpoint) {
+  body.layout-messages-room .ui__navigation-bar {
+    display: none;
+  }
+}
+
+@media screen and (max-width: $mobile-breakpoint) {
   .dm-room__scroll {
     padding: 8px 10px;
   }
@@ -13768,70 +13973,130 @@ div.compose-panel .account__bio {
   color: $darker-text-color;
 }
 
-.dm-recipient {
-  &__cell__figure {
-    position: relative;
-    display: inline-flex;
+.dm-recipient,
+.dm-members {
+  background: var(--background-color);
+  backdrop-filter: none;
+
+  .dialog-modal__header {
+    flex-direction: row;
+
+    padding-inline: 16px;
+
+    justify-content: flex-start;
+
+    border-bottom: 0;
   }
 
-  &__cell__check {
-    position: absolute;
-    right: -2px;
-    bottom: -2px;
+  .dialog-modal__header__close {
+    margin-inline-start: auto;
+  }
+}
+
+.dm-members {
+  &__content {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  &__count {
+    padding: 0 16px 8px;
+    font-size: 13px;
+    color: $darker-text-color;
+  }
+
+  &__add {
     display: flex;
     align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-
-    background: var(--color-sent-message-background);
-    color: var(--color-sent-message-text);
-
-    .icon {
-      width: 14px;
-      height: 14px;
-    }
-  }
-
-  &__cell--selected {
-    .account__avatar {
-      box-shadow: 0 0 0 2px var(--color-sent-message-background);
-    }
-  }
-
-  &__mode {
-    display: flex;
-    justify-content: flex-end;
-    padding: 0 16px 8px;
-  }
-
-  &__mode__toggle {
-    border: 1px solid var(--color-border, $ui-base-lighter-color);
-    border-radius: 999px;
-    padding: 4px 12px;
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 16px;
+    border: 0;
     background: transparent;
-    color: $darker-text-color;
-    font-size: 13px;
+    color: var(--color-sent-message-background);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: start;
     cursor: pointer;
 
-    &--on {
-      border-color: var(--color-sent-message-background);
-      color: $primary-text-color;
-      font-weight: 600;
+    &:hover:not(:disabled),
+    &:focus-visible {
+      background: var(--surface-variant-background-color);
     }
 
     &:disabled {
-      opacity: 0.5;
       cursor: default;
+      opacity: 0.5;
     }
   }
 
+  &__add__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--color-recieve-message-background);
+
+    .icon {
+      width: 22px;
+      height: 22px;
+    }
+  }
+
+  &__list {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: 50vh;
+    overflow-y: auto;
+    padding-bottom: 8px;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+  }
+
+  &__row__text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  &__row__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 20px;
+  }
+
+  &__row__handle {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 14px;
+    line-height: 18px;
+    color: $darker-text-color;
+  }
+}
+
+.dm-recipient {
   &__chips {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    padding: 0 16px 12px;
+
+    padding: 0 16px 10px;
   }
 
   &__chip {
@@ -13841,7 +14106,8 @@ div.compose-panel .account__bio {
     padding: 3px 8px 3px 3px;
     border: 0;
     border-radius: 999px;
-    background: var(--surface-variant-background-color, $ui-base-lighter-color);
+
+    background: var(--color-recieve-message-background);
     color: $primary-text-color;
     font-size: 13px;
     cursor: pointer;
@@ -13865,12 +14131,6 @@ div.compose-panel .account__bio {
       cursor: default;
     }
   }
-
-  &__actions {
-    display: flex;
-    justify-content: flex-end;
-    padding: 0 16px 16px;
-  }
 }
 
 .dm-room-header__title-input {
@@ -13882,7 +14142,7 @@ div.compose-panel .account__bio {
   background: transparent;
   color: $primary-text-color;
 
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   font-family: inherit;
 
@@ -13981,6 +14241,23 @@ div.compose-panel .account__bio {
   text-align: center;
 }
 
+.dm-room-avatar {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.dm-room-avatar__back {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+}
+
+.dm-room-avatar__front {
+  position: absolute;
+  inset-block-end: 0;
+  inset-inline-end: 0;
+}
+
 .dm-room__live-region {
   position: absolute;
   width: 1px;
@@ -13988,6 +14265,33 @@ div.compose-panel .account__bio {
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+.dm-room__editing {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 16px;
+  font-size: 13px;
+  color: $darker-text-color;
+  background: var(--surface-variant-background-color);
+  border-top: 1px solid var(--background-border-color);
+
+  button {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: $highlight-text-color;
+    font-size: inherit;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: underline;
+    }
+  }
 }
 
 .dm-room-list__filter {
@@ -14002,7 +14306,6 @@ div.compose-panel .account__bio {
   background: transparent;
   color: $primary-text-color;
   font-size: 14px;
-  font-weight: 600;
   font-family: inherit;
   cursor: pointer;
 
@@ -14012,62 +14315,15 @@ div.compose-panel .account__bio {
   }
 }
 
-.dm-recipient {
-  &__grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 4px;
-    padding: 12px 8px;
+@media screen and (max-width: $mobile-breakpoint) {
+  .dm-recipient__row,
+  .dm-recipient__group-entry,
+  .dm-recipient__picked {
+    padding-inline: 12px;
   }
 
-  &__cell {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    padding: 10px 4px;
-    border: 0;
-    border-radius: 8px;
-    background: transparent;
-    color: inherit;
-    font-family: inherit;
-    cursor: pointer;
-
-    &:hover:not(:disabled),
-    &:focus-visible {
-      background: var(--surface-variant-background-color);
-    }
-
-    &:disabled {
-      cursor: default;
-      opacity: 0.5;
-    }
-
-    &__name {
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      font-size: 13px;
-      font-weight: 600;
-      line-height: 16px;
-      overflow-wrap: anywhere;
-    }
-
-    &__handle {
-      max-width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-size: 12px;
-      color: $darker-text-color;
-    }
-  }
-}
-
-@media screen and (max-width: $mobile-breakpoint - 1px) {
-  .dm-recipient__grid {
-    grid-template-columns: repeat(3, 1fr);
+  .dm-recipient__search {
+    margin-inline: 12px;
   }
 }
 
@@ -14106,7 +14362,7 @@ body.app-body.layout-messages.layout-single-column {
       flex: 0 1 auto;
       width: calc(
         var(--width-main-panel, 600px) + var(--gap-default, 0px) * 4 + 16px +
-          var(--width-compose-panel, 350px)
+          350px
       );
       max-width: none;
     }
@@ -14122,7 +14378,7 @@ body.app-body.layout-messages.layout-single-column {
 .dm-shell {
   display: grid;
 
-  grid-template-columns: var(--width-compose-panel, 350px) minmax(0, 1fr);
+  grid-template-columns: 350px minmax(0, 1fr);
 
   height: 100%;
   min-height: 0;
@@ -14162,8 +14418,8 @@ body.app-body.layout-messages.layout-single-column {
     flex: 1 1 auto;
     min-width: 0;
     margin: 0;
-    font-size: 20px;
-    font-weight: 800;
+    font-size: 18px;
+    font-weight: 700;
     color: $primary-text-color;
   }
 
@@ -14258,6 +14514,11 @@ body.app-body.layout-messages.layout-single-column {
       color: $primary-text-color;
     }
 
+    p {
+      max-width: 46ch;
+      line-height: 1.5;
+    }
+
     &__icon {
       display: flex;
       align-items: center;
@@ -14277,6 +14538,11 @@ body.app-body.layout-messages.layout-single-column {
       .icon path {
         fill: none;
         stroke: currentColor;
+      }
+
+      .icon-messages path {
+        fill: currentColor;
+        stroke: none;
       }
     }
 
@@ -14374,8 +14640,9 @@ body.app-body.layout-messages.layout-single-column {
 .dm-room-list__search .icon,
 .dm-room__to-bottom .icon,
 .dm-composer .icon,
-.dm-room__placeholder__icon .icon,
-.dm-room-item__group-badge {
+.dm-recipient .icon,
+.dm-members .icon,
+.dm-room__placeholder__icon .icon {
   background-image: none !important;
   mask-image: none !important;
   -webkit-mask-image: none !important;
@@ -14413,6 +14680,7 @@ body.app-body.layout-messages.layout-single-column {
 
 .icon.icon-message-plus,
 .icon.icon-message-circle,
+.icon.icon-smile-o,
 .dm-room-list__search .icon-search,
 .search .search__icon .icon-search {
   path,
@@ -14427,6 +14695,8 @@ body.layout-single-column .account__header__tabs__buttons {
     background-image: none !important;
     mask-image: none !important;
     -webkit-mask-image: none !important;
+
+    background-color: transparent !important;
   }
 
   .icon path {
@@ -14444,6 +14714,175 @@ body.layout-single-column .account__header__tabs__buttons {
   }
 }
 
+body.layout-single-column .column-inline-form button,
+body.layout-single-column
+  .explore__suggestions
+  .account-card__actions__button
+  button,
+body.layout-single-column .notification .account__relationship > .button,
+body.layout-single-column .account .account__relationship > .button,
+body.layout-single-column .account__header__tabs__buttons .button,
+body.layout-single-column .account__header__tabs__buttons .icon-button,
+body.layout-single-column .button.follow-button--following {
+  border-color: var(--color-button-border, var(--color-border));
+}
+
+$dm-danger: var(--color-brand-longwhile-danger, #{$error-value-color});
+$dm-danger-hover: var(--color-brand-longwhile-danger-hover, #{$error-value-color});
+
+body.layout-single-column .follow-request-banner__action .button--destructive {
+  border-color: $dm-danger;
+  color: $dm-danger;
+
+  background-color: transparent;
+
+  &:hover,
+  &:focus-visible {
+    background-color: color-mix(in srgb, #{$dm-danger} 12%, transparent);
+    border-color: $dm-danger-hover;
+    color: $dm-danger-hover;
+  }
+}
+
+body.layout-single-column .account--panel__button .icon-button:has(.icon-times) {
+  &:hover,
+  &:focus-visible {
+    color: $dm-danger;
+    background-color: color-mix(in srgb, #{$dm-danger} 12%, transparent);
+  }
+}
+
+@media screen and (min-width: 760px) and (max-width: 1174px) {
+  body.layout-single-column .columns-area__panels__main > div {
+    border-right: 1px solid var(--color-border);
+  }
+}
+
+body.layout-single-column .button.follow-button--following {
+  background-color: transparent;
+  border: 1px solid
+    var(--color-button-border, var(--color-border, $ui-base-lighter-color));
+
+  color: var(--color-topaz, #{$primary-text-color});
+
+  &:hover,
+  &:focus-visible {
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-longwhile-danger, #{$error-value-color}) 12%,
+      transparent
+    );
+    border-color: var(--color-brand-longwhile-danger, #{$error-value-color});
+    color: var(--color-brand-longwhile-danger, #{$error-value-color});
+  }
+
+  .follow-button__labels {
+    display: grid;
+    place-items: center;
+
+    > span {
+      grid-area: 1 / 1;
+    }
+  }
+
+  .follow-button__labels__hover {
+    visibility: hidden;
+  }
+
+  &:hover,
+  &:focus-visible {
+    .follow-button__labels__rest {
+      visibility: hidden;
+    }
+
+    .follow-button__labels__hover {
+      visibility: visible;
+    }
+  }
+}
+
+body.layout-single-column
+  .account
+  .account__relationship
+  > .button.follow-button--following,
+body.layout-single-column
+  .notification
+  .account__relationship
+  > .button.follow-button--following,
+body.layout-single-column
+  .account__header__tabs__buttons
+  .button.follow-button--following {
+  &:hover,
+  &:focus-visible {
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-longwhile-danger, #{$error-value-color}) 12%,
+      transparent
+    );
+    border-color: var(--color-brand-longwhile-danger, #{$error-value-color});
+    color: var(--color-brand-longwhile-danger, #{$error-value-color});
+  }
+}
+
+body.layout-single-column .account__header__tabs__buttons .button,
+body.layout-single-column .button.follow-button--following {
+  font-weight: 600;
+}
+
+body.layout-single-column .account__header__tabs__name h1 small {
+  gap: 10px;
+}
+
+body.layout-single-column .account__header__tabs__name .relationship-tag {
+  margin-inline-start: -5px;
+
+  color: var(--color-dim);
+
+  white-space: nowrap;
+}
+
+.account__locked-icon path:not([fill]),
+.dm-recipient__row__lock path:not([fill]),
+.dm-composer__send .icon-pencil path:not([fill]) {
+  fill: none;
+}
+
+.display-name__with-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+
+  .display-name__html {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.account__display-name .display-name__with-badge {
+  display: flex;
+}
+
+.account .account__display-name .display-name__with-badge {
+  display: inline-flex;
+}
+
+.account--minimal .account__display-name .display-name__with-badge {
+  display: flex;
+}
+
+body.layout-single-column .account__header__tabs__name h1 > .account__locked-icon {
+  width: 16px;
+  height: 16px;
+  margin-inline-start: 4px;
+
+  vertical-align: -0.12em;
+
+  color: var(--color-dim, #{$dark-text-color});
+}
+
 body.layout-single-column .compose-form .navigation-bar > .icon-button {
   width: 24px;
   height: 24px;
@@ -14454,6 +14893,13 @@ body.layout-single-column
   .status:not(.status--in-thread)
   .status__action-bar {
   padding-left: calc(var(--size-avatar) + var(--gap-default) - 12px);
+}
+
+body.app-body
+  .notification-ungrouped
+  .status:not(.status--in-thread)
+  .status__action-bar {
+  padding-left: 0;
 }
 
 body.layout-single-column .dropdown-menu__item--dangerous {
@@ -14478,17 +14924,30 @@ body.layout-single-column .dropdown-menu__item--dangerous {
   margin-inline-start: 0;
 }
 
+body.app-body
+  .status__action-bar__button.icon-button.icon-button--with-counter.star-icon
+  .icon-button__counter {
+  margin-inline-start: 0;
+  margin-left: 0;
+}
+
 .column-header__back-button {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  justify-content: left;
   width: 32px;
   height: 32px;
   padding: 0;
   border-radius: 9999px;
+  margin-top: 6px;
+  margin-right: 0;
+  margin-bottom: 6px;
+  margin-left: 11px;
+}
 
+body .column-header__back-button {
   &:hover,
   &:focus-visible {
-    background-color: rgba(41, 49, 56, 15%);
+    background-color: var(--color-icon-button-hover);
   }
 }

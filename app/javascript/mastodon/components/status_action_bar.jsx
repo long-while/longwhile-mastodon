@@ -39,7 +39,6 @@ const messages = defineMessages({
   mute: { id: 'account.mute', defaultMessage: 'Mute @{name}' },
   block: { id: 'account.block', defaultMessage: 'Block @{name}' },
   reply: { id: 'status.reply', defaultMessage: 'Reply' },
-  share: { id: 'status.share', defaultMessage: 'Share' },
   more: { id: 'status.more', defaultMessage: 'More' },
   replyAll: { id: 'status.replyAll', defaultMessage: 'Reply to thread' },
   reblog: { id: 'status.reblog', defaultMessage: 'Boost' },
@@ -50,13 +49,11 @@ const messages = defineMessages({
   removeFavourite: { id: 'status.remove_favourite', defaultMessage: 'Remove from favorites' },
   bookmark: { id: 'status.bookmark', defaultMessage: 'Bookmark' },
   removeBookmark: { id: 'status.remove_bookmark', defaultMessage: 'Remove bookmark' },
-  open: { id: 'status.open', defaultMessage: 'Expand this status' },
   report: { id: 'status.report', defaultMessage: 'Report @{name}' },
   muteConversation: { id: 'status.mute_conversation', defaultMessage: 'Mute conversation' },
   unmuteConversation: { id: 'status.unmute_conversation', defaultMessage: 'Unmute conversation' },
   pin: { id: 'status.pin', defaultMessage: 'Pin on profile' },
   unpin: { id: 'status.unpin', defaultMessage: 'Unpin from profile' },
-  embed: { id: 'status.embed', defaultMessage: 'Get embed code' },
   admin_account: { id: 'status.admin_account', defaultMessage: 'Open moderation interface for @{name}' },
   admin_status: { id: 'status.admin_status', defaultMessage: 'Open this post in the moderation interface' },
   admin_domain: { id: 'status.admin_domain', defaultMessage: 'Open moderation interface for {domain}' },
@@ -93,7 +90,6 @@ class StatusActionBar extends ImmutablePureComponent {
     onBlockDomain: PropTypes.func,
     onUnblockDomain: PropTypes.func,
     onReport: PropTypes.func,
-    onEmbed: PropTypes.func,
     onMuteConversation: PropTypes.func,
     onPin: PropTypes.func,
     onBookmark: PropTypes.func,
@@ -122,14 +118,6 @@ class StatusActionBar extends ImmutablePureComponent {
     } else {
       this.props.onInteractionModal('reply', this.props.status);
     }
-  };
-
-  handleShareClick = () => {
-    navigator.share({
-      url: this.props.status.get('url'),
-    }).catch((e) => {
-      if (e.name !== 'AbortError') console.error(e);
-    });
   };
 
   handleFavouriteClick = () => {
@@ -216,14 +204,6 @@ class StatusActionBar extends ImmutablePureComponent {
     onUnblockDomain(account.get('acct').split('@')[1]);
   };
 
-  handleOpen = () => {
-    this.props.history.push(`/@${this.props.status.getIn(['account', 'acct'])}/${this.props.status.get('id')}`);
-  };
-
-  handleEmbed = () => {
-    this.props.onEmbed(this.props.status);
-  };
-
   handleReport = () => {
     this.props.onReport(this.props.status);
   };
@@ -254,21 +234,11 @@ class StatusActionBar extends ImmutablePureComponent {
 
     let menu = [];
 
-    menu.push({ text: intl.formatMessage(messages.open), action: this.handleOpen });
-
     if (publicStatus && isRemote) {
       menu.push({ text: intl.formatMessage(messages.openOriginalPage), href: status.get('url') });
     }
 
     menu.push({ text: intl.formatMessage(messages.copy), action: this.handleCopy });
-
-    if (publicStatus && 'share' in navigator) {
-      menu.push({ text: intl.formatMessage(messages.share), action: this.handleShareClick });
-    }
-
-    if (publicStatus && !isRemote) {
-      menu.push({ text: intl.formatMessage(messages.embed), action: this.handleEmbed });
-    }
 
     if (signedIn) {
       menu.push(null);

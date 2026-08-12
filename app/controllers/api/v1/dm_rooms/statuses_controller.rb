@@ -9,11 +9,12 @@ class Api::V1::DmRooms::StatusesController < Api::BaseController
 
   ORPHAN_SCAN_LIMIT = 200
 
-  before_action -> { doorkeeper_authorize! :read, :'read:statuses' }
+  before_action -> { doorkeeper_authorize! :read, :'read:statuses' }, only: [:index]
+  before_action -> { doorkeeper_authorize! :write, :'write:statuses' }, only: [:hide]
   before_action :require_user!
   before_action :set_room
 
-  after_action :insert_pagination_headers
+  after_action :insert_pagination_headers, only: [:index]
 
   def index
     attach_orphan_conversations!
@@ -23,6 +24,22 @@ class Api::V1::DmRooms::StatusesController < Api::BaseController
     render json: @statuses,
            each_serializer: REST::StatusSerializer,
            relationships: StatusRelationshipsPresenter.new(@statuses, current_account.id)
+  end
+
+  def hide
+    status_id = params[:id]
+
+    return render_empty if DmHiddenStatus.exists?(account_id: current_account.id, status_id: status_id)
+
+    status = @room.visible_statuses_for(current_account).find_by(id: status_id)
+
+    raise ActiveRecord::RecordNotFound if status.nil?
+
+    DmHiddenStatus.create!(account_id: current_account.id, status_id: status.id)
+
+    render_empty
+  rescue ActiveRecord::RecordNotUnique
+    render_empty
   end
 
   private

@@ -3,7 +3,8 @@
 # @_longwhile custom feature
 class REST::DmRoomSerializer < ActiveModel::Serializer
   attributes :id, :unread_count, :root_status_id, :last_read_status_id,
-             :is_group, :is_local, :title, :participant_read_states
+             :is_group, :is_local, :title, :participant_read_states,
+             :creator_id, :nicknames
 
   has_many :other_accounts, key: :accounts, serializer: REST::AccountSerializer
   has_one :last_status, serializer: REST::StatusSerializer
@@ -40,7 +41,27 @@ class REST::DmRoomSerializer < ActiveModel::Serializer
     object.participant_read_states_for(current_account)
   end
 
+  def last_status
+    status = object.last_status
+
+    return status if status.nil? || hidden_status_ids.exclude?(status.id)
+
+    object.visible_statuses_for(current_account).reorder(id: :desc).first
+  end
+
+  def creator_id
+    object.creator_id&.to_s
+  end
+
+  def nicknames
+    object.nicknames_for(current_account)
+  end
+
   private
+
+  def hidden_status_ids
+    instance_options[:hidden_status_ids] || []
+  end
 
   def read_cursor
     return @read_cursor if defined?(@read_cursor)

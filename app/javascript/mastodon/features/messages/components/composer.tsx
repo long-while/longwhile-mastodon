@@ -6,6 +6,7 @@ import { defineMessages, useIntl } from 'react-intl';
 
 import AttachmentIcon from '@/images/compose-form-photo.svg?react';
 import SendIcon from '@/images/send-fill.svg?react';
+import EditIcon from '@/styles/bird-theme-svg/pencil-fill.svg?react';
 import { Icon } from 'mastodon/components/icon';
 
 import { useSendOnEnter } from '../util/use_send_on_enter';
@@ -15,6 +16,10 @@ const messages = defineMessages({
   placeholder: {
     id: 'messages.composer.placeholder',
     defaultMessage: 'Write a message…',
+  },
+  save: {
+    id: 'messages.composer.save',
+    defaultMessage: 'Save',
   },
   send: { id: 'messages.composer.send', defaultMessage: 'Send' },
   attach: { id: 'messages.composer.attach', defaultMessage: 'Add media' },
@@ -115,6 +120,8 @@ interface Props {
   isUploading?: boolean;
 
   isSending?: boolean;
+
+  isEditing?: boolean;
   onAttach?: (files: FileList) => void;
   onRemoveAttachment?: (localId: string) => void;
 
@@ -131,6 +138,7 @@ export const Composer: React.FC<Props> = ({
   canAttach = false,
   isUploading = false,
   isSending = false,
+  isEditing = false,
   onAttach,
   onRemoveAttachment,
   value,
@@ -320,11 +328,16 @@ export const Composer: React.FC<Props> = ({
           type='button'
           className='dm-composer__send'
           disabled={!canSubmit}
-          title={intl.formatMessage(messages.send)}
-          aria-label={intl.formatMessage(messages.send)}
+          title={intl.formatMessage(isEditing ? messages.save : messages.send)}
+          aria-label={intl.formatMessage(
+            isEditing ? messages.save : messages.send,
+          )}
           onClick={handleSubmit}
         >
-          <Icon id='send' icon={SendIcon} />
+          <Icon
+            id={isEditing ? 'pencil' : 'send'}
+            icon={isEditing ? EditIcon : SendIcon}
+          />
         </button>
       </div>
     </div>

@@ -6,7 +6,6 @@ import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
 
 import classNames from 'classnames';
 
-import HourglassIcon from '@/material-icons/400-24px/hourglass.svg?react';
 import WarningIcon from '@/material-icons/400-24px/warning.svg?react';
 import { Icon } from 'mastodon/components/icon';
 import type { PendingDmMessage } from 'mastodon/reducers/dm_messages';
@@ -105,13 +104,7 @@ export const PendingBubble: React.FC<Props> = ({
                 {intl.formatMessage(messages.discard)}
               </button>
             </>
-          ) : (
-            <Icon
-              id='clock'
-              icon={HourglassIcon}
-              title={intl.formatMessage(messages.sending)}
-            />
-          )}
+          ) : null}
         </div>
       </div>
     </div>

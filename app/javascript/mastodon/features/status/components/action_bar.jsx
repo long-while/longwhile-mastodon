@@ -48,10 +48,8 @@ const messages = defineMessages({
   unmuteConversation: { id: 'status.unmute_conversation', defaultMessage: 'Unmute conversation' },
   block: { id: 'status.block', defaultMessage: 'Block @{name}' },
   report: { id: 'status.report', defaultMessage: 'Report @{name}' },
-  share: { id: 'status.share', defaultMessage: 'Share' },
   pin: { id: 'status.pin', defaultMessage: 'Pin on profile' },
   unpin: { id: 'status.unpin', defaultMessage: 'Unpin from profile' },
-  embed: { id: 'status.embed', defaultMessage: 'Get embed code' },
   admin_account: { id: 'status.admin_account', defaultMessage: 'Open moderation interface for @{name}' },
   admin_status: { id: 'status.admin_status', defaultMessage: 'Open this post in the moderation interface' },
   admin_domain: { id: 'status.admin_domain', defaultMessage: 'Open moderation interface for {domain}' },
@@ -89,7 +87,6 @@ class ActionBar extends PureComponent {
     onMuteConversation: PropTypes.func,
     onReport: PropTypes.func,
     onPin: PropTypes.func,
-    onEmbed: PropTypes.func,
     intl: PropTypes.object.isRequired,
   };
 
@@ -177,16 +174,6 @@ class ActionBar extends PureComponent {
     this.props.onPin(this.props.status);
   };
 
-  handleShare = () => {
-    navigator.share({
-      url: this.props.status.get('url'),
-    });
-  };
-
-  handleEmbed = () => {
-    this.props.onEmbed(this.props.status);
-  };
-
   handleCopy = () => {
     const url = this.props.status.get('url');
     navigator.clipboard.writeText(url);
@@ -210,14 +197,6 @@ class ActionBar extends PureComponent {
     }
 
     menu.push({ text: intl.formatMessage(messages.copy), action: this.handleCopy });
-
-    if (publicStatus && 'share' in navigator) {
-      menu.push({ text: intl.formatMessage(messages.share), action: this.handleShare });
-    }
-
-    if (publicStatus && (signedIn || !isRemote)) {
-      menu.push({ text: intl.formatMessage(messages.embed), action: this.handleEmbed });
-    }
 
     if (signedIn) {
       menu.push(null);

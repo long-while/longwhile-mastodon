@@ -89,7 +89,17 @@ namespace :api, format: false do
         patch :title
       end
 
-      resources :statuses, only: [:index], controller: 'dm_rooms/statuses'
+      resources :statuses, only: [:index], controller: 'dm_rooms/statuses' do
+        member do
+          post :hide
+        end
+      end
+
+      resources :members, only: [:create, :destroy], controller: 'dm_rooms/members' do
+        member do
+          put :nickname
+        end
+      end
     end
 
     resources :media, only: [:create, :update, :show, :destroy]

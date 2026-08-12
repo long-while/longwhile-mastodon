@@ -12,6 +12,8 @@ interface Props {
   account?: Account;
   others?: List<Account>;
   localDomain?: string;
+
+  afterName?: React.ReactNode;
 }
 
 export class DisplayName extends React.PureComponent<Props> {
@@ -48,7 +50,7 @@ export class DisplayName extends React.PureComponent<Props> {
   };
 
   render() {
-    const { others, localDomain } = this.props;
+    const { others, localDomain, afterName } = this.props;
 
     let displayName: React.ReactNode,
       suffix: React.ReactNode,
@@ -115,7 +117,15 @@ export class DisplayName extends React.PureComponent<Props> {
         onMouseEnter={this.handleMouseEnter}
         onMouseLeave={this.handleMouseLeave}
       >
-        {displayName} {suffix}
+        {afterName ? (
+          <span className='display-name__with-badge'>
+            {displayName}
+            {afterName}
+          </span>
+        ) : (
+          displayName
+        )}{' '}
+        {suffix}
       </span>
     );
   }

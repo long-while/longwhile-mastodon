@@ -17,7 +17,7 @@ class StatusPolicy < ApplicationPolicy
 
     if requires_mention?
       owned? || mention_exists?
-    elsif private?
+    elsif private? || unlisted?
       owned? || following_author? || mention_exists?
     else
       current_account.nil? || (!author_blocking? && !author_blocking_domain?)
@@ -61,6 +61,10 @@ class StatusPolicy < ApplicationPolicy
 
   def private?
     record.private_visibility?
+  end
+
+  def unlisted?
+    record.unlisted_visibility?
   end
 
   def mention_exists?

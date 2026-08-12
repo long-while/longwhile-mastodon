@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom';
 import ArrowBackIcon from '@/material-icons/400-24px/arrow_back.svg?react';
 import MoreHorizIcon from '@/material-icons/400-24px/more_horiz.svg?react';
 import { setDmRoomTitle } from 'mastodon/actions/dm_rooms';
+import { openModal } from 'mastodon/actions/modal';
 import type { ApiDmRoomJSON } from 'mastodon/api_types/dm_rooms';
 import { Dropdown } from 'mastodon/components/dropdown_menu';
 import { Icon } from 'mastodon/components/icon';
@@ -30,6 +31,10 @@ const messages = defineMessages({
   editTitle: {
     id: 'messages.title.edit',
     defaultMessage: 'Change conversation title',
+  },
+  members: {
+    id: 'messages.members.manage',
+    defaultMessage: 'Manage members',
   },
   titlePlaceholder: {
     id: 'messages.title.placeholder',
@@ -68,6 +73,14 @@ export const RoomHeader: React.FC<Props> = ({ room, onLeave }) => {
   useEffect(() => {
     if (editing) titleInput.current?.focus();
   }, [editing]);
+
+  const handleOpenMembers = useCallback(() => {
+    if (!roomId) return;
+
+    dispatch(
+      openModal({ modalType: 'DM_MEMBERS', modalProps: { roomId } }),
+    );
+  }, [dispatch, roomId]);
 
   const handleStartEdit = useCallback(() => {
     setDraft(room?.title ?? '');
@@ -138,6 +151,14 @@ export const RoomHeader: React.FC<Props> = ({ room, onLeave }) => {
       menu.push(null);
     }
 
+    if (roomId && room.is_group) {
+      menu.push({
+        text: intl.formatMessage(messages.members),
+        action: handleOpenMembers,
+      });
+      menu.push(null);
+    }
+
     if (room?.is_group || room?.title) {
       menu.push({
         text: intl.formatMessage(messages.editTitle),
@@ -153,7 +174,16 @@ export const RoomHeader: React.FC<Props> = ({ room, onLeave }) => {
     });
 
     return menu;
-  }, [account, handleLeave, handleStartEdit, intl, room?.is_group, room?.title]);
+  }, [
+    account,
+    handleLeave,
+    handleOpenMembers,
+    handleStartEdit,
+    intl,
+    room?.is_group,
+    room?.title,
+    roomId,
+  ]);
 
   return (
     <div className='dm-room-header'>

@@ -24,11 +24,12 @@ class Api::V1::DmRoomsController < Api::BaseController
     render json: @rooms,
            each_serializer: REST::DmRoomSerializer,
            current_account: current_account,
+           hidden_status_ids: hidden_last_status_ids(@rooms),
            relationships: StatusRelationshipsPresenter.new(@rooms.filter_map(&:last_status), current_account.id)
   end
 
   def show
-    render json: @room, serializer: REST::DmRoomSerializer, current_account: current_account
+    render_room(@room)
   end
 
   def create
@@ -39,9 +40,9 @@ class Api::V1::DmRoomsController < Api::BaseController
 
     raise Mastodon::ValidationError, I18n.t('dm_rooms.errors.unknown_recipients') if Account.where(id: account_ids).count != account_ids.size
 
-    @room = DmRoom.find_or_create_for(account_ids + [current_account.id])
+    @room = DmRoom.find_or_create_for(account_ids + [current_account.id], creator: current_account)
 
-    render json: @room, serializer: REST::DmRoomSerializer, current_account: current_account
+    render_room(@room)
   end
 
   def read
@@ -55,7 +56,7 @@ class Api::V1::DmRoomsController < Api::BaseController
 
     @room.broadcast_read!(current_account) if advanced
 
-    render json: @room.reload, serializer: REST::DmRoomSerializer, current_account: current_account
+    render_room(@room.reload)
   end
 
   def title
@@ -65,7 +66,7 @@ class Api::V1::DmRoomsController < Api::BaseController
 
     @room.change_title!(current_account, new_title)
 
-    render json: @room.reload, serializer: REST::DmRoomSerializer, current_account: current_account
+    render_room(@room.reload)
   end
 
   def destroy
@@ -77,6 +78,21 @@ class Api::V1::DmRoomsController < Api::BaseController
   end
 
   private
+
+  def render_room(room)
+    render json: room,
+           serializer: REST::DmRoomSerializer,
+           current_account: current_account,
+           hidden_status_ids: hidden_last_status_ids([room])
+  end
+
+  def hidden_last_status_ids(rooms)
+    ids = rooms.filter_map(&:last_status_id)
+
+    return [] if ids.empty?
+
+    DmHiddenStatus.where(account_id: current_account.id, status_id: ids).pluck(:status_id)
+  end
 
   def set_room
     set_dm_room_membership!(params[:id])

@@ -15,6 +15,9 @@ import {
   leaveDmRoom,
   markDmRoomRead,
   setActiveDmRoom,
+  addDmRoomMembers,
+  removeDmRoomMember,
+  setDmRoomNickname,
   setDmRoomTitle,
   setDmStreamConnected,
   updateDmReadState,
@@ -46,6 +49,14 @@ const initialState: DmRoomsState = {
   streamConnected: true,
 };
 
+const compareCursors = (a: string | null, b: string | null) => {
+  if (a === b) return 0;
+  if (a === null) return -1;
+  if (b === null) return 1;
+
+  return compareIds(a, b);
+};
+
 const mergeReadStates = (
   before: ApiDmReadStateJSON[] | undefined,
   next: ApiDmReadStateJSON[] | undefined,
@@ -60,9 +71,7 @@ const mergeReadStates = (
 
     if (!previous) return state;
 
-    if (
-      compareIds(previous.last_read_status_id, state.last_read_status_id) <= 0
-    ) {
+    if (compareCursors(previous.last_read_status_id, state.last_read_status_id) <= 0) {
       return state;
     }
 
@@ -140,6 +149,15 @@ export const dmRoomsReducer = createReducer(initialState, (builder) => {
     .addCase(setDmRoomTitle.fulfilled, (state, { payload }) => {
       store(state, payload);
     })
+    .addCase(addDmRoomMembers.fulfilled, (state, { payload }) => {
+      store(state, payload);
+    })
+    .addCase(removeDmRoomMember.fulfilled, (state, { payload }) => {
+      store(state, payload);
+    })
+    .addCase(setDmRoomNickname.fulfilled, (state, { payload }) => {
+      store(state, payload);
+    })
     .addCase(updateDmReadState, (state, { payload }) => {
       const room = state.rooms[payload.roomId];
 
@@ -155,10 +173,13 @@ export const dmRoomsReducer = createReducer(initialState, (builder) => {
 
       if (
         previous &&
-        compareIds(previous.last_read_status_id, payload.lastReadStatusId) >= 0
+        compareCursors(previous.last_read_status_id, payload.lastReadStatusId) >=
+          0
       ) {
         return;
       }
+
+      if (!previous) return;
 
       room.participant_read_states = [
         ...others,

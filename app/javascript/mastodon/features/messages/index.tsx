@@ -83,7 +83,7 @@ const Messages: React.FC = () => {
   const { signedIn } = useIdentity();
   const roomMatch = useRouteMatch('/messages/:roomId');
 
-  useMessagesLayout(Boolean(dmChatEnabled) && signedIn);
+  useMessagesLayout(Boolean(dmChatEnabled) && signedIn, Boolean(roomMatch));
 
   const active = Boolean(dmChatEnabled) && signedIn;
 

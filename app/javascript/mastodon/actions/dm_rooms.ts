@@ -3,13 +3,19 @@
 import { createAction } from '@reduxjs/toolkit';
 
 import {
+  apiAddDmRoomMembers,
   apiCreateDmRoom,
+  apiDeleteDmMessageForRedraft,
+  apiEditDmMessage,
+  apiHideDmMessage,
   apiSendDmMessage,
   apiGetDmRoom,
   apiGetDmRooms,
   apiGetDmRoomStatuses,
   apiLeaveDmRoom,
   apiMarkDmRoomRead,
+  apiRemoveDmRoomMember,
+  apiSetDmRoomNickname,
   apiSetDmRoomTitle,
 } from 'mastodon/api/dm_rooms';
 import {
@@ -22,6 +28,7 @@ import {
 } from 'mastodon/store/typed_functions';
 
 import { importFetchedAccounts, importFetchedStatuses } from './importer';
+import { deleteFromTimelines } from './timelines';
 
 const nextLinkOf = (links: { refs: { rel: string; uri: string }[] }) =>
   links.refs.find((link) => link.rel === 'next')?.uri;
@@ -33,6 +40,11 @@ export const setActiveDmRoom = createAction<{ roomId?: string }>(
 export const setDmStreamConnected = createAction<{ connected: boolean }>(
   'dm_rooms/set_stream_connected',
 );
+
+export const dmMessageReceived = createAction('dm_rooms/message_received', () => ({
+  payload: undefined,
+  meta: { sound: 'boop' },
+}));
 
 export const updateDmReadState = createAction<{
   roomId: string;
@@ -135,6 +147,83 @@ export const sendDmMessage = createDataLoadingThunk(
     dispatch(importFetchedStatuses([status]));
 
     return { roomId: actionArg.roomId, statusIds: [status.id] };
+  },
+);
+
+export const addDmRoomMembers = createDataLoadingThunk(
+  'dm_rooms/add_members',
+  ({ roomId, accountIds }: { roomId: string; accountIds: string[] }) =>
+    apiAddDmRoomMembers(roomId, accountIds),
+  (room, { dispatch }) => {
+    dispatch(importFetchedAccounts(room.accounts));
+
+    return room;
+  },
+);
+
+export const removeDmRoomMember = createDataLoadingThunk(
+  'dm_rooms/remove_member',
+  ({ roomId, accountId }: { roomId: string; accountId: string }) =>
+    apiRemoveDmRoomMember(roomId, accountId),
+  (room, { dispatch }) => {
+    dispatch(importFetchedAccounts(room.accounts));
+
+    return room;
+  },
+);
+
+export const setDmRoomNickname = createDataLoadingThunk(
+  'dm_rooms/set_nickname',
+  ({
+    roomId,
+    accountId,
+    nickname,
+  }: {
+    roomId: string;
+    accountId: string;
+    nickname: string;
+  }) => apiSetDmRoomNickname(roomId, accountId, nickname),
+);
+
+export const hideDmMessage = createDataLoadingThunk(
+  'dm_messages/hide',
+  async ({ roomId, statusId }: { roomId: string; statusId: string }) => {
+    await apiHideDmMessage(roomId, statusId);
+
+    return { roomId, statusId };
+  },
+  { useLoadingBar: false },
+);
+
+export const editDmMessage = createDataLoadingThunk(
+  'dm_messages/edit',
+  ({
+    statusId,
+    text,
+    recipientAccts,
+    mediaIds,
+  }: {
+    roomId: string;
+    statusId: string;
+    text: string;
+    recipientAccts: string[];
+    mediaIds?: string[];
+  }) => apiEditDmMessage({ statusId, text, recipientAccts, mediaIds }),
+  (status, { dispatch }) => {
+    dispatch(importFetchedStatuses([status]));
+
+    return status;
+  },
+);
+
+export const redraftDmMessage = createDataLoadingThunk(
+  'dm_messages/redraft',
+  ({ statusId }: { roomId: string; statusId: string }) =>
+    apiDeleteDmMessageForRedraft(statusId),
+  (status, { dispatch, actionArg }) => {
+    dispatch(deleteFromTimelines(actionArg.statusId));
+
+    return { roomId: actionArg.roomId, text: status.text ?? '' };
   },
 );
 

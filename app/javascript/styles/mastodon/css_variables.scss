@@ -15,6 +15,9 @@
   --color-border: var(--background-border-color);
 
   --color-dim: #{$darker-text-color};
+
+  --color-icon-button-hover: #{rgba($primary-text-color, 0.12)};
+
   --background-filter: blur(10px) saturate(180%) contrast(75%) brightness(70%);
   --background-color: #{darken($ui-base-color, 8%)};
   --background-color-tint: #{rgba(darken($ui-base-color, 8%), 0.9)};

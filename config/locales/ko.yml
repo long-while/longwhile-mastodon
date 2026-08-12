@@ -1337,11 +1337,16 @@ ko:
       your_appeal_rejected: 소명이 기각되었습니다
   dm_rooms:
     errors:
+      last_members: 대화에는 두 명 이상이 남아 있어야 합니다.
       no_recipients: 메시지를 보낼 상대를 한 명 이상 선택해 주세요.
+      nickname_too_long: 별명은 %{max}자를 넘을 수 없습니다.
+      room_exists: 그 조합의 대화가 이미 있습니다. 그 대화를 열어 주세요.
       too_many_recipients: 한 대화에는 최대 %{max}명까지 초대할 수 있습니다.
       title_too_long: 대화 제목은 %{max}자를 넘을 수 없습니다.
       unknown_recipients: 선택한 계정 중 찾을 수 없는 계정이 있습니다.
       unknown_status: 이 대화에 없는 메시지입니다.
+    member_added: "%{name} 님이 %{targets} 님을 초대했습니다."
+    member_removed: "%{name} 님이 %{targets} 님을 내보냈습니다."
     title_changed: "%{name} 님이 대화 제목을 '%{title}' 으로 바꿨습니다."
     title_removed: "%{name} 님이 대화 제목을 지웠습니다."
   edit_profile:
@@ -1882,7 +1887,7 @@ ko:
     keep_polls_hint: 설문을 삭제하지 않습니다
     keep_self_bookmark: 북마크한 게시물 유지
     keep_self_bookmark_hint: 북마크한 본인의 게시물을 삭제하지 않습니다
-    keep_self_fav: 내가 마음에 들어요한 게시물 유지
+    keep_self_fav: 내가 마음에 들어한 게시물 유지
     keep_self_fav_hint: 스스로 마음에 들어요를 누른 본인의 게시물을 삭제하지 않습니다
     min_age:
       '1209600': 2 주

@@ -14,6 +14,7 @@ import { useAppDispatch, useAppSelector } from 'mastodon/store';
 
 const messages = defineMessages({
   unfollow: { id: 'account.unfollow', defaultMessage: 'Unfollow' },
+  following: { id: 'account.following', defaultMessage: 'Following' },
   follow: { id: 'account.follow', defaultMessage: 'Follow' },
   followBack: { id: 'account.follow_back', defaultMessage: 'Follow back' },
   editProfile: { id: 'account.edit_profile', defaultMessage: 'Edit profile' },
@@ -85,7 +86,16 @@ export const FollowButton: React.FC<{
   } else if (requested) {
     label = intl.formatMessage(messages.pending);
   } else if (isFollowing) {
-    label = intl.formatMessage(messages.unfollow);
+    label = (
+      <span className='follow-button__labels'>
+        <span className='follow-button__labels__rest'>
+          {intl.formatMessage(messages.following)}
+        </span>
+        <span className='follow-button__labels__hover' aria-hidden='true'>
+          {intl.formatMessage(messages.unfollow)}
+        </span>
+      </span>
+    );
   } else if (relationship.followed_by) {
     label = intl.formatMessage(messages.followBack);
   } else {
@@ -120,7 +130,7 @@ export const FollowButton: React.FC<{
       secondary={following}
       compact={compact}
       className={
-        isFollowing && !requested ? 'button--destructive' : undefined
+        isFollowing && !requested ? 'follow-button--following' : undefined
       }
     >
       {label}

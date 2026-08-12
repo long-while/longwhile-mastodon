@@ -15,16 +15,21 @@ import { defineMessages, useIntl } from 'react-intl';
 import { Helmet } from 'react-helmet';
 import { Redirect, useHistory, useParams } from 'react-router-dom';
 
+import type { List as ImmutableList, Map as ImmutableMap } from 'immutable';
+
 import ExpandMoreIcon from '@/material-icons/400-24px/expand_more.svg?react';
 import { saveDmDraft } from 'mastodon/actions/dm_drafts';
 import {
   discardDmMessage,
+  editDmMessage,
   fetchDmRoom,
   fetchDmRoomStatuses,
   markDmRoomRead,
+  redraftDmMessage,
   sendDmMessage,
   setActiveDmRoom,
 } from 'mastodon/actions/dm_rooms';
+import { apiGetDmMessageSource } from 'mastodon/api/dm_rooms';
 import { Icon } from 'mastodon/components/icon';
 import { LoadingIndicator } from 'mastodon/components/loading_indicator';
 import { dmChatEnabled, me, reduceMotion } from 'mastodon/initial_state';
@@ -39,7 +44,6 @@ import { PendingBubble } from './components/pending_bubble';
 import { RoomHeader } from './components/room_header';
 import { RoomIntro } from './components/room_intro';
 import { SystemNotice } from './components/system_notice';
-import { UnreadDivider } from './components/unread_divider';
 import {
   selectDmDrafts,
   selectDmRoom,
@@ -53,7 +57,8 @@ import { compareIds } from './util/compare_ids';
 import type { GroupableMessage } from './util/group_messages';
 import { groupMessages } from './util/group_messages';
 import { confirmLeaveRoom } from './util/leave_room';
-import { isTitleEvent } from './util/title_event';
+import { stripLeadingMentions } from './util/strip_leading_mentions';
+import { isSystemEvent } from './util/title_event';
 import { useKeyboardInset } from './util/use_keyboard_inset';
 import { useUploads } from './util/use_uploads';
 
@@ -93,6 +98,14 @@ const messages = defineMessages({
     id: 'messages.room.load_failed',
     defaultMessage: 'Could not load this conversation.',
   },
+  editingBanner: {
+    id: 'messages.editing.banner',
+    defaultMessage: 'Editing a message',
+  },
+  editingCancel: {
+    id: 'messages.editing.cancel',
+    defaultMessage: 'Cancel',
+  },
   offline: {
     id: 'messages.offline',
     defaultMessage:
@@ -105,7 +118,7 @@ interface RoomMessage extends GroupableMessage {
 
   pending?: PendingDmMessage;
 
-  isTitleEvent?: boolean;
+  isSystemEvent?: boolean;
 }
 
 const prefersInstantScroll = () =>
@@ -140,6 +153,12 @@ const Room: React.FC = () => {
   const [readSnapshot, setReadSnapshot] = useState<
     { lastReadId: string | null; hadUnread: boolean } | undefined
   >(undefined);
+
+  const [editing, setEditing] = useState<
+    { roomId: string; statusId: string; mediaIds: string[] } | undefined
+  >(undefined);
+
+  const editingMessage = editing?.roomId === roomId ? editing : undefined;
 
   const room = useAppSelector((state) => selectDmRoom(state, roomId));
   const messageState = useAppSelector((state) =>
@@ -219,6 +238,8 @@ const Room: React.FC = () => {
 
     setDraft({ roomId, text: roomId ? (draftsRef.current[roomId] ?? '') : '' });
 
+    setEditing(undefined);
+
     placedRef.current = false;
     restoreRef.current = null;
     loadingOlderRef.current = false;
@@ -297,7 +318,7 @@ const Room: React.FC = () => {
           Boolean(inReplyToId) &&
           inReplyToId !== room.root_status_id;
 
-        const titleEvent = isTitleEvent(
+        const systemEvent = isSystemEvent(
           status.get('spoiler_text') as string | undefined,
         );
 
@@ -306,8 +327,8 @@ const Room: React.FC = () => {
           accountId: status.get('account') as string,
           createdAt: status.get('created_at') as string,
           quotesAnotherMessage: quotes,
-          standalone: titleEvent,
-          isTitleEvent: titleEvent,
+          standalone: systemEvent,
+          isSystemEvent: systemEvent,
           status,
         };
       });
@@ -356,29 +377,24 @@ const Room: React.FC = () => {
   }, [entries, readSnapshot]);
 
 
-  const readMarker = useMemo(() => {
-    const states = room?.participant_read_states;
+  const readStates = room?.participant_read_states;
 
-    if (!states || states.length === 0) return undefined;
+  const unreadCountFor = useCallback(
+    (messageId: string, authorId: string) => {
+      if (!readStates || readStates.length === 0) return 0;
 
-    for (let index = entries.length - 1; index >= 0; index -= 1) {
-      const entry = entries[index];
+      return readStates.filter((state) => {
+        if (state.account_id === me) return false;
 
-      if (!entry || entry.accountId !== me) continue;
+        if (state.account_id === authorId) return false;
 
-      if (entry.isTitleEvent) continue;
+        if (state.last_read_status_id === null) return true;
 
-      const readers = states.filter(
-        (state) =>
-          state.account_id !== me &&
-          compareIds(state.last_read_status_id, entry.id) >= 0,
-      ).length;
-
-      if (readers > 0) return { id: entry.id, readers };
-    }
-
-    return undefined;
-  }, [entries, room?.participant_read_states]);
+        return compareIds(state.last_read_status_id, messageId) < 0;
+      }).length;
+    },
+    [readStates],
+  );
 
   const firstEntryId = entries[0]?.id;
 
@@ -621,6 +637,66 @@ const Room: React.FC = () => {
     [roomId],
   );
 
+  const handleEdit = useCallback(
+    (statusId: string) => {
+      if (!roomId) return;
+
+      const attachments = statusesById
+        .get(statusId)
+        ?.get('media_attachments') as
+        | ImmutableList<ImmutableMap<string, unknown>>
+        | undefined;
+
+      const mediaIds =
+        attachments?.toArray().map((item) => item.get('id') as string) ?? [];
+
+      void apiGetDmMessageSource(statusId)
+        .then((source) => {
+          setEditing({ roomId, statusId, mediaIds });
+          setDraft({ roomId, text: stripLeadingMentions(source.text) });
+
+          return source;
+        })
+        .catch(() => undefined);
+    },
+    [roomId, statusesById],
+  );
+
+  const handleCancelEdit = useCallback(() => {
+    if (!roomId) return;
+
+    setEditing(undefined);
+
+    setDraft({ roomId, text: '' });
+    void dispatch(saveDmDraft({ roomId, text: '' }));
+  }, [dispatch, roomId]);
+
+  const handleRedraft = useCallback(
+    (statusId: string) => {
+      if (!roomId) return;
+
+      const request = dispatch(
+        redraftDmMessage({ roomId, statusId }),
+      ) as unknown as Promise<{
+        meta: { requestStatus: string };
+        payload?: { roomId: string; text: string };
+      }>;
+
+      void request.then((result) => {
+        if (result.meta.requestStatus !== 'fulfilled') return result;
+
+        const text = stripLeadingMentions(result.payload?.text ?? '');
+
+        setEditing(undefined);
+        setDraft({ roomId, text });
+        void dispatch(saveDmDraft({ roomId, text }));
+
+        return result;
+      });
+    },
+    [dispatch, roomId],
+  );
+
   const send = useCallback(
     (payload: {
       text: string;
@@ -666,10 +742,31 @@ const Room: React.FC = () => {
 
     if (uploads.isBusy) return;
 
-    const text = draftText;
+    const text = draftText.trimEnd();
+
+    if (editingMessage) {
+      if (text === '') return;
+
+      void dispatch(
+        editDmMessage({
+          roomId,
+          statusId: editingMessage.statusId,
+          text,
+          recipientAccts: room.accounts.map((account) => account.acct),
+          mediaIds: editingMessage.mediaIds,
+        }),
+      );
+
+      setEditing(undefined);
+      setDraft({ roomId, text: '' });
+      void dispatch(saveDmDraft({ roomId, text: '' }));
+
+      return;
+    }
+
     const mediaIds = uploads.mediaIds;
 
-    if (text.trim() === '' && mediaIds.length === 0) return;
+    if (text === '' && mediaIds.length === 0) return;
 
     pendingCounterRef.current += 1;
 
@@ -685,7 +782,7 @@ const Room: React.FC = () => {
     setDraft({ roomId, text: '' });
     void dispatch(saveDmDraft({ roomId, text: '' }));
     uploads.reset();
-  }, [dispatch, draftText, room, roomId, send, uploads]);
+  }, [dispatch, draftText, editingMessage, room, roomId, send, uploads]);
 
   const handleRetry = useCallback(
     (localId: string) => {
@@ -767,9 +864,9 @@ const Room: React.FC = () => {
                 <div key={group.key} className='dm-room__group'>
                   {group.messages.map((entry) => (
                     <Fragment key={entry.message.id}>
-                      {entry.message.id === unreadDividerId && <UnreadDivider />}
+                      {/* {entry.message.id === unreadDividerId && <UnreadDivider />} */}
 
-                      {entry.message.isTitleEvent ? (
+                      {entry.message.isSystemEvent ? (
                         <SystemNotice
                           contentHtml={
                             entry.message.status?.get('content') as
@@ -797,8 +894,13 @@ const Room: React.FC = () => {
                             isSenderChanged={entry.isSenderChanged}
                             showTimestamp={entry.showTimestamp}
                             showSenderName={Boolean(room?.is_group)}
-                            isRead={entry.message.id === readMarker?.id}
-                            readByCount={readMarker?.readers}
+                            roomId={roomId}
+                            onEdit={handleEdit}
+                            onRedraft={handleRedraft}
+                            unreadBy={unreadCountFor(
+                              entry.message.id,
+                              entry.message.accountId,
+                            )}
                           />
                         )
                       )}
@@ -839,10 +941,21 @@ const Room: React.FC = () => {
           {announcement}
         </div>
 
+        {editingMessage && (
+          <div className='dm-room__editing'>
+            <span>{intl.formatMessage(messages.editingBanner)}</span>
+
+            <button type='button' onClick={handleCancelEdit}>
+              {intl.formatMessage(messages.editingCancel)}
+            </button>
+          </div>
+        )}
+
         <Composer
           value={draftText}
           onChange={handleDraftChange}
           onSubmit={handleSubmit}
+          isEditing={Boolean(editingMessage)}
           reservedCharacters={mentionPrefixLength}
           uploads={uploads.uploads}
           canAttach={uploads.canAddMore}
