@@ -45,6 +45,10 @@ import {
   COMPOSE_CHANGE_MEDIA_ORDER,
   COMPOSE_SET_STATUS,
   COMPOSE_FOCUS,
+  COMPOSE_SCHEDULE_SET,
+  COMPOSE_SCHEDULE_CLEAR,
+  COMPOSE_SET_SCHEDULED_STATUS,
+  COMPOSE_SCHEDULE_DETACH,
 } from '../actions/compose';
 import { REDRAFT } from '../actions/statuses';
 import { STORE_HYDRATE } from '../actions/store';
@@ -64,6 +68,9 @@ const initialState = ImmutableMap({
   caretPosition: null,
   preselectDate: null,
   in_reply_to: null,
+  // Handles the reply must carry. Kept beside the text rather than inside it so
+  // the box holds only what the user wrote; they are put back on submit.
+  reply_mentions: ImmutableList(),
   is_composing: false,
   is_submitting: false,
   is_changing_upload: false,
@@ -82,6 +89,12 @@ const initialState = ImmutableMap({
   resetFileKey: Math.floor((Math.random() * 0x10000)),
   idempotencyKey: null,
   tagHistory: ImmutableList(),
+  // ISO8601 string including the browser's UTC offset, or null when the post
+  // should go out immediately.
+  scheduled_at: null,
+  // Set when an existing scheduled status is being edited, so submitting
+  // updates that record instead of creating a new one.
+  scheduled_status_id: null,
 });
 
 const initialPoll = ImmutableMap({
@@ -90,14 +103,18 @@ const initialPoll = ImmutableMap({
   multiple: false,
 });
 
-function statusToTextMentions(state, status) {
+// Everyone a reply has to address: the author of the post being answered, plus
+// whoever it already named. Self is dropped — you are not replying to yourself.
+function statusToMentionAccts(status) {
   let set = ImmutableOrderedSet([]);
 
   if (status.getIn(['account', 'id']) !== me) {
-    set = set.add(`@${status.getIn(['account', 'acct'])} `);
+    set = set.add(status.getIn(['account', 'acct']));
   }
 
-  return set.union(status.get('mentions').filterNot(mention => mention.get('id') === me).map(mention => `@${mention.get('acct')} `)).join('');
+  return set
+    .union(status.get('mentions').filterNot(mention => mention.get('id') === me).map(mention => mention.get('acct')))
+    .toList();
 }
 
 function clearAll(state) {
@@ -109,6 +126,7 @@ function clearAll(state) {
     map.set('is_submitting', false);
     map.set('is_changing_upload', false);
     map.set('in_reply_to', null);
+    map.update('reply_mentions', list => list.clear());
     map.set('privacy', state.get('default_privacy'));
     map.set('sensitive', state.get('default_sensitive'));
     map.set('language', state.get('default_language'));
@@ -116,6 +134,8 @@ function clearAll(state) {
     map.set('progress', 0);
     map.set('poll', null);
     map.set('idempotencyKey', uuid());
+    map.set('scheduled_at', null);
+    map.set('scheduled_status_id', null);
   });
 }
 
@@ -300,6 +320,43 @@ const updatePoll = (state, index, value, maxOptions) => state.updateIn(['poll', 
 
 const calculateProgress = (loaded, total) => Math.min(Math.round((loaded / total) * 100), 100);
 
+// Restores a ScheduledStatus (as returned by the API) back into the compose
+// form. The body lives in `params`, which mirrors the original POST payload.
+const setScheduledStatus = (state, scheduled) => {
+  const params = scheduled.get('params') || ImmutableMap();
+  const spoilerText = params.get('spoiler_text') || '';
+  const poll = params.get('poll');
+  const inReplyToId = params.get('in_reply_to_id');
+
+  return state.withMutations(map => {
+    map.set('id', null);
+    map.set('scheduled_status_id', scheduled.get('id'));
+    map.set('scheduled_at', scheduled.get('scheduled_at'));
+    map.set('text', params.get('text') || '');
+    map.update('reply_mentions', list => list.clear());
+    map.set('in_reply_to', inReplyToId ? String(inReplyToId) : null);
+    map.set('privacy', params.get('visibility') || state.get('default_privacy'));
+    map.set('sensitive', !!params.get('sensitive'));
+    map.set('language', params.get('language') || state.get('default_language'));
+    map.set('media_attachments', (scheduled.get('media_attachments') || ImmutableList()).map(media => media.set('unattached', true)));
+    map.set('focusDate', new Date());
+    map.set('caretPosition', null);
+    map.set('idempotencyKey', uuid());
+    map.set('spoiler', spoilerText.length > 0);
+    map.set('spoiler_text', spoilerText);
+
+    if (poll) {
+      map.set('poll', ImmutableMap({
+        options: ImmutableList(poll.get('options') || ImmutableList(['', ''])),
+        multiple: !!poll.get('multiple'),
+        expires_in: Number(poll.get('expires_in')) || 24 * 3600,
+      }));
+    } else {
+      map.set('poll', null);
+    }
+  });
+};
+
 /** @type {import('@reduxjs/toolkit').Reducer<typeof initialState>} */
 export const composeReducer = (state = initialState, action) => {
   if (changeUploadCompose.fulfilled.match(action)) {
@@ -359,11 +416,30 @@ export const composeReducer = (state = initialState, action) => {
       .set('idempotencyKey', uuid());
   case COMPOSE_COMPOSING_CHANGE:
     return state.set('is_composing', action.value);
+  case COMPOSE_SCHEDULE_SET:
+    return state
+      .set('scheduled_at', action.scheduledAt)
+      .set('idempotencyKey', uuid());
+  case COMPOSE_SCHEDULE_CLEAR:
+    return state
+      .set('scheduled_at', null)
+      .set('idempotencyKey', uuid());
+  case COMPOSE_SET_SCHEDULED_STATUS:
+    return setScheduledStatus(state, fromJS(action.scheduledStatus));
+  case COMPOSE_SCHEDULE_DETACH:
+    // Keeps the draft and the chosen time; only the link to the server record goes.
+    return state
+      .set('scheduled_status_id', null)
+      .set('idempotencyKey', uuid());
   case COMPOSE_REPLY:
     return state.withMutations(map => {
       map.set('id', null);
+      // A reply is a new post: it must not overwrite the scheduled status that
+      // happened to be open for editing. The chosen time is kept, though.
+      map.set('scheduled_status_id', null);
       map.set('in_reply_to', action.status.get('id'));
-      map.set('text', statusToTextMentions(state, action.status));
+      map.set('text', '');
+      map.set('reply_mentions', statusToMentionAccts(action.status));
       map.set('privacy', privacyPreference(action.status.get('visibility'), state.get('default_privacy')));
       map.set('focusDate', new Date());
       map.set('caretPosition', null);
@@ -471,6 +547,9 @@ export const composeReducer = (state = initialState, action) => {
   case REDRAFT:
     return state.withMutations(map => {
       map.set('text', action.raw_text || unescapeHTML(expandMentions(action.status)));
+      // The body already carries its handles; adding them again on submit
+      // would double them up.
+      map.update('reply_mentions', list => list.clear());
       map.set('in_reply_to', action.status.get('in_reply_to_id'));
       map.set('privacy', action.status.get('visibility'));
       map.set('media_attachments', action.status.get('media_attachments').map((media) => media.set('unattached', true)));
@@ -480,6 +559,9 @@ export const composeReducer = (state = initialState, action) => {
       map.set('sensitive', action.status.get('sensitive'));
       map.set('language', action.status.get('language'));
       map.set('id', null);
+      // A redraft is a brand new post; it does not inherit a pending schedule.
+      map.set('scheduled_at', null);
+      map.set('scheduled_status_id', null);
 
       if (action.status.get('spoiler_text').length > 0) {
         map.set('spoiler', true);
@@ -500,8 +582,14 @@ export const composeReducer = (state = initialState, action) => {
   case COMPOSE_SET_STATUS:
     return state.withMutations(map => {
       map.set('id', action.status.get('id'));
+      // Published posts cannot be scheduled, so any pending schedule is dropped.
+      map.set('scheduled_at', null);
+      map.set('scheduled_status_id', null);
       map.set('text', action.text);
       map.set('in_reply_to', action.status.get('in_reply_to_id'));
+      // The body already carries its handles; adding them again on submit
+      // would double them up.
+      map.update('reply_mentions', list => list.clear());
       map.set('privacy', action.status.get('visibility'));
       map.set('media_attachments', action.status.get('media_attachments'));
       map.set('focusDate', new Date());

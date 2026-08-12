@@ -111,6 +111,9 @@ class InitialStateSerializer < ActiveModel::Serializer
       version: instance_presenter.version,
       terms_of_service_enabled: TermsOfService.live.exists?,
       advanced_layout: object_account_user&.setting_advanced_layout,
+      scheduled_status_minimum_offset: ScheduledStatus::MINIMUM_OFFSET.to_i,
+      scheduled_status_total_limit: ScheduledStatus::TOTAL_LIMIT,
+      scheduled_status_daily_limit: ScheduledStatus::DAILY_LIMIT,
     }
   end
 

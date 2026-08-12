@@ -39,6 +39,7 @@
 #  actor_type                    :string
 #  discoverable                  :boolean
 #  also_known_as                 :string           is an Array
+#  anonymized_at                 :datetime
 #  silenced_at                   :datetime
 #  suspended_at                  :datetime
 #  hide_collections              :boolean
@@ -69,6 +70,11 @@ class Account < ApplicationRecord
   STALE_THRESHOLD = 1.day
   DEFAULT_FIELDS_SIZE = 4
   INSTANCE_ACTOR_ID = -99
+
+  # Shown in place of a deleted account's identity, so the posts it leaves
+  # behind stay readable without naming who wrote them.
+  ANONYMIZED_USERNAME = 'deleted'
+  ANONYMIZED_DISPLAY_NAME = '탈퇴한 사용자'
 
   USERNAME_RE   = /[a-z0-9_]+([.-]+[a-z0-9_]+)*/i
   MENTION_RE    = %r{(?<![=/[:word:]])@((#{USERNAME_RE})(?:@[[:word:]]+([.-]+[[:word:]]+)*)?)}

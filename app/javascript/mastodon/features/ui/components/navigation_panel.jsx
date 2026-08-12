@@ -23,13 +23,12 @@ import ListAltIcon from '@/material-icons/400-24px/list_alt.svg?react';
 import AdministrationIcon from '@/material-icons/400-24px/manufacturing.svg?react';
 import NotificationsActiveIcon from '@/material-icons/400-24px/notifications-fill.svg?react';
 import NotificationsIcon from '@/material-icons/400-24px/notifications.svg?react';
+import ScheduledStatusesIcon from '@/styles/bird-theme-svg/calendar-clock.svg?react';
 import PendingMentionsActiveIcon from '@/styles/bird-theme-svg/messages-fill.svg?react';
 import PendingMentionsIcon from '@/styles/bird-theme-svg/messages.svg?react';
 import PublicIcon from '@/material-icons/400-24px/public.svg?react';
 import SearchIcon from '@/material-icons/400-24px/search.svg?react';
 import SettingsIcon from '@/material-icons/400-24px/settings.svg?react';
-import StarActiveIcon from '@/material-icons/400-24px/star-fill.svg?react';
-import StarIcon from '@/material-icons/400-24px/star.svg?react';
 import { Icon } from 'mastodon/components/icon';
 import { IconWithBadge } from 'mastodon/components/icon_with_badge';
 import { WordmarkLogo } from 'mastodon/components/logo';
@@ -55,8 +54,9 @@ const messages = defineMessages({
   firehose: { id: 'column.firehose', defaultMessage: 'Live feeds' },
   direct: { id: 'navigation_bar.direct', defaultMessage: 'Private mentions' },
   pendingMentions: { id: 'navigation_bar.pending-mentions', defaultMessage: 'Awaiting reply' },
-  favourites: { id: 'navigation_bar.favourites', defaultMessage: 'Favorites' },
   bookmarks: { id: 'navigation_bar.bookmarks', defaultMessage: 'Bookmarks' },
+  scheduledStatuses: { id: 'navigation_bar.scheduled_statuses', defaultMessage: 'Scheduled posts' },
+  scheduledStatusesFailed: { id: 'navigation_bar.scheduled_statuses_failed', defaultMessage: 'Scheduled posts (failed)' },
   lists: { id: 'navigation_bar.lists', defaultMessage: 'Lists' },
   preferences: { id: 'navigation_bar.preferences', defaultMessage: 'Preferences' },
   administration: { id: 'navigation_bar.administration', defaultMessage: 'Administration' },
@@ -144,6 +144,25 @@ const NotificationsLink = () => {
       to='/notifications'
       icon={<IconWithBadge id='bell' icon={NotificationsIcon} count={count} className='column-link__icon' />}
       activeIcon={<IconWithBadge id='bell' icon={NotificationsActiveIcon} count={count} className='column-link__icon' />}
+      text={label}
+    />
+  );
+};
+
+// No pending count: a queue that is simply waiting is not something the user has
+// to act on. A failed publication still raises the red issue dot — without it, a
+// post that never went out would be silently invisible.
+const ScheduledStatusesLink = () => {
+  const failed = useSelector(state => state.getIn(['scheduled_statuses', 'usage', 'failed'], 0));
+  const intl = useIntl();
+  const label = intl.formatMessage(failed > 0 ? messages.scheduledStatusesFailed : messages.scheduledStatuses);
+
+  return (
+    <ColumnLink
+      key='scheduled_statuses'
+      transparent
+      to='/scheduled_statuses'
+      icon={<IconWithBadge id='clock-o' icon={ScheduledStatusesIcon} count={0} issueBadge={failed > 0} className='column-link__icon' />}
       text={label}
     />
   );
@@ -240,7 +259,6 @@ class NavigationPanel extends Component {
     const directLabel = intl.formatMessage(messages.direct);
     const pendingMentionsLabel = intl.formatMessage(messages.pendingMentions);
     const bookmarksLabel = intl.formatMessage(messages.bookmarks);
-    const favouritesLabel = intl.formatMessage(messages.favourites);
     const preferencesLabel = intl.formatMessage(messages.preferences);
     const listsLabel = intl.formatMessage(messages.lists);
 
@@ -257,8 +275,8 @@ class NavigationPanel extends Component {
         <NotificationsLink />
         <ColumnLink transparent to='/pending-mentions' icon='pending' iconComponent={PendingMentionsIcon} activeIconComponent={PendingMentionsActiveIcon} text={pendingMentionsLabel} />
         <ColumnLink transparent to='/conversations' icon='at' iconComponent={AlternateEmailIcon} text={directLabel} />
+        <ScheduledStatusesLink />
         <ColumnLink transparent to='/bookmarks' icon='bookmarks' iconComponent={BookmarksIcon} activeIconComponent={BookmarksActiveIcon} text={bookmarksLabel} />
-        <ColumnLink transparent to='/favourites' icon='star' iconComponent={StarIcon} activeIconComponent={StarActiveIcon} text={favouritesLabel} />
         <ColumnLink transparent to='/lists' icon='list-ul' iconComponent={ListAltIcon} activeIconComponent={ListAltActiveIcon} text={listsLabel} />
         <ColumnLink transparent href={settingsHref} icon='cog' iconComponent={SettingsIcon} text={preferencesLabel} />
         {includeAccountSwitcher && <AccountSwitcherMenuItem />}

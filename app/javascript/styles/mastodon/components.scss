@@ -458,7 +458,10 @@ body>[data-popper-placement] {
 .autosuggest-textarea {
   &__textarea {
     background: transparent;
-    min-height: 100px;
+
+    /* Was 100px. Two or three lines of writing before it starts growing, which
+       is where most posts land. */
+    min-height: 140px;
     padding-bottom: 0;
     resize: none;
     scrollbar-color: initial;
@@ -580,10 +583,42 @@ body>[data-popper-placement] {
   flex: 0 0 auto;
 }
 
+/* Names the reply's recipients above the box, so the handles it will carry are
+   visible without sitting in the text the user is writing.
+
+   It is a sibling of the box, not a child, so it takes the page background and
+   leaves the box's rounded top corners alone. Left edge is flush with both the
+   navigation bar above and the box below. */
+.compose-form__reply-mentions {
+  /* Pulls the box up under its own label to a fixed 8px: the form's own gap
+     separates unrelated blocks, and these two are one thing. Cancelling the
+     gap rather than subtracting a fixed number keeps that true whatever the
+     gap becomes. */
+  margin-bottom: calc(8px - var(--compose-form-gap, 30px));
+  font-size: 14px;
+  line-height: 20px;
+  color: $darker-text-color;
+
+  a {
+    color: $highlight-text-color;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: underline;
+    }
+  }
+}
+
 .compose-form {
   display: flex;
   flex-direction: column;
-  gap: 32px;
+
+  /* The thread line in .reply-indicator has to span this exact gap to meet the
+     box below, so both read the one variable. */
+  --compose-form-gap: 30px;
+
+  gap: var(--compose-form-gap);
 
   .layout-multiple-columns &,
   .column & {
@@ -1204,7 +1239,11 @@ body>[data-popper-placement] {
       transform: translateX(-50%);
       background: lighten($ui-base-color, 8%);
       width: 2px;
-      height: calc(100% + 32px - 8px); // Account for gap to next element
+
+      // Reaches across the form's own gap to the box below. Reads the gap from
+      // the variable rather than repeating the number: hardcoded, the line is
+      // left hanging or overshooting the next time the spacing changes.
+      height: calc(100% + var(--compose-form-gap, 30px) - 8px);
     }
   }
 
@@ -1212,12 +1251,11 @@ body>[data-popper-placement] {
     font-size: 14px;
     line-height: 20px;
     letter-spacing: 0.25px;
-    display: -webkit-box;
-    -webkit-line-clamp: 4;
-    -webkit-box-orient: vertical;
+    display: block;
     padding: 0;
-    max-height: 4 * 20px;
-    overflow: hidden;
+    max-height: 20em;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     color: $darker-text-color;
   }
 
@@ -4771,8 +4809,8 @@ a.status-card {
   cursor: pointer;
   font-size: 16px;
   padding: 0 15px;
-  background: transparent; // 이 줄 추가
-  background-color: transparent; // 이 줄도 추가
+  background: transparent;
+  background-color: transparent;
 
   &:last-child {
     border-start-end-radius: 4px;
@@ -10845,7 +10883,10 @@ noscript {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  padding: 16px 24px;
+  padding-top: 16px;
+  padding-right: 25px;
+  padding-bottom: 16px;
+  padding-left: 18px;
   border-bottom: 1px solid var(--background-border-color);
 
   &__icon {
@@ -11024,7 +11065,10 @@ noscript {
 }
 
 .notification-ungrouped {
-  padding: 16px 24px;
+  padding-top: 16px;
+  padding-right: 26px;
+  padding-bottom: 16px;
+  padding-left: 20px;
   border-bottom: 1px solid var(--background-border-color);
 
   &__header {
@@ -11467,15 +11511,12 @@ noscript {
   }
 }
 
-// 팔로우/팔로워 목록에서 팔로워 수 대신 바이오 표시
 .scrollable .account {
 
-  // 팔로워 수 영역 숨기기
   .account__details {
     display: none;
   }
 
-  // 바이오를 같은 자리에 같은 스타일로 표시
   .account__bio {
     display: flex !important;
     flex-wrap: wrap;
@@ -12107,4 +12148,754 @@ div.compose-panel .account__bio {
 
 .navigation-panel__spacer {
   display: none;
+}
+
+
+/* Scheduled posts — composer clock button, schedule dialog, and queue list.
+   Colours go through the theme-aware custom properties rather than
+   lighten()/darken() of $ui-base-color: the light themes start from a near-white
+   base, where lighten() saturates to white and borders disappear. */
+
+.compose-form__schedule-button-icon.active {
+  color: $highlight-text-color;
+}
+
+/* The toolbar sizes every icon to 20px; this glyph is visually heavier than the
+   others at that size, so it is pulled back a little. */
+.compose-form__buttons .icon-button.compose-form__schedule-button-icon .icon {
+  width: 17px;
+  height: 17px;
+}
+
+.schedule-indicator {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 4px 4px 0 0;
+  background: var(--surface-background-color);
+  border-bottom: 1px solid var(--background-border-color);
+  flex: 0 0 auto;
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__note {
+    color: $darker-text-color;
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  &__summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1 1 auto;
+    min-width: 0;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    color: $secondary-text-color;
+    font-size: 14px;
+    line-height: 20px;
+    text-align: start;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      color: $primary-text-color;
+      text-decoration: underline;
+    }
+
+    .icon {
+      width: 18px;
+      height: 18px;
+      color: $highlight-text-color;
+      flex: 0 0 auto;
+    }
+
+    &__text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &__relative {
+      color: $darker-text-color;
+      font-size: 12px;
+      flex: 0 0 auto;
+    }
+  }
+
+  &__cancel {
+    display: flex;
+
+    .icon {
+      width: 18px;
+      height: 18px;
+    }
+  }
+}
+
+/* Backdrop mirrors the account switcher's manage dialog: the accent colour muted
+   into near-black, then made mostly transparent. Reached through :has() because
+   ModalRoot renders the overlay as a sibling of the modal, not a parent. */
+.modal-root:has(.schedule-modal) .modal-root__overlay {
+  opacity: 1;
+  background: color-mix(in srgb,
+      color-mix(in srgb,
+        #{$ui-highlight-color} 40%,
+        #1a1a1a 60%),
+      transparent 80%);
+}
+
+/* Two-column date/time picker. Colours come from the theme so the dialog reads
+   correctly in the light, dark and bird-ui builds; the container matches the
+   account switcher's panel (see .account-switcher__menu). */
+.schedule-modal {
+  // One scale for the whole dialog, so nothing reads as a different widget.
+  --schedule-font: 14px;
+  --schedule-font-small: 12px;
+
+  box-sizing: border-box;
+  width: min(550px, calc(100vw - 32px));
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 30px;
+  padding-right: 30px;
+  padding-bottom: 25px;
+  padding-left: 30px;
+  background: var(--dropdown-background-color, $ui-base-color);
+  color: $primary-text-color;
+  border: 1px solid var(--dropdown-border-color, rgba($ui-highlight-color, 0.12));
+  border-radius: 26px;
+  box-shadow: 0 0 18px rgba($base-shadow-color, 0.14), 0 0 6px rgba($base-shadow-color, 0.12);
+  // Stated rather than left to the cascade: input, select and button do not
+  // inherit font-family on their own, and every control below asks for
+  // `inherit`, so this is the value they all end up with.
+  font-family: $font-sans-serif, sans-serif;
+  font-size: var(--schedule-font);
+  line-height: 20px;
+  // Scrolls rather than clipping: a short viewport must not swallow the buttons,
+  // and the AM/PM list has to stay reachable when it opens near the bottom.
+  // overflow-x stays hidden so a stray wide child cannot add a scrollbar.
+  max-height: min(92vh, 680px);
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  @media screen and (width <= $mobile-breakpoint) {
+    // ModalRoot pushes modals to the bottom edge on narrow screens. This one is
+    // a dialog, not a sheet, so it keeps all four corners and stays centred.
+    margin-top: 0;
+    padding: 20px;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  &__title {
+    font-size: 17px;
+    line-height: 24px;
+    font-weight: 700;
+    color: $primary-text-color;
+    margin-left: 6px;
+  }
+
+  &__columns {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+
+    @media screen and (width <= $mobile-breakpoint) {
+      flex-direction: column;
+      gap: 16px;
+    }
+  }
+
+  /* ── calendar ─────────────────────────────────────────────────────────── */
+
+  &__calendar {
+    // Sized by its own 7-column grid rather than by the free space, so the
+    // inputs beside it get the remainder instead of being pushed out.
+    flex: 0 0 auto;
+    // Nothing in here is text to copy, and double-clicking the month arrows
+    // would otherwise highlight the label next to them. The date and time
+    // boxes sit outside this block and stay selectable.
+    user-select: none;
+
+    @media screen and (width <= $mobile-breakpoint) {
+      width: 100%;
+    }
+
+    &__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    &__month {
+      font-size: var(--schedule-font);
+      font-weight: 500;
+      color: $primary-text-color;
+      margin-left: 8px;
+    }
+
+    &__nav {
+      display: flex;
+      gap: 2px;
+
+      button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: $primary-text-color;
+        cursor: pointer;
+
+        .icon {
+          width: 18px;
+          height: 18px;
+        }
+
+        &:hover,
+        &:focus-visible {
+          background: var(--surface-variant-active-background-color, rgba($ui-highlight-color, 0.1));
+        }
+      }
+    }
+
+    &__weekdays,
+    &__grid {
+      display: grid;
+      grid-template-columns: repeat(7, 30px);
+      justify-items: center;
+
+      // Full width on a phone: a fixed 210px grid would sit off to one side of
+      // the header above it and the inputs below.
+      @media screen and (width <= $mobile-breakpoint) {
+        grid-template-columns: repeat(7, 1fr);
+      }
+    }
+
+    &__weekdays {
+      margin-bottom: 2px;
+
+      span {
+        font-size: var(--schedule-font-small);
+        line-height: 24px;
+        color: $darker-text-color;
+      }
+    }
+
+    &__day {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border: 1px solid transparent;
+      border-radius: 50%;
+      background: transparent;
+      color: $primary-text-color;
+      font-family: inherit;
+      font-size: 13px;
+      line-height: 1;
+      cursor: pointer;
+
+      &:hover:not(:disabled),
+      &:focus-visible:not(:disabled) {
+        background: var(--surface-variant-active-background-color, rgba($ui-highlight-color, 0.1));
+      }
+
+      &:disabled {
+        color: $darker-text-color;
+        opacity: 0.4;
+        cursor: default;
+      }
+
+      /* Days spilling in from the neighbouring months. They keep the grid at six
+         rows so the dialog holds one height all year. */
+      &--outside {
+        color: $darker-text-color;
+        opacity: 0.35;
+        cursor: default;
+        pointer-events: none;
+      }
+
+      /* Today is an outline so it stays legible next to the filled selection. */
+      &--today {
+        border-color: $ui-highlight-color;
+        color: $highlight-text-color;
+      }
+
+      /* Declared after the plain hover, and with the same specificity, so the
+         selected day keeps its fill instead of greying out under the cursor. */
+      &--selected,
+      &--selected:hover:not(:disabled),
+      &--selected:focus-visible:not(:disabled) {
+        background: $ui-highlight-color;
+        border-color: $ui-highlight-color;
+        color: #fff;
+        font-weight: 600;
+      }
+    }
+  }
+
+  /* ── right hand inputs ────────────────────────────────────────────────── */
+
+  &__inputs {
+    // Takes what the calendar leaves. min-width lets it shrink instead of
+    // overflowing the dialog.
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    @media screen and (width <= $mobile-breakpoint) {
+      width: 100%;
+    }
+  }
+
+  &__date {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--background-border-color, rgba($ui-highlight-color, 0.12));
+    border-radius: 5px;
+    background: var(--input-background-color, transparent);
+    color: $primary-text-color;
+    font-family: inherit;
+    font-size: var(--schedule-font);
+    line-height: 20px;
+
+    &:focus-visible {
+      outline: none;
+      border-color: $ui-highlight-color;
+    }
+  }
+
+  &__time {
+    display: flex;
+    gap: 6px;
+  }
+
+  &__field {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 9px 6px;
+    border: 1px solid var(--background-border-color, rgba($ui-highlight-color, 0.12));
+    border-radius: 5px;
+    background: var(--input-background-color, transparent);
+    color: $primary-text-color;
+    font-size: var(--schedule-font);
+    line-height: 20px;
+
+    &:focus-within {
+      border-color: $ui-highlight-color;
+    }
+
+    // The number and its unit read as one label: same face, same size, same line
+    // box. Only the colour separates them.
+    &__input {
+      width: 1.7em;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font-family: inherit;
+      font-size: inherit;
+      line-height: inherit;
+      text-align: center;
+
+      &:focus-visible {
+        outline: none;
+      }
+    }
+
+    &__suffix {
+      color: $darker-text-color;
+      font-family: inherit;
+      font-size: inherit;
+      line-height: inherit;
+    }
+  }
+
+  /* AM/PM picker. Same shape as the composer's visibility dropdown so the
+     dialog does not fall back to the operating system's select. */
+  &__meridiem {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+
+    &__button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      width: 100%;
+      padding: 9px 6px;
+      border: 1px solid var(--background-border-color, rgba($ui-highlight-color, 0.12));
+      border-radius: 5px;
+      background: var(--input-background-color, transparent);
+      color: $primary-text-color;
+      font-family: inherit;
+      font-size: var(--schedule-font);
+      line-height: 20px;
+      cursor: pointer;
+
+      .icon {
+        width: 16px;
+        height: 16px;
+        color: $darker-text-color;
+      }
+
+      &:hover,
+      &:focus-visible,
+      &.active {
+        outline: none;
+        border-color: $ui-highlight-color;
+      }
+    }
+
+    &__dropdown {
+      position: absolute;
+      inset-inline-start: 0;
+      top: calc(100% + 4px);
+      z-index: 2;
+      min-width: 100%;
+      padding: 4px;
+      background: var(--dropdown-background-color, $ui-base-color);
+      border: 1px solid var(--dropdown-border-color, rgba($ui-highlight-color, 0.12));
+      border-radius: 5px;
+
+      ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+    }
+
+    &__option {
+      padding: 7px 10px;
+      border-radius: 6px;
+      color: $primary-text-color;
+      font-size: var(--schedule-font);
+      line-height: 20px;
+      cursor: pointer;
+
+      &:hover,
+      &:focus-visible {
+        outline: none;
+        background: var(--surface-variant-active-background-color, rgba($ui-highlight-color, 0.1));
+      }
+
+      &.active {
+        background: $ui-highlight-color;
+        color: #fff;
+      }
+
+      &__content strong {
+        font-weight: 400;
+      }
+    }
+  }
+
+  &__summary {
+    min-height: 20px;
+    color: $primary-text-color;
+    font-size: var(--schedule-font);
+    line-height: 20px;
+
+    &--error {
+      color: $error-value-color;
+    }
+  }
+
+  &__time-zone {
+    color: $darker-text-color;
+    font-size: var(--schedule-font-small);
+    line-height: 16px;
+  }
+
+  &__hint {
+    color: $darker-text-color;
+    font-size: var(--schedule-font-small);
+    line-height: 16px;
+
+    &--warning {
+      color: $passive-text-color;
+    }
+  }
+
+  /* ── actions ──────────────────────────────────────────────────────────── */
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  &__text-button {
+    border: 0;
+    border-radius: 999px;
+    padding: 9px 14px;
+    background: transparent;
+    color: $highlight-text-color;
+    font-family: inherit;
+    font-size: var(--schedule-font);
+    line-height: 20px;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: var(--surface-variant-active-background-color, rgba($ui-highlight-color, 0.1));
+    }
+
+    &--clear {
+      color: $darker-text-color;
+      margin-inline-end: auto;
+    }
+  }
+
+  &__confirm {
+    border: 0;
+    border-radius: 999px;
+    padding: 9px 20px;
+    background: $ui-highlight-color;
+    color: #fff;
+    font-family: inherit;
+    font-size: var(--schedule-font);
+    line-height: 20px;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover:not(:disabled),
+    &:focus-visible:not(:disabled) {
+      background: darken($ui-highlight-color, 5%);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+  }
+}
+
+/* Sits inside the column header (see ColumnHeader appendContent) so the bulk
+   actions stay put while a long queue scrolls. */
+.scheduled-statuses__summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--background-border-color);
+  color: $darker-text-color;
+  font-size: 13px;
+
+  .spacer {
+    flex: 1 1 auto;
+  }
+
+  &__checkbox {
+    display: flex;
+    align-items: center;
+  }
+
+  &__failed {
+    color: $error-value-color;
+  }
+}
+
+/* Reads as a band between the groups rather than a line of text: tinted
+   background, and shallower than the rows so it stays subordinate to them. */
+.scheduled-statuses__day {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 8px 16px;
+  background: var(--surface-variant-active-background-color);
+  border-bottom: 1px solid var(--background-border-color);
+  font-size: 13px;
+  font-weight: 600;
+
+  &__date {
+    color: $highlight-text-color;
+  }
+
+  /* Plain text colour so the tally reads as a separate fact from the date. */
+  &__count {
+    color: $primary-text-color;
+    font-weight: 400;
+  }
+}
+
+.scheduled-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--background-border-color);
+
+  /* The bird-ui and theme-ui skins paint their own glyph as a background-image
+     on the icon classes they know (.icon-ellipsis-h, .icon-globe, …). They hide
+     the original SVG path only inside the containers they were written for, and
+     this list is not one of them — so both copies drew at once: the "more" dots
+     came out doubled and the visibility icon in the skin's own colour.
+
+     Turning the painted copy off leaves the Material icon that the component
+     actually asked for. Mirrors the treatment already applied to
+     .ui__navigation-bar .icon-bell for the same reason. */
+  .icon {
+    background-image: none !important;
+    mask-image: none !important;
+    -webkit-mask-image: none !important;
+  }
+
+  &--failed {
+    border-inline-start: 3px solid $error-value-color;
+  }
+
+  &__checkbox {
+    padding-top: 2px;
+  }
+
+  &__body {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    color: $secondary-text-color;
+    font-size: 13px;
+
+    .icon {
+      width: 16px;
+      height: 16px;
+    }
+
+    &__tag {
+      border: 1px solid var(--background-border-color);
+      border-radius: 4px;
+      padding: 0 4px;
+      font-size: 11px;
+      color: $darker-text-color;
+
+      &--active {
+        border-color: $highlight-text-color;
+        color: $highlight-text-color;
+      }
+
+      &--warning {
+        border-color: $passive-text-color;
+        color: $passive-text-color;
+        cursor: help;
+      }
+    }
+  }
+
+  &__spoiler {
+    color: $darker-text-color;
+    font-size: 13px;
+  }
+
+  /* One line: the queue is for scanning what is due, not for reading the posts. */
+  &__preview {
+    color: $primary-text-color;
+    font-size: 15px;
+    line-height: 20px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__media {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+
+    img {
+      width: 56px;
+      height: 56px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+
+    &__placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      border-radius: 4px;
+      border: 1px solid var(--background-border-color);
+      color: $darker-text-color;
+      font-size: 11px;
+    }
+  }
+
+  &__failure {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 4px;
+    background: rgba($error-value-color, 0.1);
+    color: $primary-text-color;
+    font-size: 13px;
+
+    .icon {
+      width: 18px;
+      height: 18px;
+      color: $error-value-color;
+      flex: 0 0 auto;
+    }
+
+    &__body {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    &__reason {
+      color: $darker-text-color;
+      overflow-wrap: break-word;
+    }
+
+    &__actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 2px;
+    }
+  }
+
+  &__actions {
+    flex: 0 0 auto;
+  }
 }

@@ -19,8 +19,15 @@ class Scheduler::ScheduledStatusesScheduler
     end
   end
 
+  # Records are normally enqueued precisely by ScheduledStatus's after_commit
+  # hook. This sweep only picks up the ones whose job was lost (Redis flushed,
+  # created before this feature shipped, or the worker died mid-flight), so it
+  # skips records that already failed or are currently being published.
   def due_statuses
-    ScheduledStatus.where(scheduled_at: ..time_due_at)
+    ScheduledStatus
+      .publishable
+      .where(scheduled_at: ..time_due_at)
+      .where('publishing_at IS NULL OR publishing_at < ?', ScheduledStatus::STALE_CLAIM_AFTER.ago)
   end
 
   def publish_scheduled_announcements!
@@ -42,6 +49,6 @@ class Scheduler::ScheduledStatusesScheduler
   end
 
   def time_due_at
-    Time.now.utc + ScheduledStatus::MINIMUM_OFFSET
+    Time.now.utc + ScheduledStatus::SWEEP_WINDOW
   end
 end

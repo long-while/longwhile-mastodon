@@ -46,7 +46,6 @@ export const DetailedStatus: React.FC<{
   onTranslate?: (status: any) => void;
   measureHeight?: boolean;
   onHeightChange?: () => void;
-  domain: string;
   showMedia?: boolean;
   withLogo?: boolean;
   overrideDisplayName?: React.ReactNode;
@@ -60,7 +59,6 @@ export const DetailedStatus: React.FC<{
   onTranslate,
   measureHeight,
   onHeightChange,
-  domain,
   showMedia,
   withLogo,
   overrideDisplayName,
@@ -331,8 +329,10 @@ export const DetailedStatus: React.FC<{
             <Avatar account={status.get('account')} size={46} />
           </div>
 
+          {/* No localDomain: this instance does not federate, so spelling out
+              the domain on every local handle only adds noise. */}
           {overrideDisplayName ?? (
-            <DisplayName account={status.get('account')} localDomain={domain} />
+            <DisplayName account={status.get('account')} />
           )}
 
           {withLogo && (

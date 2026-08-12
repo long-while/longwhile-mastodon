@@ -3455,6 +3455,20 @@ body .compose-form .compose-form__uploads {
   -webkit-mask-image: url('./bird-theme-svg/messages-fill.svg');
 }
 
+/* Scheduled posts icon */
+.layout-multiple-columns .column-link .icon-clock-o {
+  mask-image: url('./bird-theme-svg/calendar-clock.svg');
+  -webkit-mask-image: url('./bird-theme-svg/calendar-clock.svg');
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-position: center;
+  background-color: var(--color-column-link);
+  background-image: none;
+}
+
 /* Preferences icon */
 .layout-multiple-columns .column-link .icon-cog {
   --size-icon: 24px;
@@ -3485,6 +3499,8 @@ body .compose-form .compose-form__uploads {
 .layout-multiple-columns .column-link:not(.active):focus-visible .icon-bookmarks,
 .layout-multiple-columns .column-link:not(.active):hover .icon-pending,
 .layout-multiple-columns .column-link:not(.active):focus-visible .icon-pending,
+.layout-multiple-columns .column-link:not(.active):hover .icon-clock-o,
+.layout-multiple-columns .column-link:not(.active):focus-visible .icon-clock-o,
 .layout-multiple-columns .column-link:not(.active):hover .icon-star,
 .layout-multiple-columns .column-link:not(.active):focus-visible .icon-star,
 .layout-multiple-columns .column-link:not(.active):hover .icon-cog,
@@ -4231,11 +4247,11 @@ body .compose-form .compose-form__uploads {
     order: 5;
   }
 
-  .layout-multiple-columns .column-link[href="/bookmarks"] {
+  .layout-multiple-columns .column-link[href="/scheduled_statuses"] {
     order: 6;
   }
 
-  .layout-multiple-columns .column-link[href="/favourites"] {
+  .layout-multiple-columns .column-link[href="/bookmarks"] {
     order: 7;
   }
 

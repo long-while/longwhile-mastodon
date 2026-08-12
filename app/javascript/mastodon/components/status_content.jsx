@@ -14,6 +14,7 @@ import { Icon }  from 'mastodon/components/icon';
 import { Poll } from 'mastodon/components/poll';
 import { identityContextPropShape, withIdentity } from 'mastodon/identity_context';
 import { autoPlayGif, languages as preloadedLanguages } from 'mastodon/initial_state';
+import { carriedOverMentionUrls, stripLeadingMentions } from 'mastodon/utils/strip_leading_mentions';
 
 const MAX_HEIGHT = 706; // 22px * 32 (+ 2px padding at the top)
 
@@ -63,14 +64,23 @@ class TranslateButton extends PureComponent {
 
 }
 
-const mapStateToProps = state => ({
-  languages: state.getIn(['server', 'translationLanguages', 'items']),
-});
+const mapStateToProps = (state, { status }) => {
+  // Which handles a reply merely inherited can only be told from the post it
+  // answers. It is in the store whenever the thread is open; in a timeline it
+  // often is not, and then only the account being replied to is known.
+  const inReplyToId = status?.get('in_reply_to_id');
+
+  return {
+    languages: state.getIn(['server', 'translationLanguages', 'items']),
+    parentStatus: inReplyToId ? state.getIn(['statuses', inReplyToId]) : undefined,
+  };
+};
 
 class StatusContent extends PureComponent {
   static propTypes = {
     identity: identityContextPropShape,
     status: ImmutablePropTypes.map.isRequired,
+    parentStatus: ImmutablePropTypes.map,
     statusContent: PropTypes.string,
     onTranslate: PropTypes.func,
     onClick: PropTypes.func,
@@ -231,7 +241,11 @@ class StatusContent extends PureComponent {
     const targetLanguages = this.props.languages?.get(status.get('language') || 'und');
     const renderTranslate = this.props.onTranslate && this.props.identity.signedIn && ['public', 'unlisted'].includes(status.get('visibility')) && status.get('search_index').trim().length > 0 && targetLanguages?.includes(contentLocale);
 
-    const content = { __html: statusContent ?? getStatusContent(status) };
+    // A reply opens with the handles the composer prefilled. They repeat on
+    // every line of a conversation and say nothing the thread does not, so they
+    // are dropped from the rendering; see strip_leading_mentions.
+    const rawContent = statusContent ?? getStatusContent(status);
+    const content = { __html: stripLeadingMentions(rawContent, carriedOverMentionUrls(status, this.props.parentStatus)) };
     const language = status.getIn(['translation', 'language']) || status.get('language');
     const classNames = classnames('status__content', {
       'status__content--with-action': this.props.onClick && this.props.history,

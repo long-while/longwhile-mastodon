@@ -1,9 +1,10 @@
 import PropTypes from 'prop-types';
-import { createRef } from 'react';
+import { createRef, Fragment } from 'react';
 
-import { defineMessages, injectIntl } from 'react-intl';
+import { defineMessages, injectIntl, FormattedMessage } from 'react-intl';
 
 import classNames from 'classnames';
+import { Link } from 'react-router-dom';
 
 import ImmutablePropTypes from 'react-immutable-proptypes';
 import ImmutablePureComponent from 'react-immutable-pure-component';
@@ -28,6 +29,8 @@ import { LanguageDropdown } from './language_dropdown';
 import { NavigationBar } from './navigation_bar';
 import { PollForm } from "./poll_form";
 import { ReplyIndicator } from './reply_indicator';
+import { ScheduleButton } from './schedule_button';
+import { ScheduleIndicator } from './schedule_indicator';
 import { UploadForm } from './upload_form';
 import { Warning } from './warning';
 
@@ -39,12 +42,16 @@ const messages = defineMessages({
   publish: { id: 'compose_form.publish', defaultMessage: 'Post' },
   saveChanges: { id: 'compose_form.save_changes', defaultMessage: 'Update' },
   reply: { id: 'compose_form.reply', defaultMessage: 'Reply' },
+  schedule: { id: 'compose_form.schedule', defaultMessage: 'Schedule' },
+  scheduleReply: { id: 'compose_form.schedule_reply', defaultMessage: 'Schedule reply' },
+  updateSchedule: { id: 'compose_form.update_schedule', defaultMessage: 'Update scheduled post' },
 });
 
 class ComposeForm extends ImmutablePureComponent {
   static propTypes = {
     intl: PropTypes.object.isRequired,
     text: PropTypes.string.isRequired,
+    replyMentions: ImmutablePropTypes.list,
     suggestions: ImmutablePropTypes.list,
     spoiler: PropTypes.bool,
     privacy: PropTypes.string,
@@ -69,6 +76,8 @@ class ComposeForm extends ImmutablePureComponent {
     anyMedia: PropTypes.bool,
     missingAltText: PropTypes.bool,
     isInReply: PropTypes.bool,
+    isScheduled: PropTypes.bool,
+    isEditingScheduled: PropTypes.bool,
     singleColumn: PropTypes.bool,
     lang: PropTypes.string,
     maxChars: PropTypes.number,
@@ -97,8 +106,17 @@ class ComposeForm extends ImmutablePureComponent {
     }
   };
 
+  // The handles live outside the box but still go out with the post, so they
+  // have to be counted or the server would reject a status the counter called
+  // short enough.
+  replyMentionsPrefix = () => {
+    const mentions = this.props.replyMentions;
+
+    return mentions && !mentions.isEmpty() ? `${mentions.map(acct => `@${acct}`).join(' ')} ` : '';
+  };
+
   getFulltextForCharacterCounting = () => {
-    return [this.props.spoiler? this.props.spoilerText: '', countableText(this.props.text)].join('');
+    return [this.props.spoiler? this.props.spoilerText: '', countableText(this.replyMentionsPrefix() + this.props.text)].join('');
   };
 
   canSubmit = () => {
@@ -216,6 +234,16 @@ class ComposeForm extends ImmutablePureComponent {
     this.composeForm = c;
   };
 
+  submitLabel = () => {
+    const { isEditing, isEditingScheduled, isScheduled, isInReply } = this.props;
+
+    if (isEditing) return messages.saveChanges;
+    if (isEditingScheduled) return messages.updateSchedule;
+    if (isScheduled) return isInReply ? messages.scheduleReply : messages.schedule;
+
+    return isInReply ? messages.reply : messages.publish;
+  };
+
   handleEmojiPick = (data) => {
     const { text }     = this.props;
     const position     = this.textareaRef.current.selectionStart;
@@ -235,9 +263,30 @@ class ComposeForm extends ImmutablePureComponent {
         {!withoutNavigation && <NavigationBar />}
         <Warning />
 
+        {/* Sits above the box rather than inside it: this names who the reply
+            goes to, it is not part of what is being written. Keeping it out
+            also leaves the box its own background and rounded top corners. */}
+        {this.props.replyMentions && !this.props.replyMentions.isEmpty() && (
+          <div className='compose-form__reply-mentions'>
+            <FormattedMessage
+              id='compose_form.replying_to'
+              defaultMessage='Replying to {mentions}'
+              values={{
+                mentions: this.props.replyMentions.map((acct, index) => (
+                  <Fragment key={acct}>
+                    {index > 0 && ' '}
+                    <Link to={`/@${acct}`}>@{acct}</Link>
+                  </Fragment>
+                )).toArray(),
+              }}
+            />
+          </div>
+        )}
+
         <div className={classNames('compose-form__highlightable', { active: highlighted })} ref={this.setRef}>
           <div className='compose-form__scrollable'>
             <EditIndicator />
+            <ScheduleIndicator />
 
             {this.props.spoiler && (
               <div className='spoiler-input'>
@@ -292,6 +341,8 @@ class ComposeForm extends ImmutablePureComponent {
                 <UploadButtonContainer />
                 <PollButtonContainer />
                 <SpoilerButtonContainer />
+                {/* Already-published posts cannot be scheduled. */}
+                <ScheduleButton disabled={this.props.isEditing} />
                 <PrivacyDropdownContainer hideLabel disabled={this.props.isEditing} />
                 <CharacterCounter max={maxChars} text={this.getFulltextForCharacterCounting()} />
               </div>
@@ -300,7 +351,7 @@ class ComposeForm extends ImmutablePureComponent {
                 <Button
                   type='submit'
                   compact
-                  text={intl.formatMessage(this.props.isEditing ? messages.saveChanges : (this.props.isInReply ? messages.reply : messages.publish))}
+                  text={intl.formatMessage(this.submitLabel())}
                   disabled={!this.canSubmit()}
                 />
               </div>

@@ -51,7 +51,6 @@ export const HighlightedPost: React.FC<{
   }
 
   const dispatch = useAppDispatch();
-  const domain = useAppSelector((state) => state.meta.get('domain'));
   const status = useAppSelector((state) =>
     statusId ? getStatus(state, { id: statusId }) : undefined,
   );
@@ -96,7 +95,6 @@ export const HighlightedPost: React.FC<{
       <DetailedStatus
         status={status}
         pictureInPicture={pictureInPicture}
-        domain={domain}
         onToggleHidden={handleToggleHidden}
         overrideDisplayName={displayName}
       />

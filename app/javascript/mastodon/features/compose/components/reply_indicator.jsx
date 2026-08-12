@@ -10,11 +10,18 @@ import { Avatar } from 'mastodon/components/avatar';
 import { DisplayName } from 'mastodon/components/display_name';
 import { Icon } from 'mastodon/components/icon';
 import { EmbeddedStatusContent } from 'mastodon/features/notifications_v2/components/embedded_status_content';
+import { carriedOverMentionUrls, stripLeadingMentions } from 'mastodon/utils/strip_leading_mentions';
 
 export const ReplyIndicator = () => {
   const inReplyToId = useSelector(state => state.getIn(['compose', 'in_reply_to']));
   const status = useSelector(state => state.getIn(['statuses', inReplyToId]));
   const account = useSelector(state => state.getIn(['accounts', status?.get('account')]));
+  // The post being answered carries its own inherited handles. Hiding them here
+  // too keeps the preview reading like the thread it came from.
+  const parentStatus = useSelector(state => {
+    const parentId = status?.get('in_reply_to_id');
+    return parentId ? state.getIn(['statuses', parentId]) : undefined;
+  });
 
   if (!status) {
     return null;
@@ -35,7 +42,7 @@ export const ReplyIndicator = () => {
 
         <EmbeddedStatusContent
           className='reply-indicator__content translate'
-          content={status.get('contentHtml')}
+          content={stripLeadingMentions(status.get('contentHtml'), carriedOverMentionUrls(status, parentStatus))}
           language={status.get('language')}
           mentions={status.get('mentions')}
         />

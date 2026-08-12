@@ -51,7 +51,11 @@ namespace :api, format: false do
 
     resources :custom_emojis, only: [:index]
     resources :suggestions, only: [:index, :destroy]
-    resources :scheduled_statuses, only: [:index, :show, :update, :destroy]
+    resources :scheduled_statuses, only: [:index, :show, :update, :destroy] do
+      collection do
+        get :usage
+      end
+    end
     resources :preferences, only: [:index]
 
     resources :annual_reports, only: [:index, :show] do

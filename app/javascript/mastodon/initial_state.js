@@ -121,6 +121,9 @@ export const criticalUpdatesPending = initialState?.critical_updates_pending;
 export const statusPageUrl = getMeta('status_page_url');
 export const sso_redirect = getMeta('sso_redirect');
 export const termsOfServiceEnabled = getMeta('terms_of_service_enabled');
+export const scheduledStatusMinimumOffset = getMeta('scheduled_status_minimum_offset') ?? 60;
+export const scheduledStatusTotalLimit = getMeta('scheduled_status_total_limit') ?? 300;
+export const scheduledStatusDailyLimit = getMeta('scheduled_status_daily_limit') ?? 25;
 
 const displayNames = Intl.DisplayNames && new Intl.DisplayNames(getMeta('locale'), {
   type: 'language',

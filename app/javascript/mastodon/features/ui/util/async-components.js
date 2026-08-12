@@ -70,6 +70,10 @@ export function AccountFeatured() {
   return import('../../account_featured');
 }
 
+export function AccountFavourites() {
+  return import('../../account_favourites');
+}
+
 export function Followers() {
   return import('../../followers');
 }
@@ -104,6 +108,14 @@ export function BookmarkedStatuses() {
 
 export function PendingMentions() {
   return import('../../pending-mentions');
+}
+
+export function ScheduledStatuses() {
+  return import('../../scheduled_statuses');
+}
+
+export function ScheduleModal() {
+  return import('../components/schedule_modal');
 }
 
 export function Blocks() {
