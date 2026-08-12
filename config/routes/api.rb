@@ -81,6 +81,15 @@ namespace :api, format: false do
       end
     end
 
+    # @_longwhile custom feature
+    resources :dm_rooms, only: [:index, :show, :create, :destroy] do
+      member do
+        post :read
+      end
+
+      resources :statuses, only: [:index], controller: 'dm_rooms/statuses'
+    end
+
     resources :media, only: [:create, :update, :show, :destroy]
     resources :blocks, only: [:index]
     resources :mutes, only: [:index]

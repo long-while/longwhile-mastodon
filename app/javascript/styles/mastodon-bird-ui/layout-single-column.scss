@@ -3545,7 +3545,7 @@ body .compose-form .compose-form__uploads {
 
 /* Keep account switcher below settings in mid/full view */
 .layout-single-column .navigation-panel .navigation-panel__account-switcher {
-  order: 10;
+  order: 11;
   flex: 0 0 auto;
   align-self: stretch;
   width: 100%;
@@ -3673,28 +3673,32 @@ body .compose-form .compose-form__uploads {
     order: 4;
   }
 
-  .layout-single-column .column-link[href="/conversations"] {
+  .layout-single-column .column-link[href="/messages"] {
     order: 5;
   }
 
-  .layout-single-column .column-link[href="/scheduled_statuses"] {
+  .layout-single-column .column-link[href="/conversations"] {
     order: 6;
   }
 
-  .layout-single-column .column-link[href="/bookmarks"] {
+  .layout-single-column .column-link[href="/scheduled_statuses"] {
     order: 7;
   }
 
-  .layout-single-column .column-link[href="/lists"] {
+  .layout-single-column .column-link[href="/bookmarks"] {
     order: 8;
   }
 
-  .layout-single-column .column-link[href*="/settings/profile"] {
+  .layout-single-column .column-link[href="/lists"] {
     order: 9;
   }
 
-  .layout-single-column .navigation-panel .navigation-panel__account-switcher {
+  .layout-single-column .column-link[href*="/settings/profile"] {
     order: 10;
+  }
+
+  .layout-single-column .navigation-panel .navigation-panel__account-switcher {
+    order: 11;
   }
 
   /* Optional/hidden items */
@@ -4581,28 +4585,32 @@ body .compose-form .compose-form__uploads {
     order: 4;
   }
 
-  .layout-single-column .column-link[href="/conversations"] {
+  .layout-single-column .column-link[href="/messages"] {
     order: 5;
   }
 
-  .layout-single-column .column-link[href="/scheduled_statuses"] {
+  .layout-single-column .column-link[href="/conversations"] {
     order: 6;
   }
 
-  .layout-single-column .column-link[href="/bookmarks"] {
+  .layout-single-column .column-link[href="/scheduled_statuses"] {
     order: 7;
   }
 
-  .layout-single-column .column-link[href="/lists"] {
+  .layout-single-column .column-link[href="/bookmarks"] {
     order: 8;
   }
 
-  .layout-single-column .column-link[href*="/settings"] {
+  .layout-single-column .column-link[href="/lists"] {
     order: 9;
   }
 
-  .layout-single-column .navigation-panel .navigation-panel__account-switcher {
+  .layout-single-column .column-link[href*="/settings"] {
     order: 10;
+  }
+
+  .layout-single-column .navigation-panel .navigation-panel__account-switcher {
+    order: 11;
     flex: 0 0 100%;
     width: 100%;
   }

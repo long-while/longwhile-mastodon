@@ -4243,28 +4243,32 @@ body .compose-form .compose-form__uploads {
     order: 4;
   }
 
-  .layout-multiple-columns .column-link[href="/conversations"] {
+  .layout-multiple-columns .column-link[href="/messages"] {
     order: 5;
   }
 
-  .layout-multiple-columns .column-link[href="/scheduled_statuses"] {
+  .layout-multiple-columns .column-link[href="/conversations"] {
     order: 6;
   }
 
-  .layout-multiple-columns .column-link[href="/bookmarks"] {
+  .layout-multiple-columns .column-link[href="/scheduled_statuses"] {
     order: 7;
   }
 
-  .layout-multiple-columns .column-link[href="/lists"] {
+  .layout-multiple-columns .column-link[href="/bookmarks"] {
     order: 8;
   }
 
-  .layout-multiple-columns .column-link[href*="/settings"] {
+  .layout-multiple-columns .column-link[href="/lists"] {
     order: 9;
   }
 
-  .layout-multiple-columns .navigation-panel .navigation-panel__account-switcher {
+  .layout-multiple-columns .column-link[href*="/settings"] {
     order: 10;
+  }
+
+  .layout-multiple-columns .navigation-panel .navigation-panel__account-switcher {
+    order: 11;
   }
 }
 

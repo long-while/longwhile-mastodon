@@ -1352,6 +1352,12 @@ en:
       your_appeal_approved: Your appeal has been approved
       your_appeal_pending: You have submitted an appeal
       your_appeal_rejected: Your appeal has been rejected
+  dm_rooms:
+    errors:
+      no_recipients: Select at least one person to message.
+      too_many_recipients: You can include at most %{max} other people in a conversation.
+      unknown_recipients: One or more of the selected accounts could not be found.
+      unknown_status: That message is not part of this conversation.
   edit_profile:
     basic_information: Basic information
     hint_html: "<strong>Customize what people see on your public profile and next to your posts.</strong> Other people are more likely to follow you back and interact with you when you have a filled out profile and a profile picture."

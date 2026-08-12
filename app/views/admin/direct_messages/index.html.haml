@@ -46,4 +46,11 @@
             %td
               = l(status.created_at, format: :short)
 
-= paginate @direct_messages
+- if @direct_messages.current_page > 1 || @direct_messages.next_page
+  %nav.pagination
+    - if @direct_messages.current_page > 1
+      %span.prev
+        = link_to safe_join([material_symbol('chevron_left'), t('pagination.prev')], ' '), admin_direct_messages_path(direct_message_filter_params.merge(page: @direct_messages.current_page - 1)), rel: 'prev'
+    - if @direct_messages.next_page
+      %span.next
+        = link_to safe_join([t('pagination.next'), material_symbol('chevron_right')], ' '), admin_direct_messages_path(direct_message_filter_params.merge(page: @direct_messages.next_page)), rel: 'next'

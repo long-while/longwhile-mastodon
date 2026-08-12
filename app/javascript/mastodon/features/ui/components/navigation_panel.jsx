@@ -25,6 +25,7 @@ import NotificationsActiveIcon from '@/material-icons/400-24px/notifications-fil
 import NotificationsIcon from '@/material-icons/400-24px/notifications.svg?react';
 import ScheduledStatusesIcon from '@/styles/bird-theme-svg/calendar-clock.svg?react';
 import PendingMentionsActiveIcon from '@/styles/bird-theme-svg/messages-fill.svg?react';
+import MailIcon from '@/material-icons/400-24px/mail.svg?react';
 import PendingMentionsIcon from '@/styles/bird-theme-svg/messages.svg?react';
 import PublicIcon from '@/material-icons/400-24px/public.svg?react';
 import SearchIcon from '@/material-icons/400-24px/search.svg?react';
@@ -34,7 +35,7 @@ import { IconWithBadge } from 'mastodon/components/icon_with_badge';
 import { WordmarkLogo } from 'mastodon/components/logo';
 import { NavigationPortal } from 'mastodon/components/navigation_portal';
 import { identityContextPropShape, withIdentity } from 'mastodon/identity_context';
-import { timelinePreview, trendsEnabled } from 'mastodon/initial_state';
+import { timelinePreview, trendsEnabled, dmChatEnabled } from 'mastodon/initial_state';
 import { canManageReports, canViewAdminDashboard } from 'mastodon/permissions';
 import { selectUnreadNotificationGroupsCount } from 'mastodon/selectors/notifications';
 
@@ -54,6 +55,7 @@ const messages = defineMessages({
   firehose: { id: 'column.firehose', defaultMessage: 'Live feeds' },
   direct: { id: 'navigation_bar.direct', defaultMessage: 'Private mentions' },
   pendingMentions: { id: 'navigation_bar.pending-mentions', defaultMessage: 'Awaiting reply' },
+  messages: { id: 'navigation_bar.messages', defaultMessage: 'Messages' },
   bookmarks: { id: 'navigation_bar.bookmarks', defaultMessage: 'Bookmarks' },
   scheduledStatuses: { id: 'navigation_bar.scheduled_statuses', defaultMessage: 'Scheduled posts' },
   scheduledStatusesFailed: { id: 'navigation_bar.scheduled_statuses_failed', defaultMessage: 'Scheduled posts (failed)' },
@@ -274,6 +276,9 @@ class NavigationPanel extends Component {
         <ColumnLink transparent to='/public' isActive={this.isFirehoseActive} icon='globe' iconComponent={PublicIcon} text={publicLabel} />
         <NotificationsLink />
         <ColumnLink transparent to='/pending-mentions' icon='pending' iconComponent={PendingMentionsIcon} activeIconComponent={PendingMentionsActiveIcon} text={pendingMentionsLabel} />
+        {dmChatEnabled && (
+          <ColumnLink transparent to='/messages' icon='messages' iconComponent={MailIcon} text={intl.formatMessage(messages.messages)} />
+        )}
         <ColumnLink transparent to='/conversations' icon='at' iconComponent={AlternateEmailIcon} text={directLabel} />
         <ScheduledStatusesLink />
         <ColumnLink transparent to='/bookmarks' icon='bookmarks' iconComponent={BookmarksIcon} activeIconComponent={BookmarksActiveIcon} text={bookmarksLabel} />

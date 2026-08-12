@@ -147,6 +147,16 @@ class PostStatusService < BaseService
     DistributionWorker.perform_async(@status.id)
     ActivityPub::DistributionWorker.perform_async(@status.id)
     PollExpirationNotifyWorker.perform_at(@status.poll.expires_at, @status.poll.id) if @status.poll
+
+    attach_to_dm_room!
+  end
+
+  def attach_to_dm_room!
+    return unless Mastodon::DmChat.enabled?
+
+    DmRoom.attach_status!(@status)
+  rescue => e
+    Rails.logger.error { "DmRoom.attach_status! failed for status #{@status.id}: #{e.class} #{e.message}" }
   end
 
   def validate_media!

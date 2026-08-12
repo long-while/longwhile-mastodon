@@ -14,6 +14,8 @@ import { composeReducer } from './compose';
 import { contextsReducer } from './contexts';
 import conversations from './conversations';
 import custom_emojis from './custom_emojis';
+import { dmMessagesReducer } from './dm_messages';
+import { dmRoomsReducer } from './dm_rooms';
 import { dropdownMenuReducer } from './dropdown_menu';
 import filters from './filters';
 import height_cache from './height_cache';
@@ -84,6 +86,8 @@ const reducers = {
   multiAccount: multiAccountReducer,
   navigation: navigationReducer,
   scheduled_statuses: scheduledStatusesReducer,
+  dmRooms: dmRoomsReducer,
+  dmMessages: dmMessagesReducer,
 };
 
 // We want the root state to be an ImmutableRecord, which is an object with a defined list of keys,

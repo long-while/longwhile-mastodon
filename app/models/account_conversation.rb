@@ -17,6 +17,14 @@
 class AccountConversation < ApplicationRecord
   include Redisable
 
+  # @_longwhile custom feature
+  STATUS_IDS_LIMIT = begin
+    parsed = Integer(ENV.fetch('STATUS_IDS_LIMIT', '100'), exception: false)
+    parsed.nil? || parsed.negative? ? 100 : parsed
+  end
+
+  REFILL_SCAN_LIMIT = STATUS_IDS_LIMIT.positive? ? [STATUS_IDS_LIMIT * 10, 1_000].max : nil
+
   attr_writer :participant_accounts
 
   before_validation :set_last_status
@@ -91,6 +99,8 @@ class AccountConversation < ApplicationRecord
 
       conversation.status_ids.delete(status.id)
 
+      conversation.status_ids = remaining_status_ids(conversation, except: status.id) if conversation.status_ids.empty?
+
       if conversation.status_ids.empty?
         conversation.destroy
       else
@@ -102,18 +112,48 @@ class AccountConversation < ApplicationRecord
       retry
     end
 
+    def remaining_status_ids(conversation, except: nil)
+      scope = Status.where(conversation_id: conversation.conversation_id)
+      scope = scope.where.not(id: except) if except.present?
+
+      mine  = scope.where(account_id: conversation.account_id)
+      to_me = scope.where(id: Mention.active.where(account_id: conversation.account_id).select(:status_id))
+
+      candidates = mine.or(to_me).reorder(id: :desc).includes(:active_mentions)
+      candidates = candidates.limit(REFILL_SCAN_LIMIT) if REFILL_SCAN_LIMIT
+
+      matching = candidates.select { |status| participants_of(conversation.account_id, status) == conversation.participant_account_ids }
+      matching = matching.first(STATUS_IDS_LIMIT) if STATUS_IDS_LIMIT.positive?
+      matching.map(&:id).sort
+    end
+
     private
 
     def participants_from_status(recipient, status)
-      ((status.active_mentions.pluck(:account_id) + [status.account_id]).uniq - [recipient.id]).sort
+      participant_ids_for(recipient.id, status.account_id, status.active_mentions.pluck(:account_id))
+    end
+
+    def participants_of(recipient_id, status)
+      participant_ids_for(recipient_id, status.account_id, status.active_mentions.map(&:account_id))
+    end
+
+    def participant_ids_for(recipient_id, author_id, mentioned_ids)
+      ((mentioned_ids + [author_id]).uniq - [recipient_id]).sort
     end
   end
 
   private
 
   def set_last_status
-    self.status_ids     = status_ids.sort
+    self.status_ids     = limited_status_ids
     self.last_status_id = status_ids.last
+  end
+
+  def limited_status_ids
+    ids = status_ids.uniq.sort
+    return ids unless STATUS_IDS_LIMIT.positive?
+
+    ids.last(STATUS_IDS_LIMIT)
   end
 
   def push_to_streaming_api

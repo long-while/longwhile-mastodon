@@ -20,6 +20,7 @@ import {
   IgnoreNotificationsModal,
   AnnualReportModal,
   ScheduleModal,
+  DmRecipientModal,
 } from 'mastodon/features/ui/util/async-components';
 import { getScrollbarWidth } from 'mastodon/utils/scrollbar';
 
@@ -77,6 +78,7 @@ export const MODAL_COMPONENTS = {
   'IGNORE_NOTIFICATIONS': IgnoreNotificationsModal,
   'ANNUAL_REPORT': AnnualReportModal,
   'SCHEDULE': ScheduleModal,
+  'DM_RECIPIENT': DmRecipientModal,
 };
 
 // Modals that must not lock the page scroll. Locking swaps `overflow-y: hidden`

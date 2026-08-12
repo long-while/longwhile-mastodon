@@ -110,6 +110,18 @@ export function PendingMentions() {
   return import('../../pending-mentions');
 }
 
+export function Messages() {
+  return import('../../messages');
+}
+
+export function MessageRoom() {
+  return import('../../messages/room');
+}
+
+export function DmRecipientModal() {
+  return import('../../messages/recipient_modal');
+}
+
 export function ScheduledStatuses() {
   return import('../../scheduled_statuses');
 }
