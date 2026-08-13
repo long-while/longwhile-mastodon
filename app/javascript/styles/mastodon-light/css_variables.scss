@@ -16,12 +16,7 @@ body {
 
   --background-color: #fff;
 
-  --color-recieve-message-text: #{$primary-text-color};
-  --color-recieve-message-background: #{darken($ui-base-color, 4%)};
-  --color-sent-message-text: #fff;
-  --color-sent-message-background: #{$longwhile-600};
 
-  --color-hover-message-list-background: #{color.scale($ui-base-color, $lightness: -2%)};
   --background-color-tint: rgba(255, 255, 255, 80%);
   --background-filter: blur(10px);
   --color-noti-hover: #{color.adjust($ui-base-color, $alpha: -0.65)};

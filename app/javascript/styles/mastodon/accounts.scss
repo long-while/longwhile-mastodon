@@ -213,8 +213,9 @@
   display: inline-flex;
   padding: 4px;
   padding-inline-end: 8px;
-  border: 1px solid $highlight-text-color;
-  color: $highlight-text-color;
+
+  border: 1px solid var(--color-brand-longwhile, #{$highlight-text-color});
+  color: var(--color-brand-longwhile, #{$highlight-text-color});
   font-weight: 500;
   font-size: 12px;
   letter-spacing: 0.5px;

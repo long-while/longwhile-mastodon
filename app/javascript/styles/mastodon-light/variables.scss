@@ -16,18 +16,14 @@ $longwhile-300: #1d9bf0;
 $grey-600: hsl(215, 10%, 63%); // Trout
 $grey-100: hsl(209, 41%, 90%); // Topaz
 
-$classic-base-color: hsl(208, 15%, 19%);
+$classic-base-color: #212126;
 
-$classic-secondary-color: hsl(0, 0%, 100%);
+$classic-secondary-color: #ffffff;
 
 $classic-highlight-color: $longwhile-500;
 
 @use '../mastodon/variables' with (
-  $success-green: color.adjust(
-      hsl(209, 100%, 66%),
-      $lightness: 8%,
-      $space: hsl
-    ),
+  $success-green: #1d9bf0,
   $base-overlay-background: $white,
 
   $ui-base-color: $classic-secondary-color,
@@ -40,7 +36,7 @@ $classic-highlight-color: $longwhile-500;
 
   $ui-button-background-color: $longwhile-500,
   $ui-button-focus-background-color: $longwhile-600,
-  $ui-button-focus-outline-color: $longwhile-400,
+  $ui-button-focus-outline-color: var(--color-brand-longwhile, #{$longwhile-400}),
   $ui-button-tertiary-focus-background-color: $longwhile-600,
 
   $ui-button-secondary-color: $grey-600,

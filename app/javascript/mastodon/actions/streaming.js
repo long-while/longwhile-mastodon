@@ -97,6 +97,11 @@ export const connectTimelineStream = (timelineId, channelName, params = {}, opti
         case 'notification': {
           // @ts-expect-error
           const notificationJSON = JSON.parse(data.payload);
+
+          if (dmChatEnabled && notificationJSON.type === 'mention' && notificationJSON.status?.visibility === 'direct') {
+            break;
+          }
+
           dispatch(updateNotifications(notificationJSON, messages, locale));
           // TODO: remove this once the groups feature replaces the previous one
           dispatch(processNewNotificationForGroups(notificationJSON));

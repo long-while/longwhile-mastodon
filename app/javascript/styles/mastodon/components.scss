@@ -92,7 +92,8 @@
   border: 10px none;
   border-radius: 4px;
   box-sizing: border-box;
-  color: $ui-button-color;
+
+  color: var(--color-on-brand, #{$ui-button-color});
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -302,7 +303,8 @@
   &:active,
   &:focus {
     color: lighten($action-button-color, 7%);
-    background-color: rgba($action-button-color, 0.15);
+
+    background-color: var(--color-icon-button-hover);
   }
 
   &:focus-visible {
@@ -322,7 +324,7 @@
     &:active,
     &:focus {
       color: darken($lighter-text-color, 7%);
-      background-color: rgba($lighter-text-color, 0.15);
+      background-color: var(--color-icon-button-hover);
     }
 
     &:focus-visible {
@@ -336,12 +338,12 @@
   }
 
   &.active {
-    color: $highlight-text-color;
+    color: var(--color-brand-longwhile, #{$highlight-text-color});
 
     &:hover,
     &:active,
     &:focus {
-      color: $highlight-text-color;
+      color: var(--color-brand-longwhile, #{$highlight-text-color});
       background-color: transparent;
     }
 
@@ -842,7 +844,7 @@ body>[data-popper-placement] {
       padding: 8px;
 
       .icon-button.active {
-        color: #ffbe2e;
+        color: var(--color-brand-longwhile-favourite, #ffbe2e);
         background: rgba(0, 0, 0, 75%);
       }
     }
@@ -903,21 +905,21 @@ body>[data-popper-placement] {
 
     .icon-button {
       box-sizing: content-box;
-      color: $highlight-text-color;
+      color: var(--color-brand-longwhile, #{$highlight-text-color});
 
       &:hover,
       &:focus,
       &:active {
-        color: $highlight-text-color;
+        color: var(--color-brand-longwhile, #{$highlight-text-color});
       }
 
       &.disabled {
-        color: $highlight-text-color;
+        color: var(--color-brand-longwhile, #{$highlight-text-color});
         opacity: 0.5;
       }
 
       &.active {
-        background: $ui-highlight-color;
+        background: var(--color-brand-longwhile, #{$ui-highlight-color});
         color: $primary-text-color;
       }
     }
@@ -2357,6 +2359,10 @@ a.account__display-name {
   text-overflow: ellipsis;
 }
 
+body .account__display-name .display-name strong {
+  color: var(--color-fg, #{$primary-text-color});
+}
+
 .detailed-status__application,
 .detailed-status__datetime {
   color: inherit;
@@ -3131,8 +3137,8 @@ a.account__display-name {
   .search__input {
     line-height: 18px;
     font-size: 16px;
-    padding: 15px;
-    padding-inline-end: 30px;
+
+    padding: 15px 0;
   }
 
   .scrollable {
@@ -4121,8 +4127,8 @@ body .ui__navigation-bar__item:not(.ui__navigation-bar__item--menu) {
   display: flex;
   align-items: center;
   gap: 5px;
-  background: var(--color-column) !important;
-  background-color: var(--color-column) !important;
+
+  background: transparent;
   border: 0;
   font-family: inherit;
   color: $highlight-text-color;
@@ -4177,7 +4183,8 @@ body .ui__navigation-bar__item:not(.ui__navigation-bar__item--menu) {
   height: 20px;
   padding: 0;
   border-radius: 10px;
-  background-color: $ui-primary-color;
+
+  background-color: var(--color-dim, #{$ui-primary-color});
 }
 
 .react-toggle--focus {
@@ -4635,7 +4642,7 @@ a.status-card {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: $dark-text-color;
+  color: var(--color-dim, #{$dark-text-color});
   background-color: transparent;
   border: 0;
   font-size: inherit;
@@ -4807,7 +4814,7 @@ a.status-card {
     padding: 13px;
     padding-inline-end: 0;
     color: inherit;
-    background: var(--color-column);
+    background: transparent;
     font: inherit;
     text-align: start;
     text-overflow: ellipsis;
@@ -4862,8 +4869,6 @@ a.status-card {
 }
 
 .column-header__buttons {
-  background: var(--color-column);
-  background-color: var(--color-column);
   display: flex;
 }
 
@@ -4910,7 +4915,7 @@ body.layout-single-column {
 
   &:hover {
     color: lighten($darker-text-color, 4%);
-    background: var(--color-column) !important;
+    background: transparent;
   }
 
   &:focus-visible {
@@ -4922,7 +4927,7 @@ body.layout-single-column {
 
     &:hover {
       color: $primary-text-color;
-      background: var(--color-column) !important;
+      background: transparent;
     }
 
     .icon-sliders {
@@ -5259,7 +5264,7 @@ body.layout-single-column {
   section {
     padding: 16px;
     border-bottom: 1px solid var(--background-border-color);
-
+    background-color: var(--color-column);
     &:last-child {
       border-bottom: 0;
     }
@@ -5788,7 +5793,7 @@ body.layout-single-column {
 
   &:hover,
   &:active {
-    background: var(--color-privacy-hover);
+    background: var(--color-icon-button-hover);
   }
 
   &:focus,
@@ -5921,8 +5926,15 @@ body.layout-single-column {
 }
 
 .search {
-  margin-bottom: 32px;
   position: relative;
+
+  @include search-input;
+
+  margin-bottom: 32px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-inline: 16px;
 
   .layout-multiple-columns & {
     margin-bottom: 10px;
@@ -5933,6 +5945,8 @@ body.layout-single-column {
     display: none;
     position: absolute;
     inset-inline-start: 0;
+
+    top: 100%;
     margin-top: -2px;
     width: 100%;
     background: var(--input-background-color);
@@ -6025,9 +6039,7 @@ body.layout-single-column {
   }
 
   &.active {
-    .search__input {
-      border-radius: 4px 4px 0 0;
-    }
+    border-radius: 4px 4px 0 0;
 
     .search__popout {
       display: block;
@@ -6036,12 +6048,17 @@ body.layout-single-column {
 }
 
 .search__input {
-  @include search-input;
-
-  display: block;
-  padding: 12px 16px;
-  padding-inline-start: 16px + 15px + 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 12px 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  font-family: inherit;
+  font-size: 17px;
   line-height: normal;
+  color: $darker-text-color;
+  margin: 0;
 
   &::-moz-focus-inner {
     border: 0;
@@ -6055,59 +6072,44 @@ body.layout-single-column {
 }
 
 .search__icon {
-  background: transparent;
-  border: 0;
-  padding: 0;
-  position: absolute;
-  top: 12px + 2px;
-  cursor: default;
-  pointer-events: none;
-  margin-inline-start: 16px - 2px;
+  flex: 0 0 auto;
+  display: flex;
   width: 20px;
   height: 20px;
+  color: $darker-text-color;
+  pointer-events: none;
+
+  .icon {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.search__clear {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: $darker-text-color;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    color: $primary-text-color;
+  }
 
   &::-moz-focus-inner {
     border: 0;
   }
 
-  &::-moz-focus-inner,
-  &:focus {
-    outline: 0 !important;
-  }
-
   .icon {
-    position: absolute;
-    top: 0;
-    inset-inline-start: 0;
-    opacity: 0;
-    transition: all 100ms linear;
-    transition-property: transform, opacity;
     width: 20px;
     height: 20px;
-    color: $darker-text-color;
-
-    &.active {
-      pointer-events: auto;
-      opacity: 1;
-    }
-  }
-
-  .icon-search {
-    transform: rotate(90deg);
-
-    &.active {
-      pointer-events: none;
-      transform: rotate(0deg);
-    }
-  }
-
-  .icon-times-circle {
-    transform: rotate(0deg);
-    cursor: pointer;
-
-    &.active {
-      transform: rotate(90deg);
-    }
   }
 }
 
@@ -9341,21 +9343,20 @@ noscript {
   .search {
     width: 100%;
     margin-bottom: 0;
+    border: 1px solid var(--background-border-color);
+    padding-inline: 12px;
   }
 
   .search__input {
-    border: 1px solid var(--background-border-color);
-    padding: 12px;
-    padding-inline-end: 30px;
+    padding: 12px 0;
   }
 
   .search__popout {
     border: 1px solid var(--background-border-color);
   }
 
-  .search__icon {
-    top: 12px;
-    inset-inline-end: 12px;
+  .search__icon,
+  .search__clear {
     color: $dark-text-color;
   }
 }
@@ -11701,8 +11702,8 @@ div.compose-panel .account__bio {
     width: min(290px, calc(100vw - 32px));
     margin: 0;
     padding: 8px 0;
-    background: var(--dropdown-background-color, $ui-base-color);
-    border: 1px solid var(--dropdown-border-color, rgba($ui-highlight-color, 0.12));
+    background: var(--color-modal-panel, var(--dropdown-background-color, #{$ui-base-color}));
+    border: 1px solid var(--color-border, var(--dropdown-border-color));
     border-radius: 16px;
     box-shadow: 0 0 18px rgba($base-shadow-color, 0.14), 0 0 6px rgba($base-shadow-color, 0.12);
     overflow: visible;
@@ -11724,15 +11725,15 @@ div.compose-panel .account__bio {
 
   &__menu--top::before {
     bottom: -8px;
-    border-inline-start: 1px solid var(--dropdown-border-color, rgba($ui-highlight-color, 0.12));
-    border-bottom: 1px solid var(--dropdown-border-color, rgba($ui-highlight-color, 0.12));
+    border-inline-start: 1px solid var(--color-border, var(--dropdown-border-color, rgba($ui-highlight-color, 0.12)));
+    border-bottom: 1px solid var(--color-border, var(--dropdown-border-color, rgba($ui-highlight-color, 0.12)));
     border-radius: 0 0 4px 0;
   }
 
   &__menu--bottom::before {
     top: -8px;
-    border-inline-end: 1px solid var(--dropdown-border-color, rgba($ui-highlight-color, 0.12));
-    border-top: 1px solid var(--dropdown-border-color, rgba($ui-highlight-color, 0.12));
+    border-inline-end: 1px solid var(--color-border, var(--dropdown-border-color, rgba($ui-highlight-color, 0.12)));
+    border-top: 1px solid var(--color-border, var(--dropdown-border-color, rgba($ui-highlight-color, 0.12)));
     border-radius: 4px 0 0 0;
   }
 
@@ -11782,7 +11783,7 @@ div.compose-panel .account__bio {
     flex-shrink: 0;
     width: 20px;
     height: 20px;
-    color: $ui-highlight-color;
+    color: var(--color-brand-longwhile, #{$ui-highlight-color});
   }
 
   &__account-info {
@@ -11820,7 +11821,7 @@ div.compose-panel .account__bio {
   &__footer {
     margin-top: 8px;
     padding-top: 8px;
-    border-top: 1px solid var(--dropdown-border-color, rgba($ui-highlight-color, 0.12));
+    border-top: 1px solid var(--color-border, var(--dropdown-border-color, rgba($ui-highlight-color, 0.12)));
   }
 
   &__action {
@@ -11853,7 +11854,7 @@ div.compose-panel .account__bio {
 
   &__action-icon {
     flex-shrink: 0;
-    color: $ui-highlight-color;
+    color: var(--color-brand-longwhile, #{$ui-highlight-color});
     transition: color 200ms;
   }
 
@@ -11880,7 +11881,7 @@ div.compose-panel .account__bio {
       inset: 0;
       background: color-mix(in srgb,
           color-mix(in srgb,
-            var(--account-switcher-accent-color, $ui-highlight-color) 40%,
+            var(--account-switcher-accent-color, var(--color-brand-longwhile, #{$ui-highlight-color})) 40%,
             #1a1a1a 60%),
           transparent 80%);
       pointer-events: none;
@@ -11893,9 +11894,11 @@ div.compose-panel .account__bio {
     width: min(460px, calc(100vw - 32px));
     max-height: min(82vh, 680px);
     background: var(--account-switcher-modal-background,
-        var(--background-color, $ui-base-color));
+        var(--color-modal-panel, var(--background-color, #{$ui-base-color})));
+
+    color: var(--color-light-text, #{$primary-text-color});
     border-radius: 28px;
-    border: 1px solid var(--dropdown-border-color, rgba($ui-highlight-color, 0.12));
+    border: 1px solid var(--color-border, var(--dropdown-border-color, rgba($ui-highlight-color, 0.12)));
     box-shadow: none;
     padding: var(--account-switcher-manage-vertical-padding) var(--account-switcher-manage-horizontal-padding);
     position: relative;
@@ -12044,7 +12047,7 @@ div.compose-panel .account__bio {
     }
 
     &--danger {
-      color: $error-color;
+      color: var(--color-brand-longwhile-danger, #{$error-color});
 
       &:hover:not(:disabled),
       &:focus-visible:not(:disabled) {
@@ -12054,13 +12057,13 @@ div.compose-panel .account__bio {
     }
 
     &--link {
-      color: $account-switcher-add-text-color;
+      color: var(--color-brand-longwhile, #{$account-switcher-add-text-color});
       background: rgba($darker-text-color, 0.05);
 
       &:hover:not(:disabled),
       &:focus-visible:not(:disabled) {
         color: color-mix(in srgb,
-            $account-switcher-add-text-color 85%,
+            var(--color-brand-longwhile, #{$account-switcher-add-text-color}) 85%,
             #000000 15%);
         background: rgba($darker-text-color, 0.08);
       }
@@ -12111,7 +12114,7 @@ div.compose-panel .account__bio {
   &__manage-action {
     border: 0;
     border-radius: 999px;
-    color: $error-color;
+    color: var(--color-brand-longwhile-danger, #{$error-color});
     width: 36px;
     height: 36px;
     cursor: pointer;
@@ -12153,9 +12156,10 @@ div.compose-panel .account__bio {
   &__confirm-modal {
     width: min(360px, 100%);
     background: var(--account-switcher-modal-background,
-        var(--background-color, $ui-base-color));
+        var(--color-modal-panel, var(--background-color, #{$ui-base-color})));
+    color: var(--color-light-text, #{$primary-text-color});
     border-radius: 16px;
-    border: 1px solid var(--dropdown-border-color, rgba($ui-highlight-color, 0.12));
+    border: 1px solid var(--color-border, var(--dropdown-border-color, rgba($ui-highlight-color, 0.12)));
     box-shadow: none;
     padding: 20px 24px;
 
@@ -12206,7 +12210,7 @@ div.compose-panel .account__bio {
 
     &--danger {
       background: rgba($error-color, 0.14);
-      color: $error-color;
+      color: var(--color-brand-longwhile-danger, #{$error-color});
 
       &:hover {
         background: rgba($error-color, 0.22);
@@ -12217,7 +12221,8 @@ div.compose-panel .account__bio {
   &__manage-check {
     width: 18px;
     height: 18px;
-    color: #22c55e;
+
+    color: var(--color-green, #{$valid-value-color});
     stroke-width: 2.5px;
   }
 }
@@ -12326,14 +12331,11 @@ div.compose-panel .account__bio {
   }
 }
 
-/* Backdrop mirrors the account switcher's manage dialog: the accent colour muted
-   into near-black, then made mostly transparent. Reached through :has() because
-   ModalRoot renders the overlay as a sibling of the modal, not a parent. */
 .modal-root:has(.schedule-modal) .modal-root__overlay {
   opacity: 1;
   background: color-mix(in srgb,
       color-mix(in srgb,
-        #{$ui-highlight-color} 40%,
+        var(--color-brand-longwhile, #{$ui-highlight-color}) 40%,
         #1a1a1a 60%),
       transparent 80%);
 }
@@ -12354,7 +12356,7 @@ div.compose-panel .account__bio {
   padding-right: 30px;
   padding-bottom: 25px;
   padding-left: 30px;
-  background: var(--dropdown-background-color, $ui-base-color);
+  background: var(--color-bg);
   color: $primary-text-color;
   border: 1px solid var(--dropdown-border-color, rgba($ui-highlight-color, 0.12));
   border-radius: 26px;
@@ -12521,8 +12523,8 @@ div.compose-panel .account__bio {
 
       /* Today is an outline so it stays legible next to the filled selection. */
       &--today {
-        border-color: $ui-highlight-color;
-        color: $highlight-text-color;
+        border-color: var(--color-brand-longwhile, #{$ui-highlight-color});
+        color: var(--color-brand-longwhile, #{$highlight-text-color});
       }
 
       /* Declared after the plain hover, and with the same specificity, so the
@@ -12530,9 +12532,10 @@ div.compose-panel .account__bio {
       &--selected,
       &--selected:hover:not(:disabled),
       &--selected:focus-visible:not(:disabled) {
-        background: $ui-highlight-color;
-        border-color: $ui-highlight-color;
-        color: #fff;
+        background: var(--color-brand-longwhile, #{$ui-highlight-color});
+        border-color: var(--color-brand-longwhile, #{$ui-highlight-color});
+
+        color: var(--color-on-brand, #{$primary-text-color});
         font-weight: 600;
       }
     }
@@ -12557,16 +12560,16 @@ div.compose-panel .account__bio {
   &__date {
     width: 100%;
     padding: 10px 12px;
-    border: 1px solid var(--background-border-color, rgba($ui-highlight-color, 0.12));
+    border: 1px solid var(--color-border);
     border-radius: 5px;
-    background: var(--input-background-color, transparent);
+    background: transparent;
     color: $primary-text-color;
     font-family: inherit;
     font-size: var(--schedule-font);
     line-height: 20px;
 
     &:focus-visible {
-      border-color: $ui-highlight-color;
+      border-color: var(--color-brand-longwhile, #{$ui-highlight-color});
     }
 
     .schedule-modal &:focus-visible {
@@ -12587,15 +12590,15 @@ div.compose-panel .account__bio {
     flex: 1 1 0;
     min-width: 0;
     padding: 9px 6px;
-    border: 1px solid var(--background-border-color, rgba($ui-highlight-color, 0.12));
+    border: 1px solid var(--color-border);
     border-radius: 5px;
-    background: var(--input-background-color, transparent);
+    background: transparent;
     color: $primary-text-color;
     font-size: var(--schedule-font);
     line-height: 20px;
 
     &:focus-within {
-      border-color: $ui-highlight-color;
+      border-color: var(--color-brand-longwhile, #{$ui-highlight-color});
     }
 
     // The number and its unit read as one label: same face, same size, same line
@@ -12640,7 +12643,7 @@ div.compose-panel .account__bio {
       padding: 9px 6px;
       border: 1px solid var(--background-border-color, rgba($ui-highlight-color, 0.12));
       border-radius: 5px;
-      background: var(--input-background-color, transparent);
+      background: transparent;
       color: $primary-text-color;
       font-family: inherit;
       font-size: var(--schedule-font);
@@ -12657,7 +12660,7 @@ div.compose-panel .account__bio {
       &:focus-visible,
       &.active {
         outline: none;
-        border-color: $ui-highlight-color;
+        border-color: var(--color-brand-longwhile, #{$ui-highlight-color});
       }
     }
 
@@ -12694,8 +12697,8 @@ div.compose-panel .account__bio {
       }
 
       &.active {
-        background: $ui-highlight-color;
-        color: #fff;
+        background: var(--color-brand-longwhile, #{$ui-highlight-color});
+        color: var(--color-on-brand, #{$primary-text-color});
       }
 
       &__content strong {
@@ -12745,7 +12748,8 @@ div.compose-panel .account__bio {
     border-radius: 999px;
     padding: 9px 14px;
     background: transparent;
-    color: $highlight-text-color;
+
+    color: var(--color-dim, #{$darker-text-color});
     font-family: inherit;
     font-size: var(--schedule-font);
     line-height: 20px;
@@ -12767,8 +12771,9 @@ div.compose-panel .account__bio {
     border: 0;
     border-radius: 999px;
     padding: 9px 20px;
-    background: $ui-highlight-color;
-    color: #fff;
+    background: var(--color-brand-longwhile, #{$ui-highlight-color});
+
+    color: var(--color-on-brand, #{$primary-text-color});
     font-family: inherit;
     font-size: var(--schedule-font);
     line-height: 20px;
@@ -12777,7 +12782,10 @@ div.compose-panel .account__bio {
 
     &:hover:not(:disabled),
     &:focus-visible:not(:disabled) {
-      background: darken($ui-highlight-color, 5%);
+      background: var(
+        --color-brand-longwhile-hover,
+        #{darken($ui-highlight-color, 5%)}
+      );
     }
 
     &:disabled {
@@ -12795,6 +12803,8 @@ div.compose-panel .account__bio {
   flex-wrap: wrap;
   gap: 12px;
   padding: 10px 16px;
+
+  background: var(--color-column, var(--background-color));
   border-bottom: 1px solid var(--background-border-color);
   color: $darker-text-color;
   font-size: 13px;
@@ -12820,13 +12830,14 @@ div.compose-panel .account__bio {
   align-items: baseline;
   gap: 4px;
   padding: 8px 16px;
-  background: var(--surface-variant-active-background-color);
+
+  background: var(--color-noti-hover, var(--surface-variant-active-background-color));
   border-bottom: 1px solid var(--background-border-color);
   font-size: 13px;
   font-weight: 600;
 
   &__date {
-    color: $highlight-text-color;
+    color: var(--color-brand-longwhile, #{$highlight-text-color});
   }
 
   /* Plain text colour so the tally reads as a separate fact from the date. */
@@ -12895,8 +12906,8 @@ div.compose-panel .account__bio {
       color: $darker-text-color;
 
       &--active {
-        border-color: $highlight-text-color;
-        color: $highlight-text-color;
+        border-color: var(--color-brand-longwhile, #{$highlight-text-color});
+        color: var(--color-brand-longwhile, #{$highlight-text-color});
       }
 
       &--warning {
@@ -12999,17 +13010,17 @@ div.compose-panel .account__bio {
   min-height: 72px;
   color: inherit;
   text-decoration: none;
-  border-bottom: 1px solid var(--background-border-color);
+  border-bottom: 1px solid var(--color-border, var(--background-border-color));
 
   &:hover,
   &:focus-visible {
-    background: var(--color-recieve-message-background);
+    background: var(--color-noti-hover);
   }
 
   &--active,
   &--active:hover,
   &--active:focus-visible {
-    background: var(--color-hover-message-list-background);
+    background: var(--color-recieve-message-background);
   }
 
   &__avatar {
@@ -13071,7 +13082,7 @@ div.compose-panel .account__bio {
   }
 
   &--draft &__preview {
-    color: $highlight-text-color;
+    color: var(--color-brand-longwhile, #{$highlight-text-color});
   }
 
   &__badge {
@@ -13079,8 +13090,10 @@ div.compose-panel .account__bio {
     min-width: 20px;
     padding: 0;
     border-radius: 10px;
-    background: $highlight-text-color;
-    color: $white;
+
+    background: var(--color-brand-longwhile, #{$highlight-text-color});
+
+    color: var(--color-on-brand, #{$white});
     font-size: 12px;
     line-height: 20px;
     text-align: center;
@@ -13131,7 +13144,8 @@ div.compose-panel .account__bio {
     flex: 0 0 auto;
 
     padding: 0 12px;
-    color: $darker-text-color;
+
+    color: var(--color-dim, #{$darker-text-color});
     font-size: 12px;
   }
 }
@@ -13319,13 +13333,12 @@ div.compose-panel .account__bio {
 
 .dm-composer {
   flex: 0 0 auto;
-  border-top: 1px solid var(--background-border-color);
+  border-top: 1px solid var(--color-border, var(--background-border-color));
 
   padding-top: 16px;
   padding-right: 12px;
   padding-bottom: 16px;
   padding-left: 12px;
-  background: var(--surface-background-color);
 
   &__notice {
     font-size: 13px;
@@ -13356,7 +13369,7 @@ div.compose-panel .account__bio {
     }
 
     &:has(:focus-visible) {
-      outline: 1px solid $highlight-text-color;
+      outline: 1px solid var(--color-brand-longwhile, #{$highlight-text-color});
       outline-offset: -1px;
     }
   }
@@ -13371,6 +13384,10 @@ div.compose-panel .account__bio {
     padding: 0 8px;
     background: transparent;
     color: $primary-text-color;
+
+    &::placeholder {
+      color: var(--color-dim, #{$darker-text-color});
+    }
 
     font-size: 14px;
     line-height: 22px;
@@ -13536,7 +13553,7 @@ div.compose-panel .account__bio {
       border: 1px solid var(--color-button-border, var(--color-border));
       border-radius: 999px;
 
-      background: var(--color-recieve-message-background);
+      background: transparent;
 
       padding: 10px 16px 10px 42px;
       color: $primary-text-color;
@@ -13583,7 +13600,7 @@ div.compose-panel .account__bio {
 
     &:hover:not(:disabled),
     &:focus-visible {
-      background: var(--color-recieve-message-background);
+      background: var(--color-noti-hover);
     }
 
     &:disabled {
@@ -13644,7 +13661,7 @@ div.compose-panel .account__bio {
     gap: 12px;
     width: 100%;
     box-sizing: border-box;
-    padding: 8px 16px;
+    padding: 10px 20px;
     background: transparent;
     border: 0;
     color: inherit;
@@ -13654,7 +13671,7 @@ div.compose-panel .account__bio {
 
     &:hover:not(:disabled),
     &:focus-visible {
-      background: var(--color-recieve-message-background);
+      background: var(--color-noti-hover);
     }
 
     &:disabled {
@@ -14177,7 +14194,7 @@ div.compose-panel .account__bio {
     margin: 0;
     font-size: 13px;
     line-height: 18px;
-    color: $darker-text-color;
+    color: var(--color-dim, #{$darker-text-color});
   }
 }
 
@@ -14235,7 +14252,7 @@ div.compose-panel .account__bio {
   flex: 0 0 auto;
   padding: 6px 12px;
   background: var(--surface-variant-background-color);
-  border-bottom: 1px solid var(--background-border-color);
+  border-bottom: 1px solid var(--color-border, var(--background-border-color));
   color: $darker-text-color;
   font-size: 13px;
   text-align: center;
@@ -14276,7 +14293,7 @@ div.compose-panel .account__bio {
   font-size: 13px;
   color: $darker-text-color;
   background: var(--surface-variant-background-color);
-  border-top: 1px solid var(--background-border-color);
+  border-top: 1px solid var(--color-border, var(--background-border-color));
 
   button {
     padding: 0;
@@ -14301,7 +14318,7 @@ div.compose-panel .account__bio {
   padding: 4px 8px 4px 14px;
   border-radius: 999px;
 
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-button-border, var(--color-border));
 
   background: transparent;
   color: $primary-text-color;
@@ -14393,7 +14410,7 @@ body.app-body.layout-messages.layout-single-column {
 
   &__list,
   &__thread {
-    background: var(--background-color);
+    background: transparent;
     overflow: hidden;
   }
 }
@@ -14404,7 +14421,7 @@ body.app-body.layout-messages.layout-single-column {
   min-height: 0;
   height: 100%;
 
-  border-inline-end: 1px solid var(--background-border-color);
+  border-inline-end: 1px solid var(--color-border, var(--background-border-color));
 
   &__header {
     display: flex;
@@ -14428,7 +14445,7 @@ body.app-body.layout-messages.layout-single-column {
     width: 34px;
     height: 34px;
     border-radius: 50%;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-button-border, var(--color-border));
     background: transparent;
     color: $primary-text-color;
     cursor: pointer;
@@ -14447,8 +14464,10 @@ body.app-body.layout-messages.layout-single-column {
     margin: 9px 16px 16px;
     padding: 8px 14px;
     border-radius: 999px;
-    background: var(--color-hover-message-list-background);
-    color: $darker-text-color;
+
+    border: 1px solid var(--color-button-border, var(--color-border));
+    background: transparent;
+    color: var(--color-dim, #{$darker-text-color});
 
     input {
       flex: 1 1 auto;
@@ -14465,7 +14484,7 @@ body.app-body.layout-messages.layout-single-column {
     }
 
     &:focus-within {
-      outline: 1px solid $highlight-text-color;
+      outline: 1px solid var(--color-brand-longwhile, #{$highlight-text-color});
     }
   }
 
@@ -14490,13 +14509,13 @@ body.app-body.layout-messages.layout-single-column {
     overflow-y: auto;
     overscroll-behavior: contain;
 
-    background: var(--background-color);
+    background: transparent;
   }
 
   &--empty {
     align-items: center;
     justify-content: center;
-    background: var(--background-color);
+    background: transparent;
   }
 
   &__placeholder {
@@ -14527,7 +14546,8 @@ body.app-body.layout-messages.layout-single-column {
       height: 70px;
       margin-bottom: 12px;
       border-radius: 50%;
-      background: var(--color-hover-message-list-background);
+
+      background: var(--color-noti-hover);
       color: var(--color-dim);
 
       .icon {
@@ -14827,6 +14847,8 @@ body.layout-single-column
 body.layout-single-column .account__header__tabs__buttons .button,
 body.layout-single-column .button.follow-button--following {
   font-weight: 600;
+
+  color: inherit;
 }
 
 body.layout-single-column .account__header__tabs__name h1 small {
@@ -14911,7 +14933,7 @@ body.layout-single-column .dropdown-menu__item--dangerous {
 
 .column-header,
 .dm-room-header {
-  background: var(--background-color-tint);
+  background: var(--color-column);
   backdrop-filter: var(--background-filter);
 }
 
@@ -14931,10 +14953,11 @@ body.app-body
   margin-left: 0;
 }
 
-.column-header__back-button {
+.column-header .column-header__back-button {
   display: inline-flex;
   align-items: center;
   justify-content: left;
+  flex: 0 0 auto;
   width: 32px;
   height: 32px;
   padding: 0;
@@ -14945,9 +14968,76 @@ body.app-body
   margin-left: 11px;
 }
 
-body .column-header__back-button {
+body.layout-single-column .column-header,
+body.layout-multiple-columns .column-header {
+  background-color: var(--color-column);
+}
+
+body.layout-single-column,
+body.layout-multiple-columns {
+  --color-brand-longwhile-hover: color-mix(
+    in srgb,
+    var(--color-brand-longwhile) 88%,
+    #000
+  );
+}
+
+body.layout-single-column .compose-form__submit .button,
+body.layout-multiple-columns .compose-form__submit .button {
+  background-color: var(
+    --color-post-button,
+    var(--color-brand-longwhile, #{$ui-button-background-color})
+  );
+  color: var(
+    --color-post-button-text,
+    var(--color-on-brand, #{$ui-button-color})
+  );
+
   &:hover,
-  &:focus-visible {
-    background-color: var(--color-icon-button-hover);
+  &:focus,
+  &:active {
+    background-color: color-mix(
+      in srgb,
+      var(--color-post-button, var(--color-brand-longwhile)) 88%,
+      #000
+    );
+  }
+}
+
+body .compose-form__buttons .icon-button {
+  &:hover,
+  &:focus,
+  &:active {
+    background-color: var(--color-noti-hover);
+  }
+}
+
+body .button.button-secondary {
+  &:hover,
+  &:focus,
+  &:active {
+    background-color: var(--color-brand-longwhile, #{$ui-button-background-color});
+    border-color: var(--color-brand-longwhile, #{$ui-button-background-color});
+    color: var(--color-on-brand, #{$ui-button-color});
+  }
+}
+
+body .search__popout {
+  background: var(--color-bg, #{$simple-background-color});
+}
+
+body .search__popout__menu__item {
+  &:hover,
+  &:focus,
+  &:active,
+  &.active {
+    background: var(--color-brand-longwhile, #{$ui-highlight-color});
+    color: var(--color-on-brand, #{$white});
+
+    mark,
+    strong,
+    .icon-button {
+      color: var(--color-on-brand, #{$white});
+    }
   }
 }

@@ -243,7 +243,7 @@ export const MessageBubble: React.FC<Props> = ({
       </div>
 
       <div className='dm-message__aside'>
-      {(showTimestamp || showUnread) && (
+      {showTimestamp && (
         <div className='dm-message__meta'>
           {showUnread && (
             <span
@@ -257,16 +257,14 @@ export const MessageBubble: React.FC<Props> = ({
             </span>
           )}
 
-          {showTimestamp && (
-            <time className='dm-message__time' dateTime={createdAt} title={fullTime}>
-              <FormattedTime
-                value={createdAt}
-                hour='2-digit'
-                minute='2-digit'
-                hour12={false}
-              />
-            </time>
-          )}
+          <time className='dm-message__time' dateTime={createdAt} title={fullTime}>
+            <FormattedTime
+              value={createdAt}
+              hour='2-digit'
+              minute='2-digit'
+              hour12={false}
+            />
+          </time>
         </div>
       )}
 

@@ -5,7 +5,7 @@
 $black: #000000; // Black
 $white: #ffffff; // White
 $red-600: #b7253d !default; // Deep Carmine
-$red-500: #df405a !default; // Cerise
+$red-500: #d32d49 !default; // Cerise
 
 $long-while-600: #0981d1;
 $long-while-500: #1d9bf0;
@@ -17,7 +17,7 @@ $account-switcher-add-text-color: $long-while-500 !default;
 $grey-600: hsl(215, 10%, 63%); // Trout
 $grey-100: hsl(209, 41%, 90%); // Topaz
 
-$success-green: #89b1d5 !default; // Padua
+$success-green: #52a0e4 !default; // Padua
 $error-red: $red-500 !default; // Cerise
 $warning-red: #ff5050 !default; // Sunset Orange
 $gold-star: #ca8f04 !default; // Dark Goldenrod
@@ -26,9 +26,9 @@ $error-color: $error-red !default;
 
 $red-bookmark: $warning-red;
 
-$classic-base-color: hsl(240, 7%, 14%);
-$classic-primary-color: hsl(216, 23%, 76%);
-$classic-secondary-color: hsl(0, 15%, 95%);
+$classic-base-color: #212126;
+$classic-primary-color: #b4bfd0;
+$classic-secondary-color: #f4f0f0;
 $classic-highlight-color: $long-while-500;
 
 $ui-base-lighter-color: hsl(213, 12%, 71%) !default;
@@ -50,7 +50,10 @@ $ui-highlight-color: $classic-highlight-color !default;
 $ui-button-color: $white !default;
 $ui-button-background-color: $long-while-500 !default;
 $ui-button-focus-background-color: $long-while-600 !default;
-$ui-button-focus-outline-color: $long-while-400 !default;
+$ui-button-focus-outline-color: var(
+  --color-brand-longwhile,
+  #{$long-while-400}
+) !default;
 $ui-button-focus-outline: solid 2px $ui-button-focus-outline-color !default;
 
 $ui-button-disabled-color: color.adjust(

@@ -906,6 +906,7 @@
   "scheduled_statuses.stalled_hint": "이미 발행되었어야 하는 예약입니다. 시간을 변경하면 다시 대기열에 올라갑니다.",
   "scheduled_statuses.usage": "총 {total}개 / 최대 {limit}개",
   "scheduled_statuses.usage_failed": "{count}개 실패",
+  "search.clear": "검색어 지우기",
   "search.no_recent_searches": "최근 검색 기록이 없습니다",
   "search.placeholder": "검색",
   "search.quick_action.account_search": "{x}에 맞는 프로필",

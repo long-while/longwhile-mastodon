@@ -882,6 +882,7 @@
   "scheduled_statuses.stalled_hint": "This should already have been published. Changing the time queues it again.",
   "scheduled_statuses.usage": "{total} of {limit} scheduled",
   "scheduled_statuses.usage_failed": "{count, plural, one {# failed} other {# failed}}",
+  "search.clear": "Clear search",
   "search.no_recent_searches": "No recent searches",
   "search.placeholder": "Search",
   "search.quick_action.account_search": "Profiles matching {x}",

@@ -137,6 +137,8 @@ class DmRoom < ApplicationRecord
   end
 
   def register_status!(status, resurrect: true)
+    mark_read_for_author!(status) if resurrect
+
     advanced = self.class
                    .where(id: id)
                    .where('last_status_id IS NULL OR last_status_id < ?', status.id)
@@ -272,6 +274,25 @@ class DmRoom < ApplicationRecord
 
       redis.publish("timeline:direct:#{member.id}", message)
     end
+  end
+
+  def mark_read_for_author!(status)
+    cursor = read_cursor_for(status.account_id)
+
+    broadcast_read!(status.account) if cursor.advance_to!(status.id)
+  rescue ActiveRecord::ActiveRecordError => e
+    Rails.logger.error { "DmRoom#mark_read_for_author! failed for status #{status.id}: #{e.class} #{e.message}" }
+  end
+
+  def read_cursor_for(account_id)
+    existing = DmRoomRead.find_by(dm_room_id: id, account_id: account_id)
+    return existing if existing
+
+    self.class.transaction(requires_new: true) do
+      DmRoomRead.create!(dm_room_id: id, account_id: account_id)
+    end
+  rescue ActiveRecord::RecordNotUnique
+    DmRoomRead.find_by!(dm_room_id: id, account_id: account_id)
   end
 
   def member_ids

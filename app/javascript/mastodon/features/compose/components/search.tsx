@@ -33,6 +33,7 @@ const messages = defineMessages({
     id: 'search.search_or_paste',
     defaultMessage: 'Search',
   },
+  clear: { id: 'search.clear', defaultMessage: 'Clear search' },
 });
 
 const labelForRecentSearch = (search: RecentSearch) => {
@@ -453,6 +454,10 @@ export const Search: React.FC<{
 
   return (
     <form className={classNames('search', { active: expanded })}>
+      <span className='search__icon' aria-hidden='true'>
+        <Icon id='search' icon={SearchIcon} />
+      </span>
+
       <input
         ref={searchInputRef}
         className='search__input'
@@ -470,19 +475,16 @@ export const Search: React.FC<{
         onBlur={handleBlur}
       />
 
-      <button type='button' className='search__icon' onClick={handleClear}>
-        <Icon
-          id='search'
-          icon={SearchIcon}
-          className={hasValue ? '' : 'active'}
-        />
-        <Icon
-          id='times-circle'
-          icon={CancelIcon}
-          className={hasValue ? 'active' : ''}
-          aria-label={intl.formatMessage(messages.placeholder)}
-        />
-      </button>
+      {hasValue && (
+        <button
+          type='button'
+          className='search__clear'
+          onClick={handleClear}
+          aria-label={intl.formatMessage(messages.clear)}
+        >
+          <Icon id='times-circle' icon={CancelIcon} />
+        </button>
+      )}
 
       <div className='search__popout'>
         {!hasValue && (

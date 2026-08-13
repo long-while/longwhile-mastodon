@@ -113,6 +113,33 @@ RSpec.describe DmRoom do
 
       expect(room.reload.last_status_id).to eq newer.id
     end
+
+    it 'advances the read cursor of the person who wrote the message' do
+      status = direct_status_from(alice, to: bob)
+
+      room = described_class.attach_status!(status)
+
+      expect(room.dm_room_reads.find_by(account_id: alice.id).last_read_status_id).to eq status.id
+      expect(room.dm_room_reads.find_by(account_id: bob.id)).to be_nil
+    end
+
+    it 'never moves the author cursor backwards' do
+      older = direct_status_from(alice, to: bob)
+      newer = direct_status_from(alice, to: bob, thread: older)
+
+      room = described_class.attach_status!(newer)
+      room.register_status!(older)
+
+      expect(room.dm_room_reads.find_by(account_id: alice.id).last_read_status_id).to eq newer.id
+    end
+
+    it 'leaves the cursor alone when back-filling history' do
+      status = direct_status_from(alice, to: bob)
+
+      room = described_class.attach_status!(status, resurrect: false)
+
+      expect(room.dm_room_reads.find_by(account_id: alice.id)).to be_nil
+    end
   end
 
   describe '#refresh_root_status!' do
@@ -161,7 +188,15 @@ RSpec.describe DmRoom do
       room = described_class.attach_status!(theirs)
 
       expect(room.unread_count_for(alice)).to eq 1
-      expect(room.unread_count_for(bob)).to eq 1
+    end
+
+    it 'counts nothing for the person who wrote the latest message' do
+      mine   = direct_status_from(alice, to: bob)
+      theirs = direct_status_from(bob, to: alice, thread: mine)
+
+      room = described_class.attach_status!(theirs)
+
+      expect(room.unread_count_for(bob)).to eq 0
     end
 
     it 'counts nothing past the read cursor' do

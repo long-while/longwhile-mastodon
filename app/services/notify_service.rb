@@ -224,12 +224,7 @@ class NotifyService < BaseService
     return if drop?
 
     # @_longwhile custom feature
-    if direct_message?
-      push_to_conversation! unless filter?
-      return
-    end
-
-    @notification.filtered = filter?
+    @notification.filtered = dm_chat_message? ? false : filter?
     @notification.set_group_key!
     @notification.save!
 
@@ -237,7 +232,10 @@ class NotifyService < BaseService
     # between the save call and now
     return if @notification.activity.nil?
 
-    if @notification.filtered?
+    if dm_chat_message?
+      push_to_streaming_api! if subscribed_to_streaming_api?
+      push_to_conversation!
+    elsif @notification.filtered?
       update_notification_request!
     else
       push_notification!
@@ -285,6 +283,10 @@ class NotifyService < BaseService
 
   def direct_message?
     @notification.type == :mention && @notification.target_status.direct_visibility?
+  end
+
+  def dm_chat_message?
+    Mastodon::DmChat.enabled? && direct_message?
   end
 
   def push_to_web_push_subscriptions!

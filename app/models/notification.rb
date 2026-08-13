@@ -137,7 +137,7 @@ class Notification < ApplicationRecord
   end
 
   class << self
-    def browserable(types: [], exclude_types: [], from_account_id: nil, include_filtered: false)
+    def browserable(types: [], exclude_types: [], from_account_id: nil, include_filtered: false, include_direct_messages: false)
       requested_types = if types.empty?
                           TYPES
                         else
@@ -146,11 +146,14 @@ class Notification < ApplicationRecord
 
       requested_types -= exclude_types.map(&:to_sym)
 
-      all.tap do |scope|
-        scope.merge!(where(filtered: false)) unless include_filtered || from_account_id.present?
-        scope.merge!(where(from_account_id: from_account_id)) if from_account_id.present?
-        scope.merge!(where(type: requested_types)) unless requested_types.size == TYPES.size
-      end.without_direct_messages.without_unavailable
+      scope = all.tap do |relation|
+        relation.merge!(where(filtered: false)) unless include_filtered || from_account_id.present?
+        relation.merge!(where(from_account_id: from_account_id)) if from_account_id.present?
+        relation.merge!(where(type: requested_types)) unless requested_types.size == TYPES.size
+      end
+
+      scope = scope.without_direct_messages unless include_direct_messages
+      scope.without_unavailable
     end
 
     # @_longwhile custom feature

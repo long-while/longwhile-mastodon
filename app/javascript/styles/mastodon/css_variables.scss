@@ -16,8 +16,11 @@
 
   --color-dim: #{$darker-text-color};
 
-  --color-icon-button-hover: #{rgba($primary-text-color, 0.12)};
-
+  --color-icon-button-hover: color-mix(
+    in srgb,
+    var(--color-fg, #{$primary-text-color}) 8%,
+    transparent
+  );
   --background-filter: blur(10px) saturate(180%) contrast(75%) brightness(70%);
   --background-color: #{darken($ui-base-color, 8%)};
   --background-color-tint: #{rgba(darken($ui-base-color, 8%), 0.9)};
@@ -25,12 +28,18 @@
   --surface-variant-background-color: #{$ui-base-color};
   --surface-variant-active-background-color: #{lighten($ui-base-color, 4%)};
 
-  --color-recieve-message-text: #{$primary-text-color};
-  --color-recieve-message-background: #{$ui-base-color};
-  --color-sent-message-text: #{$white};
-  --color-sent-message-background: #{$long-while-600};
+  --color-recieve-message-text: var(--color-fg, #{$primary-text-color});
+  --color-recieve-message-background: var(--color-thread-line, #{$ui-base-color});
+  --color-sent-message-text: #{$primary-text-color};
+  --color-sent-message-background: var(
+    --color-brand-longwhile,
+    #{$long-while-600}
+  );
 
-  --color-hover-message-list-background: #{color.scale($ui-base-color, $lightness: 4%)};
+  --color-hover-message-list-background: var(
+    --color-light-shade,
+    #{color.scale($ui-base-color, $lightness: 4%)}
+  );
   --color-noti-hover: #{color.adjust($ui-base-color, $alpha: -0.5)};
   --avatar-border-radius: 8px;
   --media-outline-color: #{rgba(#fcf8ff, 0.15)};

@@ -144,6 +144,33 @@ RSpec.describe 'Notifications' do
       end
     end
 
+    # @_longwhile custom feature
+    context 'when DM chat is enabled' do
+      before { allow(Mastodon::DmChat).to receive(:enabled?).and_return(true) }
+
+      context 'with include_filtered' do
+        let(:params) { { include_filtered: true } }
+
+        it 'leaves direct messages out' do
+          subject
+
+          expect(response).to have_http_status(200)
+          expect(response.parsed_body.size).to eq 5
+        end
+      end
+
+      context 'with include_direct_messages' do
+        let(:params) { { include_filtered: true, include_direct_messages: true } }
+
+        it 'returns direct messages to the caller that asks for them' do
+          subject
+
+          expect(response).to have_http_status(200)
+          expect(response.parsed_body.size).to eq 6
+        end
+      end
+    end
+
     context 'with account_id param' do
       let(:params) { { account_id: tom.account.id } }
 

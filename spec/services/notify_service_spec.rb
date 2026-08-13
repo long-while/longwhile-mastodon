@@ -163,6 +163,66 @@ RSpec.describe NotifyService do
     end
   end
 
+  # @_longwhile custom feature
+  context 'with a direct message while DM chat is enabled' do
+    let(:unknown)  { Fabricate(:account, username: 'unknown') }
+    let(:status)   { Fabricate(:status, account: unknown, visibility: :direct) }
+    let(:activity) { Fabricate(:mention, account: recipient, status: status) }
+    let(:type)     { :mention }
+
+    before do
+      allow(Mastodon::DmChat).to receive(:enabled?).and_return(true)
+      allow(redis).to receive(:exists?).and_return(true)
+      allow(redis).to receive(:publish)
+    end
+
+    it 'creates the notification so that automated clients can see it' do
+      expect { subject }.to change(Notification, :count).by(1)
+    end
+
+    it 'never marks it filtered' do
+      Fabricate(:notification_policy, account: recipient, filter_private_mentions: true)
+
+      subject
+
+      expect(Notification.last).to_not be_filtered
+    end
+
+    it 'does not raise a notification request' do
+      Fabricate(:notification_policy, account: recipient, filter_private_mentions: true)
+
+      expect { subject }.to_not change(NotificationRequest, :count)
+    end
+
+    it 'pushes to streaming so that the bot receives it' do
+      subject
+
+      expect(redis).to have_received(:publish).with("timeline:#{recipient.id}:notifications", anything)
+    end
+
+    it 'updates the legacy conversation list' do
+      expect { subject }.to change(AccountConversation, :count).by(1)
+    end
+  end
+
+  context 'with a direct message while DM chat is disabled' do
+    let(:unknown)  { Fabricate(:account, username: 'unknown') }
+    let(:status)   { Fabricate(:status, account: unknown, visibility: :direct) }
+    let(:activity) { Fabricate(:mention, account: recipient, status: status) }
+    let(:type)     { :mention }
+
+    before do
+      allow(Mastodon::DmChat).to receive(:enabled?).and_return(false)
+      Fabricate(:notification_policy, account: recipient, filter_private_mentions: true)
+    end
+
+    it 'filters the private mention as upstream does' do
+      subject
+
+      expect(Notification.last).to be_filtered
+    end
+  end
+
   context 'with filtered notifications' do
     let(:unknown)  { Fabricate(:account, username: 'unknown') }
     let(:status)   { Fabricate(:status, account: unknown) }

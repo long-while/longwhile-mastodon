@@ -228,7 +228,7 @@
 }
 
 .react-toggle-track {
-  background: $ui-primary-color;
+  background: var(--color-dim, #{$ui-primary-color});
 }
 
 .react-toggle:hover:not(.react-toggle--disabled) .react-toggle-track {
@@ -461,7 +461,7 @@ img.logo--icon {
   .language-dropdown__dropdown__results__item__common-name,
 .language-dropdown__dropdown__results__item.active
   .language-dropdown__dropdown__results__item__common-name {
-  color: $white;
+  color: var(--color-on-brand, #{$white});
 }
 
 .compose-form .spoiler-input__input {
@@ -475,11 +475,15 @@ img.logo--icon {
 }
 
 .dropdown-button.warning {
-  border-color: #b3261e;
-  color: #b3261e;
+  border-color: var(--color-brand-longwhile-danger, #{$error-value-color});
+  color: var(--color-brand-longwhile-danger, #{$error-value-color});
 
   &.active {
-    background-color: #f9dedc;
+    background-color: color-mix(
+      in srgb,
+      var(--color-brand-longwhile-danger, #{$error-value-color}) 14%,
+      transparent
+    );
   }
 }
 

@@ -47,10 +47,10 @@
 }
 
 .emoji-mart-anchor-selected {
-  color: $highlight-text-color;
+  color: var(--color-brand-longwhile, #{$highlight-text-color});
 
   &:hover {
-    color: lighten($highlight-text-color, 4%);
+    color: var(--color-brand-longwhile, #{lighten($highlight-text-color, 4%)});
   }
 
   .emoji-mart-anchor-bar {
