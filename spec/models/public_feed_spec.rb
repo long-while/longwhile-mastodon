@@ -202,5 +202,40 @@ RSpec.describe PublicFeed do
         end
       end
     end
+
+    # @_longwhile custom feature
+    describe 'the followed-authors filter' do
+      subject { described_class.new(viewer).get(20).map(&:id) }
+
+      let(:viewer) { Fabricate(:account) }
+      let(:followed) { Fabricate(:account) }
+      let(:stranger) { Fabricate(:account) }
+
+      let!(:followed_status) { Fabricate(:status, account: followed, visibility: :private) }
+      let!(:stranger_status) { Fabricate(:status, account: stranger, visibility: :private) }
+      let!(:own_status) { Fabricate(:status, account: viewer, visibility: :private) }
+
+      before { viewer.follow!(followed) }
+
+      it 'shows followed authors and the viewer, and hides everyone else' do
+        expect(subject).to include(followed_status.id)
+        expect(subject).to include(own_status.id)
+        expect(subject).to_not include(stranger_status.id)
+      end
+
+      it 'still hides strangers when the viewer has blocked someone' do
+        viewer.block!(Fabricate(:account))
+
+        expect(subject).to include(followed_status.id)
+        expect(subject).to_not include(stranger_status.id)
+      end
+
+      it 'still hides strangers when the viewer has muted someone' do
+        viewer.mute!(Fabricate(:account))
+
+        expect(subject).to include(followed_status.id)
+        expect(subject).to_not include(stranger_status.id)
+      end
+    end
   end
 end

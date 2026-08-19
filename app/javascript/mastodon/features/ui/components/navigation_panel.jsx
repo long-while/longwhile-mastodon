@@ -178,7 +178,7 @@ const MessagesLink = () => {
   const label = intl.formatMessage(messages.messages);
 
   useEffect(() => {
-    dispatch(fetchDmRooms());
+    dispatch(fetchDmRooms({}));
   }, [dispatch]);
 
   return (

@@ -166,6 +166,7 @@ const MemberRow: React.FC<{
 
       <Dropdown
         items={items}
+        overlayClassName='dm-members__row__menu'
         icon='ellipsis-h'
         iconComponent={MoreHorizIcon}
         title={intl.formatMessage(messages.more)}

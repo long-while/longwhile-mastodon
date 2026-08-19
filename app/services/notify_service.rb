@@ -277,9 +277,7 @@ class NotifyService < BaseService
     if dm_chat_message?
       push_to_streaming_api! if subscribed_to_streaming_api?
       push_to_conversation!
-      # @_longwhile — DM 채팅의 모바일 앱(FCM) 푸시 알림
-      #   웹 푸시는 배지로 표시되므로 보내지 않고, 네이티브 앱만 푸시를 받는다.
-      push_to_native_mobile_subscriptions!
+      push_to_app_subscriptions!
     elsif @notification.filtered?
       update_notification_request!
     else
@@ -339,20 +337,20 @@ class NotifyService < BaseService
     ::Web::PushNotificationWorker.push_bulk(web_push_subscriptions.select { |subscription| subscription.pushable?(@notification) }) { |subscription| [subscription.id, @notification.id] }
   end
 
-  # @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 채팅
-  #   네이티브 모바일 앱(FCM)에만 푸시를 보낸다. 웹 푸시는 제외한다.
-  #   DM 알림은 웹에서는 채팅 배지로만 표시하고, 모바일에서만 푸시로 받는다.
-  def push_to_native_mobile_subscriptions!
-    native_subscriptions = web_push_subscriptions.select do |subscription|
-      # FCM 네이티브 엔드포인트 확인 (https://native-fcm.occm.cc/ 로 시작)
-      WebPushRequest.new(subscription).fcm_native? && subscription.pushable?(@notification)
-    end
+  # @_longwhile custom feature
+  def push_to_app_subscriptions!
+    targets = web_push_subscriptions.reject { |subscription| browser_subscription?(subscription) }
+                                    .select { |subscription| subscription.pushable?(@notification) }
 
-    ::Web::PushNotificationWorker.push_bulk(native_subscriptions) { |subscription| [subscription.id, @notification.id] }
+    ::Web::PushNotificationWorker.push_bulk(targets) { |subscription| [subscription.id, @notification.id] }
+  end
+
+  def browser_subscription?(subscription)
+    subscription.access_token&.application&.superapp?
   end
 
   def web_push_subscriptions
-    @web_push_subscriptions ||= ::Web::PushSubscription.where(user_id: @recipient.user.id).to_a
+    @web_push_subscriptions ||= ::Web::PushSubscription.where(user_id: @recipient.user.id).includes(access_token: :application).to_a
   end
 
   def subscribed_to_web_push?

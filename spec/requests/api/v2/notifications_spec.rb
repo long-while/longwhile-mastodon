@@ -453,4 +453,56 @@ RSpec.describe 'Notifications' do
         .to start_with('application/json')
     end
   end
+  # @_longwhile custom feature
+  describe 'GET /api/v2/notifications with direct messages', :inline_jobs do
+    subject do
+      get '/api/v2/notifications', headers: headers, params: params
+    end
+
+    let(:bob)    { Fabricate(:user) }
+    let(:params) { {} }
+
+    before do
+      allow(Mastodon::DmChat).to receive(:enabled?).and_return(true)
+      PostStatusService.new.call(bob.account, text: 'Hello @alice')
+      PostStatusService.new.call(bob.account, text: 'Hello @alice', visibility: :direct)
+    end
+
+    def body_json_types
+      response.parsed_body[:notification_groups].map { |group| group[:type] }
+    end
+
+    context 'with no options' do
+      it 'returns the direct message to callers that do not ask to exclude it' do
+        subject
+
+        expect(response).to have_http_status(200)
+        expect(response.parsed_body[:notification_groups].size).to eq 2
+        expect(body_json_types).to eq %w(mention mention)
+      end
+    end
+
+    context 'with exclude_direct_messages' do
+      let(:params) { { exclude_direct_messages: true } }
+
+      it 'leaves the direct message out' do
+        subject
+
+        expect(response).to have_http_status(200)
+        expect(response.parsed_body[:notification_groups].size).to eq 1
+      end
+    end
+
+    context 'with exclude_direct_messages and pagination' do
+      let(:params) { { exclude_direct_messages: true, limit: 1 } }
+
+      it 'carries the parameter into the next page link' do
+        subject
+
+        expect(response).to have_http_status(200)
+        expect(response.headers['Link']).to be_present
+        expect(response.headers['Link']).to include('exclude_direct_messages')
+      end
+    end
+  end
 end

@@ -110,8 +110,12 @@ class Api::V2::NotificationsController < Api::BaseController
       types: Array(browserable_params[:types]),
       exclude_types: Array(browserable_params[:exclude_types]),
       include_filtered: truthy_param?(:include_filtered),
-      include_direct_messages: truthy_param?(:include_direct_messages) || !Mastodon::DmChat.enabled?
+      include_direct_messages: !exclude_direct_messages?
     )
+  end
+
+  def exclude_direct_messages?
+    Mastodon::DmChat.enabled? && truthy_param?(:exclude_direct_messages)
   end
 
   def notification_marker
@@ -135,11 +139,11 @@ class Api::V2::NotificationsController < Api::BaseController
   end
 
   def browserable_params
-    params.slice(:include_filtered, :include_direct_messages, :types, :exclude_types, :grouped_types).permit(:include_filtered, :include_direct_messages, types: [], exclude_types: [], grouped_types: [])
+    params.slice(:include_filtered, :exclude_direct_messages, :types, :exclude_types, :grouped_types).permit(:include_filtered, :exclude_direct_messages, types: [], exclude_types: [], grouped_types: [])
   end
 
   def pagination_params(core_params)
-    params.slice(:limit, :include_filtered, :include_direct_messages, :types, :exclude_types, :grouped_types).permit(:limit, :include_filtered, :include_direct_messages, types: [], exclude_types: [], grouped_types: []).merge(core_params)
+    params.slice(:limit, :include_filtered, :exclude_direct_messages, :types, :exclude_types, :grouped_types).permit(:limit, :include_filtered, :exclude_direct_messages, types: [], exclude_types: [], grouped_types: []).merge(core_params)
   end
 
   def expand_accounts_param

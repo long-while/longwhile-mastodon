@@ -10,6 +10,9 @@ import type {
   ApiNotificationJSON,
 } from 'mastodon/api_types/notifications';
 
+// @_longwhile custom feature
+const EXCLUDE_DIRECT_MESSAGES = { exclude_direct_messages: true };
+
 export const apiFetchNotifications = async (
   params?: {
     account_id?: string;
@@ -20,7 +23,7 @@ export const apiFetchNotifications = async (
   const response = await api().request<ApiNotificationJSON[]>({
     method: 'GET',
     url: url ?? '/api/v1/notifications',
-    params,
+    params: { ...EXCLUDE_DIRECT_MESSAGES, ...params },
   });
 
   return {
@@ -39,7 +42,7 @@ export const apiFetchNotificationGroups = async (params?: {
   const response = await api().request<ApiNotificationGroupsResultJSON>({
     method: 'GET',
     url: '/api/v2/notifications',
-    params,
+    params: { ...EXCLUDE_DIRECT_MESSAGES, ...params },
   });
 
   const { statuses, accounts, notification_groups } = response.data;

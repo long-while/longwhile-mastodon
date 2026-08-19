@@ -617,6 +617,28 @@ body>[data-popper-placement] {
       text-decoration: underline;
     }
   }
+
+  &__button {
+    display: inline;
+    margin: 0 -6px;
+    padding: 2px 6px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background: var(--color-noti-hover);
+    }
+  }
+
+  &__acct {
+    color: $highlight-text-color;
+  }
 }
 
 .compose-form {
@@ -6459,6 +6481,12 @@ body.layout-single-column {
 .safety-action-modal {
   width: 600px;
   flex-direction: column;
+  border-radius: 16px;
+  box-shadow: var(--modal-shadow);
+
+  @media screen and (max-width: $mobile-breakpoint) {
+    border-radius: 16px 16px 0 0;
+  }
 
   &__top,
   &__bottom {
@@ -6466,8 +6494,7 @@ body.layout-single-column {
     gap: 8px;
     padding: 24px;
     flex-direction: column;
-    background: var(--modal-background-color);
-    backdrop-filter: var(--background-filter);
+    background: var(--background-color);
     border: 1px solid var(--modal-border-color);
   }
 
@@ -8727,6 +8754,7 @@ noscript {
       border: 0;
       outline: 0;
       border-radius: 4px;
+      margin-bottom: 12px;
 
       &::placeholder {
         color: $dark-text-color;
@@ -11893,13 +11921,12 @@ div.compose-panel .account__bio {
     --account-switcher-manage-vertical-padding: 28px;
     width: min(460px, calc(100vw - 32px));
     max-height: min(82vh, 680px);
-    background: var(--account-switcher-modal-background,
-        var(--color-modal-panel, var(--background-color, #{$ui-base-color})));
+    background: var(--background-color);
 
     color: var(--color-light-text, #{$primary-text-color});
     border-radius: 28px;
     border: 1px solid var(--color-border, var(--dropdown-border-color, rgba($ui-highlight-color, 0.12)));
-    box-shadow: none;
+    box-shadow: var(--modal-shadow);
     padding: var(--account-switcher-manage-vertical-padding) var(--account-switcher-manage-horizontal-padding);
     position: relative;
     display: flex;
@@ -12155,12 +12182,11 @@ div.compose-panel .account__bio {
 
   &__confirm-modal {
     width: min(360px, 100%);
-    background: var(--account-switcher-modal-background,
-        var(--color-modal-panel, var(--background-color, #{$ui-base-color})));
+    background: var(--background-color);
     color: var(--color-light-text, #{$primary-text-color});
     border-radius: 16px;
     border: 1px solid var(--color-border, var(--dropdown-border-color, rgba($ui-highlight-color, 0.12)));
-    box-shadow: none;
+    box-shadow: var(--modal-shadow);
     padding: 20px 24px;
 
     h3 {
@@ -12360,7 +12386,7 @@ div.compose-panel .account__bio {
   color: $primary-text-color;
   border: 1px solid var(--dropdown-border-color, rgba($ui-highlight-color, 0.12));
   border-radius: 26px;
-  box-shadow: 0 0 18px rgba($base-shadow-color, 0.14), 0 0 6px rgba($base-shadow-color, 0.12);
+  box-shadow: var(--modal-shadow);
   // Stated rather than left to the cascade: input, select and button do not
   // inherit font-family on their own, and every control below asks for
   // `inherit`, so this is the value they all end up with.
@@ -13227,7 +13253,7 @@ div.compose-panel .account__bio {
   & &__bubble .status__content {
     font-size: 14px;
     line-height: 20px;
-    font-weight: 500;
+    font-weight: 400;
   }
 
   &--mine &__bubble {
@@ -13741,6 +13767,79 @@ div.compose-panel .account__bio {
 }
 
 
+// @_longwhile custom feature
+.compose-recipients {
+  &__header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+
+    .dialog-modal__header__title {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+  }
+
+  &.dm-recipient .dialog-modal__header__close {
+    margin-inline-start: 0;
+  }
+
+  &__done {
+    flex: 0 0 auto;
+    width: auto;
+    padding: 6px 16px;
+  }
+
+  &__row {
+    cursor: pointer;
+  }
+
+  &__row__avatar-placeholder {
+    flex: 0 0 auto;
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    background: var(--color-noti-hover);
+  }
+
+  &__row__input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &__check {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--color-button-border, var(--color-border));
+    border-radius: 4px;
+
+    .icon {
+      width: 14px;
+      height: 14px;
+    }
+
+    &--on {
+      border-color: var(--color-sent-message-background);
+      background: var(--color-sent-message-background);
+      color: var(--color-sent-message-text);
+    }
+  }
+
+  &__row__input:focus-visible ~ &__check {
+    outline: 2px solid var(--color-sent-message-background);
+    outline-offset: 2px;
+  }
+}
+
+
 .dm-unread-divider {
   display: flex;
   align-items: center;
@@ -14078,6 +14177,10 @@ div.compose-panel .account__bio {
     align-items: center;
     gap: 12px;
     padding: 8px 16px;
+  }
+
+  body > &__row__menu {
+    z-index: 9999;
   }
 
   &__row__text {

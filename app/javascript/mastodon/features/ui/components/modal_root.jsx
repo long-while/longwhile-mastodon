@@ -22,6 +22,7 @@ import {
   ScheduleModal,
   DmRecipientModal,
   DmMemberModal,
+  ReplyRecipientsModal,
 } from 'mastodon/features/ui/util/async-components';
 
 import BundleContainer from '../containers/bundle_container';
@@ -80,6 +81,7 @@ export const MODAL_COMPONENTS = {
   'SCHEDULE': ScheduleModal,
   'DM_RECIPIENT': DmRecipientModal,
   'DM_MEMBERS': DmMemberModal,
+  'REPLY_RECIPIENTS': ReplyRecipientsModal,
 };
 
 const SCROLL_UNLOCKED_MODALS = ['SCHEDULE'];

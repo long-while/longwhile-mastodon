@@ -203,6 +203,40 @@ RSpec.describe NotifyService do
     it 'updates the legacy conversation list' do
       expect { subject }.to change(AccountConversation, :count).by(1)
     end
+
+    context 'with push subscriptions registered' do
+      let(:alerts) { { alerts: { mention: true } } }
+
+      let!(:app_subscription) do
+        Fabricate(:web_push_subscription, user: user, data: alerts)
+      end
+
+      let!(:browser_subscription) do
+        Fabricate(:web_push_subscription,
+                  user: user,
+                  data: alerts,
+                  access_token: Fabricate(:accessible_access_token,
+                                          resource_owner_id: user.id,
+                                          application: Fabricate(:application, superapp: true)))
+      end
+
+      before { allow(Web::PushNotificationWorker).to receive(:push_bulk) }
+
+      it 'pushes to the app and not to the browser' do
+        subject
+
+        expect(Web::PushNotificationWorker).to have_received(:push_bulk).with([app_subscription])
+      end
+
+      it 'skips subscriptions that turned the mention alert off' do
+        browser_subscription.destroy!
+        app_subscription.update!(data: { alerts: { mention: false } })
+
+        subject
+
+        expect(Web::PushNotificationWorker).to have_received(:push_bulk).with([])
+      end
+    end
   end
 
   context 'with a direct message while DM chat is disabled' do

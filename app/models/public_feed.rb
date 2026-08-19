@@ -147,16 +147,12 @@ class PublicFeed
     true
   end
 
-  # 이 피드에서 글쓴이로 인정되는 범위: 팔로우 중 + 본인 + 공지 계정
-  # @_longwhile custom fix — JOIN 이 포함된 base_scope 에서 .or() 사용 시
-  #   컬럼 참조가 모호해질 수 있으므로 명시적으로 statuses.account_id 를 지정한다.
   def visible_authors_scope(base_scope)
-    # 팔로우 중인 계정들 (Relation) + 본인/공지 계정 (Array)을 통합
-    # .in()은 Relation과 Array 모두 받을 수 있으므로, 명시적 테이블 참조만 추가
-    base_scope.where(
-      Status.arel_table[:account_id].in(followed_ids.arel)
-        .or(Status.arel_table[:account_id].in(visible_account_ids))
-    )
+    base_scope.where(visible_authors_sql)
+  end
+
+  def visible_authors_sql
+    "statuses.account_id IN (#{visible_author_ids_sql})"
   end
 
   # 재게시는 원작자까지 위 범위 안에 있어야 보인다.
@@ -174,11 +170,11 @@ class PublicFeed
   end
 
   def visible_author_ids_sql
-    Account
-      .where(id: followed_ids)
-      .or(Account.where(id: visible_account_ids))
-      .select(:id)
-      .to_sql
+    @visible_author_ids_sql ||= Account
+                                .where(id: followed_ids)
+                                .or(Account.where(id: visible_account_ids))
+                                .select(:id)
+                                .to_sql
   end
 
   def followed_ids

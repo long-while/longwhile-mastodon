@@ -17,6 +17,7 @@ import ComposeForm from '../components/compose_form';
 const mapStateToProps = state => ({
   text: state.getIn(['compose', 'text']),
   replyMentions: state.getIn(['compose', 'reply_mentions']),
+  replyCandidates: state.getIn(['compose', 'reply_candidates']),
   suggestions: state.getIn(['compose', 'suggestions']),
   spoiler: state.getIn(['compose', 'spoiler']),
   spoilerText: state.getIn(['compose', 'spoiler_text']),
@@ -76,6 +77,13 @@ const mapDispatchToProps = (dispatch) => ({
 
   onPickEmoji (position, data, needsSpace) {
     dispatch(insertEmojiCompose(position, data, needsSpace));
+  },
+
+  onOpenReplyRecipients () {
+    dispatch(openModal({
+      modalType: 'REPLY_RECIPIENTS',
+      modalProps: {},
+    }));
   },
 
 });

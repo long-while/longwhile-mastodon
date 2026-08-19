@@ -298,6 +298,7 @@ interface DropdownProps<Item = MenuItem> {
   scrollKey?: string;
   status?: ImmutableMap<string, unknown>;
   forceDropdown?: boolean;
+  overlayClassName?: string;
   renderItem?: RenderItemFn<Item>;
   renderHeader?: RenderHeaderFn<Item>;
   onOpen?: () => void;
@@ -318,6 +319,7 @@ export const Dropdown = <Item = MenuItem,>({
   scrollable,
   status,
   forceDropdown = false,
+  overlayClassName,
   renderItem,
   renderHeader,
   onOpen,
@@ -505,7 +507,7 @@ export const Dropdown = <Item = MenuItem,>({
         popperConfig={popperConfig}
       >
         {({ props, arrowProps, placement }) => (
-          <div {...props}>
+          <div {...props} className={overlayClassName}>
             <div className={`dropdown-animation dropdown-menu ${placement}`}>
               <div
                 className={`dropdown-menu__arrow ${placement}`}

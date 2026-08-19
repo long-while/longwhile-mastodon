@@ -4,7 +4,6 @@ import { createRef, Fragment } from 'react';
 import { defineMessages, injectIntl, FormattedMessage } from 'react-intl';
 
 import classNames from 'classnames';
-import { Link } from 'react-router-dom';
 
 import ImmutablePropTypes from 'react-immutable-proptypes';
 import ImmutablePureComponent from 'react-immutable-pure-component';
@@ -51,6 +50,8 @@ class ComposeForm extends ImmutablePureComponent {
     intl: PropTypes.object.isRequired,
     text: PropTypes.string.isRequired,
     replyMentions: ImmutablePropTypes.list,
+    replyCandidates: ImmutablePropTypes.list,
+    onOpenReplyRecipients: PropTypes.func,
     suggestions: ImmutablePropTypes.list,
     spoiler: PropTypes.bool,
     privacy: PropTypes.string,
@@ -262,23 +263,34 @@ class ComposeForm extends ImmutablePureComponent {
         {!withoutNavigation && <NavigationBar />}
         <Warning />
 
-        {/* Sits above the box rather than inside it: this names who the reply
-            goes to, it is not part of what is being written. Keeping it out
-            also leaves the box its own background and rounded top corners. */}
-        {this.props.replyMentions && !this.props.replyMentions.isEmpty() && (
+        {this.props.replyCandidates && !this.props.replyCandidates.isEmpty() && (
           <div className='compose-form__reply-mentions'>
-            <FormattedMessage
-              id='compose_form.replying_to'
-              defaultMessage='Replying to {mentions}'
-              values={{
-                mentions: this.props.replyMentions.map((acct, index) => (
-                  <Fragment key={acct}>
-                    {index > 0 && ' '}
-                    <Link to={`/@${acct}`}>@{acct}</Link>
-                  </Fragment>
-                )).toArray(),
-              }}
-            />
+            <button
+              type='button'
+              className='compose-form__reply-mentions__button'
+              aria-haspopup='dialog'
+              onClick={this.props.onOpenReplyRecipients}
+            >
+              {!this.props.replyMentions || this.props.replyMentions.isEmpty() ? (
+                <FormattedMessage
+                  id='compose_form.replying_to_nobody'
+                  defaultMessage='Replying to no one'
+                />
+              ) : (
+                <FormattedMessage
+                  id='compose_form.replying_to'
+                  defaultMessage='Replying to {mentions}'
+                  values={{
+                    mentions: this.props.replyMentions.map((acct, index) => (
+                      <Fragment key={acct}>
+                        {index > 0 && ' '}
+                        <span className='compose-form__reply-mentions__acct'>@{acct}</span>
+                      </Fragment>
+                    )).toArray(),
+                  }}
+                />
+              )}
+            </button>
           </div>
         )}
 

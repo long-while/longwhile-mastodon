@@ -9,6 +9,7 @@ import {
   COMPOSE_CHANGE,
   COMPOSE_REPLY,
   COMPOSE_REPLY_CANCEL,
+  COMPOSE_REPLY_MENTIONS_SET,
   COMPOSE_DIRECT,
   COMPOSE_MENTION,
   COMPOSE_SUBMIT_REQUEST,
@@ -71,6 +72,7 @@ const initialState = ImmutableMap({
   // Handles the reply must carry. Kept beside the text rather than inside it so
   // the box holds only what the user wrote; they are put back on submit.
   reply_mentions: ImmutableList(),
+  reply_candidates: ImmutableList(),
   is_composing: false,
   is_submitting: false,
   is_changing_upload: false,
@@ -106,14 +108,24 @@ const initialPoll = ImmutableMap({
 // Everyone a reply has to address: the author of the post being answered, plus
 // whoever it already named. Self is dropped — you are not replying to yourself.
 function statusToMentionAccts(status) {
+  return statusToMentionCandidates(status).map(candidate => candidate.get('acct'));
+}
+
+// @_longwhile custom feature
+function statusToMentionCandidates(status) {
   let set = ImmutableOrderedSet([]);
 
   if (status.getIn(['account', 'id']) !== me) {
-    set = set.add(status.getIn(['account', 'acct']));
+    set = set.add(ImmutableMap({
+      id: status.getIn(['account', 'id']),
+      acct: status.getIn(['account', 'acct']),
+    }));
   }
 
   return set
-    .union(status.get('mentions').filterNot(mention => mention.get('id') === me).map(mention => mention.get('acct')))
+    .union(status.get('mentions')
+      .filterNot(mention => mention.get('id') === me)
+      .map(mention => ImmutableMap({ id: mention.get('id'), acct: mention.get('acct') })))
     .toList();
 }
 
@@ -127,6 +139,7 @@ function clearAll(state) {
     map.set('is_changing_upload', false);
     map.set('in_reply_to', null);
     map.update('reply_mentions', list => list.clear());
+    map.update('reply_candidates', list => list.clear());
     map.set('privacy', state.get('default_privacy'));
     map.set('sensitive', state.get('default_sensitive'));
     map.set('language', state.get('default_language'));
@@ -334,6 +347,7 @@ const setScheduledStatus = (state, scheduled) => {
     map.set('scheduled_at', scheduled.get('scheduled_at'));
     map.set('text', params.get('text') || '');
     map.update('reply_mentions', list => list.clear());
+    map.update('reply_candidates', list => list.clear());
     map.set('in_reply_to', inReplyToId ? String(inReplyToId) : null);
     map.set('privacy', params.get('visibility') || state.get('default_privacy'));
     map.set('sensitive', !!params.get('sensitive'));
@@ -440,6 +454,7 @@ export const composeReducer = (state = initialState, action) => {
       map.set('in_reply_to', action.status.get('id'));
       map.set('text', '');
       map.set('reply_mentions', statusToMentionAccts(action.status));
+      map.set('reply_candidates', statusToMentionCandidates(action.status));
       map.set('privacy', privacyPreference(action.status.get('visibility'), state.get('default_privacy')));
       map.set('focusDate', new Date());
       map.set('caretPosition', null);
@@ -468,6 +483,17 @@ export const composeReducer = (state = initialState, action) => {
     });
   case COMPOSE_SUBMIT_REQUEST:
     return state.set('is_submitting', true);
+
+  case COMPOSE_REPLY_MENTIONS_SET: {
+    const chosen = ImmutableOrderedSet(action.accts);
+
+    return state.set(
+      'reply_mentions',
+      state.get('reply_candidates')
+        .map(candidate => candidate.get('acct'))
+        .filter(acct => chosen.has(acct)),
+    );
+  }
 
   case COMPOSE_REPLY_CANCEL:
   case COMPOSE_RESET:
@@ -550,6 +576,7 @@ export const composeReducer = (state = initialState, action) => {
       // The body already carries its handles; adding them again on submit
       // would double them up.
       map.update('reply_mentions', list => list.clear());
+      map.update('reply_candidates', list => list.clear());
       map.set('in_reply_to', action.status.get('in_reply_to_id'));
       map.set('privacy', action.status.get('visibility'));
       map.set('media_attachments', action.status.get('media_attachments').map((media) => media.set('unattached', true)));
@@ -590,6 +617,7 @@ export const composeReducer = (state = initialState, action) => {
       // The body already carries its handles; adding them again on submit
       // would double them up.
       map.update('reply_mentions', list => list.clear());
+      map.update('reply_candidates', list => list.clear());
       map.set('privacy', action.status.get('visibility'));
       map.set('media_attachments', action.status.get('media_attachments'));
       map.set('focusDate', new Date());

@@ -126,6 +126,10 @@ export function DmMemberModal() {
   return import('../../messages/member_modal');
 }
 
+export function ReplyRecipientsModal() {
+  return import('../../compose/components/reply_recipients_modal');
+}
+
 export function ScheduledStatuses() {
   return import('../../scheduled_statuses');
 }

@@ -8,6 +8,7 @@ const messages = defineMessages({
   minutes: { id: 'messages.time.minutes', defaultMessage: '{count}m ago' },
   hours: { id: 'messages.time.hours', defaultMessage: '{count}h ago' },
   yesterday: { id: 'messages.time.yesterday', defaultMessage: 'Yesterday' },
+  days: { id: 'messages.time.days', defaultMessage: '{count}d ago' },
 });
 
 const MINUTE = 60 * 1000;
@@ -42,7 +43,9 @@ export const relativeTimeLabel = (intl: IntlShape, timestamp: string) => {
   if (thatDay === today - DAY) return intl.formatMessage(messages.yesterday);
 
   if (today - thatDay < 7 * DAY) {
-    return intl.formatDate(date, { weekday: 'short' });
+    return intl.formatMessage(messages.days, {
+      count: Math.round((today - thatDay) / DAY),
+    });
   }
 
   if (date.getFullYear() === now.getFullYear()) {

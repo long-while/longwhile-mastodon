@@ -113,7 +113,9 @@ export const dmRoomsReducer = createReducer(initialState, (builder) => {
         store(state, room);
       });
 
-      if (meta.arg.refresh) {
+      const arg = meta.arg as { url?: string; refresh?: boolean } | undefined;
+
+      if (arg?.refresh) {
         state.order = [...ids, ...state.order.filter((id) => !ids.includes(id))];
 
         state.next ??= payload.next;
@@ -123,7 +125,7 @@ export const dmRoomsReducer = createReducer(initialState, (builder) => {
 
       state.next = payload.next;
 
-      state.order = meta.arg.url
+      state.order = arg?.url
         ? [...state.order.filter((id) => !ids.includes(id)), ...ids]
         : ids;
     })

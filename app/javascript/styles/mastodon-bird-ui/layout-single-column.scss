@@ -75,6 +75,7 @@
   --color-brand-longwhile-dim: #8b98a5;
 
   --color-noti-hover: #17222dcf;
+  --color-modal-overlay: #0a1a286b;
 
   --color-border: #333c46;
   --color-post-button-text: var(--color-on-brand);
@@ -87,9 +88,6 @@
 
   --color-column-link: #ffffff;
   --color-column-link-hover: #4ab6ff;
-  --color-modal-overlay: #15253363;
-
-  --color-modal-panel: var(--color-dark);
 
   --color-brand-longwhile-heart: #f91880;
   --color-brand-longwhile-favourite: #ffac33;
@@ -102,6 +100,7 @@
   --color-recieve-message-background: var(--color-bg-compose-form-focus);
   --color-recieve-message-text: var(--color-fg);
 
+  --color-modal-panel: var(--color-bg);
   --color-bg: #10171e;
   --color-fg: #fff;
   --color-dim: var(--color-brand-longwhile-dim);
@@ -314,6 +313,7 @@ body.theme-mastodon-bird-ui-light {
   --color-brand-longwhile-dim: #6f7b85;
 
   --color-noti-hover: #6e7b8d0a;
+  --color-modal-overlay: #20689926;
 
   --color-border: #eeeeee;
   --color-post-button-text: #ffffff;
@@ -359,7 +359,6 @@ body.theme-mastodon-bird-ui-light {
   --color-brand-longwhile-links: var(--color-link);
   --color-icon-button-hover: #00000014;
   --color-profile-button-hover: var(--color-noti-hover);
-  --color-modal-overlay: var(--color-noti-hover);
 
   --color-modal-panel: var(--color-dark);
 

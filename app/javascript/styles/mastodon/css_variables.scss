@@ -8,6 +8,7 @@
   --dropdown-shadow: 0 20px 25px -5px #{rgba($base-shadow-color, 0.25)},
   0 8px 10px -6px #{rgba($base-shadow-color, 0.25)};
   --modal-background-color: #{rgba(darken($ui-base-color, 8%), 0.7)};
+  --modal-shadow: 0 0 2px #00000014, 0 0 22px #00000014;
   --modal-background-variant-color: #{rgba($ui-base-color, 0.7)};
   --modal-border-color: #{rgba(lighten($ui-base-color, 4%), 1)};
   --background-border-color: #{lighten($ui-base-color, 4%)};

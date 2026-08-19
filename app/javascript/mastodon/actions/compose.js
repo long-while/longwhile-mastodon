@@ -27,6 +27,7 @@ export const COMPOSE_SUBMIT_SUCCESS  = 'COMPOSE_SUBMIT_SUCCESS';
 export const COMPOSE_SUBMIT_FAIL     = 'COMPOSE_SUBMIT_FAIL';
 export const COMPOSE_REPLY           = 'COMPOSE_REPLY';
 export const COMPOSE_REPLY_CANCEL    = 'COMPOSE_REPLY_CANCEL';
+export const COMPOSE_REPLY_MENTIONS_SET = 'COMPOSE_REPLY_MENTIONS_SET';
 export const COMPOSE_DIRECT          = 'COMPOSE_DIRECT';
 export const COMPOSE_MENTION         = 'COMPOSE_MENTION';
 export const COMPOSE_RESET           = 'COMPOSE_RESET';
@@ -130,6 +131,14 @@ export function replyCompose(status) {
     });
 
     ensureComposeIsVisible(getState);
+  };
+}
+
+// @_longwhile custom feature
+export function setComposeReplyMentions(accts) {
+  return {
+    type: COMPOSE_REPLY_MENTIONS_SET,
+    accts,
   };
 }
 

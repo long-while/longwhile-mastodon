@@ -137,7 +137,7 @@ class Notification < ApplicationRecord
   end
 
   class << self
-    def browserable(types: [], exclude_types: [], from_account_id: nil, include_filtered: false, include_direct_messages: false)
+    def browserable(types: [], exclude_types: [], from_account_id: nil, include_filtered: false, include_direct_messages: true)
       requested_types = if types.empty?
                           TYPES
                         else

@@ -985,10 +985,7 @@ const startServer = async () => {
       arr.push(`timeline:${req.accountId}:notifications`);
     }
 
-    // @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 채팅
-    //   DM 채팅 알림(conversation 이벤트)을 받기 위해 timeline:direct 채널 구독
-    //   PushConversationWorker 가 이 채널로 발행한다.
-    //   플래그가 꺼져 있으면 구독하지 않는다 — 불필요한 Redis pub/sub 트래픽 방지
+    // @_longwhile custom feature
     if (process.env.DM_CHAT_ENABLED === 'true') {
       arr.push(`timeline:direct:${req.accountId}`);
     }
