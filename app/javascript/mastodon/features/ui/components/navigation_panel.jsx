@@ -1,9 +1,11 @@
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
-import { Component, useEffect } from 'react';
+import { Component, useCallback, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 import { defineMessages, injectIntl, useIntl } from 'react-intl';
 
+import { useLocation } from 'react-router';
 import { Link } from 'react-router-dom';
 
 import { useSelector, useDispatch } from 'react-redux';
@@ -29,7 +31,8 @@ import FollowRequestsIcon from '@/styles/bird-theme-svg/user-add.svg?react';
 import PendingMentionsActiveIcon from '@/styles/bird-theme-svg/messages-fill.svg?react';
 import MailIcon from '@/material-icons/400-24px/mail.svg?react';
 import PendingMentionsIcon from '@/styles/bird-theme-svg/messages.svg?react';
-import PublicIcon from '@/material-icons/400-24px/public.svg?react';
+import ProfileActiveIcon from '@/styles/bird-theme-svg/user-fill.svg?react';
+import ProfileIcon from '@/styles/bird-theme-svg/user.svg?react';
 import SearchIcon from '@/material-icons/400-24px/search.svg?react';
 import SettingsIcon from '@/material-icons/400-24px/settings.svg?react';
 import { fetchFollowRequests } from 'mastodon/actions/accounts';
@@ -46,11 +49,14 @@ import { selectUnreadNotificationGroupsCount } from 'mastodon/selectors/notifica
 
 import { AccountSwitcher } from './account_switcher';
 import ColumnLink from './column_link';
+import { TIMELINE_TAB_PATHS } from './timeline_tabs';
 import { Search } from 'mastodon/features/compose/components/search';
 import { useBreakpoint } from 'mastodon/hooks/useBreakpoint';
 import { closeNavigation } from 'mastodon/actions/navigation';
 import { connect } from 'react-redux';
 import { Avatar } from 'mastodon/components/avatar';
+import { FollowersCounter, FollowingCounter } from 'mastodon/components/counters';
+import { ShortNumber } from 'mastodon/components/short_number';
 import { me } from 'mastodon/initial_state';
 
 const MessagesAllIcon = PendingMentionsIcon;
@@ -69,9 +75,10 @@ const isMessagesPath = (_match, location) =>
 
 const messages = defineMessages({
   home: { id: 'tabs_bar.home', defaultMessage: 'Home' },
+  profile: { id: 'navigation_bar.my_profile', defaultMessage: 'Profile' },
+  menu: { id: 'tabs_bar.menu', defaultMessage: 'Menu' },
   notifications: { id: 'tabs_bar.notifications', defaultMessage: 'Notifications' },
   explore: { id: 'explore.title', defaultMessage: 'Explore' },
-  firehose: { id: 'column.firehose', defaultMessage: 'Live feeds' },
   direct: { id: 'navigation_bar.direct', defaultMessage: 'Private mentions' },
   pendingMentions: { id: 'navigation_bar.pending-mentions', defaultMessage: 'Awaiting reply' },
   messages: { id: 'navigation_bar.messages', defaultMessage: 'Messages' },
@@ -98,7 +105,7 @@ const ProfileSummary = connect((state) => {
     return accounts[me] ?? null;
   })();
   return { account };
-})(({ account, avatarSize = 48 }) => {
+})(({ account, avatarSize = 48, showCounts = false }) => {
   if (!account) {
     return null;
   }
@@ -109,28 +116,55 @@ const ProfileSummary = connect((state) => {
   const displayName = getValue('display_name_html') || getValue('display_name') || getValue('username');
 
   return (
-    <Link to={`/@${acct}`} className='navigation-panel__profile-card' title={acct}>
-      <div className='navigation-panel__profile-avatar'>
-        <Avatar account={account} size={avatarSize} />
-      </div>
-      <div className='navigation-panel__profile-meta'>
-        <strong
-          className='navigation-panel__profile-name'
-          dangerouslySetInnerHTML={{ __html: displayName }}
+    <>
+      <Link to={`/@${acct}`} className='navigation-panel__profile-card' title={acct}>
+        <div className='navigation-panel__profile-avatar'>
+          <Avatar account={account} size={avatarSize} />
+        </div>
+        <div className='navigation-panel__profile-meta'>
+          <strong
+            className='navigation-panel__profile-name'
+            dangerouslySetInnerHTML={{ __html: displayName }}
+          />
+          <span className='navigation-panel__profile-handle'>@{acct}</span>
+        </div>
+      </Link>
+
+      {showCounts && (
+        <ProfileCounts
+          acct={acct}
+          following={getValue('following_count')}
+          followers={getValue('followers_count')}
         />
-        <span className='navigation-panel__profile-handle'>@{acct}</span>
-      </div>
-    </Link>
+      )}
+    </>
   );
 });
 
-const ProfileSection = ({ avatarSize }) => (
+const ProfileCounts = ({ acct, following, followers }) => (
+  <div className='navigation-panel__profile-counts'>
+    <Link to={`/@${acct}/following`}>
+      <ShortNumber value={following} renderer={FollowingCounter} />
+    </Link>
+    <Link to={`/@${acct}/followers`}>
+      <ShortNumber value={followers} renderer={FollowersCounter} />
+    </Link>
+  </div>
+);
+ProfileCounts.propTypes = {
+  acct: PropTypes.string.isRequired,
+  following: PropTypes.number,
+  followers: PropTypes.number,
+};
+
+const ProfileSection = ({ avatarSize, showCounts }) => (
   <div className='navigation-panel__profile'>
-    <ProfileSummary avatarSize={avatarSize} />
+    <ProfileSummary avatarSize={avatarSize} showCounts={showCounts} />
   </div>
 );
 ProfileSection.propTypes = {
   avatarSize: PropTypes.number,
+  showCounts: PropTypes.bool,
 };
 
 const AccountSwitcherMenuItem = () => {
@@ -149,6 +183,30 @@ const AccountSwitcherMenuItem = () => {
           <span>{label}</span>
         </button>
       )}
+    />
+  );
+};
+
+const ProfileLink = () => {
+  const intl = useIntl();
+  const acct = useSelector(state => state.getIn(['accounts', me, 'acct']));
+
+  const isActive = useCallback(
+    (match, location) => !!acct && (location.pathname === `/@${acct}` || location.pathname.startsWith(`/@${acct}/`)),
+    [acct],
+  );
+
+  if (!acct) return null;
+
+  return (
+    <ColumnLink
+      transparent
+      to={`/@${acct}`}
+      isActive={isActive}
+      icon='profile'
+      iconComponent={ProfileIcon}
+      activeIconComponent={ProfileActiveIcon}
+      text={intl.formatMessage(messages.profile)}
     />
   );
 };
@@ -245,6 +303,7 @@ class NavigationPanel extends Component {
     renderComposeButton: PropTypes.bool,
     isBelowFullBreakpoint: PropTypes.bool,
     isMobileBreakpoint: PropTypes.bool,
+    drawer: PropTypes.bool,
   };
 
   static defaultProps = {
@@ -254,8 +313,8 @@ class NavigationPanel extends Component {
     isMobileBreakpoint: false,
   };
 
-  isFirehoseActive = (match, location) => {
-    return match || location.pathname.startsWith('/public');
+  isTimelineTabActive = (match, location) => {
+    return match || TIMELINE_TAB_PATHS.includes(location.pathname);
   };
 
   render() {
@@ -267,6 +326,13 @@ class NavigationPanel extends Component {
     const isFullView = !isBelowFullBreakpoint;
     const showIdentitySection = signedIn && !isFullView;
     const profileAvatarSize = isFullView ? 48 : 36;
+    const isMobileDrawer = !!this.props.drawer;
+    const profileSection = showIdentitySection && (
+      <ProfileSection
+        avatarSize={isMobileDrawer ? 44 : profileAvatarSize}
+        showCounts={isMobileDrawer}
+      />
+    );
 
     const panelClassName = classNames('navigation-panel', {
       'navigation-panel--full': isFullView,
@@ -276,9 +342,13 @@ class NavigationPanel extends Component {
 
     return (
       <div className={panelClassName}>
-        <div className='navigation-panel__logo'>
-          <Link to='/' className='column-link column-link--logo'><WordmarkLogo /></Link>
-        </div>
+        {!isMobileDrawer && (
+          <div className='navigation-panel__logo'>
+            <Link to='/' className='column-link column-link--logo'><WordmarkLogo /></Link>
+          </div>
+        )}
+
+        {isMobileDrawer && profileSection}
 
         {renderSearch && (
           <div className='navigation-panel__search'>
@@ -286,7 +356,7 @@ class NavigationPanel extends Component {
           </div>
         )}
 
-        {showIdentitySection && <ProfileSection avatarSize={profileAvatarSize} />}
+        {!isMobileDrawer && profileSection}
 
         {renderComposeButton && signedIn && (
           <Link to='/publish' className='button button--block navigation-panel__compose-button'>
@@ -325,7 +395,6 @@ class NavigationPanel extends Component {
     const { permissions } = this.props.identity;
 
     const homeLabel = intl.formatMessage(messages.home);
-    const publicLabel = intl.formatMessage(messages.firehose);
     const directLabel = intl.formatMessage(messages.direct);
     const pendingMentionsLabel = intl.formatMessage(messages.pendingMentions);
     const bookmarksLabel = intl.formatMessage(messages.bookmarks);
@@ -338,14 +407,21 @@ class NavigationPanel extends Component {
         : '';
     const settingsHref = `${origin}/settings/profile`;
 
+    const inBottomBar = !!this.props.drawer;
+
     return (
       <>
-        <ColumnLink transparent to='/home' icon='home' iconComponent={HomeIcon} activeIconComponent={HomeActiveIcon} text={homeLabel} />
-        <ColumnLink transparent to='/public' isActive={this.isFirehoseActive} icon='globe' iconComponent={PublicIcon} text={publicLabel} />
-        <NotificationsLink />
-        <ColumnLink transparent to='/pending-mentions' icon='pending' iconComponent={PendingMentionsIcon} activeIconComponent={PendingMentionsActiveIcon} text={pendingMentionsLabel} />
+        {inBottomBar && <ProfileLink />}
+
+        {!inBottomBar && (
+          <>
+            <ColumnLink transparent to='/home' isActive={this.isTimelineTabActive} icon='home' iconComponent={HomeIcon} activeIconComponent={HomeActiveIcon} text={homeLabel} />
+            <NotificationsLink />
+            <ColumnLink transparent to='/pending-mentions' icon='pending' iconComponent={PendingMentionsIcon} activeIconComponent={PendingMentionsActiveIcon} text={pendingMentionsLabel} />
+          </>
+        )}
         {dmChatEnabled ? (
-          <MessagesLink />
+          !inBottomBar && <MessagesLink />
         ) : (
           <ColumnLink transparent to='/conversations' icon='at' iconComponent={AlternateEmailIcon} text={directLabel} />
         )}
@@ -379,30 +455,82 @@ const NavigationPanelWithBreakpoints = (props) => {
 
 export default NavigationPanelWithBreakpoints;
 
-export const CollapsibleNavigationPanel = () => {
-  const dispatch = useDispatch();
-  const navigationOpen = useSelector(state => state.getIn(['navigation', 'open'], false));
-  const isMobile = useBreakpoint('openable');
-  const showSearch = true;
-  const shouldShowOverlay = isMobile && navigationOpen;
-
+const useDrawerFocusAndScrollLock = (active, wrapperRef) => {
   useEffect(() => {
-    if (!navigationOpen) {
-      return undefined;
-    }
+    if (!active) return undefined;
 
-    const handleKeyUp = (event) => {
+    const root = document.documentElement;
+    const returnFocus = document.activeElement;
+
+    root.classList.add('navigation-panel-open');
+    wrapperRef.current?.focus({ preventScroll: true });
+
+    return () => {
+      root.classList.remove('navigation-panel-open');
+
+      if (!wrapperRef.current?.contains(document.activeElement)) return;
+
+      const target = returnFocus instanceof HTMLElement && returnFocus.isConnected && returnFocus !== document.body
+        ? returnFocus
+        : document.querySelector('.column-header__avatar-menu');
+
+      target?.focus({ preventScroll: true });
+    };
+  }, [active, wrapperRef]);
+};
+
+const OVERLAY_ABOVE_DRAWER = '.account-switcher__manage-overlay, .modal-root__container';
+
+const useCloseOnEscape = (open, dispatch) => {
+  useEffect(() => {
+    if (!open) return undefined;
+
+    let handledAbove = false;
+
+    const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
-        dispatch(closeNavigation());
+        handledAbove = document.querySelector(OVERLAY_ABOVE_DRAWER) !== null;
       }
     };
 
+    const handleKeyUp = (event) => {
+      if (event.key !== 'Escape') return;
+
+      if (!handledAbove) {
+        dispatch(closeNavigation());
+      }
+
+      handledAbove = false;
+    };
+
+    document.addEventListener('keydown', handleKeyDown, true);
     document.addEventListener('keyup', handleKeyUp);
 
     return () => {
+      document.removeEventListener('keydown', handleKeyDown, true);
       document.removeEventListener('keyup', handleKeyUp);
     };
-  }, [navigationOpen, dispatch]);
+  }, [open, dispatch]);
+};
+
+export const CollapsibleNavigationPanel = () => {
+  const intl = useIntl();
+  const dispatch = useDispatch();
+  const navigationOpen = useSelector(state => state.getIn(['navigation', 'open'], false));
+  const isMobile = useBreakpoint('openable');
+  const location = useLocation();
+  const wrapperRef = useRef(null);
+  const openRef = useRef(navigationOpen);
+  const shouldShowOverlay = isMobile && navigationOpen;
+
+  openRef.current = navigationOpen;
+
+  useEffect(() => {
+    if (openRef.current) dispatch(closeNavigation());
+  }, [location.pathname, dispatch]);
+
+  useCloseOnEscape(navigationOpen, dispatch);
+  useDrawerFocusAndScrollLock(shouldShowOverlay, wrapperRef);
 
   useEffect(() => {
     if (!isMobile && navigationOpen) {
@@ -410,11 +538,22 @@ export const CollapsibleNavigationPanel = () => {
     }
   }, [isMobile, navigationOpen, dispatch]);
 
-  const handleOverlayClick = (event) => {
+  useEffect(() => () => {
+    dispatch(closeNavigation());
+  }, [dispatch]);
+
+  const handleOverlayClick = useCallback((event) => {
     if (event.target === event.currentTarget) {
       dispatch(closeNavigation());
     }
-  };
+  }, [dispatch]);
+
+  const handleLinkClickCapture = useCallback((event) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (event.target instanceof Element && event.target.closest('a[href]')) {
+      dispatch(closeNavigation());
+    }
+  }, [dispatch]);
 
   const containerClassName = classNames('navigation-panel__container', {
     'navigation-panel__container--overlay': shouldShowOverlay,
@@ -424,20 +563,27 @@ export const CollapsibleNavigationPanel = () => {
     'navigation-panel__wrapper--open': !isMobile || navigationOpen,
   });
 
-  return (
+  return createPortal(
     <div
       className={containerClassName}
       onClick={shouldShowOverlay ? handleOverlayClick : undefined}
     >
-      <div className={wrapperClassName}>
-        {/* No compose button in the mobile drawer: the floating compose
-            button already sits in the same view, and every extra entry pushes
-            the ones below it further under the bottom bar. */}
+      <div
+        ref={wrapperRef}
+        className={wrapperClassName}
+        tabIndex={-1}
+        role={shouldShowOverlay ? 'dialog' : undefined}
+        aria-modal={shouldShowOverlay ? true : undefined}
+        aria-label={shouldShowOverlay ? intl.formatMessage(messages.menu) : undefined}
+        onClickCapture={handleLinkClickCapture}
+      >
         <NavigationPanelWithBreakpoints
-          renderSearch={showSearch}
+          renderSearch
           renderComposeButton={!isMobile}
+          drawer
         />
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };

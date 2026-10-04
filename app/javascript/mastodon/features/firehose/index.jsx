@@ -19,6 +19,7 @@ import { useAppDispatch, useAppSelector } from 'mastodon/store';
 import Column from '../../components/column';
 import ColumnHeader from '../../components/column_header';
 import SettingToggle from '../notifications/components/setting_toggle';
+import { TimelineTabs } from '../ui/components/timeline_tabs';
 import StatusListContainer from '../ui/containers/status_list_container';
 
 const messages = defineMessages({
@@ -129,15 +130,7 @@ const Firehose = ({ feedType, multiColumn }) => {
         values={{ domain }}
       />
     </DismissableBanner>
-  ) : (
-    <DismissableBanner id='public_timeline'>
-      <FormattedMessage
-        id='dismissable_banner.public_timeline'
-        defaultMessage='These are the most recent public posts from people on the fediverse that people on {domain} follow.'
-        values={{ domain }}
-      />
-    </DismissableBanner>
-  );
+  ) : null;
 
   const emptyMessage = feedType === 'community' ? (
     <FormattedMessage
@@ -151,6 +144,9 @@ const Firehose = ({ feedType, multiColumn }) => {
     />
   );
 
+  const remembersPosition = feedType === 'public' && !multiColumn;
+  const showsTimelineTabs = remembersPosition && signedIn;
+
   return (
     <Column bindToDocument={!multiColumn} ref={columnRef} label={intl.formatMessage(messages.title)}>
       <ColumnHeader
@@ -161,6 +157,7 @@ const Firehose = ({ feedType, multiColumn }) => {
         onPin={handlePin}
         onClick={handleHeaderClick}
         multiColumn={multiColumn}
+        tabs={showsTimelineTabs && <TimelineTabs onActiveClick={handleHeaderClick} />}
       >
         <ColumnSettings />
       </ColumnHeader>
@@ -173,6 +170,7 @@ const Firehose = ({ feedType, multiColumn }) => {
         scrollKey='firehose'
         emptyMessage={emptyMessage}
         bindToDocument={!multiColumn}
+        rememberPosition={remembersPosition}
       />
 
       <Helmet>

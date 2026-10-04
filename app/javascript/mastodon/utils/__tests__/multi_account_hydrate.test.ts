@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { MultiAccountEntry } from '../../types/multi_account';
 
@@ -51,6 +51,10 @@ const lastHydratePayload = (store: ReturnType<typeof createStore>) => {
 };
 
 describe('multi-account hydrateStore', () => {
+  beforeAll(async () => {
+    await import('../multi_account_storage');
+  }, 30000);
+
   beforeEach(() => {
     vi.resetModules();
     loadAllEntries.mockReset();

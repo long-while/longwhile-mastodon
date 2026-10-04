@@ -3716,10 +3716,6 @@ body .compose-form .compose-form__uploads {
     order: 1;
   }
 
-  .layout-single-column .column-link[href="/public"] {
-    order: 2;
-  }
-
   .layout-single-column .column-link[href="/notifications"] {
     order: 3;
   }
@@ -4043,6 +4039,29 @@ body .compose-form .compose-form__uploads {
 
 .layout-single-column .column-link.active .icon-bookmarks {
   mask-image: url('./bird-theme-svg/bookmark-fill.svg');
+}
+
+.layout-single-column .column-link .icon-profile {
+  mask-image: url('./bird-theme-svg/user.svg');
+  -webkit-mask-image: url('./bird-theme-svg/user.svg');
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-position: center;
+  background-color: var(--color-column-link);
+  background-image: none;
+}
+
+.layout-single-column .column-link.active .icon-profile {
+  mask-image: url('./bird-theme-svg/user-fill.svg');
+  -webkit-mask-image: url('./bird-theme-svg/user-fill.svg');
+}
+
+.layout-single-column .column-link:not(.active):hover .icon-profile,
+.layout-single-column .column-link:not(.active):focus-visible .icon-profile {
+  background-color: var(--color-column-link-hover);
 }
 
 .layout-single-column .column-link .icon-follow-requests {
@@ -4675,10 +4694,6 @@ body .compose-form .compose-form__uploads {
     order: 1;
   }
 
-  .layout-single-column .column-link[href="/public"] {
-    order: 2;
-  }
-
   .layout-single-column .column-link[href="/notifications"] {
     order: 3;
   }
@@ -4783,26 +4798,6 @@ screen and (device-width: 430px) and (device-height: 932px) and (min-resolution:
 }
 
 /* stylelint-disable media-feature-name-no-vendor-prefix */
-/* Fixes for iPhone Safari + iPhone Safari PWA */
-@media screen and (device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait),
-/* iPhone 12, iPhone 12 Pro, iPhone 13, iPhone 13 Pro, and iPhone 14 */
-screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait),
-/* iPhone 14 Pro */
-screen and (device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait),
-/* iPhone XR and iPhone 11 */
-screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait),
-/* iPhone Xs Max and iPhone 11 Pro Max */
-screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait),
-/* iPhone 12 Pro Max, iPhone 13 Pro Max, and iPhone 14 Plus */
-screen and (device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait),
-/* iPhone 14 Pro Max */
-screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) {
-
-  /* Fix top header overlapping in /publish on iPhone */
-  .layout-single-column .columns-area--mobile:has(.compose-form) {
-    top: 34px;
-  }
-}
 
 .layout-single-column .detailed-status__action-bar .icon-button {
   min-width: 24px;

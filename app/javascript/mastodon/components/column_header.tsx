@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useId, useState } from 'react';
 
 import { FormattedMessage, defineMessages, useIntl } from 'react-intl';
 
@@ -12,6 +12,8 @@ import CloseIcon from '@/material-icons/400-24px/close.svg?react';
 import SettingsIcon from '@/material-icons/400-24px/settings.svg?react';
 import type { IconProp } from 'mastodon/components/icon';
 import { Icon } from 'mastodon/components/icon';
+import { WordmarkLogo } from 'mastodon/components/logo';
+import { MobileMenuAvatarButton } from 'mastodon/features/ui/components/mobile_menu_avatar_button';
 import { ButtonInTabsBar } from 'mastodon/features/ui/util/columns_context';
 import { useIdentity } from 'mastodon/identity_context';
 
@@ -71,6 +73,7 @@ export interface Props {
   pinned?: boolean;
   multiColumn?: boolean;
   extraButton?: React.ReactNode;
+  tabs?: React.ReactNode;
   showBackButton?: boolean;
   placeholder?: boolean;
   appendContent?: React.ReactNode;
@@ -89,6 +92,7 @@ export const ColumnHeader: React.FC<Props> = ({
   pinned,
   multiColumn,
   extraButton,
+  tabs,
   showBackButton,
   placeholder,
   appendContent,
@@ -142,6 +146,7 @@ export const ColumnHeader: React.FC<Props> = ({
 
   const buttonClassName = classNames('column-header', {
     active,
+    'column-header--tabbed': !!tabs,
   });
 
   const collapsibleClassName = classNames('column-header__collapsible', {
@@ -242,35 +247,64 @@ export const ColumnHeader: React.FC<Props> = ({
     );
   }
 
+  const hiddenTitleId = useId();
   const hasIcon = icon && iconComponent;
   const hasTitle = hasIcon && title;
 
+  const titleButton = tabs ? (
+    <span id={hiddenTitleId} className='column-header__hidden-title'>
+      {title}
+    </span>
+  ) : (
+    hasTitle && (
+      <button onClick={handleTitleClick} className='column-header__title'>
+        {!backButton && (
+          <Icon
+            id={icon}
+            icon={iconComponent}
+            className='column-header__icon'
+          />
+        )}
+        {title}
+      </button>
+    )
+  );
+
+  const showMenuAvatar = !backButton && !multiColumn;
+
   const component = (
     <div className={wrapperClassName}>
-      <h1 className={buttonClassName}>
+      <h1
+        className={buttonClassName}
+        aria-labelledby={tabs && hasTitle ? hiddenTitleId : undefined}
+      >
         {hasTitle && (
           <>
             {backButton}
 
-            <button onClick={handleTitleClick} className='column-header__title'>
-              {!backButton && (
-                <Icon
-                  id={icon}
-                  icon={iconComponent}
-                  className='column-header__icon'
-                />
-              )}
-              {title}
-            </button>
+            {showMenuAvatar ? (
+              <MobileMenuAvatarButton>{titleButton}</MobileMenuAvatarButton>
+            ) : (
+              titleButton
+            )}
           </>
         )}
 
-        {!hasTitle && backButton}
+        {!hasTitle &&
+          (backButton ?? (showMenuAvatar && <MobileMenuAvatarButton />))}
+
+        {tabs && (
+          <span className='column-header__logo' aria-hidden='true'>
+            <WordmarkLogo />
+          </span>
+        )}
 
         <div className='column-header__buttons'>
           {extraButton}
           {collapseButton}
         </div>
+
+        {tabs}
       </h1>
 
       <div

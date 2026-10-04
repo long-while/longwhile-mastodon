@@ -3176,7 +3176,7 @@ body .account__display-name .display-name strong {
   }
 }
 
-body .ui__navigation-bar__item:not(.ui__navigation-bar__item--menu) {
+body .ui__navigation-bar__items .ui__navigation-bar__item {
   svg,
   .icon-with-badge svg {
     width: 20px;
@@ -3218,9 +3218,13 @@ body .ui__navigation-bar__item:not(.ui__navigation-bar__item--menu) {
   }
 }
 
-// Height of the mobile bottom bar. The drawer (navigation-panel__wrapper)
-// extends underneath it, so it needs that much bottom padding for the last
-// entries to be reachable.
+.reduce-motion {
+  .tabs-bar__wrapper,
+  .ui__navigation-bar {
+    transition: none;
+  }
+}
+
 $ui-navigation-bar-height: 54px;
 
 .ui__navigation-bar {
@@ -3230,7 +3234,6 @@ $ui-navigation-bar-height: 54px;
   right: 0;
   height: $ui-navigation-bar-height;
   background: var(--background-color);
-  border-top: 1px solid var(--background-border-color);
   display: flex;
   align-items: center;
   justify-content: space-around;
@@ -3241,10 +3244,16 @@ $ui-navigation-bar-height: 54px;
     display: none;
   }
 
+  transition: opacity 170ms cubic-bezier(0, 0, 1, 1);
+
+  &--dimmed {
+    opacity: 0.3;
+  }
+
   &__items {
     width: 100%;
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 8px;
   }
 
@@ -3271,10 +3280,6 @@ $ui-navigation-bar-height: 54px;
     &.active {
       background: transparent;
       color: var(--brand-color, var(--accent-color, #6364ff));
-    }
-
-    &--menu.active {
-      color: var(--secondary-text-color, var(--color-light-text));
     }
   }
 }
@@ -3847,6 +3852,29 @@ $ui-navigation-bar-height: 54px;
   color: $dark-text-color;
 }
 
+.navigation-panel__profile-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  font-size: 14px;
+  color: $dark-text-color;
+
+  a {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: underline;
+    }
+  }
+
+  strong {
+    color: $primary-text-color;
+    font-weight: 700;
+  }
+}
+
 .navigation-panel__account-switch-button {
   width: 100%;
   border: 0;
@@ -3922,7 +3950,8 @@ $ui-navigation-bar-height: 54px;
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.45);
-    z-index: 30;
+
+    z-index: 50;
 
     @media screen and (min-width: $mobile-breakpoint + 1px) {
       position: static;
@@ -3986,37 +4015,37 @@ $ui-navigation-bar-height: 54px;
   .navigation-panel__wrapper {
     position: fixed;
     inset-block: 0;
-    inset-inline-start: auto;
-    inset-inline-end: 0;
+
+    inset-inline-start: 0;
+    inset-inline-end: auto;
     max-width: 100vw;
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    transform: translateX(100%);
-    transition: transform 0.3s ease;
-    z-index: 35;
+    transform: translateX(-100%);
+
+    visibility: hidden;
+    transition:
+      transform 0.3s ease,
+      visibility 0s linear 0.3s;
+
+    &:focus {
+      outline: none;
+    }
+
+    z-index: 51;
     display: block;
   }
 
-  // The bottom bar floats above the drawer. `.ui__navigation-bar` is
-  // `position: fixed; bottom: 0; z-index: 40` while the drawer sits at 35, so
-  // the drawer's bottom 54px is always covered. Scrolling to the very end
-  // still left the last entries - settings, account switch - under the bar and
-  // untappable. Pad by the bar height instead: the background still reaches
-  // the bottom and only the content rises above the bar. This clears the iOS
-  // home indicator too.
-  //   Naming `__container` as well - three classes - is what makes it stick.
-  //   Every theme file declares `.layout-* .navigation-panel { padding: 10px }`
-  //   with two classes and loads after this file, so writing
-  //   `.navigation-panel__wrapper > .navigation-panel` (also two) ties and
-  //   loses, and that shorthand `padding` silently reset the bottom padding to
-  //   10px. Tall screens had enough slack to hide it; on a short one such as
-  //   400x600 the account switch stayed pinned under the bar no matter how far
-  //   the drawer was scrolled.
-  //   The `.search` and `__menu` rules below already carry three classes and
-  //   win as they are. Check any new drawer rule against the theme's
-  //   two-class ones.
+  .rtl .navigation-panel__wrapper {
+    transform: translateX(100%);
+  }
+
+  .rtl .navigation-panel__wrapper--open {
+    transform: translateX(0);
+  }
+
   .navigation-panel__container .navigation-panel__wrapper > .navigation-panel {
     height: auto;
     min-height: 100%;
@@ -4024,9 +4053,7 @@ $ui-navigation-bar-height: 54px;
     margin-top: 0;
     margin-bottom: 0;
     box-sizing: border-box;
-    padding-bottom: calc(
-      #{$ui-navigation-bar-height} + 16px + env(safe-area-inset-bottom, 0px)
-    );
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   }
 
   // The 24px below the search field comes from the theme's
@@ -4070,22 +4097,64 @@ $ui-navigation-bar-height: 54px;
 
   .navigation-panel__wrapper--open {
     transform: translateX(0);
+    visibility: visible;
+    transition: transform 0.3s ease;
   }
 
-  .navigation-panel__profile-card {
+  .navigation-panel__container {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background-color: transparent;
+    pointer-events: none;
+    transition: background-color 0.3s ease;
+
+    > .navigation-panel__wrapper {
+      pointer-events: auto;
+    }
+  }
+
+  .navigation-panel__container--overlay {
+    background-color: rgba(0, 0, 0, 45%);
+    pointer-events: auto;
+  }
+
+  html.navigation-panel-open,
+  html.navigation-panel-open body {
+    overflow: hidden;
+  }
+
+  .navigation-panel--mobile .navigation-panel__profile {
+    margin: 12px 16px 0;
     gap: 10px;
   }
 
-  // Sit the profile row right under the search field. Dropping the bottom
-  // margin lifts the menu by that much, which fits one more entry on a short
-  // screen.
-  .navigation-panel__profile {
-    margin: 5px 0 0;
+  .navigation-panel__container .navigation-panel__wrapper .column-link {
+    font-weight: 700;
   }
 
-  .navigation-panel__profile-avatar .account__avatar {
-    width: 36px;
-    height: 36px;
+  .navigation-panel--mobile .navigation-panel__profile-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 0;
+    max-width: none;
+    min-height: 0;
+  }
+
+  .navigation-panel--mobile .navigation-panel__profile-avatar .account__avatar {
+    width: 44px;
+    height: 44px;
+  }
+
+  .navigation-panel--mobile .navigation-panel__profile-name {
+    font-size: 17px;
+    font-weight: 700;
+  }
+
+  .navigation-panel--mobile .navigation-panel__profile-handle {
+    margin-top: 2px;
+    font-size: 15px;
   }
 
   .navigation-panel {
@@ -4093,7 +4162,7 @@ $ui-navigation-bar-height: 54px;
   }
 
   .navigation-panel__menu {
-    padding: 0 16px;
+    padding: 10px 16px;
   }
 }
 
@@ -4987,6 +5056,160 @@ a.status-card {
 
 .column-header__buttons {
   display: flex;
+}
+
+.column-header__avatar-menu {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  margin: 0;
+  border: 0;
+  padding: 8px 13px;
+  background: transparent;
+  cursor: pointer;
+
+  .account__avatar {
+    border-radius: 50%;
+  }
+
+  &:focus-visible {
+    outline: $ui-button-icon-focus-outline;
+    outline-offset: -2px;
+  }
+}
+
+.column-header__avatar-menu + .column-header__title {
+  padding-inline-start: 0;
+}
+
+.dm-room-list__header .column-header__avatar-menu {
+  padding: 0;
+}
+
+.column-header__tabs {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.column-header__tab {
+  display: flex;
+  flex: 1 1 0;
+  justify-content: center;
+  min-width: 0;
+  height: 48px;
+  padding: 0 16px;
+  color: $darker-text-color;
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+
+  span {
+    position: relative;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+
+  &:hover {
+    color: $primary-text-color;
+  }
+
+  &:focus-visible {
+    outline: $ui-button-focus-outline;
+    outline-offset: -2px;
+  }
+
+  &.active {
+    color: $primary-text-color;
+    font-weight: 700;
+
+    span::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      width: max(100%, 56px);
+      height: 4px;
+      border-radius: 2px;
+      background: var(--color-brand-longwhile, $ui-highlight-color);
+      transform: translateX(-50%);
+    }
+  }
+}
+
+.column-header__logo {
+  display: none;
+}
+
+@media screen and (min-width: $mobile-breakpoint + 1px) {
+  body.layout-single-column {
+    .column-header--tabbed:has(.column-header__buttons > *) .column-header__tabs {
+      padding-inline-end: 56px;
+    }
+
+    .column-header--tabbed:has(.column-header__buttons > * + *) .column-header__tabs {
+      padding-inline-end: 112px;
+    }
+  }
+}
+
+@media screen and (max-width: $mobile-breakpoint) {
+  .column-header--tabbed {
+    flex-wrap: wrap;
+
+    .column-header__buttons {
+      inset-block-end: auto;
+      height: 48px;
+    }
+
+    .column-header__tabs {
+      flex: 0 0 100%;
+    }
+  }
+
+  body.app-body:not(.layout-multiple-columns):has(.column-header--tabbed)
+    .tabs-bar__wrapper::after {
+    height: 100%;
+  }
+
+  .tabs-bar__wrapper {
+    transition: transform 350ms cubic-bezier(0, 0, 0, 1);
+  }
+
+  .tabs-bar__wrapper--hidden {
+    transform: translate3d(0, -100%, 0);
+  }
+
+  .column-header__logo {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: center;
+    height: 48px;
+    pointer-events: none;
+
+    .logo {
+      width: auto;
+      height: 44px;
+    }
+  }
+
+  .column-header__avatar-menu ~ .column-header__logo {
+    margin-inline-end: 58px;
+  }
+}
+
+.column-header__hidden-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 body.layout-single-column {

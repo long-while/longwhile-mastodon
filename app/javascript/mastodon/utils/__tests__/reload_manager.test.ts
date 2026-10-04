@@ -5,8 +5,16 @@ describe('reload_manager', () => {
   const originalLocation = global.location;
   const originalSessionStorage = global.sessionStorage;
 
+  let replace: ReturnType<typeof vi.fn>;
+  let reload: ReturnType<typeof vi.fn>;
+  let setItem: ReturnType<typeof vi.fn>;
+  let store: Map<string, string>;
+
   beforeEach(() => {
     let href = 'http://localhost/';
+
+    replace = vi.fn();
+    reload = vi.fn();
 
     const locationMock: Partial<Location> = {
       get href() {
@@ -15,30 +23,33 @@ describe('reload_manager', () => {
       set href(value: string) {
         href = value;
       },
+      origin: 'http://localhost',
       pathname: '/',
       search: '',
       hash: '',
-      replace: jest.fn(),
-      reload: jest.fn(),
+      replace,
+      reload,
     };
 
-    const sessionStorageMock = (() => {
-      const store = new Map<string, string>();
-      return {
-        getItem: jest.fn((key: string) => store.get(key) ?? null),
-        setItem: jest.fn((key: string, value: string) => {
-          store.set(key, value);
-        }),
-        removeItem: jest.fn((key: string) => {
-          store.delete(key);
-        }),
-      };
-    })();
+    store = new Map<string, string>();
+    setItem = vi.fn((key: string, value: string) => {
+      store.set(key, value);
+    });
+
+    const sessionStorageMock = {
+      getItem: vi.fn((key: string) => store.get(key) ?? null),
+      setItem,
+      removeItem: vi.fn((key: string) => {
+        store.delete(key);
+      }),
+    };
 
     Object.defineProperty(global, 'window', {
       value: {
         location: locationMock,
-        setTimeout: jest.fn((cb: () => void) => cb()),
+        setTimeout: vi.fn((cb: () => void) => {
+          cb();
+        }),
       },
       configurable: true,
     });
@@ -72,21 +83,17 @@ describe('reload_manager', () => {
   it('updates reload counter and triggers replace/reload', () => {
     performHardReload('/foobar');
 
-    expect(global.sessionStorage.setItem).toHaveBeenCalledWith(
-      '_multiAccountReloadCount',
-      '1',
-    );
-    expect(global.location.replace).toHaveBeenCalledWith('/foobar');
-    expect(global.location.reload).toHaveBeenCalled();
+    expect(setItem).toHaveBeenCalledWith('_multiAccountReloadCount', '1');
+    expect(replace).toHaveBeenCalledWith('/foobar');
+    expect(reload).toHaveBeenCalled();
   });
 
   it('aborts when exceeding maximum reload attempts', () => {
-    global.sessionStorage.setItem('_multiAccountReloadCount', '2');
+    store.set('_multiAccountReloadCount', '2');
 
     performHardReload('/foobar');
 
-    expect(global.location.replace).not.toHaveBeenCalled();
-    expect(global.location.reload).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
+    expect(reload).not.toHaveBeenCalled();
   });
 });
-

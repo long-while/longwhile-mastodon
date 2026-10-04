@@ -21,6 +21,7 @@ import { addColumn, removeColumn, moveColumn } from '../../actions/columns';
 import { expandHomeTimeline } from '../../actions/timelines';
 import Column from '../../components/column';
 import ColumnHeader from '../../components/column_header';
+import { TimelineTabs } from '../ui/components/timeline_tabs';
 import StatusListContainer from '../ui/containers/status_list_container';
 
 import { ColumnSettings } from './components/column_settings';
@@ -159,6 +160,7 @@ class HomeTimeline extends PureComponent {
           pinned={pinned}
           multiColumn={multiColumn}
           extraButton={announcementsButton}
+          tabs={!multiColumn && <TimelineTabs onActiveClick={this.handleHeaderClick} />}
           appendContent={hasAnnouncements && showAnnouncements && <AnnouncementsContainer />}
         >
           <ColumnSettings />
@@ -174,6 +176,7 @@ class HomeTimeline extends PureComponent {
             timelineId='home'
             emptyMessage={<FormattedMessage id='empty_column.home' defaultMessage='Your home timeline is empty! Follow more people to fill it up.' />}
             bindToDocument={!multiColumn}
+            rememberPosition={!multiColumn}
           />
         ) : <NotSignedInIndicator />}
 

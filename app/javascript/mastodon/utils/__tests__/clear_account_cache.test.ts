@@ -1,87 +1,67 @@
 import { clearAccountCache } from '../clear_account_cache';
 
 describe('clearAccountCache', () => {
-  let originalSessionStorage: any;
-  let originalLocalStorage: any;
-  let originalIndexedDB: any;
-  let originalCaches: any;
-  let originalNavigator: any;
+  const sessionClear = vi.fn();
+  const localRemoveItem = vi.fn();
+  const databases = vi.fn();
+  const deleteDatabase = vi.fn();
+  const cacheKeys = vi.fn();
+  const cacheDelete = vi.fn();
+  const postMessage = vi.fn();
 
   beforeEach(() => {
-    originalSessionStorage = global.sessionStorage;
-    originalLocalStorage = global.localStorage;
-    originalIndexedDB = (global as any).indexedDB;
-    originalCaches = (global as any).caches;
-    originalNavigator = global.navigator;
+    const localStore = new Map([
+      ['keep', 'value'],
+      ['drop', 'value'],
+    ]);
 
-    const localStore: Record<string, string> = { keep: 'value', drop: 'value' };
-
-    global.sessionStorage = {
-      clear: jest.fn(),
-    } as unknown as Storage;
-
-    global.localStorage = {
-      get length() {
-        return Object.keys(localStore).length;
-      },
-      key: jest
-        .fn()
-        .mockImplementation((index: number) => Object.keys(localStore)[index] ?? null),
-      removeItem: jest.fn((key: string) => {
-        delete localStore[key];
-      }),
-    } as unknown as Storage;
-
-    const deleteDatabaseMock = jest.fn(() => {
-      const request: any = {};
+    localRemoveItem.mockImplementation((key: string) => {
+      localStore.delete(key);
+    });
+    databases.mockResolvedValue([
+      { name: 'mastodonCache' },
+      { name: 'multiAccountStore' },
+    ]);
+    deleteDatabase.mockImplementation(() => {
+      const request: { onsuccess?: (event: unknown) => void } = {};
       setTimeout(() => {
         request.onsuccess?.(null);
       }, 0);
       return request;
     });
+    cacheKeys.mockResolvedValue(['cache-a']);
+    cacheDelete.mockResolvedValue(true);
 
-    (global as any).indexedDB = {
-      databases: jest.fn().mockResolvedValue([
-        { name: 'mastodonCache' },
-        { name: 'multiAccountStore' },
-      ]),
-      deleteDatabase: deleteDatabaseMock,
-    };
-
-    (global as any).caches = {
-      keys: jest.fn().mockResolvedValue(['cache-a']),
-      delete: jest.fn().mockResolvedValue(true),
-    };
-
-    global.navigator = {
-      serviceWorker: {
-        controller: {
-          postMessage: jest.fn(),
-        },
+    vi.stubGlobal('sessionStorage', { clear: sessionClear });
+    vi.stubGlobal('localStorage', {
+      get length() {
+        return localStore.size;
       },
-    } as unknown as Navigator;
+      key: (index: number) => Array.from(localStore.keys())[index] ?? null,
+      removeItem: localRemoveItem,
+    });
+    vi.stubGlobal('indexedDB', { databases, deleteDatabase });
+    vi.stubGlobal('caches', { keys: cacheKeys, delete: cacheDelete });
+    vi.stubGlobal('navigator', {
+      serviceWorker: { controller: { postMessage } },
+    });
   });
 
   afterEach(() => {
-    global.sessionStorage = originalSessionStorage;
-    global.localStorage = originalLocalStorage;
-    (global as any).indexedDB = originalIndexedDB;
-    (global as any).caches = originalCaches;
-    global.navigator = originalNavigator;
+    vi.unstubAllGlobals();
+    vi.clearAllMocks();
   });
 
   it('clears storages, caches, and notifies service worker', async () => {
     await clearAccountCache();
 
-    expect(global.sessionStorage.clear).toHaveBeenCalled();
-    expect(global.localStorage.removeItem).toHaveBeenCalledWith('drop');
-    expect((global as any).indexedDB.databases).toHaveBeenCalled();
-    expect((global as any).indexedDB.deleteDatabase).toHaveBeenCalledWith('mastodonCache');
-    expect((global as any).caches.keys).toHaveBeenCalled();
-    expect((global as any).caches.delete).toHaveBeenCalledWith('cache-a');
-    expect(
-      global.navigator.serviceWorker?.controller?.postMessage,
-    ).toHaveBeenCalledWith({ type: 'SWITCH_ACCOUNT_RESET' });
+    expect(sessionClear).toHaveBeenCalled();
+    expect(localRemoveItem).toHaveBeenCalledWith('drop');
+    expect(databases).toHaveBeenCalled();
+    expect(deleteDatabase).toHaveBeenCalledWith('mastodonCache');
+    expect(deleteDatabase).not.toHaveBeenCalledWith('multiAccountStore');
+    expect(cacheKeys).toHaveBeenCalled();
+    expect(cacheDelete).toHaveBeenCalledWith('cache-a');
+    expect(postMessage).toHaveBeenCalledWith({ type: 'SWITCH_ACCOUNT_RESET' });
   });
 });
-

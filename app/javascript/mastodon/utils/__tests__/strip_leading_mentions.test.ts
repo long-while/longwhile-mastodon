@@ -11,9 +11,9 @@ describe('stripLeadingMentions', () => {
   it('drops the handles the composer carried over', () => {
     const html = `<p>${mention('chul_su')} ${mention('longwhile')} Blackjack, anyone?</p>`;
 
-    expect(stripLeadingMentions(html, carriedOver('chul_su', 'longwhile'))).toBe(
-      '<p>Blackjack, anyone?</p>',
-    );
+    expect(
+      stripLeadingMentions(html, carriedOver('chul_su', 'longwhile')),
+    ).toBe('<p>Blackjack, anyone?</p>');
   });
 
   it('keeps someone the reply is bringing into the conversation', () => {
@@ -51,7 +51,9 @@ describe('stripLeadingMentions', () => {
   it('drops the line break left behind by a mention on its own line', () => {
     const html = `<p>${mention('a')}<br>Second line</p>`;
 
-    expect(stripLeadingMentions(html, carriedOver('a'))).toBe('<p>Second line</p>');
+    expect(stripLeadingMentions(html, carriedOver('a'))).toBe(
+      '<p>Second line</p>',
+    );
   });
 
   it('leaves a post without carried-over mentions untouched', () => {

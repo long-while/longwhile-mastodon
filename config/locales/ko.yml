@@ -338,7 +338,7 @@ ko:
         title: 새 공지사항
       preview:
         disclaimer: 사용자들은 수신설정을 끌 수 없기 때문에 이메일 알림은 개인정보 유출이나 서버 종료와 같은 중요한 공지사항에만 사용해야 합니다.
-        explanation_html: "<strong>%{display_count} 명의 사용자</strong>에게 이메일이 발송됩니다. 다음 내용이 이메일에 포함됩니다:"
+        explanation_html: "<strong>%{display_count}명의 사용자</strong>에게 이메일이 발송됩니다. 다음 내용이 이메일에 포함됩니다:"
         title: 공지사항 알림 미리보기
       publish: 게시
       published_msg: 공지사항이 성공적으로 발행되었습니다!
@@ -995,7 +995,7 @@ ko:
       notified_on_html: 사용자들이 %{date}에 알림을 받았습니다
       notify_users: 사용자들에게 알리기
       preview:
-        explanation_html: "%{date} 이전에 가입한 <strong>%{display_count} 명의 사용자</strong>에게 이메일이 발송됩니다. 다음 내용이 이메일에 포함됩니다:"
+        explanation_html: "%{date} 이전에 가입한 <strong>%{display_count}명의 사용자</strong>에게 이메일이 발송됩니다. 다음 내용이 이메일에 포함됩니다:"
         send_preview: 미리보기를 %{email}에 보내기
         send_to_all:
           other: "%{display_count} 건의 메일 발송"
@@ -1025,7 +1025,7 @@ ko:
         publishers:
           no_publisher_selected: 아무 것도 선택 되지 않아 어떤 게시자도 바뀌지 않았습니다
         shared_by_over_week:
-          other: 지난 주 동안 %{count} 명의 사람들이 공유했습니다
+          other: 지난 주 동안 %{count}명의 사람들이 공유했습니다
         title: 유행하는 링크
         usage_comparison: 오늘은 %{today}회 공유되었고, 어제는 %{yesterday}회 공유되었습니다
       not_allowed_to_trend: 트렌드에 오를 수 없음
@@ -1073,7 +1073,7 @@ ko:
         usable: 사용 가능
         usage_comparison: 오늘은 %{today}회 쓰였고, 어제는 %{yesterday}회 쓰임
         used_by_over_week:
-          other: 지난 주 동안 %{count} 명의 사람들이 사용했습니다
+          other: 지난 주 동안 %{count}명의 사람들이 사용했습니다
       title: 추천과 유행
       trending: 유행 중
     warning_presets:
@@ -1987,7 +1987,7 @@ ko:
       follows_title: 누구를 팔로우 할 지
       follows_view_more: 팔로우 할 사람들 더 보기
       hashtags_recent_count:
-        other: 최근 2일동안 %{people} 명
+        other: 최근 2일동안 %{people}명
       hashtags_subtitle: 최근 2일간 무엇이 유행했는지 둘러보기
       hashtags_title: 유행하는 해시태그
       hashtags_view_more: 유행하는 해시태그 더 보기

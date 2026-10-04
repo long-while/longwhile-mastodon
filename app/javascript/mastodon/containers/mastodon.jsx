@@ -18,6 +18,7 @@ import initialState, { title as siteTitle, getAccessToken } from 'mastodon/initi
 import { IntlProvider } from 'mastodon/locales';
 import { store } from 'mastodon/store';
 import { isProduction } from 'mastodon/utils/environment';
+import { remembersOwnScroll } from 'mastodon/utils/scroll_anchor';
 import { setActiveAccountToken } from 'mastodon/api';
 import { hydrateStore as hydrateMultiAccountStore } from 'mastodon/utils/multi_account_storage';
 
@@ -85,6 +86,10 @@ export default class Mastodon extends PureComponent {
   }
 
   shouldUpdateScroll (prevRouterProps, { location }) {
+    if (remembersOwnScroll(prevRouterProps?.location?.pathname, location.pathname)) {
+      return false;
+    }
+
     return !(location.state?.mastodonModalKey && location.state?.mastodonModalKey !== prevRouterProps?.location?.state?.mastodonModalKey);
   }
 

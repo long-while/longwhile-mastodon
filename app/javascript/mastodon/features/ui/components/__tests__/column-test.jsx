@@ -1,3 +1,6 @@
+import { Provider } from 'react-redux';
+
+import { store } from 'mastodon/store';
 import { render, fireEvent, screen } from 'mastodon/test_helpers';
 
 import Column from '../column';
@@ -9,9 +12,11 @@ describe('<Column />', () => {
     it('runs the scroll animation if the column contains scrollable content', () => {
       const scrollToMock = vi.fn();
       const { container } = render(
-        <Column heading='notifications' icon='notifications' iconComponent={fakeIcon}>
-          <div className='scrollable' />
-        </Column>,
+        <Provider store={store}>
+          <Column heading='notifications' icon='notifications' iconComponent={fakeIcon}>
+            <div className='scrollable' />
+          </Column>
+        </Provider>,
       );
       container.querySelector('.scrollable').scrollTo = scrollToMock;
       fireEvent.click(screen.getByText('notifications'));
@@ -19,7 +24,11 @@ describe('<Column />', () => {
     });
 
     it('does not try to scroll if there is no scrollable content', () => {
-      render(<Column heading='notifications' icon='notifications' iconComponent={fakeIcon} />);
+      render(
+        <Provider store={store}>
+          <Column heading='notifications' icon='notifications' iconComponent={fakeIcon} />
+        </Provider>,
+      );
       fireEvent.click(screen.getByText('notifications'));
     });
   });

@@ -11,6 +11,7 @@ import { supportsPassiveEvents } from 'detect-passive-events';
 import { throttle } from 'lodash';
 
 import ScrollContainer from 'mastodon/containers/scroll_container';
+import { getScrollAnchor, saveScrollAnchor, findScrollAnchor, scrollDeltaToAnchor } from 'mastodon/utils/scroll_anchor';
 
 import IntersectionObserverArticleContainer from '../containers/intersection_observer_article_container';
 import { attachFullscreenListener, detachFullscreenListener, isFullscreen } from '../features/ui/util/fullscreen';
@@ -21,6 +22,10 @@ import { LoadPending } from './load_pending';
 import { LoadingIndicator } from './loading_indicator';
 
 const MOUSE_IDLE_DELAY = 300;
+
+const TOP_THRESHOLD = 100;
+
+const ANCHOR_SETTLE_DELAYS = [0, 150, 500];
 
 const listenerOptions = supportsPassiveEvents ? { passive: true } : false;
 
@@ -82,6 +87,7 @@ class ScrollableList extends PureComponent {
     preventScroll: PropTypes.bool,
     footer: PropTypes.node,
     className: PropTypes.string,
+    rememberPosition: PropTypes.bool,
   };
 
   static defaultProps = {
@@ -188,8 +194,54 @@ class ScrollableList extends PureComponent {
 
     attachFullscreenListener(this.onFullScreenChange);
 
+    if (this.props.rememberPosition) {
+      this.restoreRememberedPosition();
+    }
+
     // Handle initial scroll position
     this.handleScroll();
+  }
+
+  _getViewportTop = () => {
+    return this.props.bindToDocument ? 0 : this.node.getBoundingClientRect().top;
+  };
+
+  rememberCurrentPosition () {
+    if (!this.node) return;
+
+    const atTop = this.getScrollTop() < TOP_THRESHOLD;
+    const anchor = atTop ? null : findScrollAnchor(this.node, this._getViewportTop());
+
+    saveScrollAnchor(this.props.scrollKey, anchor);
+  }
+
+  restoreRememberedPosition () {
+    const anchor = getScrollAnchor(this.props.scrollKey);
+
+    if (!this.node || !anchor) {
+      this.setScrollTop(0);
+      return;
+    }
+
+    let expectedTop = null;
+
+    const apply = () => {
+      if (!this.node) return;
+      if (expectedTop !== null && this.getScrollTop() !== expectedTop) return;
+
+      const delta = scrollDeltaToAnchor(this.node, this._getViewportTop(), anchor);
+
+      if (delta !== null) {
+        this.setScrollTop(this.getScrollTop() + delta);
+      } else if (expectedTop === null) {
+        this.setScrollTop(0);
+      }
+
+      expectedTop = this.getScrollTop();
+    };
+
+    apply();
+    this.anchorTimers = ANCHOR_SETTLE_DELAYS.map(delay => setTimeout(apply, delay));
   }
 
   getScrollPosition = () => {
@@ -246,6 +298,11 @@ class ScrollableList extends PureComponent {
   };
 
   componentWillUnmount () {
+    if (this.props.rememberPosition) {
+      this.rememberCurrentPosition();
+    }
+
+    this.anchorTimers?.forEach(clearTimeout);
     this.clearMouseIdleTimer();
     this.detachScrollListener();
     this.detachIntersectionObserver();

@@ -18,6 +18,7 @@ import PublicIcon from '@/material-icons/400-24px/public.svg?react';
 import SettingsIcon from '@/material-icons/400-24px/settings-fill.svg?react';
 import { openModal } from 'mastodon/actions/modal';
 import Column from 'mastodon/components/column';
+import { ColumnHeader } from 'mastodon/components/column_header';
 import { Icon }  from 'mastodon/components/icon';
 
 import elephantUIPlane from '../../../images/elephant_ui_plane.svg';
@@ -41,6 +42,7 @@ const messages = defineMessages({
 
 const mapStateToProps = (state) => ({
   columns: state.getIn(['settings', 'columns']),
+  isMobileLayout: state.getIn(['meta', 'layout']) === 'mobile',
 });
 
 class Compose extends PureComponent {
@@ -49,6 +51,7 @@ class Compose extends PureComponent {
     dispatch: PropTypes.func.isRequired,
     columns: ImmutablePropTypes.list.isRequired,
     multiColumn: PropTypes.bool,
+    isMobileLayout: PropTypes.bool,
     intl: PropTypes.object.isRequired,
   };
 
@@ -124,6 +127,8 @@ class Compose extends PureComponent {
 
     return (
       <Column onFocus={this.onFocus}>
+        {this.props.isMobileLayout && <ColumnHeader showBackButton />}
+
         <ComposeFormContainer />
 
         <Helmet>

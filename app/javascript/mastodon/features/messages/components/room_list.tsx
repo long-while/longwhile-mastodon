@@ -12,6 +12,7 @@ import { fetchDmRooms, markDmRoomRead } from 'mastodon/actions/dm_rooms';
 import { openModal } from 'mastodon/actions/modal';
 import { Icon } from 'mastodon/components/icon';
 import ScrollableList from 'mastodon/components/scrollable_list';
+import { MobileMenuAvatarButton } from 'mastodon/features/ui/components/mobile_menu_avatar_button';
 import { me } from 'mastodon/initial_state';
 import { useAppDispatch, useAppSelector } from 'mastodon/store';
 
@@ -141,6 +142,8 @@ export const RoomList: React.FC = () => {
   return (
     <div className='dm-room-list'>
       <div className='dm-room-list__header'>
+        <MobileMenuAvatarButton />
+
         <h1 className='dm-room-list__title'>
           {intl.formatMessage(messages.title)}
         </h1>

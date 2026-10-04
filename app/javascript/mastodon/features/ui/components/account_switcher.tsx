@@ -1,54 +1,58 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type FC,
-  type MouseEvent as ReactMouseEvent,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type ReactNode,
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type {
+  FC,
+  MouseEvent as ReactMouseEvent,
+  KeyboardEvent as ReactKeyboardEvent,
+  ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
 
-import { defineMessages, useIntl, type MessageDescriptor } from 'react-intl';
+import { defineMessages, useIntl } from 'react-intl';
+import type { MessageDescriptor } from 'react-intl';
 
 import { useSelector } from 'react-redux';
 
-import MoreHorizIcon from '@/material-icons/400-24px/more_horiz.svg?react';
+import CheckIcon from '@/material-icons/400-24px/check.svg?react';
 import CloseIcon from '@/material-icons/400-24px/close.svg?react';
 import DeleteIcon from '@/material-icons/400-24px/delete.svg?react';
-import CheckIcon from '@/material-icons/400-24px/check.svg?react';
-import { Icon } from 'mastodon/components/icon';
-import { CircularProgress } from 'mastodon/components/circular_progress';
+import MoreHorizIcon from '@/material-icons/400-24px/more_horiz.svg?react';
 import { showAlert } from 'mastodon/actions/alerts';
-import type { Account } from 'mastodon/models/account';
-import api, { suspendSessionRecovery } from 'mastodon/api';
-import { MULTI_ACCOUNT_REQUEST_TIMEOUT } from 'mastodon/api/multi_accounts_constants';
 import {
   registerAccount,
   switchAccount,
   registerAccountAction,
   removeAccount,
 } from 'mastodon/actions/multi_account';
+import api, { suspendSessionRecovery } from 'mastodon/api';
+import type * as MultiAccountsApi from 'mastodon/api/multi_accounts';
+import { MULTI_ACCOUNT_REQUEST_TIMEOUT } from 'mastodon/api/multi_accounts_constants';
+import { CircularProgress } from 'mastodon/components/circular_progress';
+import { Icon } from 'mastodon/components/icon';
+import type * as CallbackHandler from 'mastodon/features/multi_account/callback_handler';
+import {
+  closeBlankOAuthPopup,
+  isIosHomeScreenApp,
+  openBlankOAuthPopup,
+} from 'mastodon/features/multi_account/oauth_popup';
+import type { Account } from 'mastodon/models/account';
+import { useAppDispatch } from 'mastodon/store/typed_functions';
 import type { MultiAccountEntry } from 'mastodon/types/multi_account';
 import { MultiAccountSwitchError } from 'mastodon/types/multi_account';
-import { useAppDispatch } from 'mastodon/store/typed_functions';
+import { logOut } from 'mastodon/utils/log_out';
 import {
   clearAllAccounts,
   loadAllEntries,
   loadEncryptedToken,
 } from 'mastodon/utils/multi_account_db';
 import { clearActiveAccountIdInStorage } from 'mastodon/utils/multi_account_storage';
-import { logOut } from 'mastodon/utils/log_out';
 
 // Backstop for the whole add-account flow. Releases the UI flags if something
 // hangs past every individual timeout (15s per api call, 90s for the OAuth
 // popup).
 const ADD_ACCOUNT_WATCHDOG_TIMEOUT = 100000;
 
-type MultiAccountsModule = typeof import('mastodon/api/multi_accounts');
-type CallbackHandlerModule = typeof import('mastodon/features/multi_account/callback_handler');
+type MultiAccountsModule = typeof MultiAccountsApi;
+type CallbackHandlerModule = typeof CallbackHandler;
 
 const loadMultiAccountsModule = (): Promise<MultiAccountsModule> =>
   import('mastodon/api/multi_accounts');
@@ -65,17 +69,46 @@ const pageTokenWasRevoked = async (): Promise<boolean> => {
     });
     return false;
   } catch (error) {
-    return (error as { response?: { status?: number } }).response?.status === 401;
+    return (
+      (error as { response?: { status?: number } }).response?.status === 401
+    );
   }
 };
 
 const messages = defineMessages({
-  switchAccount: { id: 'account_switcher.switch_account', defaultMessage: 'Switch account' },
-  addAccount: { id: 'account_switcher.add_account', defaultMessage: 'Add another account' },
-  addingAccount: { id: 'account_switcher.adding_account', defaultMessage: 'Adding account...' },
-  addError: { id: 'account_switcher.add_error', defaultMessage: 'Failed to add account.' },
-  switchError: { id: 'account_switcher.switch_error', defaultMessage: 'Failed to switch account.' },
-  popupBlocked: { id: 'account_switcher.popup_blocked', defaultMessage: 'Popup was blocked. Please allow popups for this site.' },
+  switchAccount: {
+    id: 'account_switcher.switch_account',
+    defaultMessage: 'Switch account',
+  },
+  addAccount: {
+    id: 'account_switcher.add_account',
+    defaultMessage: 'Add another account',
+  },
+  addingAccount: {
+    id: 'account_switcher.adding_account',
+    defaultMessage: 'Adding account...',
+  },
+  addError: {
+    id: 'account_switcher.add_error',
+    defaultMessage: 'Failed to add account.',
+  },
+  switchError: {
+    id: 'account_switcher.switch_error',
+    defaultMessage: 'Failed to switch account.',
+  },
+  popupBlocked: {
+    id: 'account_switcher.popup_blocked',
+    defaultMessage: 'Popup was blocked. Please allow popups for this site.',
+  },
+  popupLoading: {
+    id: 'account_switcher.popup_loading',
+    defaultMessage: 'Loading the login screen…',
+  },
+  homeScreenAppUnsupported: {
+    id: 'account_switcher.home_screen_app_unsupported',
+    defaultMessage:
+      'Accounts cannot be added from the Home Screen app. Please open this site in Safari to add an account.',
+  },
   oauthPopupClosed: {
     id: 'account_switcher.oauth_popup_closed',
     defaultMessage: 'OAuth popup was closed before authorization completed.',
@@ -110,7 +143,8 @@ const messages = defineMessages({
   },
   manageDeleteConfirmDescription: {
     id: 'account_switcher.manage_delete_confirm_description',
-    defaultMessage: 'Deleting this account will remove saved login data and sign it out on this device.',
+    defaultMessage:
+      'Deleting this account will remove saved login data and sign it out on this device.',
   },
   manageDeleteCancel: {
     id: 'account_switcher.manage_delete_cancel',
@@ -130,7 +164,8 @@ const messages = defineMessages({
   },
   manageSignOutFailure: {
     id: 'account_switcher.manage_sign_out_failure',
-    defaultMessage: 'Account was removed locally, but signing out on the server failed.',
+    defaultMessage:
+      'Account was removed locally, but signing out on the server failed.',
   },
   manageLogoutAll: {
     id: 'account_switcher.manage_logout_all',
@@ -146,7 +181,8 @@ const messages = defineMessages({
   },
   addTimeout: {
     id: 'account_switcher.add_timeout',
-    defaultMessage: 'Adding an account took too long and was cancelled. Please try again.',
+    defaultMessage:
+      'Adding an account took too long and was cancelled. Please try again.',
   },
 });
 
@@ -157,17 +193,19 @@ interface AccountSwitcherTriggerArgs {
 interface AccountSwitcherProps {
   renderTrigger?: (options: AccountSwitcherTriggerArgs) => ReactNode;
 }
-// An empty string does not count as a value. `??` lets '' through, which left
-// accounts with no display name showing as a blank row.
-const firstNonEmpty = (
-  ...values: (string | null | undefined)[]
-): string => values.find((value) => !!value && value.length > 0) ?? '';
+const firstNonEmpty = (...values: (string | null | undefined)[]): string =>
+  values.find((value) => !!value && value.length > 0) ?? '';
+
+const OAUTH_POPUP_CLOSED =
+  'OAuth popup was closed before authorization completed';
 
 const knownErrorMessages: Record<string, MessageDescriptor> = {
-  'OAuth popup was closed before authorization completed': messages.oauthPopupClosed,
+  [OAUTH_POPUP_CLOSED]: messages.oauthPopupClosed,
 };
 
-export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => {
+export const AccountSwitcher: FC<AccountSwitcherProps> = ({
+  renderTrigger,
+}) => {
   const intl = useIntl();
   const dispatch = useAppDispatch();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -176,13 +214,20 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
   // closure, so a ref is what actually prevents concurrent runs.
   const isProcessingRef = useRef(false);
   const addWatchdogRef = useRef<number | null>(null);
+  const addPopupRef = useRef<Window | null>(null);
+  const addFlowRef = useRef(0);
   const storingAccountIdsRef = useRef<Set<string>>(new Set());
   // Accounts we already tried to mint a long-lived token for on this page.
   const mintAttemptedIdsRef = useRef<Set<string>>(new Set());
-  const [persistedAccounts, setPersistedAccounts] = useState<MultiAccountEntry[]>([]);
+  const [persistedAccounts, setPersistedAccounts] = useState<
+    MultiAccountEntry[]
+  >([]);
   const [isManageOpen, setIsManageOpen] = useState(false);
-  const [pendingDeletion, setPendingDeletion] = useState<MultiAccountEntry | null>(null);
-  const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null);
+  const [pendingDeletion, setPendingDeletion] =
+    useState<MultiAccountEntry | null>(null);
+  const [deletingAccountId, setDeletingAccountId] = useState<string | null>(
+    null,
+  );
 
   // Get multi-account state from Redux
   const multiAccountState = useSelector((state: any) => {
@@ -197,10 +242,10 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
       if (!multiAccountState) {
         return null;
       }
-      if (typeof (multiAccountState as any).get === 'function') {
-        return (multiAccountState as any).get(key);
+      if (typeof multiAccountState.get === 'function') {
+        return multiAccountState.get(key);
       }
-      return (multiAccountState as any)[key] ?? null;
+      return multiAccountState[key] ?? null;
     },
     [multiAccountState],
   );
@@ -257,7 +302,7 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
       .then((entries) => {
         setPersistedAccounts(Object.values(entries));
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         console.error('Failed to load persisted multi-account entries:', error);
       });
   }, []);
@@ -274,14 +319,14 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
 
   const activeEntry = useMemo(() => {
     if (!sessionAccountId || !accounts) {
-    return null;
+      return null;
     }
 
-    if (typeof (accounts as any).get === 'function') {
-      return (accounts as any).get(sessionAccountId);
+    if (typeof accounts.get === 'function') {
+      return accounts.get(sessionAccountId);
     }
 
-    return (accounts as any)[sessionAccountId] ?? null;
+    return accounts[sessionAccountId] ?? null;
   }, [sessionAccountId, accounts]);
 
   const displayAvatar =
@@ -302,31 +347,6 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
     currentAccount?.username ??
     '';
 
-  const activeAccount = useMemo(() => {
-    if (activeEntry) {
-      const entry = activeEntry.toJS ? activeEntry.toJS() : activeEntry;
-      return {
-        id: entry.id ?? sessionAccountId ?? 'active',
-        acct: entry.acct ?? entry.username ?? '',
-        displayName: entry.displayName ?? entry.acct ?? entry.username ?? '',
-        avatar: entry.avatar ?? entry.avatar_static ?? displayAvatar,
-      };
-    }
-
-    if (currentAccount) {
-      return {
-        id: currentAccount.id,
-        acct: currentAccount.acct,
-        displayName:
-          currentAccount.display_name ?? currentAccount.username ?? '',
-        avatar:
-          currentAccount.avatar ?? currentAccount.avatar_static ?? displayAvatar,
-      };
-    }
-
-    return null;
-  }, [activeEntry, sessionAccountId, currentAccount, displayAvatar]);
-
   const mergedAccounts = useMemo(() => {
     const map = new Map<string, MultiAccountEntry>();
 
@@ -337,16 +357,17 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
     });
 
     if (accounts) {
-      const iterate = typeof (accounts as any).toList === 'function'
-        ? (accounts as any).toList()
-        : Object.values(accounts as Record<string, MultiAccountEntry>);
+      const iterate =
+        typeof accounts.toList === 'function'
+          ? accounts.toList()
+          : Object.values(accounts as Record<string, MultiAccountEntry>);
 
       iterate.forEach((entry: any) => {
-          const normalized = entry?.toJS ? entry.toJS() : entry;
-          if (normalized?.id) {
-            map.set(normalized.id, normalized);
-          }
-        });
+        const normalized = entry?.toJS ? entry.toJS() : entry;
+        if (normalized?.id) {
+          map.set(normalized.id, normalized);
+        }
+      });
     }
 
     return Array.from(map.values());
@@ -374,9 +395,9 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
     async (accountId: string) => {
       const accountExists =
         !!accounts &&
-        (typeof (accounts as any).has === 'function'
-          ? (accounts as any).has(accountId)
-          : Boolean((accounts as any)[accountId]));
+        (typeof accounts.has === 'function'
+          ? accounts.has(accountId)
+          : Boolean(accounts[accountId]));
 
       if (accountExists) {
         return true;
@@ -576,7 +597,7 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
     const entries = accounts
       .toList()
       .map((entry: any) => (entry?.toJS ? entry.toJS() : entry))
-      .filter((entry: any) => entry && entry.id);
+      .filter((entry: any) => entry?.id);
 
     if (entries.length === 0) {
       return;
@@ -636,8 +657,11 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
       .then((entries) => {
         setPersistedAccounts(Object.values(entries));
       })
-      .catch((error) => {
-        console.error('Failed to refresh persisted multi-account entries:', error);
+      .catch((error: unknown) => {
+        console.error(
+          'Failed to refresh persisted multi-account entries:',
+          error,
+        );
       });
   }, [isManageOpen]);
 
@@ -703,15 +727,7 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
         setPendingDeletion(null);
       }
     },
-    [
-      dispatch,
-      intl,
-      messages.manageRemoveFailure,
-      messages.manageRemoveSuccess,
-      messages.manageSignOutFailure,
-      sessionAccountId,
-      deletingAccountId,
-    ],
+    [dispatch, intl, sessionAccountId, deletingAccountId],
   );
 
   // Release the UI flags and the watchdog when the add-account flow ends,
@@ -728,6 +744,8 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
   // The user cancelled adding an account: close the in-flight OAuth popup and
   // restore the UI at once.
   const handleCancelAddAccount = useCallback(() => {
+    addFlowRef.current += 1;
+    closeBlankOAuthPopup(addPopupRef.current);
     void loadCallbackHandlerModule().then(({ cancelPendingOAuthRequests }) => {
       cancelPendingOAuthRequests();
     });
@@ -735,30 +753,66 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
   }, [finishAddProcessing]);
 
   const handleAddAccount = useCallback(() => {
+    if (isProcessingRef.current) {
+      return;
+    }
+
+    if (isIosHomeScreenApp()) {
+      dispatch(showAlert({ message: messages.homeScreenAppUnsupported }));
+      return;
+    }
+
+    const popup = openBlankOAuthPopup(
+      intl.formatMessage(messages.popupLoading),
+    );
+
+    if (!popup) {
+      dispatch(showAlert({ message: messages.popupBlocked }));
+      return;
+    }
+
+    addPopupRef.current = popup;
+
+    const flowId = ++addFlowRef.current;
+    const isStale = () => addFlowRef.current !== flowId;
+
     const add = async () => {
-      if (isProcessingRef.current) {
-        return;
-      }
       isProcessingRef.current = true;
       setIsProcessing(true);
 
-      // Backstop: arm the watchdog as soon as the flow starts so an
-      // unexpected hang past every individual timeout (15s per api call, 90s
-      // for the OAuth popup) cannot lock the UI forever.
-      addWatchdogRef.current = window.setTimeout(() => {
+      const handleWatchdog = () => {
         console.warn(
           '[MultiAccount] add-account watchdog fired; force-releasing UI state',
         );
+        addFlowRef.current += 1;
         void loadCallbackHandlerModule().then(
           ({ cancelPendingOAuthRequests }) => {
             cancelPendingOAuthRequests();
           },
         );
+        closeBlankOAuthPopup(popup);
         finishAddProcessing();
-        dispatch(showAlert({ message: intl.formatMessage(messages.addTimeout) }));
-      }, ADD_ACCOUNT_WATCHDOG_TIMEOUT);
+        dispatch(
+          showAlert({ message: intl.formatMessage(messages.addTimeout) }),
+        );
+      };
 
-      const pending = { state: null as string | null, nonce: null as string | null };
+      const armWatchdog = () => {
+        if (addWatchdogRef.current !== null) {
+          window.clearTimeout(addWatchdogRef.current);
+        }
+        addWatchdogRef.current = window.setTimeout(
+          handleWatchdog,
+          ADD_ACCOUNT_WATCHDOG_TIMEOUT,
+        );
+      };
+
+      armWatchdog();
+
+      const pending = {
+        state: null as string | null,
+        nonce: null as string | null,
+      };
 
       // Whoever the server session belongs to right now is the reference.
       const currentAccountId = sessionAccountId;
@@ -771,102 +825,86 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
       // end in a reload keep recovery suspended.
       let releaseSessionRecovery: (() => void) | null = null;
       let reloading = false;
+      let mintPromise: Promise<void> = Promise.resolve();
 
       try {
-        // Refetch and overwrite this account's long-lived token before the
-        // popup opens. This is the only path that repairs a session token
-        // stored by an older version, so it never skips an account that
-        // already has an entry. It is also the last moment a token can be
-        // minted for this account: the popup's `prompt=login` is about to
-        // sign the shared session out.
-        if (currentAccountId) {
-          try {
-            const { mintSwitchToken } = await loadMultiAccountsModule();
-            const minted = await mintSwitchToken(currentAccountId);
+        const mintCurrentAccountToken = async () => {
+          if (currentAccountId) {
+            try {
+              const { mintSwitchToken } = await loadMultiAccountsModule();
+              const minted = await mintSwitchToken(currentAccountId);
 
-            if (minted) {
-              const refreshedEntry: MultiAccountEntry = {
-                id: minted.account.id,
-                acct: firstNonEmpty(
-                  minted.account.acct,
-                  currentAccount?.acct,
-                  currentAccount?.username,
-                  currentAccountId,
-                ),
-                displayName: firstNonEmpty(
-                  minted.account.display_name,
-                  minted.account.username,
-                  currentAccount?.display_name,
-                  currentAccount?.username,
-                ),
-                avatar: firstNonEmpty(
-                  minted.account.avatar,
-                  minted.account.avatar_static,
-                  currentAccount?.avatar,
-                  currentAccount?.avatar_static,
-                ),
-                encryptedTokenRef: '',
-                lastUsedAt: new Date().toISOString(),
-              };
+              if (minted) {
+                const refreshedEntry: MultiAccountEntry = {
+                  id: minted.account.id,
+                  acct: firstNonEmpty(
+                    minted.account.acct,
+                    currentAccount?.acct,
+                    currentAccount?.username,
+                    currentAccountId,
+                  ),
+                  displayName: firstNonEmpty(
+                    minted.account.display_name,
+                    minted.account.username,
+                    currentAccount?.display_name,
+                    currentAccount?.username,
+                  ),
+                  avatar: firstNonEmpty(
+                    minted.account.avatar,
+                    minted.account.avatar_static,
+                    currentAccount?.avatar,
+                    currentAccount?.avatar_static,
+                  ),
+                  encryptedTokenRef: '',
+                  lastUsedAt: new Date().toISOString(),
+                };
 
-              await dispatch(
-                registerAccount(refreshedEntry, minted.token) as unknown as any,
+                await dispatch(
+                  registerAccount(
+                    refreshedEntry,
+                    minted.token,
+                  ) as unknown as any,
+                );
+                mintAttemptedIdsRef.current.add(currentAccountId);
+              }
+            } catch (refreshError) {
+              console.error(
+                '[MultiAccount] Pre-OAuth: token refresh FAILED',
+                refreshError,
               );
-              mintAttemptedIdsRef.current.add(currentAccountId);
             }
-          } catch (refreshError) {
-            console.error(
-              '[MultiAccount] Pre-OAuth: token refresh FAILED',
-              refreshError,
-            );
           }
-        }
+        };
+
+        mintPromise = mintCurrentAccountToken();
 
         const [
-          {
-            fetchAuthorizeEntry,
-            consumeAuthorizationCode,
-            restoreMultiAccountSession,
-          },
+          ,
+          { consumeAuthorizationCode, restoreMultiAccountSession },
           { openOAuthPopup },
+          authorizeEntry,
         ] = await Promise.all([
+          mintPromise,
           loadMultiAccountsModule(),
           loadCallbackHandlerModule(),
+          loadMultiAccountsModule().then((module) =>
+            module.fetchAuthorizeEntry({ forceLogin: true }),
+          ),
         ]);
 
         restoreMultiAccountSessionFn = restoreMultiAccountSession;
-
-        const width = 600;
-        const height = 700;
-        const left = window.screenX + (window.outerWidth - width) / 2;
-        const top = window.screenY + (window.outerHeight - height) / 2;
-
-        releaseSessionRecovery = suspendSessionRecovery();
-
-        const blankPopup = window.open(
-          'about:blank',
-          'multi-account-oauth',
-          `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,location=no`,
-        );
-
-        if (!blankPopup) {
-          throw new Error(
-            intl.formatMessage({
-              id: 'account_switcher.popup_blocked',
-              defaultMessage: 'Popup was blocked. Please allow popups for this site.',
-            }),
-          );
-        }
-
-        // Adding a new account must force the login screen. Otherwise OAuth
-        // simply re-authorises the account in the current session cookie and
-        // adds the one that is already signed in.
-        const authorizeEntry = await fetchAuthorizeEntry({ forceLogin: true });
         pending.state = authorizeEntry.state;
         pending.nonce = authorizeEntry.nonce;
         const { authorize_url: authorizeUrl, state, nonce } = authorizeEntry;
 
-        const callback = await openOAuthPopup(authorizeUrl, state, blankPopup);
+        if (isStale() || popup.closed) {
+          throw new Error(OAUTH_POPUP_CLOSED);
+        }
+
+        releaseSessionRecovery = suspendSessionRecovery();
+        armWatchdog();
+
+        const callback = await openOAuthPopup(authorizeUrl, state, popup);
 
         const { token, account } = await consumeAuthorizationCode({
           state: callback.state,
@@ -883,23 +921,32 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
           lastUsedAt: new Date().toISOString(),
         };
 
-        await dispatch(
-          registerAccount(accountEntry, token) as unknown as any,
-        );
-        // On success `switchAccount` reloads the page.
+        await dispatch(registerAccount(accountEntry, token) as unknown as any);
         await dispatch(switchAccount(accountEntry.id) as unknown as any);
         reloading = true;
       } catch (error) {
         console.error('Account registration failed:', error);
 
-        if (pending.state && pending.nonce && restoreMultiAccountSessionFn) {
+        await mintPromise;
+
+        closeBlankOAuthPopup(popup);
+
+        if (
+          releaseSessionRecovery &&
+          pending.state &&
+          pending.nonce &&
+          restoreMultiAccountSessionFn
+        ) {
           try {
             await restoreMultiAccountSessionFn({
               state: pending.state,
               nonce: pending.nonce,
             });
           } catch (restoreError) {
-            console.error('Failed to restore multi-account session:', restoreError);
+            console.error(
+              'Failed to restore multi-account session:',
+              restoreError,
+            );
           }
         }
 
@@ -912,30 +959,30 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
         }
 
         const knownMessage =
-          error instanceof Error ? knownErrorMessages[error.message] : undefined;
+          error instanceof Error
+            ? knownErrorMessages[error.message]
+            : undefined;
         const message =
           knownMessage ??
-          (error instanceof Error
-            ? error.message
-            : messages.addError);
+          (error instanceof Error ? error.message : messages.addError);
 
-        dispatch(showAlert({ message }));
+        if (!isStale()) {
+          dispatch(showAlert({ message }));
+        }
       } finally {
         if (!reloading) {
           releaseSessionRecovery?.();
         }
-        finishAddProcessing();
+
+        if (!isStale()) {
+          addPopupRef.current = null;
+          finishAddProcessing();
+        }
       }
     };
 
     void add();
-  }, [
-    currentAccount,
-    dispatch,
-    finishAddProcessing,
-    intl,
-    sessionAccountId,
-  ]);
+  }, [currentAccount, dispatch, finishAddProcessing, intl, sessionAccountId]);
 
   const handleLogOutAllAccounts = useCallback(() => {
     const logOutAll = async () => {
@@ -963,7 +1010,7 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
     };
 
     void logOutAll();
-  }, [dispatch, intl, isLoggingOutAll, messages.manageLogoutAllError]);
+  }, [dispatch, intl, isLoggingOutAll]);
 
   if (!currentAccount) {
     return null;
@@ -992,7 +1039,10 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
         aria-labelledby='account-switcher-manage-title'
         onClick={handleOverlayClick}
       >
-        <div className='account-switcher__manage-modal' onClick={stopPropagation}>
+        <div
+          className='account-switcher__manage-modal'
+          onClick={stopPropagation}
+        >
           <div className='account-switcher__manage-header'>
             <button
               type='button'
@@ -1002,7 +1052,10 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
             >
               <Icon id='close' icon={CloseIcon} />
             </button>
-            <h2 id='account-switcher-manage-title' className='account-switcher__manage-title'>
+            <h2
+              id='account-switcher-manage-title'
+              className='account-switcher__manage-title'
+            >
               {intl.formatMessage(messages.manageTitle)}
             </h2>
           </div>
@@ -1031,7 +1084,9 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
                   void handleSwitchAccount(entry.id);
                 };
 
-                const handleItemKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+                const handleItemKeyDown = (
+                  event: ReactKeyboardEvent<HTMLDivElement>,
+                ) => {
                   if (!canSwitch) return;
                   if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault();
@@ -1069,8 +1124,15 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
                     </div>
                     <div className='account-switcher__manage-actions'>
                       {isCurrentLoggedIn && (
-                        <span className='account-switcher__manage-status' aria-hidden>
-                          <Icon id='check' icon={CheckIcon} className='account-switcher__manage-check' />
+                        <span
+                          className='account-switcher__manage-status'
+                          aria-hidden
+                        >
+                          <Icon
+                            id='check'
+                            icon={CheckIcon}
+                            className='account-switcher__manage-check'
+                          />
                         </span>
                       )}
                       <button
@@ -1151,7 +1213,9 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
                     pendingDeletion.id,
                 })}
               </h3>
-              <p>{intl.formatMessage(messages.manageDeleteConfirmDescription)}</p>
+              <p>
+                {intl.formatMessage(messages.manageDeleteConfirmDescription)}
+              </p>
               <div className='account-switcher__confirm-actions'>
                 <button
                   type='button'
@@ -1212,16 +1276,17 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({ renderTrigger }) => 
                   @{displayAcct}
                 </span>
               </div>
-              <Icon id='more-horiz' icon={MoreHorizIcon} className='account-switcher__icon' />
+              <Icon
+                id='more-horiz'
+                icon={MoreHorizIcon}
+                className='account-switcher__icon'
+              />
             </button>
           )}
         </div>
-
       </div>
 
       {renderManageModal()}
     </>
   );
 };
-
-
