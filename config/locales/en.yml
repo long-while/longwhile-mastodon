@@ -894,13 +894,14 @@ en:
           mascot: Any size
           thumbnail: 1200×630px
           wordmark: 340×160px
-        wordmark_half_set: "The '%{missing}' wordmark is still the default logo. People using that theme will see the old one."
         wordmark_preview: Mobile size preview
         wordmark_rules:
-          format: Upload a PNG with a transparent background
+          center: If there is room left on either side, centre the logo.
+          format: A PNG with a transparent background is required
           margin: Leave some space above and below so it looks right on mobile.
+          themes: Applies to the Mastodon and Twitter-like themes.
           tone: The dark-theme version sits on a dark background, so use a light logo; the light-theme version sits on a light background, so use a dark logo.
-        wordmark_template: Download the current logo as a template
+        wordmark_template: Download the current logo
     site_uploads:
       delete: Delete uploaded file
       destroyed_msg: Site upload successfully deleted!

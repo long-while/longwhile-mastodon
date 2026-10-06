@@ -22,27 +22,6 @@ RSpec.describe Admin::Settings::UploadsHelper do
     end
   end
 
-  describe '#half_set_wordmark' do
-    let(:settings) { Form::AdminSettings.new }
-
-    it 'is nil when neither wordmark is uploaded' do
-      expect(helper.half_set_wordmark(settings)).to be_nil
-    end
-
-    it 'names the one still using the default' do
-      Fabricate(:site_upload, var: 'wordmark_dark', file: attachment_fixture('wordmark.png'))
-
-      expect(helper.half_set_wordmark(settings)).to eq 'wordmark_light'
-    end
-
-    it 'is nil when both are uploaded' do
-      Fabricate(:site_upload, var: 'wordmark_dark', file: attachment_fixture('wordmark.png'))
-      Fabricate(:site_upload, var: 'wordmark_light', file: attachment_fixture('wordmark.png'))
-
-      expect(helper.half_set_wordmark(settings)).to be_nil
-    end
-  end
-
   describe '#wordmark_input_data' do
     it 'hands the browser the same limits the model enforces' do
       expect(helper.wordmark_input_data)

@@ -266,8 +266,8 @@ ko:
         trendable_by_default: 사전 리뷰 없이 트렌드에 오르는 것을 허용
         trends: 유행 활성화
         trends_as_landing_page: 유행을 방문 페이지로 쓰기
-        wordmark_dark: 다크 테마용
-        wordmark_light: 라이트 테마용
+        wordmark_dark: 다크 테마 워드마크
+        wordmark_light: 라이트 테마 워드마크
       interactions:
         must_be_follower: 나를 팔로우 하지 않는 사람에게서 온 알림을 차단
         must_be_following: 내가 팔로우 하지 않는 사람에게서 온 알림을 차단

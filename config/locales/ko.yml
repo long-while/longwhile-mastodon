@@ -883,13 +883,14 @@ ko:
           mascot: 크기 제한 없음
           thumbnail: 1200×630px
           wordmark: 340×160px
-        wordmark_half_set: "워드마크 중 '%{missing}' 은(는) 아직 기본 로고입니다. 그 테마를 쓰는 사람에게는 옛 로고가 보입니다."
         wordmark_preview: 모바일 사이즈 미리보기
         wordmark_rules:
-          format: 배경 투명화된 PNG 파일 업로드
+          center: 좌우에 자리가 남는 경우, 로고를 중앙에 오도록 정렬해 주세요.
+          format: 배경 투명화된 PNG 파일 필요
           margin: 상하 여백이 있어야 모바일 적용 시 예쁘게 보입니다.
+          themes: 마스토돈 및 유사 트위터 테마에 적용됩니다.
           tone: 다크 테마용은 어두운 배경 위에 올라가므로 밝은 색의 로고 사용, 라이트 테마용은 밝은 배경 위에 올라가므로 어두운 색의 로고를 사용합니다.
-        wordmark_template: 지금 로고를 템플릿으로 내려받기
+        wordmark_template: 현재 로고 다운로드
     site_uploads:
       delete: 업로드한 파일 삭제
       destroyed_msg: 사이트 업로드를 성공적으로 삭제했습니다!

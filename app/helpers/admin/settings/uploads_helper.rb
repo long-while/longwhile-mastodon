@@ -40,11 +40,6 @@ module Admin::Settings::UploadsHelper
     }
   end
 
-  def half_set_wordmark(settings)
-    stored, missing = SiteUpload::WORDMARK_VARS.partition { |var| site_upload_preview_url(settings.public_send(var)) }
-    missing.first if stored.one?
-  end
-
   def site_upload_default_asset(var)
     return DEFAULT_ASSETS[var.to_sym] unless SiteUpload::WORDMARK_VARS.include?(var.to_s)
 

@@ -41,15 +41,6 @@ RSpec.describe 'Admin::Settings::Branding' do
         .and have_css('details.branding-guide .branding-guide__chevron')
         .and have_css('.image-picker__size', text: I18n.t('admin.settings.uploads.sizes.wordmark'), count: 1)
         .and have_css('.branding-wordmark__pair .wordmark-preview', count: 2)
-        .and have_no_css('.image-picker__notice')
-    end
-
-    it 'warns while only one theme has a custom wordmark' do
-      Fabricate(:site_upload, var: 'wordmark_dark', file: attachment_fixture('wordmark.png'))
-      visit admin_settings_branding_path
-
-      expect(page)
-        .to have_css('.image-picker__notice', text: I18n.t('simple_form.labels.form_admin_settings.wordmark_light'))
     end
 
     it 'saves a 340×160 PNG' do

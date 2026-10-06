@@ -272,8 +272,8 @@ en:
         trendable_by_default: Allow trends without prior review
         trends: Enable trends
         trends_as_landing_page: Use trends as the landing page
-        wordmark_dark: Dark theme
-        wordmark_light: Light theme
+        wordmark_dark: Dark theme wordmark
+        wordmark_light: Light theme wordmark
       interactions:
         must_be_follower: Block notifications from non-followers
         must_be_following: Block notifications from people you don't follow

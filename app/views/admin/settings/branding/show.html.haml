@@ -41,14 +41,10 @@
     %p.image-picker__size= t('admin.settings.uploads.sizes.wordmark')
     .branding-wordmark__rules
       %p= t('admin.settings.uploads.wordmark_rules.format')
+      %p= t('admin.settings.uploads.wordmark_rules.themes')
       %p= t('admin.settings.uploads.wordmark_rules.tone')
       %p= t('admin.settings.uploads.wordmark_rules.margin')
-
-    - missing_wordmark = half_set_wordmark(@admin_settings)
-    - if missing_wordmark
-      .image-picker__notice{ role: 'status' }
-        = material_symbol 'warning'
-        = t('admin.settings.uploads.wordmark_half_set', missing: t("simple_form.labels.form_admin_settings.#{missing_wordmark}"))
+      %p= t('admin.settings.uploads.wordmark_rules.center')
 
     .image-picker.branding-wordmark__pair
       - SiteUpload::WORDMARK_VARS.each do |var|
