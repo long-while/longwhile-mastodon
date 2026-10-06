@@ -1,0 +1,7 @@
+- tone = attribute.to_s.delete_prefix('wordmark_')
+- shown_url = site_upload_preview_url(upload) || site_upload_default_url(attribute)
+
+.wordmark-preview{ class: "wordmark-preview--#{tone}", 'aria-hidden': 'true' }
+  %span.wordmark-preview__avatar
+  - if shown_url.present?
+    = image_tag shown_url, alt: '', class: 'wordmark-preview__logo', data: { upload_preview: "form_admin_settings_#{attribute}", original_src: shown_url }

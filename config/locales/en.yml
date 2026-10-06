@@ -865,6 +865,42 @@ en:
         authorized_fetch_overridden_hint: You are currently unable to change this setting because it is overridden by an environment variable.
         federation_authentication: Federation authentication enforcement
       title: Server settings
+      uploads:
+        default: Preview
+        delete_confirm: Everyone will see the default image once this is deleted. Delete it?
+        guide:
+          app_icon:
+            name: App icon
+            where: The icon used when someone adds this server to their phone's home screen.
+          bookmark: Favicons saved in the bookmarks bar only update after the bookmark is removed and added again.
+          cache: After replacing a file, be sure to click 'Save changes' at the top. Changes appear after a refresh.
+          favicon:
+            name: Favicon
+            tip: It is shown very small, at 16–48px, so a simple icon works best.
+            where: The small icon on browser tabs and bookmarks.
+          thumbnail:
+            name: Server thumbnail
+            tip: It may be cropped around the centre, so keep important content in the middle.
+            where: The preview image shown when a link to this server is shared.
+          title: Where these images are used
+          wordmark:
+            mobile: 'Mobile web: the centre of the top menu bar.'
+            name: Wordmark
+            pc: 'Desktop web: the top left of the home screen.'
+            where: The server's horizontal logo.
+        sizes:
+          app_icon: 1024×1024px
+          favicon: 48×48px
+          mascot: Any size
+          thumbnail: 1200×630px
+          wordmark: 340×160px
+        wordmark_half_set: "The '%{missing}' wordmark is still the default logo. People using that theme will see the old one."
+        wordmark_preview: Mobile size preview
+        wordmark_rules:
+          format: Upload a PNG with a transparent background
+          margin: Leave some space above and below so it looks right on mobile.
+          tone: The dark-theme version sits on a dark background, so use a light logo; the light-theme version sits on a light background, so use a dark logo.
+        wordmark_template: Download the current logo as a template
     site_uploads:
       delete: Delete uploaded file
       destroyed_msg: Site upload successfully deleted!
@@ -1157,6 +1193,7 @@ en:
     motion: Motion
     viewing: Viewing
   application_mailer:
+    footer_html: '<a href="https://kre.pe/QTRx">Hancham Mastodon Edition for OC communities</a>'
     notification_preferences: Change email preferences
     salutation: "%{name},"
     settings: 'Change email preferences: %{link}'
@@ -2037,12 +2074,15 @@ en:
       follows_subtitle: Follow well-known accounts
       follows_title: Who to follow
       follows_view_more: View more people to follow
+      guide_action: Mastodon guide
+      guide_explanation: New to Mastodon? Learn how to use this instance.
       hashtags_recent_count:
         one: "%{people} person in the past 2 days"
         other: "%{people} people in the past 2 days"
       hashtags_subtitle: Explore what’s trending since past 2 days
       hashtags_title: Trending hashtags
       hashtags_view_more: View more trending hashtags
+      joined: You have successfully joined %{host}.
       post_action: Compose
       post_step: Say hello to the world with text, photos, videos, or polls.
       post_title: Make your first post

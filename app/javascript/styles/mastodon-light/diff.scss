@@ -432,7 +432,7 @@
 }
 
 img.logo--wordmark {
-  content: url("../images/logos/wordmark_light.png");
+  content: var(--lw-wordmark-light, url("../images/logos/wordmark_light.png"));
 }
 
 img.logo--icon {

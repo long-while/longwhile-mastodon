@@ -5138,6 +5138,10 @@ a.status-card {
   }
 }
 
+img.logo--wordmark {
+  content: var(--lw-wordmark-dark);
+}
+
 .column-header__logo {
   display: none;
 }

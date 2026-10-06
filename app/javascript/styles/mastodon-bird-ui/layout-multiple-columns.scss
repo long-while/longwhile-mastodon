@@ -6,7 +6,7 @@
 /* Multi-column layout-scoped definitions (icons + multi-col sizes). */
 /* Color variables cascade from `body.theme-*` defined in single-col. */
 body.layout-multiple-columns {
-  --logo: url('../images/logos/wordmark_dark.png');
+  --logo: var(--lw-wordmark-dark, url('../images/logos/wordmark_dark.png'));
   --m-logo: url('../images/logos/m_logo_dark.png');
   --color-outer-space: #42485a;
   --font-size: 15px;

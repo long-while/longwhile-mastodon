@@ -40,6 +40,8 @@ class Form::AdminSettings
     app_icon
     favicon
     min_age
+    wordmark_dark
+    wordmark_light
   ).freeze
 
   INTEGER_KEYS = %i(
@@ -69,6 +71,8 @@ class Form::AdminSettings
     mascot
     app_icon
     favicon
+    wordmark_dark
+    wordmark_light
   ).freeze
 
   DIGEST_KEYS = %i(

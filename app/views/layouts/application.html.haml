@@ -36,6 +36,7 @@
     = csrf_meta_tags unless skip_csrf_meta_tags?
     %meta{ name: 'style-nonce', content: request.content_security_policy_nonce }
 
+    = custom_wordmark_tag
     = custom_stylesheet
 
     = yield :header_tags

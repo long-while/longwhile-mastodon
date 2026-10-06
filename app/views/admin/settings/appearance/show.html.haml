@@ -23,4 +23,4 @@
               wrapper: :with_block_label
 
   .image-picker
-    = render partial: 'admin/settings/shared/upload', locals: { f: f, attribute: :mascot, upload: @admin_settings.mascot, preview_url: (@admin_settings.mascot.file.url if @admin_settings.mascot.persisted?) }
+    = render partial: 'admin/settings/shared/upload', locals: { f: f, attribute: :mascot, upload: @admin_settings.mascot }

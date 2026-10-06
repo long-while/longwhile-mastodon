@@ -36,7 +36,23 @@ module ThemeHelper
     end
   end
 
+  def custom_wordmark_tag
+    declarations = SiteUpload::WORDMARK_VARS.filter_map do |var|
+      upload = InstancePresenter.new.public_send(var)
+      next if upload.blank?
+
+      "--lw-#{var.dasherize}:url(\"#{css_string_escape(upload.file.url)}\");"
+    end
+    return if declarations.empty?
+
+    tag.style(":root{#{declarations.join}}".html_safe) # rubocop:disable Rails/OutputSafety
+  end
+
   private
+
+  def css_string_escape(value)
+    value.to_s.gsub(%r{[^A-Za-z0-9\-._~:/?@!$&'()*+,;=%\[\]#]}) { |char| "\\#{char.ord.to_s(16)} " }
+  end
 
   def active_custom_stylesheet
     if cached_custom_css_digest.present?

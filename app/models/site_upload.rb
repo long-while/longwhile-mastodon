@@ -25,6 +25,11 @@ class SiteUpload < ApplicationRecord
 
   APP_ICON_SIZES = (APPLE_ICON_SIZES + ANDROID_ICON_SIZES).uniq.freeze
 
+  WORDMARK_VARS = %w(wordmark_dark wordmark_light).freeze
+  WORDMARK_SIZE = [340, 160].freeze
+  WORDMARK_TOLERANCE = 3
+  WORDMARK_MIME_TYPES = %w(image/png image/jpeg).freeze
+
   STYLES = {
     app_icon:
       APP_ICON_SIZES.to_h do |size|
@@ -55,6 +60,8 @@ class SiteUpload < ApplicationRecord
     }.freeze,
 
     mascot: {}.freeze,
+    wordmark_dark: {}.freeze,
+    wordmark_light: {}.freeze,
   }.freeze
 
   has_attached_file :file, styles: ->(file) { STYLES[file.instance.var.to_sym] }, convert_options: { all: '-coalesce +profile "!icc,*" +set date:modify +set date:create +set date:timestamp' }, processors: [:lazy_thumbnail, :blurhash_transcoder, :type_corrector]
@@ -62,12 +69,17 @@ class SiteUpload < ApplicationRecord
   validates_attachment_content_type :file, content_type: %r{\Aimage/.*\z}
   validates :file, presence: true
   validates :var, presence: true, uniqueness: true
+  validate :validate_wordmark_file, if: :wordmark?
 
   before_save :set_meta
   after_commit :clear_cache
 
   def cache_key
     "site_uploads/#{var}"
+  end
+
+  def wordmark?
+    WORDMARK_VARS.include?(var)
   end
 
   private
@@ -79,6 +91,23 @@ class SiteUpload < ApplicationRecord
 
     width, height = FastImage.size(tempfile.path)
     self.meta = { width: width, height: height }
+  end
+
+  def validate_wordmark_file
+    tempfile = file.queued_for_write[:original]
+    return if tempfile.nil?
+    return errors.add(:file, :wordmark_content_type) unless WORDMARK_MIME_TYPES.include?(file_content_type)
+
+    width, height = FastImage.size(tempfile.path)
+    return if wordmark_size_acceptable?(width, height)
+
+    errors.add(:file, :wordmark_dimensions, width: WORDMARK_SIZE[0], height: WORDMARK_SIZE[1], tolerance: WORDMARK_TOLERANCE, actual: "#{width || '?'}×#{height || '?'}")
+  end
+
+  def wordmark_size_acceptable?(width, height)
+    return false if width.nil? || height.nil?
+
+    [width, height].zip(WORDMARK_SIZE).all? { |actual, expected| (actual - expected).abs <= WORDMARK_TOLERANCE }
   end
 
   def clear_cache

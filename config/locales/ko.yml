@@ -4,7 +4,7 @@ ko:
     about_mastodon_html: "한참(longwhile@crepe) 마스토돈 에디션"
     contact_missing: 미설정
     contact_unavailable: 없음
-    hosted_on: "%{domain}에서 호스팅 되는 한참(longwhile@longwhile) 마스토돈 에디션"
+    hosted_on: "한참(longwhile@crepe) 마스토돈 에디션"
     title: 정보
   accounts:
     followers:
@@ -854,6 +854,42 @@ ko:
         authorized_fetch_overridden_hint: 현재 이 값은 환경변수에 의해 설정되어 있기에 설정을 변경할 수 없습니다.
         federation_authentication: 연합 인증 필수
       title: 서버 설정
+      uploads:
+        default: 미리보기
+        delete_confirm: 이 이미지를 지우면 모든 사용자에게 기본 이미지가 보입니다. 지울까요?
+        guide:
+          app_icon:
+            name: 앱 아이콘
+            where: 휴대폰 홈 화면에 이 서버를 추가했을 때의 아이콘입니다.
+          bookmark: 북마크바에 저장된 파비콘의 경우, 북마크를 삭제 후 재등록해야 수정사항이 반영됩니다.
+          cache: 파일을 교체한 후, 반드시 위쪽의 '변경 사항을 저장' 버튼을 클릭하세요. 이후 새로고침하면 변경사항이 적용됩니다.
+          favicon:
+            name: 파비콘
+            tip: 16~48px 로 아주 작게 보이니 단순한 아이콘을 추천합니다.
+            where: 브라우저 탭과 북마크에 붙는 작은 아이콘입니다.
+          thumbnail:
+            name: 서버 썸네일
+            tip: 가운데를 중심으로 잘릴 수 있으니, 중요한 내용은 중앙에 두시기 바랍니다.
+            where: 이 서버의 링크를 공유했을 때 뜨는 미리보기 이미지입니다.
+          title: 이미지가 쓰이는 곳
+          wordmark:
+            mobile: '모바일 웹: 화면 위쪽 메뉴 바 가운데에 들어갑니다.'
+            name: 워드마크
+            pc: 'PC 웹: 홈 화면 왼쪽 상단에 들어갑니다.'
+            where: 가로 형태를 가진 서버의 로고입니다.
+        sizes:
+          app_icon: 1024×1024px
+          favicon: 48×48px
+          mascot: 크기 제한 없음
+          thumbnail: 1200×630px
+          wordmark: 340×160px
+        wordmark_half_set: "워드마크 중 '%{missing}' 은(는) 아직 기본 로고입니다. 그 테마를 쓰는 사람에게는 옛 로고가 보입니다."
+        wordmark_preview: 모바일 사이즈 미리보기
+        wordmark_rules:
+          format: 배경 투명화된 PNG 파일 업로드
+          margin: 상하 여백이 있어야 모바일 적용 시 예쁘게 보입니다.
+          tone: 다크 테마용은 어두운 배경 위에 올라가므로 밝은 색의 로고 사용, 라이트 테마용은 밝은 배경 위에 올라가므로 어두운 색의 로고를 사용합니다.
+        wordmark_template: 지금 로고를 템플릿으로 내려받기
     site_uploads:
       delete: 업로드한 파일 삭제
       destroyed_msg: 사이트 업로드를 성공적으로 삭제했습니다!
@@ -1140,6 +1176,7 @@ ko:
     motion: 움직임
     viewing: 보기
   application_mailer:
+    footer_html: '<a href="https://kre.pe/QTRx">자캐커뮤 특화 한참 마스토돈 에디션</a>'
     notification_preferences: 이메일 설정 변경
     salutation: "%{name} 님,"
     settings: '이메일 설정 변경: %{link}'
@@ -1986,11 +2023,14 @@ ko:
       follows_subtitle: 잘 알려진 계정들을 팔로우
       follows_title: 누구를 팔로우 할 지
       follows_view_more: 팔로우 할 사람들 더 보기
+      guide_action: 마스토돈 가이드
+      guide_explanation: 마스토돈이 처음이신가요? 자캐커뮤에 특화된 한참 에디션의 이용 가이드를 알아보세요!
       hashtags_recent_count:
         other: 최근 2일동안 %{people}명
       hashtags_subtitle: 최근 2일간 무엇이 유행했는지 둘러보기
       hashtags_title: 유행하는 해시태그
       hashtags_view_more: 유행하는 해시태그 더 보기
+      joined: "%{host} 서버에 성공적으로 가입했습니다."
       post_action: 작성
       post_step: 글, 사진, 영상, 또는 투표로 세상에 인사해보세요.
       post_title: 첫번째 게시물 쓰기
@@ -1999,7 +2039,7 @@ ko:
       share_title: 마스토돈 프로필을 공유하세요
       sign_in_action: 로그인
       subject: 마스토돈에 오신 것을 환영합니다
-      title: 환영합니다 %{name} 님!
+      title: 환영합니다, %{name}!
   users:
     follow_limit_reached: 당신은 %{limit}명의 사람을 넘어서 팔로우 할 수 없습니다
     go_to_sso_account_settings: ID 공급자의 계정 설정으로 이동

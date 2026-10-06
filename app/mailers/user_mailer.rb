@@ -10,6 +10,10 @@ class UserMailer < Devise::Mailer
   helper :routing
   helper :statuses
 
+  helper_method :welcome_guide_url
+
+  DEFAULT_GUIDE_URL = 'https://stellar-ground-601.notion.site/303d06ebad998013bebbd2946804a568?pvs=73'
+
   before_action :set_instance
 
   default to: -> { @resource.email }
@@ -135,12 +139,6 @@ class UserMailer < Devise::Mailer
 
     return unless @resource.active_for_authentication?
 
-    @suggestions = AccountSuggestions.new(@resource.account).get(5)
-    @tags = Trends.tags.query.allowed.limit(5)
-    @has_account_fields = @resource.account.display_name.present? || @resource.account.note.present? || @resource.account.avatar.present?
-    @has_active_relationships = @resource.account.active_relationships.exists?
-    @has_statuses = @resource.account.statuses.exists?
-
     I18n.with_locale(locale) do
       mail subject: default_i18n_subject
     end
@@ -229,6 +227,10 @@ class UserMailer < Devise::Mailer
   end
 
   private
+
+  def welcome_guide_url
+    ENV.fetch('LONGWHILE_GUIDE_URL', nil).presence || DEFAULT_GUIDE_URL
+  end
 
   def default_devise_subject
     I18n.t(:subject, scope: ['devise.mailer', action_name])

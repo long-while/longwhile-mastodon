@@ -29,7 +29,32 @@
               input_html: { rows: 2, maxlength: Form::AdminSettings::DESCRIPTION_LIMIT },
               wrapper: :with_block_label
 
+  = render 'admin/settings/branding/guide'
+
   .image-picker
-    = render partial: 'admin/settings/shared/upload', locals: { f: f, attribute: :thumbnail, upload: @admin_settings.thumbnail, preview_url: (@admin_settings.thumbnail.file.url(:'@1x') if @admin_settings.thumbnail.persisted?), frame: 'header' }
-    = render partial: 'admin/settings/shared/upload', locals: { f: f, attribute: :favicon, upload: @admin_settings.favicon, preview_url: (@admin_settings.favicon.file.url('48') if @admin_settings.favicon.persisted?) }
-    = render partial: 'admin/settings/shared/upload', locals: { f: f, attribute: :app_icon, upload: @admin_settings.app_icon, preview_url: (@admin_settings.app_icon.file.url('48') if @admin_settings.app_icon.persisted?) }
+    = render partial: 'admin/settings/shared/upload', locals: { f: f, attribute: :thumbnail, upload: @admin_settings.thumbnail, frame: 'thumbnail' }
+    = render partial: 'admin/settings/shared/upload', locals: { f: f, attribute: :favicon, upload: @admin_settings.favicon }
+    = render partial: 'admin/settings/shared/upload', locals: { f: f, attribute: :app_icon, upload: @admin_settings.app_icon }
+
+  .branding-wordmark
+    %h4.branding-wordmark__title= t('admin.settings.uploads.guide.wordmark.name')
+    %p.image-picker__size= t('admin.settings.uploads.sizes.wordmark')
+    .branding-wordmark__rules
+      %p= t('admin.settings.uploads.wordmark_rules.format')
+      %p= t('admin.settings.uploads.wordmark_rules.tone')
+      %p= t('admin.settings.uploads.wordmark_rules.margin')
+
+    - missing_wordmark = half_set_wordmark(@admin_settings)
+    - if missing_wordmark
+      .image-picker__notice{ role: 'status' }
+        = material_symbol 'warning'
+        = t('admin.settings.uploads.wordmark_half_set', missing: t("simple_form.labels.form_admin_settings.#{missing_wordmark}"))
+
+    .image-picker.branding-wordmark__pair
+      - SiteUpload::WORDMARK_VARS.each do |var|
+        = render partial: 'admin/settings/shared/upload', locals: { f: f, attribute: var.to_sym, upload: @admin_settings.public_send(var), frame: var.dasherize, size: :wordmark, show_size: false, accept: SiteUpload::WORDMARK_MIME_TYPES, input_data: wordmark_input_data, extra: 'admin/settings/branding/wordmark_extra' }
+
+    %h5.branding-wordmark__subtitle= t('admin.settings.uploads.wordmark_preview')
+    .branding-wordmark__pair
+      - SiteUpload::WORDMARK_VARS.each do |var|
+        = render 'admin/settings/branding/wordmark_preview', attribute: var.to_sym, upload: @admin_settings.public_send(var)

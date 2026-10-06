@@ -139,7 +139,7 @@
   --account-switcher-manage-overlay: var(--color-modal-overlay);
   --color-thread-line: var(--color-brand-longwhile-threaded-line);
 
-  --logo: url('../images/logos/wordmark_dark.png');
+  --logo: var(--lw-wordmark-dark, url('../images/logos/wordmark_dark.png'));
   --m-logo: url('../images/logos/m_logo_dark.png');
 
   --color-brand-longwhile-dark: #161e2b;
@@ -379,7 +379,7 @@ body.theme-mastodon-bird-ui-light {
   --color-bg-90: #ffffffe6;
   --account-switcher-manage-overlay: var(--color-modal-overlay);
 
-  --logo: url('../images/logos/wordmark_light.png');
+  --logo: var(--lw-wordmark-light, url('../images/logos/wordmark_light.png'));
   --m-logo: url('../images/logos/m_logo_light.png');
 
 

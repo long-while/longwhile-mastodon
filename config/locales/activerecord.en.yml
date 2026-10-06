@@ -45,6 +45,11 @@ en:
             account_id:
               taken: is already on the list
           must_be_following: must be a followed account
+        site_upload:
+          attributes:
+            file:
+              wordmark_content_type: must be a PNG or JPG file
+              wordmark_dimensions: "must be %{width}×%{height} pixels, give or take %{tolerance}px (got %{actual})"
         status:
           attributes:
             reblog:

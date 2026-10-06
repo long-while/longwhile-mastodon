@@ -33,6 +33,105 @@ Rails.delegate(
   },
 );
 
+const SITE_UPLOAD_INPUT = '#edit_admin_settings input[type="file"]';
+
+const loadImageSize = (url: string) =>
+  new Promise<{ width: number; height: number }>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => {
+      resolve({ width: image.naturalWidth, height: image.naturalHeight });
+    };
+    image.onerror = () => {
+      reject(new Error(`Could not read image ${url}`));
+    };
+    image.src = url;
+  });
+
+const findSiteUploadProblem = async (
+  input: HTMLInputElement,
+  file: File,
+  url: string,
+): Promise<string | null> => {
+  const {
+    allowedTypes,
+    typeError,
+    sizeError,
+    expectedWidth,
+    expectedHeight,
+    tolerance,
+  } = input.dataset;
+
+  if (allowedTypes && typeError && !allowedTypes.split(',').includes(file.type))
+    return typeError;
+
+  if (!sizeError || !expectedWidth || !expectedHeight) return null;
+
+  try {
+    const { width, height } = await loadImageSize(url);
+    const slack = Number(tolerance ?? 0);
+    const fits =
+      Math.abs(width - Number(expectedWidth)) <= slack &&
+      Math.abs(height - Number(expectedHeight)) <= slack;
+
+    return fits ? null : sizeError.replace('{actual}', `${width}×${height}`);
+  } catch {
+    return typeError ?? null;
+  }
+};
+
+const showSiteUploadProblem = (
+  input: HTMLInputElement,
+  message: string | null,
+) => {
+  input.setCustomValidity(message ?? '');
+
+  const slot = document.querySelector<HTMLElement>(
+    `[data-client-error="${input.id}"]`,
+  );
+  if (slot) {
+    slot.textContent = message ?? '';
+    slot.hidden = !message;
+  }
+
+  input
+    .closest('.image-picker__frame')
+    ?.classList.toggle('image-picker__frame--invalid', Boolean(message));
+};
+
+const setSiteUploadPreviews = (input: HTMLInputElement, url?: string) => {
+  document
+    .querySelectorAll<HTMLImageElement>(
+      `img[data-upload-preview="${input.id}"]`,
+    )
+    .forEach((image) => {
+      const src = url ?? image.dataset.originalSrc;
+      if (src) image.src = src;
+    });
+};
+
+Rails.delegate(document, SITE_UPLOAD_INPUT, 'change', ({ target }) => {
+  if (!(target instanceof HTMLInputElement)) return;
+
+  document
+    .querySelectorAll<HTMLElement>(`[data-server-error="${target.id}"]`)
+    .forEach((element) => {
+      element.hidden = true;
+    });
+
+  const file = target.files?.[0];
+  if (!file) {
+    setSiteUploadPreviews(target);
+    showSiteUploadProblem(target, null);
+    return;
+  }
+
+  const url = URL.createObjectURL(file);
+  setSiteUploadPreviews(target, url);
+  void findSiteUploadProblem(target, file, url).then((message) => {
+    showSiteUploadProblem(target, message);
+  });
+});
+
 const batchCheckboxClassName = '.batch-checkbox input[type="checkbox"]';
 
 const showSelectAll = () => {

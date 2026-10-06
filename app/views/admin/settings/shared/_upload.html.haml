@@ -1,12 +1,30 @@
+- frame = local_assigns.fetch(:frame, 'avatar')
+- accept = local_assigns.fetch(:accept, %w(image/jpeg image/png image/gif image/webp))
+- size_key = local_assigns.fetch(:size, attribute)
+- preview_url = site_upload_preview_url(upload)
+- default_url = site_upload_default_url(attribute)
+- shown_url = preview_url || default_url
+- errors = f.object.errors[attribute].uniq
+- input_id = "form_admin_settings_#{attribute}"
+
 .image-picker__item
   %span.image-picker__caption= t("simple_form.labels.form_admin_settings.#{attribute}")
+  - if local_assigns.fetch(:show_size, true)
+    %span.image-picker__size= t("admin.settings.uploads.sizes.#{size_key}")
   .image-picker__slot
-    %label.image-picker__frame{ class: ["image-picker__frame--#{defined?(frame) ? frame : 'avatar'}", ('image-picker__frame--empty' if preview_url.blank?)] }
-      - if preview_url.present?
-        = image_tag preview_url, class: 'image-picker__img'
+    %label.image-picker__frame{ class: ["image-picker__frame--#{frame}", ('image-picker__frame--empty' if shown_url.blank?), ('image-picker__frame--invalid' if errors.any?)] }
+      - if shown_url.present?
+        = image_tag shown_url, alt: '', class: 'image-picker__img', data: { upload_preview: input_id, original_src: shown_url }
       %span.image-picker__overlay
         = material_symbol 'photo_camera'
-      = f.file_field attribute, accept: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].join(','), class: 'image-picker__input'
-    - if upload&.persisted?
-      = link_to admin_site_upload_path(upload), data: { method: :delete }, class: 'image-picker__remove', title: t('admin.site_uploads.delete'), 'aria-label': t('admin.site_uploads.delete') do
+      = f.file_field attribute, accept: accept.join(','), class: 'image-picker__input', data: local_assigns.fetch(:input_data, {})
+    - if preview_url.present?
+      = link_to admin_site_upload_path(upload), data: { method: :delete, confirm: t('admin.settings.uploads.delete_confirm') }, class: 'image-picker__remove', title: t('admin.site_uploads.delete'), 'aria-label': t('admin.site_uploads.delete') do
         = material_symbol 'close'
+    - elsif default_url.present?
+      %span.image-picker__badge= t('admin.settings.uploads.default')
+  - errors.each do |message|
+    %span.image-picker__error{ data: { server_error: input_id } }= message
+  %span.image-picker__error{ hidden: true, 'aria-live': 'polite', data: { client_error: input_id } }
+  - if local_assigns[:extra]
+    = render local_assigns[:extra], attribute: attribute, input_id: input_id, shown_url: shown_url

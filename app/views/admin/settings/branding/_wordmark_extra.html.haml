@@ -1,0 +1,3 @@
+- template_url = site_upload_default_url(attribute)
+- if template_url.present?
+  = link_to t('admin.settings.uploads.wordmark_template'), template_url, download: "#{attribute}_template.png", target: '_blank', rel: 'noopener', class: 'image-picker__template'

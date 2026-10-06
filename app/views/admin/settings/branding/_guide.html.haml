@@ -1,0 +1,16 @@
+%details.branding-guide
+  %summary.branding-guide__summary
+    = material_symbol 'info'
+    = t('admin.settings.uploads.guide.title')
+    = material_symbol 'expand_more', class: 'branding-guide__chevron'
+  %dl.branding-guide__list
+    - %w(thumbnail favicon app_icon wordmark).each do |key|
+      %dt= t("admin.settings.uploads.guide.#{key}.name")
+      %dd
+        %p= t("admin.settings.uploads.guide.#{key}.where")
+        - %w(tip pc mobile).each do |part|
+          - next unless I18n.exists?("admin.settings.uploads.guide.#{key}.#{part}")
+          %p.branding-guide__tip= t("admin.settings.uploads.guide.#{key}.#{part}")
+  .branding-guide__footer
+    %p= t('admin.settings.uploads.guide.cache')
+    %p= t('admin.settings.uploads.guide.bookmark')

@@ -118,6 +118,41 @@ RSpec.describe ThemeHelper do
     end
   end
 
+  describe '#custom_wordmark_tag' do
+    let(:presenter) { instance_double(InstancePresenter, wordmark_dark: dark, wordmark_light: nil) }
+
+    before { allow(InstancePresenter).to receive(:new).and_return(presenter) }
+
+    context 'when no wordmark is uploaded' do
+      let(:dark) { nil }
+
+      it 'emits nothing, so the themes keep their bundled images' do
+        expect(custom_wordmark_tag).to be_nil
+      end
+    end
+
+    context 'when a wordmark is uploaded' do
+      let(:dark) { instance_double(SiteUpload, file: instance_double(Paperclip::Attachment, url: url)) }
+      let(:url) { '/system/site_uploads/files/000/000/001/original/wordmark.png?1700000000' }
+
+      it 'exposes only the uploaded one as a CSS variable' do
+        expect(custom_wordmark_tag)
+          .to eq(%(<style>:root{--lw-wordmark-dark:url("#{url}");}</style>))
+      end
+    end
+
+    context 'when the URL carries characters that could end the string or the tag' do
+      let(:dark) { instance_double(SiteUpload, file: instance_double(Paperclip::Attachment, url: url)) }
+      let(:url) { %(/a"b\c</style><script>) }
+
+      it 'escapes them' do
+        expect(custom_wordmark_tag)
+          .to include('/a\22 b\5c c\3c /style\3e \3c script\3e ')
+          .and not_include('</style><')
+      end
+    end
+  end
+
   private
 
   def html_links

@@ -11,7 +11,7 @@
       \table { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
     %style{ 'data-premailer': 'ignore' }
       \.email a { color: inherit; text-decoration: none; }
-      \.email-btn-hover:hover { background-color: #563acc !important; }
+      \.email-btn-hover:hover { background-color: #2453a2 !important; }
     /[if mso]
       <xml>
       <o:OfficeDocumentSettings xmlns:o="urn:schemas-microsoft-com:office:office">
@@ -77,11 +77,9 @@
                       = link_to root_url, class: 'email-footer-logo-a' do
                         = image_tag frontend_asset_url('images/mailer-new/common/logo-footer.png'), alt: 'Mastodon', width: 44, height: 44
                     %p.email-footer-p
-                      = t 'about.hosted_on', domain: site_hostname
-                    %p.email-footer-p
-                      = link_to t('application_mailer.notification_preferences'), settings_notifications_url
-                      - if defined?(@unsubscribe_url)
-                        ·
+                      = t 'application_mailer.footer_html'
+                    - if defined?(@unsubscribe_url)
+                      %p.email-footer-p
                         = link_to t('application_mailer.unsubscribe'), @unsubscribe_url
               /[if mso]
                 </td></tr></table>

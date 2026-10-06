@@ -29,6 +29,16 @@ RSpec.describe UserMailer do
         .and(have_body_text(Rails.configuration.x.local_domain))
     end
 
+    it 'says who set up the server, with a link' do
+      expect(mail).to have_body_text('https://kre.pe/QTRx')
+    end
+
+    it 'offers the guide next to the confirm button' do
+      expect(mail)
+        .to have_body_text(I18n.t('user_mailer.welcome.guide_action'))
+        .and(have_body_text(described_class::DEFAULT_GUIDE_URL))
+    end
+
     it_behaves_like 'localized subject',
                     'devise.mailer.confirmation_instructions.subject',
                     instance: Rails.configuration.x.local_domain
@@ -276,17 +286,34 @@ RSpec.describe UserMailer do
   describe '#welcome' do
     let(:mail) { described_class.welcome(receiver) }
 
-    before do
-      # This is a bit hacky and low-level but this allows stubbing trending tags
-      tag_ids = Fabricate.times(5, :tag).pluck(:id)
-      allow(Trends.tags).to receive(:query).and_return(instance_double(Trends::Query, allowed: Tag.where(id: tag_ids)))
-    end
-
-    it 'renders welcome mail' do
+    it 'renders welcome mail with only the guide button' do
       expect(mail)
         .to be_present
         .and(have_subject(I18n.t('user_mailer.welcome.subject')))
-        .and(have_body_text(I18n.t('user_mailer.welcome.explanation')))
+        .and(have_body_text(I18n.t('user_mailer.welcome.joined', host: Rails.configuration.x.local_domain)))
+        .and(have_body_text(I18n.t('user_mailer.welcome.guide_explanation')))
+        .and(have_body_text(I18n.t('user_mailer.welcome.guide_action')))
+        .and(have_body_text(described_class::DEFAULT_GUIDE_URL))
+      expect(mail.body.encoded)
+        .to_not include(I18n.t('user_mailer.welcome.checklist_title'))
+    end
+
+    context 'when LONGWHILE_GUIDE_URL is set' do
+      around do |example|
+        ClimateControl.modify(LONGWHILE_GUIDE_URL: 'https://guide.example.com/start') { example.run }
+      end
+
+      it 'links the guide button to it' do
+        expect(mail).to have_body_text('https://guide.example.com/start')
+      end
+    end
+
+    context 'when the account has a display name' do
+      before { receiver.account.update!(display_name: '한참이') }
+
+      it 'fills in both the name and the server, whichever the locale uses' do
+        expect(mail).to have_body_text(I18n.t('user_mailer.welcome.title', name: '한참이', host: Rails.configuration.x.local_domain))
+      end
     end
 
     it_behaves_like 'delivery to memorialized user'

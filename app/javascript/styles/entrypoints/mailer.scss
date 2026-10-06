@@ -1,8 +1,14 @@
 @use '../fonts/inter';
 
+$email-brand: #3376e7;
+$email-brand-hover: #2453a2;
+$email-on-brand: #fff;
+$email-link: $email-brand;
+
 body {
-  accent-color: #6364ff;
-  word-break: break-word;
+  accent-color: $email-brand;
+  word-break: keep-all;
+  overflow-wrap: break-word;
   margin: 0;
   background-color: #f3f2f5;
   padding: 0;
@@ -45,7 +51,8 @@ table + p {
 .email {
   min-width: 280px;
   font-family: Inter, 'Lucida Grande', sans-serif;
-  word-break: break-word;
+  word-break: keep-all;
+  overflow-wrap: break-word;
   color: #17063b;
   background-color: #f3f2f5;
 }
@@ -185,11 +192,11 @@ table + p {
     }
 
     a:not([class]) {
-      color: #6364ff;
+      color: $email-link;
       text-decoration: none;
 
       &:hover {
-        color: #563acc !important;
+        color: $email-brand-hover !important;
       }
     }
   }
@@ -258,7 +265,7 @@ table + p {
 // Header
 .email-header-td {
   padding: 16px 32px;
-  background-color: #1b001f;
+  background-color: #0a124d;
   background-image: url('../../images/mailer-new/common/header-bg-start.png');
   background-position: left top;
   background-repeat: repeat;
@@ -421,7 +428,7 @@ table + p {
 
 .email-header-after-inside-div {
   height: 30px;
-  background-color: #1b001f;
+  background-color: #0a124d;
 }
 
 // Body content
@@ -453,11 +460,11 @@ table + p {
     color: #17063b;
 
     a {
-      color: #6364ff;
+      color: $email-link;
       text-decoration: none;
 
       &:hover {
-        color: #563acc !important;
+        color: $email-brand-hover !important;
       }
     }
   }
@@ -514,12 +521,27 @@ table + p {
 }
 
 // Button
+.email-btn-row {
+  font-size: 0;
+
+  & + p {
+    margin-top: 8px;
+  }
+}
+
+.email-btn-row-item {
+  display: inline-block;
+  vertical-align: top;
+  margin: 0 8px 8px 0;
+  font-size: 14px;
+}
+
 .email-btn-table {
   margin: 0;
   max-width: 100%;
   border-collapse: separate;
   border-radius: 8px;
-  background-color: #6364ff;
+  background-color: $email-brand;
 }
 
 .email-btn-td {
@@ -541,7 +563,7 @@ table + p {
   font-size: 14px;
   font-weight: 600;
   line-height: 20px;
-  color: #fff;
+  color: $email-on-brand;
   text-decoration: none;
   transition: background-color 0.3s ease-in-out;
 }
@@ -599,11 +621,11 @@ table + p {
   }
 
   a {
-    color: #6364ff;
+    color: $email-link;
     text-decoration: none;
 
     &:hover {
-      color: #563acc !important;
+      color: $email-brand-hover !important;
     }
   }
 
@@ -634,11 +656,11 @@ table + p {
   }
 
   a {
-    color: #6364ff;
+    color: $email-link;
     text-decoration: none;
 
     &:hover {
-      color: #563acc !important;
+      color: $email-brand-hover !important;
     }
   }
 }
@@ -779,13 +801,13 @@ table + p {
 }
 
 .email-link-with-arrow {
-  color: #6364ff;
+  color: $email-link;
   font-size: 14px;
   font-weight: 600;
   line-height: 16.8px;
 
   &:hover {
-    color: #563acc !important;
+    color: $email-brand-hover !important;
   }
 
   span {
@@ -796,7 +818,7 @@ table + p {
 
 .email-column-action-td {
   padding: 24px 0;
-  color: #6364ff;
+  color: $email-link;
   font-size: 14px;
   font-weight: 600;
   line-height: 16.8px;

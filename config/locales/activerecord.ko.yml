@@ -45,6 +45,11 @@ ko:
             account_id:
               taken: 이미 목록에 존재합니다
           must_be_following: 팔로우한 계정이어야 합니다
+        site_upload:
+          attributes:
+            file:
+              wordmark_content_type: PNG 또는 JPG 파일만 올릴 수 있습니다
+              wordmark_dimensions: "%{width}×%{height} 픽셀(±%{tolerance}px)이어야 합니다 (올린 그림: %{actual})"
         status:
           attributes:
             reblog:
