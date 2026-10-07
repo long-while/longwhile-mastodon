@@ -33,6 +33,10 @@ class BatchedRemoveStatusService < BaseService
     # cascade the delete faster without loading the associations.
     statuses_and_reblogs.each_slice(50) { |slice| Status.unscoped.where(id: slice.pluck(:id)).delete_all }
 
+    # preview_cards_statuses has no foreign key to cascade from, so its rows
+    # have to be removed explicitly
+    PreviewCardsStatus.where(status_id: statuses_and_reblogs.pluck(:id)).in_batches.delete_all
+
     # Since we skipped all callbacks, we also need to manually
     # deindex the statuses
     if Chewy.enabled?

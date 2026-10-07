@@ -101,9 +101,9 @@ class User < ApplicationRecord
   accepts_nested_attributes_for :invite_request, reject_if: ->(attributes) { attributes['text'].blank? && !Setting.require_invite_text }
   validates :invite_request, presence: true, on: :create, if: :invite_text_required?
 
-  validates :email, presence: true, email_address: true
+  validates :email, presence: true, email_address: true, length: { maximum: 320 }
 
-  validates_with UserEmailValidator, if: -> { ENV['EMAIL_DOMAIN_LISTS_APPLY_AFTER_CONFIRMATION'] == 'true' || !confirmed? }
+  validates_with UserEmailValidator, if: -> { (ENV['EMAIL_DOMAIN_LISTS_APPLY_AFTER_CONFIRMATION'] == 'true' || !confirmed?) && will_save_change_to_email? }
   validates_with EmailMxValidator, if: :validate_email_dns?
   validates :agreement, acceptance: { allow_nil: false, accept: [true, 'true', '1'] }, on: :create
 
@@ -145,7 +145,9 @@ class User < ApplicationRecord
   delegate :can?, to: :role
 
   attr_reader :invite_code, :date_of_birth
-  attr_writer :external, :bypass_registration_checks, :current_account
+  attr_writer :external, :current_account
+
+  attribute :bypass_registration_checks, :boolean, default: false
 
   def self.those_who_can(*any_of_privileges)
     matching_role_ids = UserRole.that_can(*any_of_privileges).map(&:id)
@@ -357,13 +359,6 @@ class User < ApplicationRecord
     super
   end
 
-  def external_or_valid_password?(compare_password)
-    # If encrypted_password is blank, we got the user from LDAP or PAM,
-    # so credentials are already valid
-
-    encrypted_password.blank? || valid_password?(compare_password)
-  end
-
   def send_reset_password_instructions
     return false if encrypted_password.blank?
 
@@ -521,10 +516,6 @@ class User < ApplicationRecord
 
   def external?
     !!@external
-  end
-
-  def bypass_registration_checks?
-    @bypass_registration_checks
   end
 
   def sanitize_role
