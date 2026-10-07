@@ -169,6 +169,10 @@ function appendMedia(state, media, file) {
 
     if (prevSize === 0 && (state.get('default_sensitive') || state.get('spoiler'))) {
       map.set('sensitive', true);
+
+      if (state.get('default_sensitive')) {
+        map.set('spoiler', true);
+      }
     }
   });
 }
@@ -411,7 +415,7 @@ export const composeReducer = (state = initialState, action) => {
       map.set('spoiler', !state.get('spoiler'));
       map.set('idempotencyKey', uuid());
 
-      if (state.get('media_attachments').size >= 1 && !state.get('default_sensitive')) {
+      if (state.get('media_attachments').size >= 1) {
         map.set('sensitive', !state.get('spoiler'));
       }
     });
@@ -594,13 +598,18 @@ export const composeReducer = (state = initialState, action) => {
         map.set('spoiler', true);
         map.set('spoiler_text', action.status.get('spoiler_text'));
       } else {
-        map.set('spoiler', false);
+        map.set('spoiler', action.status.get('sensitive') && action.status.get('media_attachments').size > 0);
         map.set('spoiler_text', '');
       }
 
       if (action.status.get('poll')) {
+        let options = ImmutableList(action.status.get('poll').options.map(x => x.title));
+        if (options.size < action.maxOptions) {
+          options = options.push('');
+        }
+
         map.set('poll', ImmutableMap({
-          options: ImmutableList(action.status.get('poll').options.map(x => x.title)),
+          options: options,
           multiple: action.status.get('poll').multiple,
           expires_in: expiresInFromExpiresAt(action.status.get('poll').expires_at),
         }));
@@ -630,13 +639,18 @@ export const composeReducer = (state = initialState, action) => {
         map.set('spoiler', true);
         map.set('spoiler_text', action.spoiler_text);
       } else {
-        map.set('spoiler', false);
+        map.set('spoiler', action.status.get('sensitive') && action.status.get('media_attachments').size > 0);
         map.set('spoiler_text', '');
       }
 
       if (action.status.get('poll')) {
+        let options = ImmutableList(action.status.get('poll').options.map(x => x.title));
+        if (options.size < action.maxOptions) {
+          options = options.push('');
+        }
+
         map.set('poll', ImmutableMap({
-          options: ImmutableList(action.status.get('poll').options.map(x => x.title)),
+          options: options,
           multiple: action.status.get('poll').multiple,
           expires_in: expiresInFromExpiresAt(action.status.get('poll').expires_at),
         }));
