@@ -16,6 +16,15 @@ RSpec.describe 'Settings Deletes' do
           .to have_http_status(400)
       end
 
+      it 'rejects a confirmation without a username instead of erroring' do
+        delete settings_delete_path(form_delete_confirmation: { password: user.password })
+
+        expect(response)
+          .to redirect_to(settings_delete_path)
+        expect(user.account.reload)
+          .to_not be_suspended
+      end
+
       context 'when suspended' do
         let(:user) { Fabricate(:user, account_attributes: { suspended_at: Time.now.utc }) }
 

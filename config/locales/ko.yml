@@ -1310,9 +1310,11 @@ ko:
   deletes:
     challenge_not_passed: 입력한 정보가 올바르지 않습니다
     confirm_password: 본인 확인을 위해 현재 사용 중인 암호를 입력해 주십시오
-    confirm_username: 절차를 진행하려면 당신의 사용자명을 입력하세요
+    confirm_username: 사용자명 확인
+    confirm_username_hint_html: 삭제할 계정이 맞는지 확인하기 위해 <code>%{username}</code> 을(를) 입력하세요
     proceed: 계정 삭제
     success_msg: 계정이 성공적으로 삭제되었습니다
+    title: "%{acct} 계정 삭제"
     warning:
       before: '진행하기 전, 주의사항을 꼼꼼히 읽어보세요:'
       caches: 다른 서버에 캐싱된 정보들은 남아있을 수 있습니다
