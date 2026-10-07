@@ -35,7 +35,10 @@ import {
 const importStatus = (state, status) => state.withMutations(map => {
   map.set(status.id, fromJS(status));
 
-  if (status.in_reply_to_id && status.account === me) {
+  // Only mark a parent that is already loaded. Writing into a missing id leaves
+  // a stub with no account: fetchStatus then skips it as "already fetched" and
+  // makeGetStatus crashes on it, breaking the whole thread view.
+  if (status.in_reply_to_id && status.account === me && map.has(status.in_reply_to_id)) {
     map.setIn([status.in_reply_to_id, 'replied'], true);
   }
 });
