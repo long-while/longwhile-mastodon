@@ -24,7 +24,6 @@ vi.mock('../importer', () => ({
   },
 }));
 
-// 리듀서만 진짜로 돌리는 아주 작은 스토어. 썽크는 그대로 실행한다.
 const makeStore = (me: string | null = '1') => {
   let heads: Record<string, ThreadHeadState> = {};
 

@@ -110,7 +110,6 @@ export function PendingMentions() {
   return import('../../pending-mentions');
 }
 
-// @_longwhile — DM 채팅
 export function Messages() {
   return import('../../messages');
 }
@@ -127,7 +126,6 @@ export function DmMemberModal() {
   return import('../../messages/member_modal');
 }
 
-// @_longwhile — 답글이 부를 사람 고르기. "…에게 보내는 답글" 을 눌러 연다.
 export function ReplyRecipientsModal() {
   return import('../../compose/components/reply_recipients_modal');
 }

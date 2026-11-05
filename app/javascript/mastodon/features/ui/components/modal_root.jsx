@@ -79,21 +79,11 @@ export const MODAL_COMPONENTS = {
   'IGNORE_NOTIFICATIONS': IgnoreNotificationsModal,
   'ANNUAL_REPORT': AnnualReportModal,
   'SCHEDULE': ScheduleModal,
-  // @_longwhile — DM 채팅. 새 대화의 수신자 선택과 방의 멤버 관리.
   'DM_RECIPIENT': DmRecipientModal,
   'DM_MEMBERS': DmMemberModal,
-  // @_longwhile — 답글이 부를 사람 고르기.
   'REPLY_RECIPIENTS': ReplyRecipientsModal,
 };
 
-// Modals that must not lock the page scroll. Locking swaps `overflow-y: hidden`
-// onto the body, which means the page behind stops responding to the wheel.
-// The account switcher avoids this by rendering its own portal; these opt out
-// instead.
-//
-// @_longwhile — 이 주석은 "마진으로 보정하는데 그것이 화면을 덜컹이게 한다" 고
-//   적고 있었다. 그 보정은 아래 componentDidUpdate 에서 뺐으므로 더는 사실이
-//   아니다. 잠금이 남기는 차이는 **뒤쪽 화면이 스크롤되지 않는다** 는 것뿐이다.
 const SCROLL_UNLOCKED_MODALS = ['SCHEDULE'];
 
 export default class ModalRoot extends PureComponent {
@@ -113,29 +103,6 @@ export default class ModalRoot extends PureComponent {
     return { visible: !!this.props.type && !SCROLL_UNLOCKED_MODALS.includes(this.props.type) };
   }
 
-  // @_longwhile — 스크롤바 폭만큼 `html` 에 marginRight 를 주던 상류 보정을 뺐다.
-  //
-  //   상류의 전제는 "모달이 열리면 body 가 `overflow-y: hidden` 이 되어 스크롤바
-  //   자리가 사라지고, 그만큼 화면이 오른쪽으로 넓어진다" 는 것이다. 그래서 같은
-  //   폭의 마진으로 되민다.
-  //
-  //   **그 전제가 이 저장소에서는 더 이상 참이 아니다.** `basics.scss` 가 `html`
-  //   에 `scrollbar-gutter: stable` 을 걸어 자리를 늘 잡아 두므로, 잠금만으로는
-  //   폭이 변하지 않는다. 거기에 마진까지 더하면 **없어지지 않은 스크롤바를 한 번
-  //   더 보정해** 화면이 그 폭만큼 밀린다.
-  //
-  //   실측(1369px 창, 스크롤바 8px):
-  //     평소                     body.clientWidth 1363
-  //     잠금만                                    1363   ← 보정이 필요 없다
-  //     잠금 + marginRight 8px                    1355   ← 여기서 덜컹한다
-  //
-  //   삭제 확인 모달에서만 눈에 띈 이유는 그것이 잠그는 모달이기 때문이다.
-  //   예약(SCHEDULE)은 아래 SCROLL_UNLOCKED_MODALS 로 잠금을 건너뛰고, 계정
-  //   전환은 자체 포털을 쓴다. 둘 다 이 경로를 타지 않는다.
-  //
-  //   스크롤바가 오버레이인 환경(macOS·iOS)에서는 getScrollbarWidth() 가 0 이라
-  //   원래도 보정이 없었다. 고전 스크롤바를 쓰는 환경(Windows·Linux)은
-  //   `scrollbar-gutter` 를 지원하는 브라우저와 겹치므로, 빼도 되돌아가지 않는다.
   componentDidUpdate (prevProps, prevState, { visible }) {
     if (visible) {
       document.body.classList.add('with-modals--active');

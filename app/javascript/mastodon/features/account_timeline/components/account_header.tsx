@@ -6,12 +6,6 @@ import classNames from 'classnames';
 import { Helmet } from 'react-helmet';
 import { NavLink, useHistory } from 'react-router-dom';
 
-// @_longwhile — 프로필 헤더 버튼 줄의 아이콘 넷. 넷 다 원본이
-// `styles/bird-theme-svg/` 에 있고 **테마가 그것을 `mask-image` 로 쓰고 있어**
-// 옮기지 못한다. 여기 것은 사본이다 — 원본을 고치면 사본도 함께 고쳐야 한다.
-//   `action-bar-dots` 만 선(stroke)으로 그린다. 전역 `.icon path { fill:
-//   currentColor }` 가 그대로 걸리면 점 세 개가 반지름 1px 로 쪼그라들므로,
-//   components.scss 에서 그 줄의 stroke 를 되살린다.
 import DotsIcon from '@/images/action-bar-dots.svg?react';
 import NotificationsActiveIcon from '@/images/bell-fill.svg?react';
 import NotificationsIcon from '@/images/bell.svg?react';
@@ -245,12 +239,6 @@ export const AccountHeader: React.FC<{
     }
   }, [dispatch, account, relationship]);
 
-  // @_longwhile — 프로필에서 바로 대화방으로. 서버가 find_or_create 라 이미 있는
-  // 방이면 그 방이 그대로 온다.
-  //   dispatch 의 반환 타입이 살아 있지 않다(이 저장소의 rootReducer 가 any 다).
-  //   recipient_modal.tsx 와 같은 방식으로 형태만 다시 붙인다.
-  //   `account.id` 가 아니라 prop 인 `accountId` 를 쓴다. 이 파일에서 `account` 는
-  //   타입이 풀리지 않아(파일 전체가 그렇다) 거기서 꺼낸 값은 any 로 샌다.
   const handleChat = useCallback(() => {
     const pending = dispatch(
       createDmRoom({ accountIds: [accountId] }),
@@ -260,7 +248,6 @@ export const AccountHeader: React.FC<{
     }>;
 
     void pending.then((result) => {
-      // 실패 알림은 errorsMiddleware 가 이미 띄운다. 여기서 또 띄우면 두 번 뜬다.
       if (result.meta.requestStatus === 'fulfilled' && result.payload) {
         history.push(`/messages/${result.payload.id}`);
       }
@@ -404,9 +391,6 @@ export const AccountHeader: React.FC<{
         }),
         action: handleMention,
       });
-      // @_longwhile — "다이렉트 메시지" 를 뺐다. 이 서버에는 채팅이 있고, 같은
-      // 줄의 채팅 버튼이 그 자리를 대신한다. 둘을 함께 두면 어느 쪽이 진짜
-      // 대화인지 알 수 없다(하나는 공개 범위가 달린 툿 작성창으로 간다).
       arr.push(null);
     }
 
@@ -467,12 +451,9 @@ export const AccountHeader: React.FC<{
             });
           }
 
-          // @_longwhile — "구독한 언어 변경" 을 뺐다. 이 서버는 연합하지 않아
-          // 다른 언어의 글이 들어올 일이 없다.
           arr.push(null);
         }
 
-        // @_longwhile — "프로필에 추천하기" 를 뺐다.
         arr.push({
           text: intl.formatMessage(messages.add_or_remove_from_list),
           action: handleAddToList,
@@ -701,8 +682,6 @@ export const AccountHeader: React.FC<{
     }
   }
 
-  // @_longwhile — 채팅. 남의 프로필에서만, 로그인했을 때만, 기능이 켜져 있을 때만.
-  // 내 프로필에 나에게 말 거는 버튼을 두지 않는다.
   let chatBtn: React.ReactNode;
 
   if (dmChatEnabled && signedIn && accountId !== me) {
@@ -757,8 +736,6 @@ export const AccountHeader: React.FC<{
       <Icon
         id='lock'
         icon={LockIcon}
-        // 계정 줄(components/account.tsx)과 같은 클래스를 붙인다. 아래 SCSS 가
-        // 이 클래스 하나로 두 자리의 "보호 경로" 를 함께 처리한다.
         className='account__locked-icon'
         title={intl.formatMessage(messages.account_locked)}
       />
@@ -811,11 +788,6 @@ export const AccountHeader: React.FC<{
             <FollowRequestNoteContainer account={account} />
           )}
 
-        {/* @_longwhile — 관계 태그("맞팔로우 중입니다" 등)를 헤더 이미지 위에서
-            뺐다. 핸들 옆으로 옮겼다(아래 `account__header__tabs__name`).
-            배너 위에 떠 있으면 배너 그림에 따라 읽히기도 안 읽히기도 하고,
-            "누구인가"(이름·핸들)와 "나와 무슨 사이인가"가 화면 양 끝으로
-            갈라져 있었다. */}
         <div className='account__header__image'>
 
           {!(suspended || hidden) && (
@@ -842,9 +814,6 @@ export const AccountHeader: React.FC<{
               />
             </a>
 
-            {/* @_longwhile — 순서는 더보기 · 채팅 · 알림 · 팔로우다.
-                오른쪽 끝의 팔로우/언팔로우가 이 줄에서 가장 자주 눌리는 것이라
-                제자리를 지키고, 그 앞을 자주 쓰는 순서로 채운다. */}
             <div className='account__header__tabs__buttons'>
               <Dropdown
                 disabled={menu.length === 0}
@@ -860,10 +829,6 @@ export const AccountHeader: React.FC<{
 
           <div className='account__header__tabs__name'>
             <h1>
-              {/* @_longwhile — 자물쇠는 **닉네임 옆**이다. 핸들 옆이 아니다.
-                  잠금은 그 사람의 성질이지 핸들의 성질이 아니고, 핸들 줄에는
-                  이미 도메인 알약과 관계 태그가 있어 하나 더 붙으면 무엇이
-                  무엇에 걸린 표시인지 읽히지 않는다. */}
               <span dangerouslySetInnerHTML={displayNameHtml} />
               {lockedIcon}
               <small>
@@ -877,9 +842,6 @@ export const AccountHeader: React.FC<{
                   isSelf={me === account.id}
                 />
 
-                {/* 관계 태그가 핸들 바로 옆에 온다. 배너 위가 아니라 여기가
-                    맞는 자리다 — "누구인가" 와 "나와 무슨 사이인가" 는 함께
-                    읽히는 정보다. 간격은 SCSS 가 준다. */}
                 {info}
               </small>
             </h1>
@@ -1011,7 +973,6 @@ export const AccountHeader: React.FC<{
 
       {!(hideTabs || hidden) && (
         <div className='account__section-headline'>
-          {/* Featured 탭 제거 */}
           {/*
           <NavLink exact to={`/@${account.acct}/featured`}>
             <FormattedMessage id='account.featured' defaultMessage='Featured' />

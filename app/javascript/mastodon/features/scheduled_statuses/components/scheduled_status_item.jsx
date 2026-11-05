@@ -125,8 +125,6 @@ export const ScheduledStatusItem = ({ scheduledStatus, showCheckbox, checked, on
             {intl.formatTime(scheduledAt, { hour: 'numeric', minute: '2-digit' })}
           </time>
 
-          {/* 공개 범위 아이콘은 뺐다 — 모든 툿이 팔로워 전용이라 구분해 줄 것이 없다. */}
-
           {/* A past time must never read as "soon", which is what the relative
               timestamp would say once the moment has gone by. */}
           {isPublishing && (

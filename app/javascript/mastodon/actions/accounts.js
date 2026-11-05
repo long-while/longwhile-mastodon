@@ -18,8 +18,6 @@ import {
 import { showAlert } from './alerts';
 import { importFetchedAccount, importFetchedAccounts } from './importer';
 
-// @_longwhile — 승인제 계정을 팔로우하면 그 자리에서는 아무 일도 일어나지 않은
-// 것처럼 보인다. 요청이 갔다는 사실과 기다려야 한다는 사실을 알린다.
 const messages = defineMessages({
   followRequestSent: {
     id: 'account.follow_request_sent',
@@ -172,8 +170,6 @@ export function followAccount(id, options = { reblogs: true }) {
     api().post(`/api/v1/accounts/${id}/follow`, options).then(response => {
       dispatch(followAccountSuccess({relationship: response.data, alreadyFollowing}));
 
-      // 승인제 계정은 following 이 아니라 requested 로 돌아온다. 버튼이 "대기 중"
-      // 으로 바뀌는 것만으로는 요청이 갔는지 알 수 없어 한 번 알린다.
       if (response.data.requested && !response.data.following) {
         const acct = getState().getIn(['accounts', id, 'acct']);
 

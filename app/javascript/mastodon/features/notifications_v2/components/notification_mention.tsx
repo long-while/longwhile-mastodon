@@ -60,9 +60,6 @@ export const NotificationMention: React.FC<{
     <NotificationWithStatus
       type='mention'
       icon={isReply ? ReplyIcon : AlternateEmailIcon}
-      // @_longwhile — 멘션과 답글의 id 를 가른다. 상류는 둘 다 'reply' 라
-      //   클래스가 `icon-reply` 하나로 굳어, 테마에서 두 알림에 서로 다른 그림을
-      //   깔 방법이 없었다. 그림은 이미 위에서 갈라 놓고 있다.
       iconId={isReply ? 'reply' : 'at'}
       accountIds={notification.sampleAccountIds}
       count={notification.notifications_count}

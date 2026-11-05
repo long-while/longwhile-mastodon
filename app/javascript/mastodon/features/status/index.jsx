@@ -505,13 +505,6 @@ class Status extends ImmutablePureComponent {
     });
   }
 
-  /* ══════════════════════════════════════════════════════════════════════════
-   * @_longwhile custom feature / 한참(longwhile) 제작 기능 — 게시물 스크롤 오류 해결
-   * 이 기능을 사용·재사용하려면 서버 내에 아래 출처를 반드시 표기해야 합니다.
-   * If you use or reuse this feature, you must credit the author on your server.
-   *   Twitter/X : @_longwhile  ·  https://twitter.com/_longwhile
-   *   Crepe     : https://kre.pe/QTRx
-   * ════════════════════════════════════════════════════════════════════════ */
   _scrollIfReady() {
     const { status, isLoading, contextLoaded, params } = this.props;
     const id = params?.statusId;
@@ -620,10 +613,6 @@ class Status extends ImmutablePureComponent {
 
     return (
       <Column bindToDocument={!multiColumn} label={intl.formatMessage(messages.detailedStatus)}>
-        {/* @_longwhile — 스레드 헤더의 "모두 펼치기/접기" 버튼을 뺐습니다.
-            그 자리는 홈 칼럼 설정의 "콘텐츠 워닝 모두 펼치기" 토글이 대신합니다
-            (features/home_timeline/components/column_settings.tsx). 한 스레드에서
-            한 번 누르는 것보다, 켜 두면 계속 적용되는 편이 쓰임에 맞습니다. */}
         <ColumnHeader
           showBackButton
           multiColumn={multiColumn}

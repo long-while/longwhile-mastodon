@@ -12,15 +12,12 @@ interface Seen {
   action?: string;
 }
 
-// 지금 주소와 마지막 이동 방식(push/replace)을 바깥에서 볼 수 있게 적어 둔다.
 const LocationSpy: React.FC<{ seen: Seen }> = ({ seen }) => {
   seen.location = useLocation();
   seen.action = useHistory().action;
   return null;
 };
 
-// test_helpers 의 render 는 MemoryRouter 를 고정해서 감싸므로, 시작 주소를
-// 정하려면 라우터를 직접 둔다.
 const renderTabs = (path: string, onActiveClick = vi.fn()) => {
   const seen: Seen = {};
 

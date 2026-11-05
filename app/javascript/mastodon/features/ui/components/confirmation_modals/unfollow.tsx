@@ -18,8 +18,6 @@ const messages = defineMessages({
     id: 'confirmations.unfollow.confirm',
     defaultMessage: 'Unfollow',
   },
-  // @_longwhile — 아직 팔로우가 아닌 상태에서 누른 경우. 끊을 관계가 없으므로
-  // "언팔로우" 라고 물으면 사용자가 자기 상태를 잘못 이해한다.
   cancelTitle: {
     id: 'confirmations.cancel_follow_request.title',
     defaultMessage: 'Cancel follow request?',
@@ -38,7 +36,6 @@ export const ConfirmUnfollowModal: React.FC<
   const intl = useIntl();
   const dispatch = useAppDispatch();
 
-  // 요청만 걸린 상태인지. 취소 동작은 언팔로우와 같은 엔드포인트라 문구만 가른다.
   const requested = useAppSelector((state) =>
     Boolean(state.relationships.getIn([account.id, 'requested'])),
   );

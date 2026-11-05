@@ -1,14 +1,3 @@
-// @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 운영 관리
-//   운영진이 남의 대화를 읽는 화면. **읽기 전용이다.**
-//
-//   일반 대화방(../room.tsx)을 재사용하지 않는다. 그쪽은 전송·답장·읽음 기록·
-//   초안·낙관적 UI 가 얽혀 있고, 그 전부가 "내가 참여자다" 를 전제한다. 조건문으로
-//   끄는 것보다 읽는 부분만 따로 두는 편이 안전하다 — 조건 하나를 빠뜨리면
-//   운영진이 남의 방에 글을 쓰게 된다.
-//
-//   말풍선은 같은 컴포넌트를 쓴다. 좌우 구분은 **방의 첫 참여자 기준**이다.
-//   운영진은 참여자가 아니라 "내 메시지" 라는 것이 없다.
-
 import { Fragment, useEffect, useMemo } from 'react';
 
 import { defineMessages, useIntl } from 'react-intl';
@@ -69,11 +58,8 @@ export const AdminRoom: React.FC = () => {
     void dispatch(fetchAdminDmRoomStatuses({ roomId }));
   }, [dispatch, roomId]);
 
-  // 좌우를 가르는 기준. 참여자 중 첫 번째를 "왼쪽" 으로 잡는다. 누가 왼쪽인지는
-  // 임의지만 대화 내내 일관되면 읽는 데 지장이 없다.
   const leftAccountId = room?.accounts[0]?.id;
 
-  // 본문 앞의 수신자 핸들을 지우는 기준. 운영진 화면에서는 참여자 전원이 온다.
   const memberUrls = useMemo(
     () =>
       new Set(
@@ -157,13 +143,11 @@ export const AdminRoom: React.FC = () => {
                     <MessageBubble
                       status={entry.message.status}
                       memberUrls={memberUrls}
-                      // "내 것" 이 아니라 "왼쪽 사람이 아닌 쪽" 이다.
                       isMine={entry.message.accountId !== leftAccountId}
                       isFirstInGroup={entry.isFirstInGroup}
                       isLastInGroup={entry.isLastInGroup}
                       isSenderChanged={entry.isSenderChanged}
                       showTimestamp={entry.showTimestamp}
-                      // 누가 한 말인지 항상 적는다. 운영진은 두 사람 다 모른다.
                       showSenderName
                       readOnly
                     />

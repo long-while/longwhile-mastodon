@@ -10,7 +10,6 @@ import { render, screen } from '@testing-library/react';
 import type { ThreadHeadState } from '../../reducers/thread_heads';
 import { ThreadPreviewItem } from '../thread_preview_item';
 
-// Status 자체는 여기서 보지 않는다. 어떤 글을 어떤 설정으로 그리는지만 본다.
 vi.mock('mastodon/containers/status_container', () => ({
   default: (props: Record<string, unknown>) => (
     <div
@@ -23,7 +22,6 @@ vi.mock('mastodon/containers/status_container', () => ({
   ),
 }));
 
-// 필터("숨기기")에 걸린 글은 선택자가 null 을 돌려준다.
 const hiddenByFilter = new Set<string>();
 vi.mock('mastodon/selectors', () => ({
   makeGetStatus:
@@ -108,7 +106,6 @@ describe('<ThreadPreviewItem />', () => {
         .getByRole('link', { name: 'Show more replies' })
         .getAttribute('href'),
     ).toBe('/statuses/5');
-    // 답글의 위쪽 선은 실제 부모(4)에 잇는다 — 사이에 글이 있어도 선은 끊기지 않는다.
     expect(screen.getByTestId('reply').dataset.previousId).toBe('4');
   });
 

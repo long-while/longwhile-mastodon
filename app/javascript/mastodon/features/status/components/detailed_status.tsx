@@ -249,11 +249,6 @@ export const DetailedStatus: React.FC<{
     );
   }
 
-  // 공개 범위 아이콘은 뺐다 — 모든 툿이 팔로워 전용이라 구분해 줄 것이 없다.
-  //
-  // 재게시 수는 private 에서도 보여준다. upstream 이 숨겼던 건 남이 재게시할 수 없어
-  // 언제나 0 이었기 때문인데, 여기서는 재게시가 되므로 숫자에 의미가 있다.
-  // 재게시가 불가능한 direct/limited 만 계속 숨긴다.
   if (['direct', 'limited'].includes(status.get('visibility') as string)) {
     reblogLink = '';
   } else {

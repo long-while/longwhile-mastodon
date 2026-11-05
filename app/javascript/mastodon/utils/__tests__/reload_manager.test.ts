@@ -23,7 +23,6 @@ describe('reload_manager', () => {
       set href(value: string) {
         href = value;
       },
-      // sanitizeTarget 가 `new URL(target, location.origin)` 으로 같은 출처인지 본다.
       origin: 'http://localhost',
       pathname: '/',
       search: '',

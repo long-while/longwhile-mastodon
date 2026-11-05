@@ -30,7 +30,6 @@ import { importFetchedAccounts, importFetchedStatuses } from './importer';
 import { NOTIFICATIONS_FILTER_SET } from './notifications';
 import { saveSettings } from './settings';
 
-// --- 기존 함수 유지 ---
 function dispatchAssociatedRecords(
   dispatch: AppDispatch,
   notifications: ApiNotificationGroupJSON[] | ApiNotificationJSON[],
@@ -67,37 +66,30 @@ function selectNotificationGroupedTypes(state: RootState) {
   return types;
 }
 
-// --- mention 제외 절대 금지 & fetch 단계 필터링 ---
 function getExcludedTypes(state: RootState) {
   const activeFilter = selectSettingsNotificationsQuickFilterActive(state);
 
-  // 기존 제외 타입에서 mention 제거
   const baseExcluded = selectSettingsNotificationsExcludedTypes(state).filter(
     (type) => type !== 'mention',
   );
 
   if (activeFilter === 'all') return baseExcluded;
 
-  // DM, Mentions, 일반 탭 모두 mention 제외하지 않음
   return allNotificationTypes.filter(
     (type) => type !== 'mention' && type !== activeFilter,
   );
 }
 
-// --- visibility 가져오기 헬퍼 함수 (백엔드 수정 전후 호환성) ---
 function getNotificationVisibility(notification: ApiNotificationGroupJSON | ApiNotificationJSON): string | undefined {
-  // 백엔드에서 status_visibility를 제공하면 우선 사용
   if ('status_visibility' in notification && notification.status_visibility) {
     return notification.status_visibility;
   }
-  // fallback: 기존 status.visibility 사용
   if ('status' in notification && notification.status?.visibility) {
     return notification.status.visibility;
   }
   return undefined;
 }
 
-// --- fetchNotifications 수정 ---
 export const fetchNotifications = createDataLoadingThunk(
   'notificationGroups/fetch',
   async (_params, { getState }) => {
@@ -111,7 +103,6 @@ export const fetchNotifications = createDataLoadingThunk(
       exclude_types: excludeTypes,
     });
 
-    // fetch 후 visibility 기준 필터링
     const filteredNotifications = allNotifications.notifications.filter((n) => {
       if (n.type !== 'mention') {
         return true;
@@ -127,7 +118,7 @@ export const fetchNotifications = createDataLoadingThunk(
         return visibility !== 'direct';
       }
 
-      return true; // all 또는 일반 탭
+      return true;
     });
 
     return {
@@ -182,7 +173,6 @@ export const pollRecentNotifications = createDataLoadingThunk(
         : undefined,
     });
 
-    // fetch 후 visibility 기준 필터링
     const activeFilter = selectSettingsNotificationsQuickFilterActive(state);
     const filteredNotifications = allNotifications.notifications.filter((n) => {
       if (n.type !== 'mention') return true;

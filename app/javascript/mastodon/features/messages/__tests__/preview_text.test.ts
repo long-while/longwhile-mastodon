@@ -29,7 +29,6 @@ describe('previewText', () => {
     expect(previewText(source(), labels)).toBe('안녕하세요');
   });
 
-  // 이걸 빼먹으면 모든 미리보기가 상대 핸들로 시작한다. (FR-13)
   it('drops the mentions the composer put at the front', () => {
     const html =
       '<p><span class="h-card"><a href="https://example.com/@bob">@bob</a></span> 잘 지내?</p>';
@@ -73,7 +72,6 @@ describe('previewText', () => {
     ).toBe('파일');
   });
 
-  // 콘텐츠 워닝이 있으면 본문 대신 경고를 보여준다. 가려둔 내용이 목록에 새면 안 된다.
   it('shows the content warning instead of the body', () => {
     expect(
       previewText(
@@ -101,8 +99,6 @@ describe('previewText', () => {
     expect(previewText(source({ content: '' }), labels)).toBe('메시지 없음');
   });
 
-  // 방 제목 변경 안내(Phase 5). 표식이 spoiler_text 에 있어 그냥 두면 콘텐츠 워닝
-  // 분기에 걸려 목록에 "열람 주의: conversation:title_changed:" 가 뜬다.
   describe('title change notices', () => {
     const titleEvent = (content: string) =>
       source({
@@ -130,7 +126,6 @@ describe('previewText', () => {
     });
   });
 
-  // 멤버 변경 안내도 같은 표식 방식이다. 목록에 표식이 새면 안 된다.
   it('shows the body of a member change notice without its handles', () => {
     const html =
       '<p><span class="h-card"><a href="https://example.com/@alice">@alice</a></span> ' +

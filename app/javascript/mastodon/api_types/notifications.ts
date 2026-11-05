@@ -63,7 +63,7 @@ export interface BaseNotificationGroupJSON {
 interface NotificationGroupWithStatusJSON extends BaseNotificationGroupJSON {
   type: NotificationWithStatusType;
   status_id: string | null;
-  status_visibility?: 'public' | 'unlisted' | 'private' | 'direct'; // 👈 추가된 필드
+  status_visibility?: 'public' | 'unlisted' | 'private' | 'direct';
 }
 
 interface NotificationWithStatusJSON extends BaseNotificationJSON {

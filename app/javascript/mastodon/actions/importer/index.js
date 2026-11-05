@@ -57,8 +57,6 @@ export function importFetchedStatuses(statuses) {
     const polls = [];
     const filters = [];
 
-    // @_longwhile — 앞으로 들어올 글에도 "콘텐츠 워닝 모두 펼치기" 를 적용한다.
-    // 이미 받아둔 글은 setExpandContentWarnings 가 처리한다.
     const expandContentWarnings = getState().settings.getIn(['content_warnings', 'expand_all'], false);
 
     function processStatus(status) {

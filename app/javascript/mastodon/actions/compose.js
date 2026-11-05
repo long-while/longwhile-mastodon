@@ -27,7 +27,6 @@ export const COMPOSE_SUBMIT_SUCCESS  = 'COMPOSE_SUBMIT_SUCCESS';
 export const COMPOSE_SUBMIT_FAIL     = 'COMPOSE_SUBMIT_FAIL';
 export const COMPOSE_REPLY           = 'COMPOSE_REPLY';
 export const COMPOSE_REPLY_CANCEL    = 'COMPOSE_REPLY_CANCEL';
-// @_longwhile — 답글이 부를 사람을 사용자가 직접 고른다. (reply_recipients_modal)
 export const COMPOSE_REPLY_MENTIONS_SET = 'COMPOSE_REPLY_MENTIONS_SET';
 export const COMPOSE_DIRECT          = 'COMPOSE_DIRECT';
 export const COMPOSE_MENTION         = 'COMPOSE_MENTION';
@@ -140,14 +139,6 @@ export function replyCompose(status) {
   };
 }
 
-// @_longwhile custom feature / 한참(longwhile) 제작 기능 — 답글 수신자 고르기
-//
-//   답글이 부를 사람을 사용자가 직접 고른다. 넘기는 것은 **핸들(acct) 목록**이다 —
-//   `reply_mentions` 가 그 모양이고, 그것이 곧 글 앞에 붙는 문자열이 된다
-//   (`withReplyMentions`).
-//
-//   고를 수 있는 후보 전체는 `reply_candidates` 에 따로 남아 있다. 여기서 지운
-//   사람을 다시 넣으려면 그 목록이 필요하기 때문이다.
 export function setComposeReplyMentions(accts) {
   return {
     type: COMPOSE_REPLY_MENTIONS_SET,

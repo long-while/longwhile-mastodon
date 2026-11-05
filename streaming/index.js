@@ -436,8 +436,6 @@ const startServer = async () => {
       return 'user:notification';
     case '/api/v1/streaming/public':
       return onlyMedia ? 'public:media' : 'public';
-    // 상류 경로는 /public/local 이다. 포크는 처음부터 /local 을 써 왔으므로 둘 다 받는다
-    // (웹 화면은 WebSocket 이라 무관하고, SSE 를 쓰는 외부 앱이 상류 경로로 온다).
     case '/api/v1/streaming/public/local':
     case '/api/v1/streaming/local':
       return onlyMedia ? 'public:local:media' : 'public:local';
@@ -1068,10 +1066,6 @@ const startServer = async () => {
       arr.push(`timeline:${req.accountId}:notifications`);
     }
 
-    // @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 채팅
-    //   DM 채팅 알림(conversation 이벤트)을 받기 위해 timeline:direct 채널 구독
-    //   PushConversationWorker 가 이 채널로 발행한다.
-    //   플래그가 꺼져 있으면 구독하지 않는다 — 불필요한 Redis pub/sub 트래픽 방지
     if (process.env.DM_CHAT_ENABLED === 'true') {
       arr.push(`timeline:direct:${req.accountId}`);
     }

@@ -81,8 +81,6 @@ export const BoostModal: React.FC<{
 
       <div className={classNames('safety-action-modal__bottom')}>
         <div className='safety-action-modal__actions'>
-          {/* 재게시에도 공개 범위 선택지가 없다 — 언제나 팔로워 전용이고,
-              게다가 원작자를 팔로우하는 사람에게만 보인다. */}
           <div className='spacer' />
 
           <button onClick={handleCancel} className='link-button'>

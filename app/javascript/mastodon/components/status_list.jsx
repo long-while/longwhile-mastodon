@@ -35,7 +35,6 @@ export default class StatusList extends ImmutablePureComponent {
     timelineId: PropTypes.string,
     lastId: PropTypes.string,
     bindToDocument: PropTypes.bool,
-    // @_longwhile — 답글 위에 타래 시작 글을 붙인다(홈·퍼블릭만). `components/thread_preview_item.tsx`
     threadPreview: PropTypes.bool,
   };
 

@@ -1,9 +1,3 @@
-// @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 운영 관리
-//   운영진 화면(/messages/all)의 방 목록과 방별 메시지 id.
-//
-//   일반 채팅의 dmRooms / dmMessages 와 **따로 든다.** 같은 저장소를 쓰면 운영진
-//   화면을 한 번 열었을 때 남의 방이 자기 대화 목록에 섞여 들어간다.
-
 import { createReducer } from '@reduxjs/toolkit';
 
 import { compareIds } from 'mastodon/features/messages/util/compare_ids';
@@ -52,7 +46,6 @@ const emptyRoom = (): AdminRoomMessages => ({
   loaded: false,
 });
 
-// 화면은 위에서 아래로 시간순인데 API 는 역순으로 준다. 저장 시점에 정규화한다.
 const merge = (existing: string[], incoming: string[]) =>
   Array.from(new Set([...existing, ...incoming])).sort(compareIds);
 
@@ -104,8 +97,6 @@ export const adminDmRoomsReducer = createReducer(initialState, (builder) => {
       room.hasMore = payload.hasMore;
       room.statusIds = merge(room.statusIds, payload.statusIds);
     })
-    // 운영진 화면에서 글을 지우는 수단은 없지만, 다른 화면에서 지운 글이 여기
-    // 열려 있을 수 있다. 죽은 id 를 남기지 않는다.
     .addCase(timelineDelete, (state, { payload }) => {
       Object.values(state.messages).forEach((room) => {
         if (!room.statusIds.includes(payload.statusId)) return;

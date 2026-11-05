@@ -89,7 +89,6 @@ const AutosuggestTextarea = forwardRef(({
     onChange(e);
   }, [value, onSuggestionsFetchRequested, onSuggestionsClearRequested, onChange, setSelectedSuggestion]);
 
-  // 자동으로 바뀐 기호 바로 뒤의 Backspace 는 친 그대로 되돌린다.
   const undoTypographic = useCallback((e) => {
     const { target } = e;
     const edit = undoTypographicReplacement(target.value, target.selectionStart, target.selectionEnd, typographicRef.current);

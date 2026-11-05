@@ -70,10 +70,6 @@ const mapStateToProps = (state, { status }) => ({
   relationship: state.getIn(['relationships', status.getIn(['account', 'id'])]),
 });
 
-// @_longwhile — 0 은 숨긴다. IconButton 은 `typeof counter !== 'undefined'` 로만
-//   판단해서 0 을 그대로 넘기면 "0" 이 눈에 보이게 찍힌다. 아무도 안 한
-//   동작에 숫자가 붙어 있으면 자리만 차지하고, 세 개가 나란히 0 이면
-//   액션 바가 숫자판처럼 보인다.
 const countOrNone = (count) => (count > 0 ? count : undefined);
 
 class StatusActionBar extends ImmutablePureComponent {
@@ -226,10 +222,6 @@ class StatusActionBar extends ImmutablePureComponent {
   };
 
   render () {
-    // @_longwhile — 재게시·마음에 들어요도 답글처럼 **항상** 숫자를 띄운다.
-    //   상류는 `withCounters` 를 넘긴 화면(프로필·둘러보기)에서만 보여 줬는데,
-    //   같은 게시물이 홈에서는 숫자가 없고 프로필에서는 있어 서로 다른 게시물처럼
-    //   보였다. 답글 숫자는 원래 조건 없이 나온다 — 거기에 맞춘다.
     const { status, relationship, intl, withDismiss, scrollKey } = this.props;
     const { signedIn, permissions } = this.props.identity;
 
@@ -241,18 +233,6 @@ class StatusActionBar extends ImmutablePureComponent {
     const isRemote           = status.getIn(['account', 'username']) !== status.getIn(['account', 'acct']);
 
     let menu = [];
-
-    // @_longwhile — "상세 정보 표시" · "공유" · "임베드 코드 보기" 를 뺐다.
-    //
-    //   상세 정보 표시  게시물을 누르면 어차피 그리로 간다. 메뉴에 한 번 더 두면
-    //                   맨 위 자리를 아무도 안 쓰는 항목이 차지한다.
-    //   공유            OS 공유 시트를 여는 항목이다. 연합하지 않는 비공개
-    //                   인스턴스라 밖으로 내보낼 링크가 뜻이 없다.
-    //   임베드 코드     같은 이유. 바깥 웹에 붙일 일이 없다.
-    //
-    // 원본 페이지 보기는 남긴다 — 원격 글의 출처를 확인하는 경로다.
-    // 같은 항목이 상세 화면(features/status/components/action_bar.jsx)에도
-    // 있었고 그쪽도 함께 걷었다.
 
     if (publicStatus && isRemote) {
       menu.push({ text: intl.formatMessage(messages.openOriginalPage), href: status.get('url') });
@@ -342,10 +322,6 @@ class StatusActionBar extends ImmutablePureComponent {
       replyTitle = intl.formatMessage(messages.replyAll);
     }
 
-    // upstream 은 "내 private 툿"만 재게시할 수 있어서 작성자를 함께 봤다. 이 인스턴스는
-    // 모든 툿이 private 이고 남의 것도 재게시할 수 있으므로 범위만 본다. 작성자 조건을
-    // 남겨두면 버튼이 통째로 비활성이 되어 재게시가 아예 불가능해진다.
-    // 자물쇠 달린 재게시 아이콘은 그대로 쓴다 — 재게시가 겹팔로워에게만 간다는 표시로 맞다.
     const reblogPrivate = status.get('visibility') === 'private';
 
     let reblogTitle, reblogIconComponent;

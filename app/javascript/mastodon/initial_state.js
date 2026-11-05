@@ -92,7 +92,6 @@ const getMeta = (prop) => initialState?.meta && initialState.meta[prop];
 export const activityApiEnabled = getMeta('activity_api_enabled');
 export const autoPlayGif = getMeta('auto_play_gif');
 export const boostModal = getMeta('boost_modal');
-// @_longwhile — DM 채팅 기능 플래그
 export const dmChatEnabled = getMeta('dm_chat_enabled');
 export const deleteModal = getMeta('delete_modal');
 export const missingAltTextModal = getMeta('missing_alt_text_modal');

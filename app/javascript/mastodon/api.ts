@@ -132,18 +132,6 @@ const requestUsedSessionToken = (config: AxiosError['config']): boolean => {
   );
 };
 
-// @_longwhile — **계정 추가 팝업이 떠 있는 동안에는 복구하지 않는다.**
-//   팝업의 `prompt=login` 이 부르는 `sign_out(:user)` 은 세션 쿠키를 같이 쓰는
-//   이 탭까지 로그아웃시키고, `before_logout` 이 이 페이지의 세션 토큰도
-//   폐기한다. 그 뒤 스트리밍이 끊겨 폴링으로 넘어가면 첫 401 에서 여기로 와
-//   `DELETE /auth/sign_out` 을 쏘고 로그인 화면("Signed out successfully.")으로
-//   가 버렸다. 팝업은 사라진 opener 에 결과를 보내고, 닫으라는 답을 영영 못
-//   받는다. `main.tsx` 는 부팅할 때마다 페이지 세션 토큰을 bearer 로 쓰므로
-//   (저장된 전환 토큰은 전환하는 순간에만 깔린다) **계정을 몇 개 추가했든
-//   매번** 걸린다.
-//
-//   그 401 은 예정된 것이다. 흐름이 끝나면 `handleAddAccount` 가 새로고침으로
-//   화면을 세션에 맞춘다.
 let sessionRecoverySuspensions = 0;
 
 export const suspendSessionRecovery = (): (() => void) => {

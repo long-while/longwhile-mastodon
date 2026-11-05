@@ -18,8 +18,6 @@ export const ConfirmationModal: React.FC<
     onConfirm: () => void;
     closeWhenConfirm?: boolean;
 
-    // @_longwhile — 확인 단추를 빨강으로. 되돌릴 수 없는 동작에만 붙인다.
-    //   기본값은 파랑 그대로다. 전부 빨강으로 만들면 색이 뜻을 잃는다.
     dangerous?: boolean;
   } & BaseConfirmationModalProps
 > = ({

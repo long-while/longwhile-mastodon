@@ -35,8 +35,6 @@ const makeGetStatusIds = (pending = false) => createSelector([
   });
 });
 
-// @_longwhile — 타래 한 갈래는 가장 최근 글 한 칸으로만 보인다(위 답글의 조상은 뺀다).
-//   `components/thread_preview_dedupe.ts`
 const isHiddenByFilter = (statuses, filters, id) => {
   if (!filters) return false;
 
