@@ -33,7 +33,7 @@ ko:
 
           만약 직접 가입 요청을 보내지 않았다면, 이 메일을 무시하세요.
         extra_html: <a href="%{terms_path}">서버의 규칙</a>과 <a href="%{policy_path}">이용 약관</a>도 확인해 주세요.
-        installed_by_html: '%{host} 서버는 <a href="https://kre.pe/QTRx"><strong>크레페 한참 커미션</strong></a>으로 설치되었습니다.'
+        installed_by_html: '%{host} 서버는 <a href="https://kre.pe/QTRx"><strong>크레페 한참 커미션</strong></a>의 공개 배포 버전을 사용합니다.'
         subject: '한참 마스토돈 에디션: %{instance}에 대한 확인 메일'
         title: 이메일 주소 확인
       email_changed:
