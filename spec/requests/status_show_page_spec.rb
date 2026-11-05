@@ -7,7 +7,7 @@ RSpec.describe 'Statuses' do
     include AccountsHelper
 
     def site_hostname
-      Rails.configuration.x.web_domain || Rails.configuration.x.local_domain
+      local_domain_uri.host
     end
 
     it 'has valid opengraph tags' do
@@ -40,27 +40,6 @@ RSpec.describe 'Statuses' do
       expect(head_meta_exists('og:locale')).to be true
       expect(head_meta_content('og:locale')).to eq 'ca'
       expect(head_meta_content('og:description')).to eq status_text
-    end
-
-    def head_link_icons
-      response
-        .parsed_body
-        .search('html head link[rel=icon]')
-    end
-
-    def head_meta_content(property)
-      response
-        .parsed_body
-        .search("html head meta[property='#{property}']")
-        .attr('content')
-        .text
-    end
-
-    def head_meta_exists(property)
-      !response
-        .parsed_body
-        .search("html head meta[property='#{property}']")
-        .empty?
     end
   end
 end

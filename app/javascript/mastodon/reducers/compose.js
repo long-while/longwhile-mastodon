@@ -72,6 +72,9 @@ const initialState = ImmutableMap({
   // Handles the reply must carry. Kept beside the text rather than inside it so
   // the box holds only what the user wrote; they are put back on submit.
   reply_mentions: ImmutableList(),
+  // @_longwhile — 고를 수 있는 사람 전부. `{ id, acct }` 의 목록이고, 위의
+  //   `reply_mentions` 는 여기서 **체크된 부분집합**이다. 체크를 해제한 사람을
+  //   다시 넣으려면 원래 후보가 무엇이었는지가 남아 있어야 한다.
   reply_candidates: ImmutableList(),
   is_composing: false,
   is_submitting: false,
@@ -85,6 +88,8 @@ const initialState = ImmutableMap({
   poll: null,
   suggestion_token: null,
   suggestions: ImmutableList(),
+  // 서버가 initial_state 로 덮어쓰지만, 하이드레이션 전에 작성창이 뜨는 찰나에도
+  // public 으로 새 나가지 않도록 여기서부터 private 으로 둔다.
   default_privacy: 'private',
   default_sensitive: false,
   default_language: 'en',
@@ -111,7 +116,18 @@ function statusToMentionAccts(status) {
   return statusToMentionCandidates(status).map(candidate => candidate.get('acct'));
 }
 
-// @_longwhile custom feature
+// @_longwhile custom feature / 한참(longwhile) 제작 기능 — 답글 수신자 고르기
+//
+//   위와 같은 사람들을 **id 와 함께** 담는다. `reply_candidates` 가 이 모양이고,
+//   수신자 모달이 아바타와 표시 이름을 그리려면 id 가 필요하다 — `reply_mentions`
+//   는 핸들만 들고 있어서 계정을 찾을 수 없다.
+//
+//   **후보는 지워도 남는다.** 체크를 해제한 사람을 다시 넣을 수 있어야 하는데,
+//   `reply_mentions` 에서 빠지고 나면 그 사람이 원래 후보였다는 사실이 어디에도
+//   없기 때문이다.
+//
+//   순서를 지킨다 — 답글 대상(글쓴이)이 맨 앞이고 그 다음이 원래 멘션된 순서다.
+//   모달의 줄 순서이자 글 앞에 붙는 핸들 순서다.
 function statusToMentionCandidates(status) {
   let set = ImmutableOrderedSet([]);
 
@@ -126,6 +142,8 @@ function statusToMentionCandidates(status) {
     .union(status.get('mentions')
       .filterNot(mention => mention.get('id') === me)
       .map(mention => ImmutableMap({ id: mention.get('id'), acct: mention.get('acct') })))
+    // 같은 사람이 글쓴이이면서 멘션에도 들어 있을 수 있다. OrderedSet 은 값이
+    // 같은 Map 을 하나로 본다(Immutable 의 값 동등성) — 그래서 여기서 걸러진다.
     .toList();
 }
 
@@ -488,6 +506,14 @@ export const composeReducer = (state = initialState, action) => {
   case COMPOSE_SUBMIT_REQUEST:
     return state.set('is_submitting', true);
 
+  // @_longwhile — 답글 수신자 고르기. 모달이 정한 핸들 목록으로 갈아 끼운다.
+  //
+  //   **후보 순서로 다시 세운다.** 모달이 준 순서를 그대로 쓰면 체크를 껐다 켠
+  //   사람이 맨 뒤로 가서, 글 앞에 붙는 핸들 순서가 눌렀다 뗄 때마다 바뀐다.
+  //
+  //   후보에 없는 핸들은 버린다. `idempotencyKey` 는 건드리지 않는다 — 보낼
+  //   내용이 바뀐 것은 맞지만, 그 키는 "같은 글을 두 번 보내는 것" 을 막는
+  //   장치이고 수신자를 고치는 동안 새로 발급하면 그 보호가 헐거워진다.
   case COMPOSE_REPLY_MENTIONS_SET: {
     const chosen = ImmutableOrderedSet(action.accts);
 

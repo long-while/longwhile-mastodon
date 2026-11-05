@@ -25,11 +25,11 @@ RSpec.describe 'Signed-out visits to the web app' do
 
   context 'when LIMITED_FEDERATION_MODE is on' do
     around do |example|
-      original = Rails.configuration.x.limited_federation_mode
-      Rails.configuration.x.limited_federation_mode = true
+      original = Rails.configuration.x.mastodon.limited_federation_mode
+      Rails.configuration.x.mastodon.limited_federation_mode = true
       example.run
     ensure
-      Rails.configuration.x.limited_federation_mode = original
+      Rails.configuration.x.mastodon.limited_federation_mode = original
     end
 
     it_behaves_like 'sends signed-out visitors to the login form'

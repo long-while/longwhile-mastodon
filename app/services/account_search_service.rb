@@ -1,12 +1,16 @@
 # frozen_string_literal: true
 
 class AccountSearchService < BaseService
+  include SearchStoplight
+
   attr_reader :query, :limit, :offset, :options, :account
 
   MENTION_ONLY_RE = /\A#{Account::MENTION_RE}\z/i
 
   # Min. number of characters to look for non-exact matches
-  MIN_QUERY_LENGTH = 5
+  MIN_QUERY_LENGTH = 3
+
+  ES_QUERY_TIMEOUT = ENV.fetch('ES_QUERY_TIMEOUT', '10s')
 
   class QueryBuilder
     def initialize(query, account, options = {})
@@ -178,6 +182,12 @@ class AccountSearchService < BaseService
         'search.backend' => Chewy.enabled? ? 'elasticsearch' : 'database'
       )
 
+      # Trigger searching accounts using providers.
+      # This will not return any immediate results but has the
+      # potential to fill the local database with relevant
+      # accounts for the next time the search is performed.
+      Fasp::AccountSearchWorker.perform_async(@query) if options[:query_fasp]
+
       search_service_results.compact.uniq.tap do |results|
         span.set_attribute('search.results.count', results.size)
       end
@@ -206,6 +216,8 @@ class AccountSearchService < BaseService
             end
 
     match = nil if !match.nil? && !account.nil? && options[:following] && !account.following?(match)
+    # @_longwhile — 익명화(탈퇴) 계정을 옛 이름으로 찾게 하면 익명 처리한 글과 옛 이름이 다시 이어진다.
+    match = nil if match&.anonymized?
 
     @exact_match = match
   end
@@ -245,12 +257,12 @@ class AccountSearchService < BaseService
       end
     end
 
-    records = query_builder.build.limit(limit_for_non_exact_results).offset(offset).objects.compact
+    records = elastic_stoplight_wrapper.run { query_builder.build.limit(limit_for_non_exact_results).timeout(ES_QUERY_TIMEOUT).offset(offset).objects.compact }
 
     ActiveRecord::Associations::Preloader.new(records: records, associations: [:account_stat, { user: :role }]).call
 
     records
-  rescue Faraday::ConnectionFailed, Parslet::ParseFailed
+  rescue Stoplight::Error::RedLight, Faraday::ConnectionFailed, Parslet::ParseFailed, Errno::ENETUNREACH, OpenSSL::SSL::SSLError, Elastic::Transport::Transport::Error
     nil
   end
 

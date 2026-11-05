@@ -6,6 +6,11 @@ class Auth::RegistrationsController < Devise::RegistrationsController
 
   layout :determine_layout
 
+  # @_longwhile — Devise 가 prepend_before_action 으로 건 require_no_authentication 등이
+  # Localized 의 around_action 보다 먼저 돌아 "You are already signed in." 같은 플래시를
+  # 영어로 만든다. 같은 이름으로 다시 걸면 앞의 등록이 지워지고 맨 앞으로 온다.
+  prepend_around_action :set_locale
+
   before_action :set_invite, only: [:new, :create]
   before_action :check_enabled_registrations, only: [:new, :create]
   before_action :configure_sign_up_params, only: [:create]
@@ -23,12 +28,14 @@ class Auth::RegistrationsController < Devise::RegistrationsController
     super(&:build_invite_request)
   end
 
-  def edit # rubocop:disable Lint/UselessMethodDefinition
+  def edit
     super
   end
 
-  def create # rubocop:disable Lint/UselessMethodDefinition
+  def create
     super
+  rescue ActiveRecord::MultiparameterAssignmentErrors => e
+    handle_multiparameter_assignment_error(e.errors)
   end
 
   def update
@@ -52,7 +59,12 @@ class Auth::RegistrationsController < Devise::RegistrationsController
   def build_resource(hash = nil)
     super
 
-    resource.locale                 = I18n.default_locale
+    # @_longwhile — 브라우저의 Accept-Language 를 따르지 않는다. 따랐다가는 영어
+    # 브라우저로 가입한 사람이 영어에 갇힌다 (settings-phase-2.md §1.3).
+    # I18n.locale 은 Localized 가 요청마다 :ko 로 고정한 값이다. I18n.default_locale 을
+    # 쓰면 안 된다 — DEFAULT_LOCALE 이 없으면 :en 이라(config/initializers/i18n.rb)
+    # 가입자가 모두 en 으로 적혀 Sidekiq 이 보내는 메일이 영어로 나간다.
+    resource.locale                 = I18n.locale
     resource.invite_code            = @invite&.code if resource.invite_code.blank?
     resource.registration_form_time = session[:registration_form_time]
     resource.sign_up_ip             = request.remote_ip
@@ -89,7 +101,7 @@ class Auth::RegistrationsController < Devise::RegistrationsController
   end
 
   def check_enabled_registrations
-    redirect_to root_path unless allowed_registration?(request.remote_ip, @invite)
+    redirect_to new_user_session_path, alert: I18n.t('devise.failure.closed_registrations', email: Setting.site_contact_email) unless allowed_registration?(request.remote_ip, @invite)
   end
 
   def invite_code
@@ -106,6 +118,28 @@ class Auth::RegistrationsController < Devise::RegistrationsController
     @invite = begin
       invite = Invite.find_by(code: invite_code) if invite_code.present?
       invite if invite&.valid_for_use?
+    end
+  end
+
+  def handle_multiparameter_assignment_error(errors)
+    build_resource(sign_up_params_without_invalid_multiparameter_attributes(errors))
+
+    errors.each do |attribute_error|
+      resource.errors.add(attribute_error.attribute, :invalid)
+    end
+
+    clean_up_passwords resource
+    set_minimum_password_length
+    respond_with resource
+  end
+
+  def sign_up_params_without_invalid_multiparameter_attributes(errors)
+    invalid_attributes = errors.map { |attribute_error| attribute_error.attribute.to_s }
+
+    sign_up_params.to_h.reject do |key, _value|
+      invalid_attributes.any? do |attribute|
+        key.to_s == attribute || key.to_s.match?(/\A#{Regexp.escape(attribute)}\(\d+i\)\z/)
+      end
     end
   end
 
@@ -126,19 +160,24 @@ class Auth::RegistrationsController < Devise::RegistrationsController
   end
 
   def set_rules
-    @rules = Rule.ordered
+    @rules = Rule.ordered.includes(:translations)
   end
 
   def require_rules_acceptance!
-    return if @rules.empty? || (session[:accept_token].present? && params[:accept] == session[:accept_token])
+    return if @rules.empty? || validated_accept_token?
 
     @accept_token = session[:accept_token] = SecureRandom.hex
-    @invite_code  = invite_code
+    @invite_code = invite_code
+    @rule_translations = @rules.map { |rule| rule.translation_for(I18n.locale) }
 
-    set_locale { render :rules }
+    render :rules
   end
 
-  def is_flashing_format? # rubocop:disable Naming/PredicateName
+  def validated_accept_token?
+    session[:accept_token].present? && params[:accept] == session[:accept_token]
+  end
+
+  def is_flashing_format? # rubocop:disable Naming/PredicatePrefix
     if params[:action] == 'create'
       false # Disable flash messages for sign-up
     else

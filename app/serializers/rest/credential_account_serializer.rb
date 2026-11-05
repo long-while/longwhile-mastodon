@@ -20,7 +20,11 @@ class REST::CredentialAccountSerializer < REST::AccountSerializer
       indexable: object.indexable,
       attribution_domains: object.attribution_domains,
 
+      # @_longwhile — DM 읽음 표시 (docs/dm-chat/phases/dm-chat-phase-4.md §2.1).
+      # 프론트가 이 값으로 설정 상태를 알고, 꺼져 있으면 상대 읽음도 그리지
+      # 않는다. **그건 보조일 뿐이다** — 실제 차단은 서버가 한다(FR-19).
       dm_read_receipts: user.settings['dm_read_receipts'],
+      quote_policy: user.setting_default_quote_policy,
     }
   end
 

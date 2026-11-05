@@ -8,12 +8,13 @@ class ActivityPub::FetchRemoteStatusService < BaseService
   DISCOVERIES_PER_REQUEST = 1000
 
   # Should be called when uri has already been checked for locality
-  def call(uri, prefetched_body: nil, on_behalf_of: nil, expected_actor_uri: nil, request_id: nil)
+  def call(uri, prefetched_body: nil, on_behalf_of: nil, expected_actor_uri: nil, request_id: nil, depth: nil)
     return if domain_not_allowed?(uri)
 
+    @depth = depth || 0
     @request_id = request_id || "#{Time.now.utc.to_i}-status-#{uri}"
     @json = if prefetched_body.nil?
-              fetch_status(uri, true, on_behalf_of)
+              fetch_status(uri, on_behalf_of)
             else
               body_to_json(prefetched_body, compare_id: uri)
             end
@@ -52,13 +53,14 @@ class ActivityPub::FetchRemoteStatusService < BaseService
       return nil if discoveries > DISCOVERIES_PER_REQUEST
     end
 
-    ActivityPub::Activity.factory(activity_json, actor, request_id: @request_id).perform
+    ActivityPub::Activity.factory(activity_json, actor, request_id: @request_id, depth: @depth).perform
   end
 
   private
 
   def trustworthy_attribution?(uri, attributed_to)
     return false if uri.nil? || attributed_to.nil?
+    return false if unsupported_uri_scheme?(uri) || unsupported_uri_scheme?(attributed_to)
 
     Addressable::URI.parse(uri).normalized_host.casecmp(Addressable::URI.parse(attributed_to).normalized_host).zero?
   end
@@ -81,9 +83,9 @@ class ActivityPub::FetchRemoteStatusService < BaseService
     equals_or_includes_any?(@json['type'], ActivityPub::Activity::Create::SUPPORTED_TYPES + ActivityPub::Activity::Create::CONVERTED_TYPES)
   end
 
-  def fetch_status(uri, id_is_known, on_behalf_of = nil)
+  def fetch_status(uri, on_behalf_of = nil)
     begin
-      fetch_resource(uri, id_is_known, on_behalf_of, raise_on_error: :all)
+      fetch_resource(uri, on_behalf_of: on_behalf_of, raise_on_error: :all)
     rescue Mastodon::UnexpectedResponseError => e
       return unless e.response.code == 404
 
@@ -91,7 +93,6 @@ class ActivityPub::FetchRemoteStatusService < BaseService
       existing_status = Status.remote.find_by(uri: uri)
       if existing_status&.distributable?
         Rails.logger.debug { "FetchRemoteStatusService - Got 404 for orphaned status with URI #{uri}, deleting" }
-        Tombstone.find_or_create_by(uri: uri, account: existing_status.account)
         RemoveStatusService.new.call(existing_status, redraft: false)
       end
     end

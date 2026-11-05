@@ -1,0 +1,297 @@
+# frozen_string_literal: true
+
+require 'rails_helper'
+
+RSpec.describe 'Api::V1::Collections' do
+  include_context 'with API authentication', oauth_scopes: 'read:collections write:collections'
+
+  describe 'GET /api/v1/accounts/:account_id/collections' do
+    subject do
+      get "/api/v1/accounts/#{account.id}/collections", headers: headers, params: params
+    end
+
+    let(:params) { {} }
+
+    let(:account) { Fabricate(:account) }
+
+    before { Fabricate.times(3, :collection, account:) }
+
+    it 'returns all collections for the given account and http success' do
+      subject
+
+      expect(response).to have_http_status(200)
+      expect(response.parsed_body[:collections].size).to eq 3
+    end
+
+    it 'features a deprecation header when requested via the alpha route' do
+      subject
+      expect(response.headers['Deprecation']).to be_nil
+
+      get "/api/v1_alpha/accounts/#{account.id}/collections", headers: headers, params: params
+      expect(response.headers['Deprecation']).to eq '@1781049600'
+    end
+
+    context 'with limit param' do
+      let(:params) { { limit: '1' } }
+
+      it 'returns only a single result' do
+        subject
+
+        expect(response).to have_http_status(200)
+        expect(response.parsed_body[:collections].size).to eq 1
+
+        expect(response)
+          .to include_pagination_headers(
+            next: api_v1_account_collections_url(account, limit: 1, offset: 1)
+          )
+      end
+    end
+
+    context 'with limit and offset params' do
+      let(:params) { { limit: '1', offset: '1' } }
+
+      it 'returns the correct result and headers' do
+        subject
+
+        expect(response).to have_http_status(200)
+        expect(response.parsed_body[:collections].size).to eq 1
+
+        expect(response)
+          .to include_pagination_headers(
+            prev: api_v1_account_collections_url(account, limit: 1, offset: 0),
+            next: api_v1_account_collections_url(account, limit: 1, offset: 2)
+          )
+      end
+    end
+
+    context 'when some collections are not discoverable' do
+      before do
+        Fabricate(:collection, account:, discoverable: false)
+      end
+
+      context 'when requesting user is a third party' do
+        it 'hides the collections that are not discoverable' do
+          subject
+
+          expect(response).to have_http_status(200)
+          expect(response.parsed_body[:collections].size).to eq 3
+        end
+      end
+
+      context 'when requesting user owns the collection' do
+        let(:account) { user.account }
+
+        it 'returns all collections, including the ones that are not discoverable' do
+          subject
+
+          expect(response).to have_http_status(200)
+          expect(response.parsed_body[:collections].size).to eq 4
+        end
+      end
+    end
+
+    context 'when the requesting user is blocked by the given account' do
+      before do
+        account.block!(user.account)
+      end
+
+      it 'returns an empty array' do
+        subject
+
+        expect(response).to have_http_status(200)
+        expect(response.parsed_body[:collections]).to eq []
+      end
+    end
+  end
+
+  describe 'GET /api/v1/collections/:id' do
+    subject do
+      get "/api/v1/collections/#{collection.id}", headers: headers
+    end
+
+    let(:collection) { Fabricate(:collection) }
+    let!(:items) { Fabricate.times(2, :collection_item, collection:) }
+
+    shared_examples 'unfiltered, successful request' do
+      it 'includes all items in the response' do
+        subject
+
+        expect(response).to have_http_status(200)
+        expect(response.parsed_body[:collection][:items].size).to eq 2
+      end
+    end
+
+    context 'when user is not signed in' do
+      let(:headers) { {} }
+
+      it_behaves_like 'unfiltered, successful request'
+    end
+
+    context 'when user is signed in' do
+      context 'when the user has not blocked or muted anyone' do
+        it_behaves_like 'unfiltered, successful request'
+      end
+
+      context 'when the user has blocked an account' do
+        before do
+          user.account.block!(items.first.account)
+        end
+
+        it 'only includes the non-blocked account in the response' do
+          subject
+
+          expect(response).to have_http_status(200)
+          expect(response.parsed_body[:collection][:items].size).to eq 1
+          expect(response.parsed_body[:collection][:items][0]['id']).to eq items.last.id.to_s
+        end
+      end
+    end
+  end
+
+  describe 'POST /api/v1/collections' do
+    subject do
+      post '/api/v1/collections', headers: headers, params: params
+    end
+
+    let(:params) { {} }
+
+    it_behaves_like 'forbidden for wrong scope', 'read'
+
+    # @_longwhile — 이 인스턴스에서는 컬렉션을 만들 수 없다(CollectionPolicy#create?).
+    # 이름·설명이 로그인한 모두에게 보이는 공개 글이 되고, 팔로워가 프로텍트 계정을
+    # 동의 없이 담아 숨겨 둔 팔로우 관계를 드러낸다. 고정 프런트에는 컬렉션 화면이 없다.
+    context 'with valid params' do
+      let(:params) do
+        {
+          name: 'Low-traffic bots',
+          description: 'Really nice bots, please follow',
+          language: 'en',
+          sensitive: '0',
+          discoverable: '1',
+        }
+      end
+
+      it 'refuses to create a collection' do
+        expect do
+          subject
+        end.to_not change(Collection, :count)
+
+        expect(response).to have_http_status(403)
+      end
+    end
+
+    context 'with a protected account the user follows' do
+      let(:protected_account) { Fabricate(:account, locked: true, discoverable: true) }
+      let(:params) { { name: 'Friends', description: 'people I follow', account_ids: [protected_account.id] } }
+
+      before { user.account.follow!(protected_account) }
+
+      it 'does not feature the protected account' do
+        expect do
+          subject
+        end.to_not change(CollectionItem, :count)
+
+        expect(response).to have_http_status(403)
+      end
+    end
+  end
+
+  describe 'PATCH /api/v1/collections/:id' do
+    subject do
+      patch "/api/v1/collections/#{collection.id}", headers: headers, params: params
+    end
+
+    let(:collection) { Fabricate(:collection) }
+    let(:params) { {} }
+
+    context 'when user is not owner' do
+      it 'returns http forbidden' do
+        subject
+
+        expect(response).to have_http_status(403)
+      end
+    end
+
+    context 'when user is the owner' do
+      let(:collection) do
+        Fabricate(:collection,
+                  account: user.account,
+                  name: 'Pople to follow',
+                  description: 'Cool pople',
+                  sensitive: true,
+                  discoverable: false)
+      end
+
+      it_behaves_like 'forbidden for wrong scope', 'read:collections'
+
+      context 'with valid params' do
+        let(:params) do
+          {
+            name: 'People to follow',
+            description: 'Cool people',
+            sensitive: '0',
+            discoverable: '1',
+          }
+        end
+
+        it 'updates the collection and returns http success' do
+          subject
+          collection.reload
+
+          expect(response).to have_http_status(200)
+          expect(collection.name).to eq 'People to follow'
+          expect(collection.description).to eq 'Cool people'
+          expect(collection.sensitive).to be false
+          expect(collection.discoverable).to be true
+        end
+      end
+
+      context 'with invalid params' do
+        let(:params) { { name: '' } }
+
+        it 'returns http unprocessable content and detailed errors' do
+          subject
+
+          expect(response).to have_http_status(422)
+          expect(response.parsed_body).to include({
+            'error' => a_hash_including({
+              'details' => a_hash_including({
+                'name' => [{ 'error' => 'ERR_BLANK', 'description' => "can't be blank" }],
+              }),
+            }),
+          })
+        end
+      end
+    end
+  end
+
+  describe 'DELETE /api/v1/collections/:id' do
+    subject do
+      delete "/api/v1/collections/#{collection.id}", headers: headers
+    end
+
+    let(:collection) { Fabricate(:collection) }
+
+    context 'when user is not owner' do
+      it 'returns http forbidden' do
+        subject
+
+        expect(response).to have_http_status(403)
+      end
+    end
+
+    context 'when user is the owner' do
+      let(:collection) { Fabricate(:collection, account: user.account) }
+
+      it_behaves_like 'forbidden for wrong scope', 'read:collections'
+
+      it 'deletes the collection and returns http success' do
+        collection
+
+        expect { subject }.to change(Collection, :count).by(-1)
+
+        expect(response).to have_http_status(200)
+      end
+    end
+  end
+end

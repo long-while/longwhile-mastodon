@@ -2,7 +2,7 @@
 
 class DateOfBirthValidator < ActiveModel::EachValidator
   def validate_each(record, attribute, value)
-    record.errors.add(attribute, :below_limit) if value.present? && value.to_date > min_age.ago
+    record.errors.add(attribute, :below_limit) if value.present? && value.to_date > min_age.ago.to_date
   rescue Date::Error
     record.errors.add(attribute, :invalid)
   end

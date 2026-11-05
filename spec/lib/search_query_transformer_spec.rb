@@ -129,4 +129,35 @@ RSpec.describe SearchQueryTransformer do
       end
     end
   end
+
+  context 'with multiple prefix clauses before a search term' do
+    let(:query) { 'from:me has:media foo' }
+
+    it 'transforms clauses' do
+      expect(subject.send(:must_clauses).map(&:term)).to contain_exactly('foo')
+      expect(subject.send(:must_not_clauses)).to be_empty
+      expect(subject.send(:filter_clauses).map(&:prefix)).to contain_exactly('from', 'has')
+    end
+  end
+
+  # @_longwhile — 탈퇴(익명화) 계정은 옛 이름으로 글을 모아 볼 수 없어야 한다.
+  context 'with from: naming an anonymized account' do
+    let(:query) { 'from:@formername' }
+
+    before { Fabricate(:account, username: 'formername', anonymized_at: Time.now.utc) }
+
+    it 'matches no account' do
+      expect(subject.send(:filter_clauses).map(&:term)).to contain_exactly(-1)
+    end
+  end
+
+  context 'with a search term between two prefix clauses' do
+    let(:query) { 'from:me foo has:media' }
+
+    it 'transforms clauses' do
+      expect(subject.send(:must_clauses).map(&:term)).to contain_exactly('foo')
+      expect(subject.send(:must_not_clauses)).to be_empty
+      expect(subject.send(:filter_clauses).map(&:prefix)).to contain_exactly('from', 'has')
+    end
+  end
 end

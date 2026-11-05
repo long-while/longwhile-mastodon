@@ -25,7 +25,7 @@ RSpec.describe Admin::DistributeTermsOfServiceNotificationWorker do
         expect(emails.first)
           .to have_attributes(
             to: [user.email],
-            subject: I18n.t('user_mailer.terms_of_service_changed.subject')
+            subject: I18n.t('user_mailer.terms_of_service_changed.subject', locale: ApplicationMailer::MAIL_LOCALE)
           )
 
         expect(user.reload.require_tos_interstitial?).to be false

@@ -18,7 +18,11 @@ const initialState = ImmutableMap({
     show: true,
   }),
 
-  // ─── @_longwhile custom feature
+  // ─── @_longwhile custom feature / 한참(longwhile) 제작 기능 ───
+  // 콘텐츠 워닝을 항상 펼쳐 둘지. **홈만이 아니라 모든 화면에 걸립니다** —
+  // 토글이 홈 칼럼 설정 안에 있다고 홈 전용으로 읽지 마십시오.
+  // 서버 쪽 환경설정의 `expand_spoilers` 와는 별개입니다. 그쪽은 계정 설정이고
+  // 이것은 이 브라우저의 설정입니다. 둘 중 하나만 켜도 펼쳐집니다.
   content_warnings: ImmutableMap({
     expand_all: false,
   }),

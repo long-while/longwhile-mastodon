@@ -14,7 +14,8 @@ class FanOutOnWriteService < BaseService
     @account   = status.account
     @options   = options
 
-    check_race_condition!
+    return if @status.proper.account.suspended?
+
     warm_payload_cache!
 
     fan_out_to_local_recipients!
@@ -24,22 +25,11 @@ class FanOutOnWriteService < BaseService
 
   private
 
-  def check_race_condition!
-    # I don't know why but at some point we had an issue where
-    # this service was being executed with status objects
-    # that had a null visibility - which should not be possible
-    # since the column in the database is not nullable.
-    #
-    # This check re-queues the service to be run at a later time
-    # with the full object, if something like it occurs
-
-    raise Mastodon::RaceConditionError if @status.visibility.nil?
-  end
-
   def fan_out_to_local_recipients!
     deliver_to_self! unless @status.direct_visibility?
 
     unless @options[:skip_notifications]
+      notify_quoted_account!
       notify_mentioned_accounts!
       notify_about_update! if update?
     end
@@ -51,6 +41,12 @@ class FanOutOnWriteService < BaseService
     when :limited
       deliver_to_mentioned_followers!
     else
+      # ─── @_longwhile — DM 은 타임라인에 넣지 않는다 ───
+      # 보낸 사람도, 받은 사람도, 운영진도 마찬가지다. DM 을 보는 곳은 /messages
+      # 하나뿐이고, 운영진 열람은 /admin/direct_messages 와 /messages/all 이
+      # 맡는다. 홈에 섞이면 "타임라인에 DM 이 보인다" 는 사고로 읽힌다.
+      #
+      # 알림은 그대로 간다 — 위의 notify_mentioned_accounts! 는 이 분기와 무관하다.
       deliver_to_conversation!
     end
   end
@@ -68,10 +64,18 @@ class FanOutOnWriteService < BaseService
     FeedManager.instance.push_to_home(@account, @status, update: update?) if @account.local?
   end
 
+  def notify_quoted_account!
+    return unless @status.quote&.quoted_account&.local? && @status.quote&.accepted?
+
+    LocalNotificationWorker.perform_async(@status.quote.quoted_account_id, @status.quote.id, 'Quote', 'quote')
+  end
+
   def notify_mentioned_accounts!
-    @status.active_mentions.where.not(id: @options[:silenced_account_ids] || []).joins(:account).merge(Account.local).select(:id, :account_id).reorder(nil).find_in_batches do |mentions|
+    @status.active_mentions.joins(:account).merge(Account.local).select(:id, :account_id).reorder(nil).find_in_batches do |mentions|
       LocalNotificationWorker.push_bulk(mentions) do |mention|
-        [mention.account_id, mention.id, 'Mention', 'mention']
+        options = { 'silenced' => true } if @options[:silenced_account_ids]&.include?(mention.account_id)
+
+        [mention.account_id, mention.id, 'Mention', 'mention', options].compact
       end
 
       next unless update?
@@ -91,6 +95,12 @@ class FanOutOnWriteService < BaseService
         [account.id, @status.id, 'Status', 'update']
       end
     end
+
+    @status.quotes.accepted.find_in_batches do |quotes|
+      LocalNotificationWorker.push_bulk(quotes) do |quote|
+        [quote.account_id, quote.status_id, 'Status', 'quoted_update']
+      end
+    end
   end
 
   def deliver_to_all_followers!
@@ -105,6 +115,10 @@ class FanOutOnWriteService < BaseService
     end
   end
 
+  # 재게시는 부스터의 팔로워 ∩ 원작자의 팔로워에게만 내려간다. B 를 팔로우하지만
+  # A 는 팔로우하지 않는 사람은 B 가 재게시한 A 의 툿을 받지 않는다.
+  # 읽기 쪽(StatusPolicy#show?, FeedManager#filter_from_home)에도 같은 규칙이 있다 —
+  # 여기만 막으면 백필(merge_into_home)이나 퍼머링크로 새어 나간다.
   def distribution_followers_scope
     return @account.followers_for_local_distribution unless @status.reblog?
 
@@ -116,9 +130,11 @@ class FanOutOnWriteService < BaseService
     )
   end
 
-  # ─── @_longwhile custom feature
+  # ─── @_longwhile custom feature / 한참(longwhile) 제작 기능 — 공지 계정 전체 브로드캐스트 ───
   # 사용·재사용 시 서버 내 출처 표기 필수 / Credit required to use or reuse:
   #   Twitter/X @_longwhile · Crepe https://kre.pe/QTRx
+  # 공지용 계정(@longwhile)의 unlisted(로컬 범위) 툿은 모든 로컬 활성 사용자의
+  # 홈 피드에 푸시한다. zadd 기반이므로 팔로워와 중복돼도 안전함.
   def deliver_to_all_local_accounts!
     Account.local
            .without_suspended
@@ -154,6 +170,7 @@ class FanOutOnWriteService < BaseService
     end
   end
 
+  # 리스트도 마찬가지다. 리스트 주인이 원작자를 팔로우하지 않으면 재게시가 안 들어간다.
   def distribution_lists_scope
     return @account.lists_for_local_distribution unless @status.reblog?
 
@@ -197,6 +214,9 @@ class FanOutOnWriteService < BaseService
 
     AccountConversation.add_status(@account, @status)
 
+    # @_longwhile — DM 채팅. PostStatusService 가 이미 붙였으면 멱등하게 통과한다.
+    #   여기 두는 것은 그 서비스를 타지 않는 작성 경로를 위한 안전망이다.
+    #   (dm-chat-phase-1.md §3.3)
     DmRoom.attach_status!(@status) if Mastodon::DmChat.enabled?
   end
 
@@ -205,10 +225,10 @@ class FanOutOnWriteService < BaseService
   end
 
   def anonymous_payload
-    @anonymous_payload ||= Oj.dump(
+    @anonymous_payload ||= JSON.generate({
       event: update? ? :'status.update' : :update,
-      payload: rendered_status
-    )
+      payload: rendered_status,
+    }.as_json)
   end
 
   def rendered_status

@@ -40,6 +40,36 @@ RSpec.describe Admin::StatusesController do
         expect(response).to have_http_status(200)
       end
     end
+
+    # DM 본문은 admin/owner 만 본다(Admin::DirectMessagePolicy, 3b11809336). 목록도 같아야 한다.
+    context 'with direct messages on the account' do
+      let!(:direct_status) { Fabricate(:status, account: account, visibility: :direct, text: 'secret direct message') }
+
+      context 'when signed in as an admin' do
+        it 'lists them' do
+          get :index, params: { account_id: account.id, direct: '1' }
+
+          expect(response.body).to include(direct_status.text)
+        end
+      end
+
+      context 'when signed in as a moderator' do
+        let(:user) { Fabricate(:moderator_user) }
+
+        it 'leaves them out of the full list' do
+          get :index, params: { account_id: account.id }
+
+          expect(response).to have_http_status(200)
+          expect(response.body).to_not include(direct_status.text)
+        end
+
+        it 'leaves them out of the direct message filter' do
+          get :index, params: { account_id: account.id, direct: '1' }
+
+          expect(response.body).to_not include(direct_status.text)
+        end
+      end
+    end
   end
 
   describe 'GET #show' do

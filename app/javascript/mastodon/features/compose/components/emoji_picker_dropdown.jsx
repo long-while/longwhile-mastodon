@@ -388,6 +388,10 @@ class EmojiPickerDropdown extends PureComponent {
           title={title}
           aria-expanded={active}
           active={active}
+          // @_longwhile — 작성창 줄의 다른 아이콘과 같은 계열(bird-theme-svg)로
+          //   맞춘다. 상류의 MoodIcon 은 채운 그림이라 옆의 선 아이콘들과 어긋난다.
+          //   `icon` 이름을 준다 — 없으면 클래스가 `icon-undefined` 가 되어
+          //   테마도 우리 규칙도 이 아이콘을 짚을 수 없다.
           icon='smile-o'
           iconComponent={SmileIcon}
           onClick={this.onToggle}

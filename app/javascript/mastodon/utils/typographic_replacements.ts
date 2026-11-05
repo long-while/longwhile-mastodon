@@ -1,4 +1,11 @@
+// 입력창에서 `--` → `—`, `->` → `→` 처럼 치는 대로 기호를 바꿔 준다.
+//
+// **한 글자를 쳤을 때만** 바꾼다. 붙여넣기·자동완성·삭제는 여러 글자가 한꺼번에
+// 바뀌므로 걸리지 않는다 — 코드나 주소를 붙여넣었는데 `--` 가 `—` 로 망가지면
+// 안 된다. 바로 뒤에 Backspace 를 누르면 친 그대로 되돌린다.
+
 export interface TypographicReplacement {
+  // 바뀐 기호가 시작하는 위치
   start: number;
   original: string;
   replaced: string;
@@ -12,6 +19,7 @@ export interface TypographicEdit {
 
 const EM_DASH = '—';
 
+// 앞에 있는 것이 먼저 걸린다. 모두 마지막 글자를 친 순간에 판정한다.
 const RULES: readonly (readonly [string, string])[] = [
   ['--', EM_DASH],
   ['->', '→'],
@@ -34,6 +42,7 @@ const typedCharacter = (
   return next.charAt(caret - 1);
 };
 
+// 주소 안의 `--` 나 `...` 는 바꾸면 링크가 깨진다.
 const isInsideUrl = (value: string, caret: number): boolean => {
   const word = /\S*$/.exec(value.slice(0, caret))?.[0] ?? '';
 
@@ -47,6 +56,8 @@ const splice = (
   text: string,
 ): string => value.slice(0, start) + text + value.slice(end);
 
+// `--` 가 `—` 로 바뀐 직후의 `-` 는 `---` 로 친 것이다. `—` 뒤라고 아무 `-` 나
+// 삼키면 `----------` 같은 구분선이 `—` 한 글자로 줄어든다.
 const extendEmDash = (
   value: string,
   caret: number,
@@ -116,6 +127,8 @@ export const undoTypographicReplacement = (
   };
 };
 
+// 제어 컴포넌트에서 쓴다. DOM 값을 먼저 고쳐 두면 뒤따르는 렌더가 같은 값을
+// 받으므로 React 가 값을 다시 쓰지 않고, 그래서 커서가 끝으로 튀지 않는다.
 export const applyEditToTextarea = (
   node: HTMLTextAreaElement,
   edit: TypographicEdit,

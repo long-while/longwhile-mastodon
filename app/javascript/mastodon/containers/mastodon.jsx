@@ -47,6 +47,17 @@ export default class Mastodon extends PureComponent {
 
     const accountId = state.getIn(['meta', 'me']);
     const disabledAccountId = state.getIn(['meta', 'disabled_account_id']);
+    // @_longwhile — **리덕스에는 `role` 이 없다.** 그런 리듀서가 아예 없어서
+    //   `state.getIn(['role', 'permissions'])` 는 늘 undefined 이고, `?? 0` 이
+    //   그것을 0 으로 굳힌다.
+    //
+    //   부팅 때는 createIdentityContext(initialState) 가 제대로 넣어 주는데,
+    //   이 함수는 store.subscribe 로 걸려 있어 **스토어가 한 번이라도 바뀌면**
+    //   그 값을 0 으로 덮는다. 그래서 권한으로 갈리는 항목이 처음에는 보이다가
+    //   사라지거나, 실제로는 아예 안 보인다 — 운영진 전용 "모든 채팅" 이
+    //   내비에 나오지 않던 원인이다.
+    //
+    //   스토어에 없으면 부팅값을 그대로 쓴다. 역할은 런타임에 바뀌지 않는다.
     const permissions =
       state.getIn(['role', 'permissions']) ?? initialState.role?.permissions ?? 0;
     const signedIn = !!accountId;

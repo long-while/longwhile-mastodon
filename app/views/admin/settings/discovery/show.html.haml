@@ -4,15 +4,51 @@
 - content_for :heading do
   = render partial: 'admin/settings/shared/heading'
 
+-# @_longwhile — 여덟 개 중 셋만 남겼다. 나머지는 이 서버에 대상이 없다.
+-#   · 유행을 방문 페이지로 / 사전 검토 없이 유행 — 유행 검토 화면을 걷어냈다
+-#   · 발견된 서버 발행 · 연합 인증 필수 — 연합하지 않는다
+-#   · 팔로우 추천 · 프로필 책자 — 신규 유입을 유치하는 기능. 초대제다
+-#   · 통계 발행 — 비공개 서버의 활동량을 밖에 알릴 이유가 없다
+-#
+-# "유행" 본 스위치는 남긴다. 검토 화면이 없어도 배경 계산은 계속 도는데,
+-# 그것을 멈출 수 있는 유일한 자리다.
 = simple_form_for @admin_settings, url: admin_settings_discovery_path, html: { id: 'edit_admin_settings', method: :patch } do |f|
   = render 'shared/error_messages', object: @admin_settings
 
-  .fields-group
-    = f.input :timeline_preview,
-              as: :boolean,
-              hint: false,
-              wrapper: :with_label
+  -# @_longwhile — 업스트림 4.5 가 `timeline_preview` 하나를 아래 넷으로 나눴다
+  -#   (마이그레이션 MigrateTimelinePreviewSetting 이 옛 값을 옮긴다). 남겨 둔 스위치가
+  -#   이것이었으므로 새 넷으로 바꿔 둔다.
+  .fields-row
+    .fields-row__column.fields-row__column-6.fields-group
+      = f.input :local_live_feed_access,
+                collection: f.object.class::FEED_ACCESS_MODES,
+                include_blank: false,
+                label_method: ->(mode) { I18n.t("admin.settings.feed_access.modes.#{mode}") },
+                wrapper: :with_label
 
+    .fields-row__column.fields-row__column-6.fields-group
+      = f.input :remote_live_feed_access,
+                collection: f.object.class::FEED_ACCESS_MODES,
+                include_blank: false,
+                label_method: ->(mode) { I18n.t("admin.settings.feed_access.modes.#{mode}") },
+                wrapper: :with_label
+
+  .fields-row
+    .fields-row__column.fields-row__column-6.fields-group
+      = f.input :local_topic_feed_access,
+                collection: f.object.class::ALTERNATE_FEED_ACCESS_MODES,
+                include_blank: false,
+                label_method: ->(mode) { I18n.t("admin.settings.feed_access.modes.#{mode}") },
+                wrapper: :with_label
+
+    .fields-row__column.fields-row__column-6.fields-group
+      = f.input :remote_topic_feed_access,
+                collection: f.object.class::FEED_ACCESS_MODES,
+                include_blank: false,
+                label_method: ->(mode) { I18n.t("admin.settings.feed_access.modes.#{mode}") },
+                wrapper: :with_label
+
+  .fields-group
     = f.input :noindex,
               as: :boolean,
               hint: false,

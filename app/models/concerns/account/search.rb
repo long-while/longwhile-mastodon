@@ -49,6 +49,8 @@ module Account::Search
     )
   SQL
 
+  # @_longwhile — 아래 세 질의는 익명화(탈퇴) 계정도 뺀다. 레코드에 옛 사용자명이 남아 있어서
+  # 그 이름을 치면 "탈퇴한 사용자" 가 나와 익명 처리한 글과 옛 이름이 이어진다.
   BASIC_SEARCH_SQL = <<~SQL.squish
     SELECT
       accounts.*,
@@ -57,7 +59,8 @@ module Account::Search
     LEFT JOIN users ON accounts.id = users.account_id
     LEFT JOIN account_stats AS s ON accounts.id = s.account_id
     WHERE to_tsquery('simple', :tsquery) @@ #{TEXT_SEARCH_RANKS}
-      AND accounts.suspended_at IS NULL
+      AND accounts.suspended_at IS NULL AND accounts.requested_deletion_at IS NULL
+      AND accounts.anonymized_at IS NULL
       AND accounts.moved_to_account_id IS NULL
       AND (accounts.domain IS NOT NULL OR (users.approved = TRUE AND users.confirmed_at IS NOT NULL))
     ORDER BY rank DESC
@@ -80,7 +83,8 @@ module Account::Search
     LEFT JOIN account_stats AS s ON accounts.id = s.account_id
     WHERE accounts.id IN (SELECT * FROM first_degree)
       AND to_tsquery('simple', :tsquery) @@ #{TEXT_SEARCH_RANKS}
-      AND accounts.suspended_at IS NULL
+      AND accounts.suspended_at IS NULL AND accounts.requested_deletion_at IS NULL
+      AND accounts.anonymized_at IS NULL
       AND accounts.moved_to_account_id IS NULL
     GROUP BY accounts.id, s.id
     ORDER BY rank DESC
@@ -98,7 +102,8 @@ module Account::Search
     LEFT JOIN users ON accounts.id = users.account_id
     LEFT JOIN account_stats AS s ON accounts.id = s.account_id
     WHERE to_tsquery('simple', :tsquery) @@ #{TEXT_SEARCH_RANKS}
-      AND accounts.suspended_at IS NULL
+      AND accounts.suspended_at IS NULL AND accounts.requested_deletion_at IS NULL
+      AND accounts.anonymized_at IS NULL
       AND accounts.moved_to_account_id IS NULL
       AND (accounts.domain IS NOT NULL OR (users.approved = TRUE AND users.confirmed_at IS NOT NULL))
     GROUP BY accounts.id, s.id

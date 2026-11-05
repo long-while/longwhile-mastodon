@@ -3,12 +3,12 @@
 namespace :admin do
   get '/dashboard', to: 'dashboard#index'
 
-  resources :domain_allows, only: [:new, :create, :destroy]
-  resources :domain_blocks, only: [:new, :create, :destroy, :update, :edit] do
-    collection do
-      post :batch
-    end
+  concern :batch do
+    collection { post :batch }
   end
+
+  resources :domain_allows, only: [:new, :create, :destroy]
+  resources :domain_blocks, only: [:new, :create, :destroy, :update, :edit], concerns: :batch
 
   resources :export_domain_allows, only: [:new] do
     collection do
@@ -24,9 +24,24 @@ namespace :admin do
     end
   end
 
-  resources :email_domain_blocks, only: [:index, :new, :create] do
+  resources :email_domain_blocks, only: [:index, :new, :create], concerns: :batch
+
+  resources :email_subscriptions, only: [:index, :destroy] do
     collection do
-      post :batch
+      post :purge
+      post :disable
+    end
+  end
+
+  namespace :email_subscriptions do
+    resource :setup, only: [:show, :create]
+    resource :additional_footer_text, only: [:show, :update]
+
+    resources :accounts, only: :show do
+      member do
+        post :enable
+        post :disable
+      end
     end
   end
 
@@ -91,9 +106,16 @@ namespace :admin do
       post :restart_delivery
       post :stop_delivery
     end
+
+    resources :moderation_notes, module: :instances, only: [:create, :destroy]
   end
 
-  resources :rules, only: [:index, :new, :create, :edit, :update, :destroy]
+  resources :rules, only: [:index, :new, :create, :edit, :update, :destroy] do
+    member do
+      post :move_up
+      post :move_down
+    end
+  end
 
   resources :webhooks do
     member do
@@ -101,13 +123,13 @@ namespace :admin do
       post :disable
     end
 
-    resource :secret, only: [], controller: 'webhooks/secrets' do
+    resource :secret, only: [], module: :webhooks do
       post :rotate
     end
   end
 
   resources :reports, only: [:index, :show] do
-    resources :actions, only: [:create], controller: 'reports/actions' do
+    resources :actions, only: [:create], module: :reports do
       collection do
         post :preview
       end
@@ -123,7 +145,7 @@ namespace :admin do
 
   resources :report_notes, only: [:create, :destroy]
 
-  resources :accounts, only: [:index, :show, :destroy] do
+  resources :accounts, only: [:index, :show, :destroy], concerns: :batch do
     member do
       post :enable
       post :unsensitive
@@ -139,19 +161,12 @@ namespace :admin do
       post :toggle_protect
     end
 
-    collection do
-      post :batch
-    end
-
     resource :change_email, only: [:show, :update]
     resource :reset, only: [:create]
     resource :action, only: [:new, :create], controller: 'account_actions'
 
-    resources :statuses, only: [:index, :show] do
-      collection do
-        post :batch
-      end
-    end
+    resources :collections, only: [:index, :show], concerns: :batch
+    resources :statuses, only: [:index, :show], concerns: :batch
 
     resources :relationships, only: [:index]
 
@@ -165,30 +180,25 @@ namespace :admin do
   resources :users, only: [] do
     scope module: :users do
       resource :two_factor_authentication, only: [:destroy]
+      resource :sign_in_token_authentication, only: [:create, :destroy]
       resource :role, only: [:show, :update]
     end
   end
 
-  resources :custom_emojis, only: [:index, :new, :create] do
-    collection do
-      post :batch
-    end
-  end
+  resources :custom_emojis, only: [:index, :new, :create], concerns: :batch
 
   # ─── @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 운영 관리 ───
   resources :direct_messages, only: [:index]
 
-  resources :ip_blocks, only: [:index, :new, :create] do
-    collection do
-      post :batch
-    end
-  end
+  resources :ip_blocks, only: [:index, :new, :create], concerns: :batch
 
   resources :roles, except: [:show]
   resources :account_moderation_notes, only: [:create, :destroy]
   resources :tags, only: [:index, :show, :update]
 
   namespace :disputes do
+    resources :strikes, only: [:show, :index]
+
     resources :appeals, only: [:index] do
       member do
         post :approve
@@ -198,4 +208,6 @@ namespace :admin do
   end
 
   resources :software_updates, only: [:index]
+
+  resources :username_blocks, except: [:show, :destroy], concerns: :batch
 end

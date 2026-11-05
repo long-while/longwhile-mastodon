@@ -2,6 +2,8 @@
 
 require 'rails_helper'
 
+# 이 포크는 브라우저 언어나 사용자 설정과 무관하게 언제나 한국어다
+# (`Localized#requested_locale`). 업스트림의 경우마다 같은 입력을 주고 `ko` 를 기대한다.
 RSpec.describe Localized do
   controller(ApplicationController) do
     include Localized # rubocop:disable RSpec/DescribedClass
@@ -11,44 +13,50 @@ RSpec.describe Localized do
     end
   end
 
+  # spec/support/korean_ui_locale.rb 가 깔아 둔 :ko 를 걷는다. 그대로 두면 이
+  # 컨선이 로캘을 정하지 않아도 `ko` 가 나와 통과해 버린다.
+  around do |example|
+    I18n.with_locale(:en) { example.run }
+  end
+
   before do
     routes.draw { get 'success' => 'anonymous#success' }
   end
 
   shared_examples 'default locale' do
-    it 'sets available and preferred language' do
+    it 'ignores an available and preferred language' do
       request.headers['Accept-Language'] = 'sr-Latn'
       get 'success'
-      expect(response.body).to eq 'sr-Latn'
+      expect(response.body).to eq 'ko'
     end
 
-    it 'sets available and preferred language' do
+    it 'ignores an available and preferred language among several' do
       request.headers['Accept-Language'] = 'ca-ES, fa'
       get 'success'
-      expect(response.body).to eq 'ca'
+      expect(response.body).to eq 'ko'
     end
 
-    it 'sets available and compatible language if none of available languages are preferred' do
+    it 'ignores an available and compatible language if none of available languages are preferred' do
       request.headers['Accept-Language'] = 'fa-IR'
       get 'success'
-      expect(response.body).to eq 'fa'
+      expect(response.body).to eq 'ko'
     end
 
-    it 'sets default locale if none of available languages are compatible' do
+    it 'uses Korean rather than the default locale if none of available languages are compatible' do
       request.headers['Accept-Language'] = ''
       get 'success'
-      expect(response.body).to eq 'en'
+      expect(response.body).to eq 'ko'
     end
   end
 
   context 'with a user with valid locale has signed in' do
-    it "sets user's locale" do
+    it "ignores user's locale" do
       user = Fabricate(:user, locale: :ca)
 
       sign_in(user)
       get 'success'
 
-      expect(response.body).to eq 'ca'
+      expect(response.body).to eq 'ko'
     end
   end
 

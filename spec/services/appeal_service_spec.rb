@@ -6,6 +6,13 @@ RSpec.describe AppealService, :inline_jobs do
   describe '#call' do
     let!(:admin) { Fabricate(:admin_user) }
 
+    # 이 포크는 알림 메일 설정의 기본값이 모두 꺼짐이다(UserSettings 의 notification_emails,
+    # 첫 커밋부터). 메일을 받겠다고 켠 운영진에게 가는지를 본다.
+    before do
+      admin.settings['notification_emails.appeal'] = true
+      admin.save!
+    end
+
     context 'with an existing strike' do
       let(:strike) { Fabricate(:account_warning) }
       let(:text) { 'Appeal text' }
@@ -30,7 +37,8 @@ RSpec.describe AppealService, :inline_jobs do
               I18n.t(
                 'admin_mailer.new_appeal.subject',
                 username: strike.target_account.acct,
-                instance: Rails.configuration.x.local_domain
+                instance: Rails.configuration.x.local_domain,
+                locale: ApplicationMailer::MAIL_LOCALE
               )
             )
           )

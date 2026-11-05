@@ -21,7 +21,7 @@ RSpec.describe 'Admin Report Notes' do
           expect(report.reload)
             .to be_action_taken
           expect(page)
-            .to have_content(success_message)
+            .to have_text(success_message)
         end
 
         def submit_form
@@ -39,7 +39,7 @@ RSpec.describe 'Admin Report Notes' do
           expect(report.reload)
             .to_not be_action_taken
           expect(page)
-            .to have_content(success_message)
+            .to have_text(success_message)
         end
 
         def submit_form
@@ -61,7 +61,7 @@ RSpec.describe 'Admin Report Notes' do
           expect(report.reload)
             .to_not be_action_taken
           expect(page)
-            .to have_content(success_message)
+            .to have_text(success_message)
         end
 
         def submit_form
@@ -79,7 +79,7 @@ RSpec.describe 'Admin Report Notes' do
           expect(report.reload)
             .to be_action_taken
           expect(page)
-            .to have_content(success_message)
+            .to have_text(success_message)
         end
 
         def submit_form
@@ -98,7 +98,7 @@ RSpec.describe 'Admin Report Notes' do
         expect { submit_form }
           .to_not change(ReportNote, :count)
         expect(page)
-          .to have_content(/error below/)
+          .to have_text(/아래 \d+개 오류/) # 화면은 한국어 고정(Localized#requested_locale)
       end
 
       def submit_form
@@ -120,7 +120,7 @@ RSpec.describe 'Admin Report Notes' do
       expect { delete_note }
         .to change(ReportNote, :count).by(-1)
       expect(page)
-        .to have_content(I18n.t('admin.report_notes.destroyed_msg'))
+        .to have_text(I18n.t('admin.report_notes.destroyed_msg'))
     end
 
     def delete_note

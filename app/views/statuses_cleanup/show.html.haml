@@ -4,6 +4,11 @@
 - content_for :heading_actions do
   = button_tag t('generic.save_changes'), class: 'button', form: 'edit_policy'
 
+-# @_longwhile — 예외를 6개에서 3개로 줄이고 상호작용 임계값 둘을 걷어냈다.
+-# 임계값은 화면이 스스로 "삭제되는 것을 보장하지 못합니다" 라고 적고 있던
+-# 조건이다. 보장하지 못하는 설정을 숫자로 물어보는 것은 책임을 떠넘기는 것이다.
+-# 컬럼은 그대로 둔다 — 지우려면 마이그레이션이 필요하고 되돌리기가 어렵다.
+-# 근거: docs/settings/phases/settings-phase-2.md §2
 = simple_form_for @policy, url: statuses_cleanup_path, method: :put, html: { id: 'edit_policy' } do |f|
   .fields-row
     .fields-row__column.fields-row__column-6.fields-group
@@ -24,7 +29,7 @@
 
   .flash-message= t('statuses_cleanup.explanation')
 
-  %h4= t('statuses_cleanup.exceptions')
+  %h2= t('statuses_cleanup.exceptions')
 
   .fields-group
     = f.input :keep_pinned,

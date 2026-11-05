@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Api::V1::MultiAccounts::SessionsController < Api::BaseController
+  include Api::MultiAccountResponse
+
   skip_before_action :require_authenticated_user!, only: :refresh
   skip_before_action :require_not_suspended!, only: :refresh
 
@@ -9,7 +11,7 @@ class Api::V1::MultiAccounts::SessionsController < Api::BaseController
 
     unless MultiAccountConfig.refresh_flow_enabled?
       Rails.logger.warn('[MultiAccount] Refresh flow is DISABLED — check MA_MULTI_ACCOUNT_REFRESH_FLOW env var and config/settings.yml')
-      render json: { error: 'Multi-account refresh flow is disabled' }, status: :forbidden
+      render json: { error: 'Multi-account refresh flow is disabled' }, status: 403
       return
     end
 
@@ -32,7 +34,7 @@ class Api::V1::MultiAccounts::SessionsController < Api::BaseController
 
       if user && !MultiAccounts::Rollout.should_enable_for_user?(user)
         Rails.logger.warn("[MultiAccount] User #{user.id} not eligible for rollout")
-        render json: { error: 'This feature is not available for your account' }, status: :forbidden
+        render json: { error: 'This feature is not available for your account' }, status: 403
         return
       end
     else
@@ -42,24 +44,24 @@ class Api::V1::MultiAccounts::SessionsController < Api::BaseController
     result = service.call
 
     Rails.logger.info(
-      "[MultiAccount] Before sign_in - current_user: #{current_user&.id}, target_user: #{result.user&.id}",
+      "[MultiAccount] Before sign_in - current_user: #{current_user&.id}, target_user: #{result.user&.id}"
     )
 
     reset_session
     sign_in(result.user, scope: :user)
 
     Rails.logger.info(
-      "[MultiAccount] After sign_in - session user: #{session[:user_id]}, current_user: #{current_user&.id}",
+      "[MultiAccount] After sign_in - session user: #{session[:user_id]}, current_user: #{current_user&.id}"
     )
 
     render json: {
       token: result.access_token.token,
-      account: REST::AccountSerializer.new(result.account).as_json,
+      account: self_account_json(result.account),
       scope: result.access_token.scopes.to_s,
-      expires_at: result.access_token.expires_at&.iso8601
+      expires_at: result.access_token.expires_at&.iso8601,
     }
   rescue ActionController::ParameterMissing => e
-    render json: { error: "필수 파라미터 누락: #{e.param}" }, status: :bad_request
+    render json: { error: "필수 파라미터 누락: #{e.param}" }, status: 400
   rescue MultiAccounts::RefreshService::Error => e
     render json: { error: e.message }, status: e.status
   end
@@ -74,4 +76,3 @@ class Api::V1::MultiAccounts::SessionsController < Api::BaseController
     params.require(:refresh_token)
   end
 end
-

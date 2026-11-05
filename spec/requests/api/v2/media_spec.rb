@@ -3,10 +3,7 @@
 require 'rails_helper'
 
 RSpec.describe 'Media API', :attachment_processing do
-  let(:user)    { Fabricate(:user) }
-  let(:token)   { Fabricate(:accessible_access_token, resource_owner_id: user.id, scopes: scopes) }
-  let(:scopes)  { 'write' }
-  let(:headers) { { 'Authorization' => "Bearer #{token.token}" } }
+  include_context 'with API authentication', oauth_scopes: 'write'
 
   describe 'POST /api/v2/media' do
     context 'when small media format attachment is processed immediately' do
@@ -29,6 +26,26 @@ RSpec.describe 'Media API', :attachment_processing do
       end
     end
 
+    # @_longwhile 아이폰은 HEIC 를 그대로 올린다. libvips 가 heifload 를 막으면 500 이 난다.
+    context 'when an iPhone HEIC photo is uploaded' do
+      let(:params) { { file: fixture_file_upload('600x400.heic', 'image/heic') } }
+
+      it 'converts it to JPEG and returns http success' do
+        post '/api/v2/media', headers: headers, params: params
+
+        expect(response)
+          .to have_http_status(200)
+
+        media = user.account.media_attachments.first
+        expect(media)
+          .to have_attributes(type: 'image', file_content_type: 'image/jpeg', file_file_name: end_with('.jpeg'))
+        expect(File.exist?(media.file.path(:small)))
+          .to be true
+        expect(response.parsed_body)
+          .to include(type: 'image', meta: include(original: include(width: 600, height: 400)))
+      end
+    end
+
     context 'when media description is too long' do
       let(:params) do
         {
@@ -41,7 +58,8 @@ RSpec.describe 'Media API', :attachment_processing do
         post '/api/v2/media', headers: headers, params: params
 
         expect(response).to have_http_status(422)
-        expect(response.body).to include 'Description is too long'
+        # 화면 언어는 한국어로 고정돼 있다(Localized#requested_locale).
+        expect(response.body).to include I18n.t('errors.messages.too_long', attribute: MediaAttachment.human_attribute_name(:description, locale: :ko), count: MediaAttachment::MAX_DESCRIPTION_LENGTH, locale: :ko)
       end
     end
 
@@ -74,7 +92,7 @@ RSpec.describe 'Media API', :attachment_processing do
         allow(user.account).to receive(:media_attachments).and_return(media_attachments)
       end
 
-      context 'when imagemagick cannot identify the file type' do
+      context 'when file type cannot be identified' do
         before do
           allow(media_attachments).to receive(:create!).and_raise(Paperclip::Errors::NotIdentifiedByImageMagickError)
         end

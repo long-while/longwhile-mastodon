@@ -3,11 +3,7 @@
 require 'rails_helper'
 
 RSpec.describe 'Accounts' do
-  let(:role)    { UserRole.find_by(name: 'Admin') }
-  let(:user)    { Fabricate(:user, role: role) }
-  let(:scopes)  { 'admin:read:accounts admin:write:accounts' }
-  let(:token)   { Fabricate(:accessible_access_token, resource_owner_id: user.id, scopes: scopes) }
-  let(:headers) { { 'Authorization' => "Bearer #{token.token}" } }
+  include_context 'with API authentication', user_fabricator: :admin_user, oauth_scopes: 'admin:read:accounts admin:write:accounts'
 
   describe 'GET /api/v1/admin/accounts' do
     subject do
@@ -425,7 +421,8 @@ RSpec.describe 'Accounts' do
         expect(response).to have_http_status(200)
         expect(response.content_type)
           .to start_with('application/json')
-        expect(Admin::AccountDeletionWorker).to have_received(:perform_async).with(account.id).once
+        # 관리자가 누른 삭제는 계정을 익명 처리하고 글은 남긴다(ecfb76663d).
+        expect(Admin::AccountDeletionWorker).to have_received(:perform_async).with(account.id, { 'preserve_content' => true }).once
       end
     end
 

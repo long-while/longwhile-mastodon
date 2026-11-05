@@ -3,15 +3,14 @@
 require 'rails_helper'
 
 RSpec.describe 'API Markers' do
-  let(:user)    { Fabricate(:user) }
-  let(:scopes)  { 'read:statuses write:statuses' }
-  let(:token)   { Fabricate(:accessible_access_token, resource_owner_id: user.id, scopes: scopes) }
-  let(:headers) { { 'Authorization' => "Bearer #{token.token}" } }
+  include_context 'with API authentication', oauth_scopes: 'read:statuses write:statuses'
 
   describe 'GET /api/v1/markers' do
     before do
-      Fabricate(:marker, timeline: 'home', last_read_id: 123, user: user)
-      Fabricate(:marker, timeline: 'notifications', last_read_id: 456, user: user)
+      travel_to DateTime.parse('2026-03-15T12:34:56.789Z'), with_usec: true do
+        Fabricate(:marker, timeline: 'home', last_read_id: 123, user: user)
+        Fabricate(:marker, timeline: 'notifications', last_read_id: 456, user: user)
+      end
 
       get '/api/v1/markers', headers: headers, params: { timeline: %w(home notifications) }
     end
@@ -25,6 +24,12 @@ RSpec.describe 'API Markers' do
           home: include(last_read_id: '123'),
           notifications: include(last_read_id: '456')
         )
+    end
+
+    it 'uses a specific style of IS08601 timestamps' do
+      expect(response.parsed_body)
+        # 이 포크는 Time.zone 이 Asia/Seoul 이라 오프셋이 붙어 나간다(4.5 부터 같다). 형식(밀리초 세 자리)만 본다.
+        .to include(home: include(updated_at: eq(Time.zone.parse('2026-03-15T12:34:56.789Z').iso8601(3))))
     end
   end
 

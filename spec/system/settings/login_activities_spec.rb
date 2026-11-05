@@ -16,9 +16,9 @@ RSpec.describe 'Login activities page' do
         click_on I18n.t('sessions.view_authentication_history')
 
         expect(page)
-          .to have_content(browser_description)
-          .and have_content(login_activity.authentication_method)
-          .and have_content(login_activity.ip)
+          .to have_text(browser_description)
+          .and have_text(I18n.t("login_activities.authentication_methods.#{login_activity.authentication_method}")) # 화면은 한국어 고정
+          .and have_text(login_activity.ip)
           .and have_private_cache_control
       end
 

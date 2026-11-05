@@ -17,6 +17,8 @@ import ComposeForm from '../components/compose_form';
 const mapStateToProps = state => ({
   text: state.getIn(['compose', 'text']),
   replyMentions: state.getIn(['compose', 'reply_mentions']),
+  // @_longwhile — 고를 수 있는 사람 전부. 체크를 다 꺼도 이 목록은 남으므로,
+  //   "…에게 보내는 답글" 줄은 사라지지 않고 다시 열 수 있다.
   replyCandidates: state.getIn(['compose', 'reply_candidates']),
   suggestions: state.getIn(['compose', 'suggestions']),
   spoiler: state.getIn(['compose', 'spoiler']),
@@ -79,6 +81,7 @@ const mapDispatchToProps = (dispatch) => ({
     dispatch(insertEmojiCompose(position, data, needsSpace));
   },
 
+  // @_longwhile — 답글이 부를 사람 고르기.
   onOpenReplyRecipients () {
     dispatch(openModal({
       modalType: 'REPLY_RECIPIENTS',

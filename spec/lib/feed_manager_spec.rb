@@ -37,11 +37,22 @@ RSpec.describe FeedManager do
         expect(subject.filter?(:home, status, bob)).to be false
       end
 
+      # 이 포크의 부스트는 겹팔로워 전용이다(943745d134) — 부스터와 원작자를 모두
+      # 팔로우해야 홈에 들어온다. 아래 부스트 예제들은 원작자(jeff)도 팔로우한 상태에서
+      # 원래 검사하려던 필터(차단·뮤트·부스트 끄기)가 거르는지 본다.
       it 'returns false for reblog by followee' do
         status = Fabricate(:status, text: 'Hello world', account: jeff)
         reblog = Fabricate(:status, reblog: status, account: alice)
         bob.follow!(alice)
+        bob.follow!(jeff)
         expect(subject.filter?(:home, reblog, bob)).to be false
+      end
+
+      it 'returns true for reblog by followee of an author the recipient does not follow' do
+        status = Fabricate(:status, text: 'Hello world', account: jeff)
+        reblog = Fabricate(:status, reblog: status, account: alice)
+        bob.follow!(alice)
+        expect(subject.filter?(:home, reblog, bob)).to be true
       end
 
       it 'returns true for post from account who blocked me' do
@@ -60,6 +71,7 @@ RSpec.describe FeedManager do
         status = Fabricate(:status, text: 'Hello world', account: jeff)
         reblog = Fabricate(:status, reblog: status, account: alice)
         bob.follow!(alice)
+        bob.follow!(jeff)
         bob.block!(jeff)
         expect(subject.filter?(:home, reblog, bob)).to be true
       end
@@ -68,6 +80,7 @@ RSpec.describe FeedManager do
         status = Fabricate(:status, text: 'Hello world', account: jeff)
         reblog = Fabricate(:status, reblog: status, account: alice)
         bob.follow!(alice)
+        bob.follow!(jeff)
         bob.mute!(jeff)
         expect(subject.filter?(:home, reblog, bob)).to be true
       end
@@ -76,6 +89,7 @@ RSpec.describe FeedManager do
         status = Fabricate(:status, text: 'Hello world', account: jeff)
         reblog = Fabricate(:status, reblog: status, account: alice)
         bob.follow!(alice)
+        bob.follow!(jeff)
         jeff.block!(bob)
         expect(subject.filter?(:home, reblog, bob)).to be true
       end
@@ -84,6 +98,7 @@ RSpec.describe FeedManager do
         status = Fabricate(:status, text: 'Hello world', account: jeff)
         reblog = Fabricate(:status, reblog: status, account: alice)
         bob.follow!(alice, reblogs: false)
+        bob.follow!(jeff)
         expect(subject.filter?(:home, reblog, bob)).to be true
       end
 
@@ -153,6 +168,7 @@ RSpec.describe FeedManager do
       it 'returns true for reblog of a personally blocked domain' do
         alice.block_domain!('example.com')
         alice.follow!(jeff)
+        alice.follow!(bob)
         status = Fabricate(:status, text: 'Hello world', account: bob)
         reblog = Fabricate(:status, reblog: status, account: jeff)
         expect(subject.filter?(:home, reblog, alice)).to be true
@@ -202,6 +218,7 @@ RSpec.describe FeedManager do
       it 'returns false for reblog from followee on non-exclusive list' do
         list.exclusive = false
         alice.follow!(jeff)
+        alice.follow!(bob)
         list.accounts << jeff
         status = Fabricate(:status, text: 'I post a lot', account: bob)
         reblog = Fabricate(:status, reblog: status, account: jeff)
@@ -224,10 +241,18 @@ RSpec.describe FeedManager do
       end
 
       it 'returns false for reblog by followee' do
+        bob.follow!(jeff)
         status = Fabricate(:status, text: 'Hello world', account: jeff)
         reblog = Fabricate(:status, reblog: status, account: alice)
 
         expect(subject.filter?(:list, reblog, list)).to be false
+      end
+
+      it 'returns true for reblog by followee of an author the list owner does not follow' do
+        status = Fabricate(:status, text: 'Hello world', account: jeff)
+        reblog = Fabricate(:status, reblog: status, account: alice)
+
+        expect(subject.filter?(:list, reblog, list)).to be true
       end
     end
 
@@ -559,7 +584,7 @@ RSpec.describe FeedManager do
       allow(redis).to receive_messages(publish: nil)
       subject.unpush_from_home(receiver, status)
 
-      deletion = Oj.dump(event: :delete, payload: status.id.to_s)
+      deletion = { event: :delete, payload: status.id.to_s }.to_json
       expect(redis).to have_received(:publish).with("timeline:#{receiver.id}", deletion)
     end
   end

@@ -31,6 +31,7 @@ class Sanitize
         next true if /^(h|p|u|dt|e)-/.match?(e) # microformats classes
         next true if /^(mention|hashtag)$/.match?(e) # semantic classes
         next true if /^(ellipsis|invisible)$/.match?(e) # link formatting classes
+        next true if e == 'quote-inline'
       end
 
       node['class'] = class_list.join(' ')
@@ -113,6 +114,8 @@ class Sanitize
     #   Twitter/X : @_longwhile  ·  https://twitter.com/_longwhile
     #   Crepe     : https://kre.pe/QTRx
     # ═════════════════════════════════════════════════════════════════════════
+    SAFE_STYLE_PROPERTIES = %w(color background-color).freeze
+
     SAFE_STYLE_TRANSFORMER = lambda do |env|
       node = env[:node]
       return unless node.element? && node['style']
@@ -121,7 +124,7 @@ class Sanitize
         prop, val = declaration.split(':', 2).map(&:strip)
         next unless prop && val
 
-        "#{prop}: #{val};" if %w(color background-color).include?(prop) && /\A#[0-9a-fA-F]{3,8}\z/.match?(val)
+        "#{prop}: #{val};" if SAFE_STYLE_PROPERTIES.include?(prop) && /\A#[0-9a-fA-F]{3,8}\z/.match?(val)
       end
 
       if safe_properties.empty?
@@ -135,10 +138,12 @@ class Sanitize
       elements: %w(p br span a del s pre blockquote code b strong u i em ul ol li ruby rt rp),
 
       attributes: {
+        :all => %w(lang),
         'a' => %w(href rel class translate),
         'span' => %w(class translate style),
         'ol' => %w(start reversed),
         'li' => %w(value),
+        'p' => %w(class),
       },
 
       add_attributes: {
@@ -146,6 +151,12 @@ class Sanitize
           'rel' => 'nofollow noopener',
           'target' => '_blank',
         },
+      },
+
+      # style 을 허용하면 Sanitize 가 마지막에 이 목록으로 CSS 를 한 번 더 거른다.
+      # 목록이 없으면 SAFE_STYLE_TRANSFORMER 가 남긴 color 까지 전부 지운다.
+      css: {
+        properties: SAFE_STYLE_PROPERTIES,
       },
 
       protocols: {},

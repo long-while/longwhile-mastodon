@@ -15,6 +15,13 @@ RSpec.describe 'Admin Account Actions' do
       expect(page)
         .to have_title(I18n.t('admin.account_actions.title', acct: account.pretty_acct))
 
+      # Invalid submission
+      expect { submit_form }
+        .to_not(change { account.strikes.count })
+      expect(page)
+        .to have_text(I18n.t('errors.messages.blank').split('%{attribute}').last) # 화면은 한국어 고정, 문구 앞에 속성 이름이 붙는다
+
+      # Valid submission
       choose(option: 'silence')
       expect { submit_form }
         .to change { account.strikes.count }.by(1)

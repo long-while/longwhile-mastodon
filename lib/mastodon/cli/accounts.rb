@@ -17,7 +17,6 @@ module Mastodon::CLI
     LONG_DESC
     def rotate(username = nil)
       if options[:all]
-        processed = 0
         delay     = 0
         scope     = Account.local.without_suspended
         progress  = create_progress_bar(scope.count)
@@ -26,14 +25,13 @@ module Mastodon::CLI
           accounts.each do |account|
             rotate_keys_for_account(account, delay)
             progress.increment
-            processed += 1
           end
 
           delay += 5.minutes
         end
 
         progress.finish
-        say("OK, rotated keys for #{processed} accounts", :green)
+        say("OK, rotated keys for #{progress.progress} accounts", :green)
       elsif username.present?
         rotate_keys_for_account(Account.find_local(username))
         say('OK', :green)
@@ -102,7 +100,8 @@ module Mastodon::CLI
       end
 
       account.suspended_at = nil
-      user.account         = account
+      account.requested_deletion_at = nil
+      user.account = account
 
       if user.save
         if options[:confirmed]
@@ -126,6 +125,7 @@ module Mastodon::CLI
     option :enable, type: :boolean
     option :disable, type: :boolean
     option :disable_2fa, type: :boolean
+    option :disable_sign_in_token, type: :boolean
     option :approve, type: :boolean
     option :reset_password, type: :boolean
     desc 'modify USERNAME', 'Modify a user account'
@@ -146,6 +146,16 @@ module Mastodon::CLI
 
       With the --disable-2fa option, the two-factor authentication
       requirement for the user can be removed.
+
+      With the --disable-sign-in-token option, an account that has been
+      inactive for a long time won't have to introduce a security code that
+      has been sent to their email when trying to log in. This option
+      only disables the security code check for a limited amount of time
+      (up to 92 hours)
+
+      With the --enable-sign-in-token option, ensure that the account
+      generates a security code challenge if it has been inactive for too
+      long.
 
       With the --reset-password option, the user's password is replaced by
       a randomly-generated one, printed in the output.
@@ -170,6 +180,8 @@ module Mastodon::CLI
       user.disabled = true if options[:disable]
       user.approved = true if options[:approve]
       user.disable_two_factor! if options[:disable_2fa]
+      user.disable_sign_in_token! if options[:disable_sign_in_token]
+      user.enable_sign_in_token! if options[:enable_sign_in_token]
 
       # Password changes are a little different, as we also need to ensure
       # sessions, subscriptions, and access tokens are revoked after changing:
@@ -255,20 +267,11 @@ module Mastodon::CLI
     desc 'fix-duplicates', 'Find duplicate remote accounts and merge them'
     option :dry_run, type: :boolean
     long_desc <<-LONG_DESC
-      Merge known remote accounts sharing an ActivityPub actor identifier.
-
-      Such duplicates can occur when a remote server admin misconfigures their
-      domain configuration.
+      This command is deprecated as of Mastodon v4.7.0.
     LONG_DESC
     def fix_duplicates
-      Account.remote.duplicate_uris.pluck(:uri).each do |uri|
-        say("Duplicates found for #{uri}")
-        begin
-          ActivityPub::FetchRemoteAccountService.new.call(uri) unless dry_run?
-        rescue => e
-          say("Error processing #{uri}: #{e}", :red)
-        end
-      end
+      # TODO: remove this after 4.7.0
+      say('This command is deprecated as Mastodon v4.7.0 migrations enforce ActivityPub actor identifier uniqueness', :yellow)
     end
 
     desc 'backup USERNAME', 'Request a backup for a user'
@@ -442,7 +445,6 @@ module Mastodon::CLI
       total    += account.following.reorder(nil).count if options[:follows]
       total    += account.followers.reorder(nil).count if options[:followers]
       progress  = create_progress_bar(total)
-      processed = 0
 
       if options[:follows]
         account.following.reorder(nil).find_each do |target_account|
@@ -451,7 +453,6 @@ module Mastodon::CLI
           progress.log pastel.red("Error processing #{target_account.id}: #{e}")
         ensure
           progress.increment
-          processed += 1
         end
 
         BootstrapTimelineWorker.perform_async(account.id)
@@ -464,12 +465,11 @@ module Mastodon::CLI
           progress.log pastel.red("Error processing #{target_account.id}: #{e}")
         ensure
           progress.increment
-          processed += 1
         end
       end
 
       progress.finish
-      say("Processed #{processed} relationships", :green, true)
+      say("Processed #{progress.progress} relationships", :green, true)
     end
 
     option :number, type: :numeric, aliases: [:n]
@@ -617,10 +617,22 @@ module Mastodon::CLI
     def rotate_keys_for_account(account, delay = 0)
       fail_with_message 'No such account' if account.nil?
 
-      old_key = account.private_key
+      old_key = account.keypair
       new_key = OpenSSL::PKey::RSA.new(2048)
-      account.update(private_key: new_key.to_pem, public_key: new_key.public_key.to_pem)
-      ActivityPub::UpdateDistributionWorker.perform_in(delay, account.id, { 'sign_with' => old_key })
+
+      account.update(private_key: nil, public_key: '', keypairs: [account.keypairs.build(local_fragment: '#main-key', type: :rsa, public_key: new_key.public_key.to_pem, private_key: new_key.to_pem)])
+
+      ActivityPub::UpdateDistributionWorker.perform_in(
+        delay,
+        account.id,
+        {
+          'sign_with' => {
+            'private_key' => old_key.private_key,
+            'local_fragment' => old_key.local_fragment,
+            'type' => old_key.type,
+          },
+        }
+      )
     end
   end
 end

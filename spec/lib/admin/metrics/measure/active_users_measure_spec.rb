@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe Admin::Metrics::Measure::ActiveUsersMeasure do
+RSpec.describe Admin::Metrics::Measure::ActiveUsersMeasure, :utc_time_zone do
   subject { described_class.new(start_at, end_at, params) }
 
   let(:start_at) { 2.days.ago }

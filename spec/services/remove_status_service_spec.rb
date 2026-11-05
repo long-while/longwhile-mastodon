@@ -28,7 +28,10 @@ RSpec.describe RemoveStatusService, :inline_jobs do
       Fabricate(:status, account: bill, reblog: status, uri: 'hoge')
     end
 
-    it 'removes status from notifications and from author and local follower home feeds, publishes to media timeline, sends delete activities' do
+    # PostStatusService 가 만드는 글은 이 포크에서 언제나 private 라(943745d134) 공개 스트림
+    # (public:media)에 나간 적이 없다. 그래서 거기로 삭제를 보내는 대신, 그 글을 받은
+    # 팔로워의 스트림으로 삭제가 가는지와 공개 스트림에는 아무것도 안 나가는지를 본다.
+    it 'removes status from notifications and from author and local follower home feeds, notifies follower streams but not public ones, sends delete activities' do
       allow(redis).to receive(:publish).with(any_args)
 
       expect { subject.call(status) }
@@ -40,7 +43,9 @@ RSpec.describe RemoveStatusService, :inline_jobs do
         .to_not include(status.id)
 
       expect(redis)
-        .to have_received(:publish).with('timeline:public:media', Oj.dump(event: :delete, payload: status.id.to_s))
+        .to have_received(:publish).with("timeline:#{jeff.id}", { event: :delete, payload: status.id.to_s }.to_json)
+      expect(redis)
+        .to_not have_received(:publish).with('timeline:public:media', anything)
 
       expect(delete_delivery(hank, status))
         .to have_been_made.once
@@ -128,5 +133,21 @@ RSpec.describe RemoveStatusService, :inline_jobs do
         'object' => ActivityPub::TagManager.instance.uri_for(status)
       )
     )
+  end
+
+  context 'when removed status is a quote of a local user', inline_jobs: false do
+    let(:original_status) { Fabricate(:status, account: alice) }
+    let(:status) { Fabricate(:status, account: jeff) }
+
+    before do
+      bill.follow!(jeff)
+      Fabricate(:quote, status: status, quoted_status: original_status, state: :accepted)
+      original_status.discard
+    end
+
+    it 'sends deletion without crashing' do
+      expect { subject.call(status.reload) }
+        .to enqueue_sidekiq_job(ActivityPub::DeliveryWorker).with(/Delete/, jeff.id, bill.inbox_url)
+    end
   end
 end

@@ -62,7 +62,15 @@ module Admin
     end
 
     def set_statuses
-      @statuses = Admin::StatusFilter.new(@account, filter_params).results.preload(:application, :preloadable_poll, :media_attachments, active_mentions: :account, reblog: [:account, :application, :preloadable_poll, :media_attachments, active_mentions: :account]).page(params[:page]).per(PER_PAGE)
+      @statuses = Admin::StatusFilter.new(@account, filter_params).results
+      # @_longwhile — DM 본문은 admin/owner 만 본다(Admin::DirectMessagePolicy). 모더레이터의
+      #   목록에서는 뺀다. merge! 가 아니라 where 로 이어야 위 필터의 visibility 조건이 살아남는다.
+      @statuses = @statuses.where.not(visibility: :direct) unless policy([:admin, :direct_message]).index?
+      @statuses = @statuses.preload(*preload_columns, reblog: [:account, *preload_columns]).page(params[:page]).per(PER_PAGE)
+    end
+
+    def preload_columns
+      [:application, :preloadable_poll, :media_attachments, active_mentions: :account]
     end
 
     def filter_params
@@ -78,8 +86,6 @@ module Admin
         'report'
       elsif params[:remove_from_report]
         'remove_from_report'
-      elsif params[:delete]
-        'delete'
       end
     end
   end

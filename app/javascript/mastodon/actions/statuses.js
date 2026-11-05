@@ -273,7 +273,15 @@ export function revealStatus(ids) {
   };
 }
 
-// ─── @_longwhile custom feature
+// ─── @_longwhile custom feature / 한참(longwhile) 제작 기능 — 콘텐츠 워닝 일괄 펼치기 ───
+//
+// 설정을 바꾸는 것으로 끝내지 않고 **이미 받아둔 글에도 바로 적용합니다.** 앞으로
+// 들어올 글은 importer 가 처리하지만(actions/importer/index.js), 그것만 하면 지금
+// 화면에 있는 것들은 그대로라 토글이 아무 일도 안 한 것처럼 보입니다.
+//
+// 끄는 쪽에서 전체를 hidden 으로 돌려도 워닝이 없는 글은 화면이 바뀌지 않습니다 —
+// components/status.jsx 의 expanded 판정이 `spoiler_text` 가 비면 hidden 을 보지
+// 않습니다. 민감함 표시가 붙은 첨부만 다시 가려집니다.
 export function setExpandContentWarnings(expand) {
   return (dispatch, getState) => {
     dispatch(changeSetting(['content_warnings', 'expand_all'], expand));

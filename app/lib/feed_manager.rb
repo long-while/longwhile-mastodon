@@ -12,7 +12,7 @@ class FeedManager
   # Number of items in the feed since last reblog of status
   # before the new reblog will be inserted. Must be <= MAX_ITEMS
   # or the tracking sets will grow forever
-  REBLOG_FALLOFF = 40
+  REBLOG_FALLOFF = 80
 
   # Execute block for every active account
   # @yield [Account]
@@ -90,7 +90,7 @@ class FeedManager
   def unpush_from_home(account, status, update: false)
     return false unless remove_from_feed(:home, account.id, status, aggregate_reblogs: account.user&.aggregates_reblogs?)
 
-    redis.publish("timeline:#{account.id}", Oj.dump(event: :delete, payload: status.id.to_s)) unless update
+    redis.publish("timeline:#{account.id}", { event: :delete, payload: status.id.to_s }.to_json) unless update
     true
   end
 
@@ -117,7 +117,7 @@ class FeedManager
   def unpush_from_list(list, status, update: false)
     return false unless remove_from_feed(:list, list.id, status, aggregate_reblogs: list.account.user&.aggregates_reblogs?)
 
-    redis.publish("timeline:list:#{list.id}", Oj.dump(event: :delete, payload: status.id.to_s)) unless update
+    redis.publish("timeline:list:#{list.id}", { event: :delete, payload: status.id.to_s }.to_json) unless update
     true
   end
 
@@ -200,11 +200,22 @@ class FeedManager
     timeline_key        = key(:list, list.id)
     timeline_status_ids = redis.zrange(timeline_key, 0, -1)
 
+    # 홈과 달리 재게시까지 걷어내지 않는다. 이 메서드는 언팔로우뿐 아니라
+    # RemoveAccountsFromListService — 팔로우는 유지한 채 리스트에서만 빼는 경우 —
+    # 에서도 불린다. 거기서 재게시까지 지우면 아직 볼 자격이 있는 툿을 없애게 된다.
     from_account.statuses.select(:id, :reblog_of_id).where(id: timeline_status_ids).reorder(nil).find_each do |status|
       remove_from_feed(:list, list.id, status, aggregate_reblogs: list.account.user&.aggregates_reblogs?)
     end
   end
 
+  # A 를 언팔로우(또는 A 를 정지)했을 때, 남이 재게시한 A 의 툿을 피드에서 뺀다.
+  # 재게시는 원작자를 팔로우하는 사람에게만 보인다는 규칙이 여기서 깨지기 때문이다.
+  # upstream 에는 이 구멍이 없었다 — 남의 private 툿을 재게시할 수 없었으니까.
+  #
+  # remove_from_feed 를 쓰지 않고 직접 지운다. 그쪽은 재게시를 하나 빼면 **같은
+  # 원본의 다른 재게시를 대신 끼워 넣는다**(재게시 묶음). C 와 D 가 같은 툿을
+  # 재게시했다면 C 것을 빼는 순간 D 것이 올라와 A 의 툿이 계속 남는다.
+  # 그래서 묶음 집합(reblogs:<원본id>)째로 날린다.
   def unmerge_reblogs_of_account!(timeline_type, id, from_account, timeline_status_ids)
     return if timeline_status_ids.empty?
 
@@ -233,10 +244,10 @@ class FeedManager
     # This is a bit tricky because we need posts tagged with this hashtag that are not
     # also tagged with another followed hashtag or from a followed user
     scope = from_tag.statuses
-                    .where(id: timeline_status_ids)
-                    .where.not(account: into_account)
-                    .where.not(account: into_account.following)
-                    .tagged_with_none(TagFollow.where(account: into_account).pluck(:tag_id))
+      .where(id: timeline_status_ids)
+      .where.not(account: into_account)
+      .where.not(account: into_account.following)
+      .tagged_with_none(TagFollow.where(account: into_account).pluck(:tag_id))
 
     scope.select(:id, :reblog_of_id).reorder(nil).find_each do |status|
       remove_from_feed(:home, into_account.id, status, aggregate_reblogs: into_account.user&.aggregates_reblogs?)
@@ -467,6 +478,8 @@ class FeedManager
   # @param [Hash] crutches
   # @return [void|Symbol] nil, :skip_home, or :filter
   def filter_from_home(status, receiver_id, crutches, timeline_type = :home)
+    # @_longwhile — DM 은 어떤 경로로도 홈·리스트에 들어가지 않는다. 본인 글도
+    # 예외가 아니라 이 검사가 맨 앞이다(아래 첫 줄이 본인 글을 통과시킨다).
     return :filter    if status.direct_visibility?
 
     return            if receiver_id == status.account_id
@@ -474,6 +487,7 @@ class FeedManager
     return :filter    if status.reply? && (status.in_reply_to_id.nil? || status.in_reply_to_account_id.nil?)
     return :skip_home if timeline_type != :list && crutches[:exclusive_list_users][status.account_id].present?
     return :filter    if crutches[:languages][status.account_id].present? && status.language.present? && !crutches[:languages][status.account_id].include?(status.language)
+    return :filter    if status.reblog? && status.reblog.blank?
 
     check_for_blocks = crutches[:active_mentions][status.id] || []
     check_for_blocks.push(status.account_id)
@@ -494,6 +508,8 @@ class FeedManager
       should_filter   = crutches[:hiding_reblogs][status.account_id]                                                             # if the reblogger's reblogs are suppressed
       should_filter ||= crutches[:blocked_by][status.reblog.account_id]                                                          # or if the author of the reblogged status is blocking me
       should_filter ||= crutches[:domain_blocking][status.reblog.account.domain]                                                 # or the author's domain is blocked
+      # 재게시는 원작자를 팔로우하는 사람에게만 보인다 (겹팔로워 전용). 팬아웃에서 이미
+      # 걸러지지만, merge_into_home 백필은 이 함수만 거치므로 여기서도 막아야 한다.
       should_filter ||= !crutches[:following_reblogged_authors][status.reblog.account_id] &&
                         receiver_id != status.reblog.account_id
     else
@@ -677,6 +693,8 @@ class FeedManager
     crutches
   end
 
+  # 재게시된 원본의 작성자 중 수신자가 팔로우 중인 사람. filter_from_home 의
+  # 겹팔로워 판정에 쓴다.
   def crutches_following_reblogged_authors(recipient_id, statuses)
     Follow
       .where(account_id: recipient_id, target_account_id: statuses.filter_map { |s| s.reblog&.account_id })
@@ -713,6 +731,11 @@ class FeedManager
   # If you use or reuse this feature, you must credit the author on your server.
   #   Twitter/X : @_longwhile  ·  https://twitter.com/_longwhile  /  Crepe : https://kre.pe/QTRx
   # ═══════════════════════════════════════════════════════════════════════════
+  # Admin / Owner 수신자는 팔로우 중인 계정의 direct 까지 홈 피드로 받음
+  # 홈 피드 백필(팔로우·재생성)이 가져올 공개 범위.
+  #
+  # **운영진에게도 direct 를 주지 않는다.** DM 은 /messages 와 운영진 열람 화면에서만
+  # 본다. 여기서 한 줄 열어두면 팔로우 한 번에 상대의 지난 DM 이 홈에 쏟아진다.
   def home_visibility_scope_for(receiver)
     if receiver.user&.can?(:administrator, :manage_roles)
       Status.where(visibility: %i(unlisted private))

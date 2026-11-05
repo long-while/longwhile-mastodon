@@ -125,6 +125,9 @@ class Compose extends PureComponent {
       );
     }
 
+    // @_longwhile — 모바일 작성창의 왼쪽 위 ← (툿 상세 화면의 것과 같다).
+    //   모바일에는 작성창을 닫고 나갈 다른 단추가 없다. 앱 안에서 들어왔으면
+    //   이전 화면으로, 주소로 바로 들어왔으면 홈으로 간다(BackButton).
     return (
       <Column onFocus={this.onFocus}>
         {this.props.isMobileLayout && <ColumnHeader showBackButton />}

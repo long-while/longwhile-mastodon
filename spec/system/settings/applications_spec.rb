@@ -13,7 +13,7 @@ RSpec.describe 'Settings applications page' do
       visit settings_applications_path
 
       expect(page)
-        .to have_content(application.name)
+        .to have_text(application.name)
         .and have_private_cache_control
     end
   end
@@ -23,7 +23,7 @@ RSpec.describe 'Settings applications page' do
       visit settings_application_path(application)
 
       expect(page)
-        .to have_content(application.name)
+        .to have_text(application.name)
     end
   end
 
@@ -35,12 +35,13 @@ RSpec.describe 'Settings applications page' do
 
       expect { submit_form }
         .to change(Doorkeeper::Application, :count).by(1)
+      # 목록 화면의 제목은 "개발" 이다(settings: Phase 4, 8bcadda03d).
       expect(page)
-        .to have_content(I18n.t('doorkeeper.applications.index.title'))
-        .and have_content('My new app')
-        .and have_content('read')
-        .and have_content('write')
-        .and have_content('follow')
+        .to have_text(I18n.t('settings.development'))
+        .and have_text('My new app')
+        .and have_text('read')
+        .and have_text('write')
+        .and have_text('follow')
     end
 
     it 'does not save with invalid form values' do
@@ -49,7 +50,7 @@ RSpec.describe 'Settings applications page' do
       expect { submit_form }
         .to not_change(Doorkeeper::Application, :count)
       expect(page)
-        .to have_content("can't be blank")
+        .to have_text(I18n.t('errors.messages.blank', attribute: '')) # 화면은 한국어 고정(Localized#requested_locale)
     end
 
     def fill_in_form
@@ -80,7 +81,7 @@ RSpec.describe 'Settings applications page' do
       submit_form
 
       expect(page)
-        .to have_content('My new app name with a new value')
+        .to have_text('My new app name with a new value')
         .and have_checked_field('push', id: :doorkeeper_application_scopes_push)
     end
 
@@ -92,7 +93,7 @@ RSpec.describe 'Settings applications page' do
       submit_form
 
       expect(page)
-        .to have_content("can't be blank")
+        .to have_text(I18n.t('errors.messages.blank', attribute: '')) # 화면은 한국어 고정(Localized#requested_locale)
     end
 
     def submit_form
@@ -101,10 +102,15 @@ RSpec.describe 'Settings applications page' do
   end
 
   describe 'Destroying an application' do
-    let(:redis_pipeline_stub) { instance_double(Redis::Namespace, publish: nil) }
+    let(:redis_pipeline_stub) { instance_double(Redis::PipelinedConnection, publish: nil) }
     let!(:access_token) { Fabricate(:accessible_access_token, application: application) }
 
-    before { stub_redis_pipeline }
+    before do
+      # Disable wrapstodon to avoid redis calls that we don't want to stub
+      Setting.wrapstodon = false
+
+      stub_redis_pipeline
+    end
 
     it 'destroys the record and tells the broader universe about that' do
       visit settings_applications_path
@@ -112,7 +118,7 @@ RSpec.describe 'Settings applications page' do
       expect { destroy_application }
         .to change(Doorkeeper::Application, :count).by(-1)
       expect(page)
-        .to have_no_content(application.name)
+        .to have_no_text(application.name)
       expect(redis_pipeline_stub)
         .to have_received(:publish).with("timeline:access_token:#{access_token.id}", '{"event":"kill"}')
     end
@@ -130,12 +136,17 @@ RSpec.describe 'Settings applications page' do
 
   describe 'Regenerating an app token' do
     it 'updates the app token' do
-      visit settings_application_path(application)
+      expect { visit settings_application_path(application) }
+        .to change(user_application_token, :first).from(be_nil).to(be_present)
 
       expect { regenerate_token }
-        .to(change { user.token_for_app(application) })
+        .to(change { user_application_token.first.token })
       expect(page)
-        .to have_content(I18n.t('applications.token_regenerated'))
+        .to have_text(I18n.t('applications.token_regenerated'))
+    end
+
+    def user_application_token
+      Doorkeeper::AccessToken.where(application:).where(resource_owner_id: user)
     end
 
     def regenerate_token

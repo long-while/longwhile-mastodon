@@ -26,9 +26,10 @@ RSpec.describe 'Auth Challenges' do
       it 'renders challenge, displays error, does not set session' do
         post '/auth/challenge', params: { form_challenge: { return_to: return_to, current_password: 'hhfggjjd562' } }
 
+        # 화면 언어는 한국어로 고정돼 있다(Localized#requested_locale).
         expect(response.body)
-          .to include(I18n.t('challenge.prompt'))
-          .and include('Invalid password')
+          .to include(I18n.t('challenge.prompt', locale: :ko))
+          .and include(I18n.t('challenge.invalid_password', locale: :ko))
         expect(session[:challenge_passed_at])
           .to be_nil
       end

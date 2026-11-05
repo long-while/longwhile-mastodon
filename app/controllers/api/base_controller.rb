@@ -50,6 +50,10 @@ class Api::BaseController < ApplicationController
     nil
   end
 
+  def require_client_credentials!
+    render json: { error: 'This method requires an client credentials authentication' }, status: 403 if doorkeeper_token.resource_owner_id.present?
+  end
+
   def require_authenticated_user!
     render json: { error: 'This method requires an authenticated user' }, status: 401 unless current_user
   end
@@ -90,12 +94,16 @@ class Api::BaseController < ApplicationController
   end
 
   def disallow_unauthenticated_api_access?
-    ENV['DISALLOW_UNAUTHENTICATED_API_ACCESS'] == 'true' || Rails.configuration.x.limited_federation_mode
+    ENV['DISALLOW_UNAUTHENTICATED_API_ACCESS'] == 'true' || Rails.configuration.x.mastodon.limited_federation_mode
   end
 
   private
 
   def respond_with_error(code)
     render json: { error: Rack::Utils::HTTP_STATUS_CODES[code] }, status: code
+  end
+
+  def alpha_path?
+    request.path.starts_with?('/api/v1_alpha')
   end
 end

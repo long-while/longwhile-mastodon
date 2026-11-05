@@ -17,29 +17,28 @@ RSpec.describe 'Settings Deletes' do
       # Wrong confirmation value
       fill_in 'form_delete_confirmation_username', with: user.account.username
       fill_in 'form_delete_confirmation_password', with: 'wrongvalue'
-      click_on I18n.t('deletes.proceed')
+      # 한국어에서는 사이드바의 "계정 삭제" 링크와 이름이 같아 단추로 좁힌다.
+      click_button I18n.t('deletes.proceed')
       expect(page)
-        .to have_content(I18n.t('deletes.challenge_not_passed'))
+        .to have_text(I18n.t('deletes.challenge_not_passed'))
 
       # Wrong confirmation value
       fill_in 'form_delete_confirmation_username', with: 'wrongvalue'
       fill_in 'form_delete_confirmation_password', with: user.password
-      click_on I18n.t('deletes.proceed')
+      click_button I18n.t('deletes.proceed')
       expect(page)
         .to have_text(I18n.t('deletes.challenge_not_passed'))
 
       # Correct confirmation value
       fill_in 'form_delete_confirmation_username', with: user.account.username
       fill_in 'form_delete_confirmation_password', with: user.password
-      click_on I18n.t('deletes.proceed')
+      click_button I18n.t('deletes.proceed')
       expect(page)
-        .to have_content(I18n.t('deletes.success_msg'))
+        .to have_text(I18n.t('deletes.success_msg'))
       expect(page)
         .to have_title(I18n.t('auth.login'))
-      expect(User.find_by(id: user.id))
-        .to be_nil
       expect(user.account.reload)
-        .to be_suspended
+        .to be_deleted
       expect(CanonicalEmailBlock.block?(user.email))
         .to be(false)
     end

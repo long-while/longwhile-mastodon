@@ -44,6 +44,19 @@ RSpec.describe MultiAccounts::RefreshService do
       end
     end
 
+    # 4.7 부터 자기 삭제는 정지가 아니라 `requested_deletion_at` 만 채운다(`mark_deleted!`).
+    # 삭제 작업이 돌기 전까지 저장된 갱신 토큰이 살아 있다.
+    context 'when the account has requested its own deletion' do
+      before { user.account.mark_deleted! }
+
+      it 'raises an error with status 403 without issuing a session token' do
+        expect { service_call }.to raise_error(MultiAccounts::RefreshService::Error) { |error|
+          expect(error.status).to eq(403)
+        }
+        expect(Doorkeeper::AccessToken.where(purpose: 'multi_account_session')).to be_empty
+      end
+    end
+
     context 'when the refresh token is invalid' do
       let(:refresh_token) { 'invalid' }
 
@@ -59,9 +72,8 @@ RSpec.describe MultiAccounts::RefreshService do
         refresh_token_record.update!(long_lived: false, purpose: nil)
       end
 
-      # Regression: while the auto-upgrade only looked at the `multi_account`
-      # flag it promoted tokens issued by other applications too, which left
-      # this example silently broken.
+      # @_longwhile — 회귀: 자동 승격이 `multi_account` 플래그만 보던 때는
+      #   다른 앱이 발급한 토큰까지 올려 주어 이 검사가 조용히 깨져 있었다.
       it 'raises an error with status 422' do
         expect { service_call }.to raise_error(MultiAccounts::RefreshService::Error) { |error|
           expect(error.status).to eq(422)
@@ -82,8 +94,7 @@ RSpec.describe MultiAccounts::RefreshService do
           Rails.configuration.x.multi_account = ActiveSupport::HashWithIndifferentAccess.new(original)
         end
 
-        # Older versions of `consume` did not set the flags. Those tokens
-        # must keep working.
+        # 옛 버전의 `consume` 는 플래그를 박지 않았다. 그런 토큰은 쓸 수 있어야 한다.
         it 'upgrades the legacy token instead of rejecting it' do
           expect { service_call }.to_not raise_error
 
@@ -96,11 +107,10 @@ RSpec.describe MultiAccounts::RefreshService do
       end
     end
 
-    # A session token handed out by a switch belongs to the multi-account
-    # application with `multi_account: true`, so without the marker the
-    # auto-upgrade turns it into a ten-year refresh token. `revoke_access!`
-    # skips those, so logout never clears them - and one is created on every
-    # switch.
+    # @_longwhile — 전환으로 나간 세션 토큰은 다중 계정 앱 소유에
+    #   `multi_account: true` 라, 표식이 없으면 자동 승격에 걸려 **10년짜리
+    #   갱신 토큰**이 된다. `revoke_access!` 가 그런 토큰을 건너뛰므로
+    #   로그아웃해도 안 지워진다. 전환할 때마다 하나씩 생기는 토큰이다.
     context 'when a session token from a previous switch is replayed' do
       around do |example|
         original = Rails.configuration.x.multi_account.dup
@@ -125,4 +135,3 @@ RSpec.describe MultiAccounts::RefreshService do
     end
   end
 end
-

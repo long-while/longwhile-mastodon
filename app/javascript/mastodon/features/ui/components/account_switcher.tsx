@@ -35,6 +35,7 @@ import {
   openBlankOAuthPopup,
 } from 'mastodon/features/multi_account/oauth_popup';
 import type { Account } from 'mastodon/models/account';
+// 타입만 가져온다. 실제 모듈은 아래에서 `import()` 로 늦게 불러온다.
 import { useAppDispatch } from 'mastodon/store/typed_functions';
 import type { MultiAccountEntry } from 'mastodon/types/multi_account';
 import { MultiAccountSwitchError } from 'mastodon/types/multi_account';
@@ -46,9 +47,8 @@ import {
 } from 'mastodon/utils/multi_account_db';
 import { clearActiveAccountIdInStorage } from 'mastodon/utils/multi_account_storage';
 
-// Backstop for the whole add-account flow. Releases the UI flags if something
-// hangs past every individual timeout (15s per api call, 90s for the OAuth
-// popup).
+// add-account 전체 흐름의 안전망(backstop). 개별 api 호출(15s)·OAuth 팝업(90s)
+// 타임아웃을 모두 넘기는 예기치 못한 hang에 대비해 UI 플래그를 강제 해제한다.
 const ADD_ACCOUNT_WATCHDOG_TIMEOUT = 100000;
 
 type MultiAccountsModule = typeof MultiAccountsApi;
@@ -60,8 +60,8 @@ const loadMultiAccountsModule = (): Promise<MultiAccountsModule> =>
 const loadCallbackHandlerModule = (): Promise<CallbackHandlerModule> =>
   import('mastodon/features/multi_account/callback_handler');
 
-// The popup's forced login revokes this page's token. Check whether it still
-// works once the flow has failed.
+// 팝업의 `prompt=login` 이 공유 세션을 로그아웃시키면 이 페이지가 들고 있던
+// 토큰도 함께 폐기된다. 흐름이 실패로 끝났을 때 그 토큰이 아직 쓸 만한지 본다.
 const pageTokenWasRevoked = async (): Promise<boolean> => {
   try {
     await api().get('/api/v1/accounts/verify_credentials', {
@@ -193,9 +193,12 @@ interface AccountSwitcherTriggerArgs {
 interface AccountSwitcherProps {
   renderTrigger?: (options: AccountSwitcherTriggerArgs) => ReactNode;
 }
+// 빈 문자열은 값이 있는 것으로 치지 않는다. `??` 는 `''` 를 통과시켜
+// 표시명이 비어 있는 계정이 목록에서 빈칸으로 보였다.
 const firstNonEmpty = (...values: (string | null | undefined)[]): string =>
   values.find((value) => !!value && value.length > 0) ?? '';
 
+// callback_handler.ts 가 팝업이 닫혔을 때 던지는 문구와 같아야 한다.
 const OAUTH_POPUP_CLOSED =
   'OAuth popup was closed before authorization completed';
 
@@ -210,14 +213,19 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
   const dispatch = useAppDispatch();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoggingOutAll, setIsLoggingOutAll] = useState(false);
-  // Ref-based re-entry guard: the isProcessing state can be stale inside a
-  // closure, so a ref is what actually prevents concurrent runs.
+  // ref 기반 재진입 가드: isProcessing state는 클로저에서 stale 할 수 있어
+  // 동시 실행 방지에는 ref를 사용한다.
   const isProcessingRef = useRef(false);
   const addWatchdogRef = useRef<number | null>(null);
+  // 계정 추가 중에 열어 둔 팝업. 취소하면 아직 빈 창일 때 닫는다.
   const addPopupRef = useRef<Window | null>(null);
+  // 지금 살아 있는 계정 추가 흐름의 번호. 취소·워치독이 올리면 그 전 흐름은
+  // 계속 돌더라도 UI(알림·처리 중 표시)를 건드리지 못한다. 안 그러면 취소한
+  // 뒤에 "팝업이 닫혔습니다" 가 뜨고, 그사이 새로 시작한 흐름의 상태까지 옛
+  // 흐름의 마무리가 풀어 버린다.
   const addFlowRef = useRef(0);
   const storingAccountIdsRef = useRef<Set<string>>(new Set());
-  // Accounts we already tried to mint a long-lived token for on this page.
+  // 장기 토큰 발급을 이번 페이지에서 이미 시도한 계정들.
   const mintAttemptedIdsRef = useRef<Set<string>>(new Set());
   const [persistedAccounts, setPersistedAccounts] = useState<
     MultiAccountEntry[]
@@ -258,11 +266,10 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
     state.getIn(['accounts', state.getIn(['meta', 'me'])]),
   ) as Account | undefined;
 
-  // On this screen there is exactly one current account: the one the server
-  // session decided. `activeAccountId` is a locally written hint that can
-  // drift from the session, and mixing the two ticked both entries and
-  // blocked switching on both rows. The hint is only leaned on while the
-  // session is not known yet, right after boot.
+  // @_longwhile — 이 화면에서 "현재 계정" 은 **서버 세션이 정한 계정** 하나다.
+  //   `activeAccountId` 는 로컬에 적어 둔 힌트라 세션과 어긋날 수 있고, 그때
+  //   둘을 섞어 쓰면 초록 체크가 두 계정에 찍히고 두 줄 다 전환이 막혔다.
+  //   세션을 아직 모를 때(부팅 직후)만 힌트로 버틴다.
   const sessionAccountId: string | null =
     currentAccount?.id ?? (activeAccountId as string | null) ?? null;
 
@@ -307,7 +314,7 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
       });
   }, []);
 
-  // Clear the add-account watchdog on unmount so it cannot setState after.
+  // 언마운트 시 add-account 워치독 타이머 정리(언마운트 후 setState 방지).
   useEffect(() => {
     return () => {
       if (addWatchdogRef.current !== null) {
@@ -446,10 +453,9 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
       } catch (error) {
         console.error(error);
 
-        // When the stored token is dead - expired, revoked, undecryptable -
-        // do not just show the raw error: open the manage modal so the entry
-        // can be removed. Decided by the structured error code, not by
-        // matching translated strings.
+        // 저장된 토큰이 죽은(만료·폐기·복호화 불가) 계정이면 원시 에러만 띄우지 말고,
+        // 관리 모달을 열어 해당 항목을 제거하도록 유도한다. 로케일 문자열 매칭이 아니라
+        // 구조화된 에러 코드로 판별한다.
         if (error instanceof MultiAccountSwitchError && error.isDeadToken) {
           const deadEntry =
             managedAccounts.find((candidate) => candidate.id === accountId) ??
@@ -478,7 +484,7 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
     [dispatch, ensureAccountRegistered, intl, managedAccounts, mergedAccounts],
   );
 
-  // Is account switching actually in use in this browser?
+  // 이 브라우저에서 계정 전환을 실제로 쓰고 있는가.
   const hasOtherStoredAccounts = useMemo(
     () =>
       mergedAccounts.some(
@@ -487,21 +493,19 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
     [mergedAccounts, currentAccount],
   );
 
-  // Makes the currently signed-in account something we can switch back to
-  // later.
+  // @_longwhile — **지금 로그인된 계정을 나중에 전환해 돌아올 수 있게** 만든다.
   //
-  // This used to store the page's session token (`getAccessToken()`) as-is.
-  // But that token is created by `SessionActivation` on the web superapp with
-  // `long_lived`, `purpose` and `multi_account` all unset, and
-  // `MultiAccounts::RefreshService#ensure_refresh_token_valid!` rejects it
-  // with a 422. So clicking that account's row only ever reported that the
-  // stored token had expired or could not be used - the token was not dead,
-  // it was the wrong kind. Only `mintSwitchToken()` produces a token usable
-  // for switching.
+  //   예전에는 여기서 페이지의 세션 토큰(`getAccessToken()`)을 그대로
+  //   저장했다. 그런데 그건 `SessionActivation` 이 **웹 superapp** 으로 만든
+  //   토큰이라 `long_lived`·`purpose`·`multi_account` 가 전부 비어 있고,
+  //   `MultiAccounts::RefreshService#ensure_refresh_token_valid!` 가 **422** 로 막는다.
+  //   그래서 그 계정 줄을 누를 때마다 "저장된 계정 토큰이 만료되었거나
+  //   사용할 수 없습니다" 만 나왔다 — 토큰이 죽은 게 아니라 **종류가 틀린** 것이다.
+  //   전환에 쓸 수 있는 토큰은 `mintSwitchToken()` 으로만 만든다.
   //
-  // Whether one exists is decided solely by IndexedDB. The redux `accounts`
-  // map always has the session account injected by `hydrateStore`, so having
-  // an entry never meant having a token.
+  //   판단 기준은 **IndexedDB 에 실제 토큰이 있느냐** 하나다. redux 의
+  //   `accounts` 는 `hydrateStore` 가 세션 계정을 항상 끼워 넣으므로
+  //   "항목이 있다" 가 "토큰이 있다" 를 뜻하지 않는다.
   const ensureAccountStored = useCallback(async () => {
     if (!currentAccount) {
       return;
@@ -509,10 +513,10 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
 
     const accountId = currentAccount.id;
 
-    // No reason to hand a ten-year token to someone with a single account.
-    // For them the first token is fetched by `handleAddAccount` just before
-    // the popup. Not setting the `mintAttemptedIdsRef` marker here matters:
-    // stored entries arrive asynchronously, so this has to stay reachable.
+    // 계정이 하나뿐인 사람에게까지 10년짜리 토큰을 쥐여 줄 이유가 없다.
+    // 그 경우 첫 토큰은 `handleAddAccount` 가 팝업 직전에 받아 둔다.
+    // 표식(`mintAttemptedIdsRef`)을 여기서 남기지 않는 게 중요하다 — 저장된
+    // 항목은 비동기로 늦게 도착하므로 나중에 다시 들어와야 한다.
     if (!hasOtherStoredAccounts) {
       return;
     }
@@ -524,13 +528,13 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
       return;
     }
 
-    // Set the markers before the first asynchronous step. Behind the `await`
-    // below, a second invocation (React 18 StrictMode runs effects twice)
-    // clears the same checks and mints twice. The server returns the same
-    // token so nothing breaks, but it is a wasted request.
+    // 표식은 **첫 비동기 작업 전에** 남긴다. 아래 `await` 뒤에 두면 두 번째
+    // 호출(React 18 StrictMode 는 이펙트를 두 번 돌린다)가 같은 점검을 통과해
+    // 발급을 두 번 시도한다. 서버가 같은 토큰을 돌려주므로 틀진 않지만,
+    // 쓸데없는 요청이 한 번 더 나간다.
     storingAccountIdsRef.current.add(accountId);
-    // Mint at most once per page load. Retrying on every failure only piles
-    // up ten-year tokens nobody uses.
+    // 발급은 페이지당 한 번만 시도한다. 실패할 때마다 다시 부르면 쓰지도
+    // 않을 10년짜리 토큰만 계속 쌓인다.
     mintAttemptedIdsRef.current.add(accountId);
 
     try {
@@ -540,7 +544,7 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
         return;
       }
     } catch {
-      // Could not read it; the code below mints a fresh one.
+      // 읽지 못했다 — 아래에서 새로 발급받아 채운다.
     }
 
     try {
@@ -646,8 +650,7 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
     };
   }, [isManageOpen, handleCloseManage]);
 
-  // Re-read the stored entries whenever the manage modal opens so display
-  // names and avatars stay current.
+  // 관리 모달을 열 때마다 저장된 항목을 다시 읽어 표시명·아바타를 최신 상태로 유지한다.
   useEffect(() => {
     if (!isManageOpen) {
       return;
@@ -730,8 +733,7 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
     [dispatch, intl, sessionAccountId, deletingAccountId],
   );
 
-  // Release the UI flags and the watchdog when the add-account flow ends,
-  // whether it succeeded, failed, was cancelled, or timed out.
+  // add-account 흐름이 끝나면(성공/실패/취소/워치독) UI 플래그와 워치독을 해제.
   const finishAddProcessing = useCallback(() => {
     isProcessingRef.current = false;
     if (addWatchdogRef.current !== null) {
@@ -741,10 +743,11 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
     setIsProcessing(false);
   }, []);
 
-  // The user cancelled adding an account: close the in-flight OAuth popup and
-  // restore the UI at once.
+  // 사용자가 계정 추가를 수동 취소: 진행 중인 OAuth 팝업을 닫고 UI를 즉시 복구.
   const handleCancelAddAccount = useCallback(() => {
     addFlowRef.current += 1;
+    // 아직 준비 중이면(인가 화면 전) 팝업이 `pendingRequests` 에 없어서 아래가
+    // 닫지 못한다. 빈 창은 여기서 닫는다.
     closeBlankOAuthPopup(addPopupRef.current);
     void loadCallbackHandlerModule().then(({ cancelPendingOAuthRequests }) => {
       cancelPendingOAuthRequests();
@@ -762,6 +765,8 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
       return;
     }
 
+    // 팝업은 **여기서, 동기로** 연다. `await` 뒤에 열면 iOS 사파리가 막는다
+    // (features/multi_account/oauth_popup.ts).
     const popup = openBlankOAuthPopup(
       intl.formatMessage(messages.popupLoading),
     );
@@ -780,6 +785,8 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
       isProcessingRef.current = true;
       setIsProcessing(true);
 
+      // 안전망: 모든 개별 타임아웃(api 15s · OAuth 팝업 90s)을 넘기는 예기치 못한
+      // hang에도 UI가 영구히 잠기지 않도록 흐름 진입 즉시 워치독을 건다.
       const handleWatchdog = () => {
         console.warn(
           '[MultiAccount] add-account watchdog fired; force-releasing UI state',
@@ -797,6 +804,9 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
         );
       };
 
+      // 로그인 화면으로 넘길 때 **다시 건다.** 팝업의 90초는 그때부터 세는데,
+      // 처음에 건 100초를 그대로 두면 준비 단계(토큰 발급 등, 모바일에서 10초
+      // 넘게 걸리기도 한다)만큼 먼저 터져 로그인 중인 창을 닫아 버린다.
       const armWatchdog = () => {
         if (addWatchdogRef.current !== null) {
           window.clearTimeout(addWatchdogRef.current);
@@ -814,20 +824,27 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
         nonce: null as string | null,
       };
 
-      // Whoever the server session belongs to right now is the reference.
+      // 지금 서버 세션이 누구인지가 기준이다.
       const currentAccountId = sessionAccountId;
 
       let restoreMultiAccountSessionFn:
         | MultiAccountsModule['restoreMultiAccountSession']
         | undefined;
 
-      // Once the popup opens this page's token may die at any time. Paths that
-      // end in a reload keep recovery suspended.
+      // 팝업을 띄운 뒤로는 이 페이지의 토큰이 언제든 죽을 수 있다
+      // (`suspendSessionRecovery` 참고). 새로고침으로 끝나는 경로에서는 풀지 않는다.
       let releaseSessionRecovery: (() => void) | null = null;
       let reloading = false;
+      // 실패해도 이것이 끝날 때까지는 기다린다. 안 그러면 사용자가 곧바로 다시
+      // 시도할 때 앞의 `registerAccount` 쓰기가 아직 돌고 있다.
       let mintPromise: Promise<void> = Promise.resolve();
 
       try {
+        // @_longwhile — 팝업을 인가 화면으로 넘기기 **전에** 지금 계정의 장기 토큰을 다시
+        //   받아 덮어쓴다. 이게 **예전 버전이 저장해 둔 세션 토큰을 고치는
+        //   유일한 경로**라, 이미 항목이 있어도 건너뛰지 않는다. 곧 뒤에
+        //   팝업의 `prompt=login` 이 공유 세션을 로그아웃시키므로,
+        //   지금이 이 계정으로 토큰을 받을 수 있는 마지막 순간이기도 하다.
         const mintCurrentAccountToken = async () => {
           if (currentAccountId) {
             try {
@@ -878,6 +895,10 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
 
         mintPromise = mintCurrentAccountToken();
 
+        // 장기 토큰 발급과 인가 주소 받기는 **서로 무관해서** 함께 돌린다
+        // (`/multi_accounts/entry` 는 state 를 Redis 에 적을 뿐 세션을 건드리지
+        // 않는다). 그동안 팝업은 "불러오는 중" 으로 기다리므로 짧을수록 좋다 —
+        // iOS 에서는 팝업이 새 탭으로 열려 이 페이지가 뒤로 밀려 있다.
         const [
           ,
           { consumeAuthorizationCode, restoreMultiAccountSession },
@@ -887,6 +908,9 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
           mintPromise,
           loadMultiAccountsModule(),
           loadCallbackHandlerModule(),
+          // 새 계정 추가 시에는 반드시 로그인 화면을 강제한다. 그렇지 않으면
+          // OAuth가 현재 세션 쿠키의 계정을 그대로 재인가해 "이미 로그인된
+          // 계정"을 추가하게 된다.
           loadMultiAccountsModule().then((module) =>
             module.fetchAuthorizeEntry({ forceLogin: true }),
           ),
@@ -897,6 +921,8 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
         pending.nonce = authorizeEntry.nonce;
         const { authorize_url: authorizeUrl, state, nonce } = authorizeEntry;
 
+        // 기다리는 동안 사용자가 빈 팝업을 닫았거나 취소를 눌렀다. 여기서 멈춰야
+        // 팝업 없이 로그아웃만 일어나는 일이 없다.
         if (isStale() || popup.closed) {
           throw new Error(OAUTH_POPUP_CLOSED);
         }
@@ -922,15 +948,20 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
         };
 
         await dispatch(registerAccount(accountEntry, token) as unknown as any);
+        // 성공하면 `switchAccount` 가 새로고침한다.
         await dispatch(switchAccount(accountEntry.id) as unknown as any);
         reloading = true;
       } catch (error) {
         console.error('Account registration failed:', error);
 
+        // 스스로 오류를 삼키므로 거절되지 않는다.
         await mintPromise;
 
+        // 인가 화면으로 넘어가기 전에 실패했으면 "불러오는 중" 창이 남는다.
         closeBlankOAuthPopup(popup);
 
+        // 복원은 팝업을 인가 화면으로 넘긴 뒤에만 필요하다 — 그 전에는 아무도
+        // 로그아웃시키지 않았다. (`releaseSessionRecovery` 가 그 경계다.)
         if (
           releaseSessionRecovery &&
           pending.state &&
@@ -950,8 +981,9 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
           }
         }
 
-        // If the popup already signed the session out, every request from this
-        // page now fails. Reload so the page matches the current session.
+        // 팝업이 이미 로그아웃시켰다면 이 페이지의 토큰은 죽었고, 세션은
+        // 복원됐든(원래 계정) 팝업에서 로그인했든 새 토큰을 들고 있다. 이대로
+        // 두면 모든 요청이 401 이므로 새로고침해서 화면을 세션에 맞춘다.
         if (releaseSessionRecovery && (await pageTokenWasRevoked())) {
           reloading = true;
           window.location.reload();
@@ -966,6 +998,7 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
           knownMessage ??
           (error instanceof Error ? error.message : messages.addError);
 
+        // 취소했거나 워치독이 이미 알렸으면 덧붙이지 않는다.
         if (!isStale()) {
           dispatch(showAlert({ message }));
         }
@@ -1067,10 +1100,10 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
               </div>
             ) : (
               managedAccounts.map((entry) => {
-                // The server session decides the current account.
-                // `activeAccountId` is a locally written hint that can drift
-                // from it, and when both got ticked, both rows refused to
-                // switch and the user could go nowhere.
+                // @_longwhile — **'현재 계정' 은 서버 세션이 정한다.**
+                //   `activeAccountId` 는 로컬에 적어 둔 힌트라 세션과 어긋날 수
+                //   있고, 그때 둘 다 체크되면(초록 체크 두 개) 두 줄 모두
+                //   전환이 막혀 아무 데로도 갈 수 없었다.
                 const isCurrentLoggedIn = entry.id === currentAccount.id;
                 const isDeleting = deletingAccountId === entry.id;
                 const canSwitch = !(

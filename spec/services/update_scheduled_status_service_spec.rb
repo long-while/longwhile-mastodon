@@ -124,8 +124,11 @@ RSpec.describe UpdateScheduledStatusService do
   end
 
   describe 'a record that is being published right now' do
+    # claim_for_publishing! 은 워커가 update_all 로 거는 것이라 이 인스턴스에는 반영되지
+    # 않는다. 실제로는 컨트롤러가 요청마다 레코드를 새로 읽으므로 reload 해서 맞춘다.
     before do
       scheduled_status.claim_for_publishing!
+      scheduled_status.reload
     end
 
     it 'refuses the change rather than losing it' do

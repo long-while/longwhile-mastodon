@@ -4,7 +4,14 @@ require 'rails_helper'
 
 RSpec.describe 'Dispute Appeals' do
   let(:user) { Fabricate(:user) }
-  let!(:admin) { Fabricate(:admin_user) }
+  # 이 포크는 알림 메일을 모두 꺼 둔 채로 시작한다(UserSettings 의 notification_emails 기본값).
+  # 소명 알림을 켠 운영진에게 메일이 가는지를 본다.
+  let!(:admin) do
+    Fabricate(:admin_user).tap do |admin|
+      admin.settings.update('notification_emails.appeal': true)
+      admin.save!
+    end
+  end
 
   before { sign_in user }
 
@@ -23,27 +30,20 @@ RSpec.describe 'Dispute Appeals' do
       expect(emails)
         .to be_empty
       expect(page)
-        .to have_content(/can't be blank/)
+        .to have_text(I18n.t('errors.messages.blank', attribute: '')) # 화면은 한국어 고정(Localized#requested_locale)
 
       # Valid with text
       fill_in 'appeal_text', with: 'It wasnt me this time!'
-      emails = capture_emails do
-        expect { submit_form }
-          .to change(Appeal, :count).by(1)
-      end
-      expect(emails)
-        .to contain_exactly(
-          have_attributes(
-            to: contain_exactly(admin.email),
-            subject: eq(new_appeal_subject)
-          )
-        )
+      expect { submit_form }
+        .to change(Appeal, :count).by(1)
+        .and send_email(to: admin.email, subject: new_appeal_subject)
       expect(page)
-        .to have_content(I18n.t('disputes.strikes.appealed_msg'))
+        .to have_text(I18n.t('disputes.strikes.appealed_msg'))
     end
 
     def new_appeal_subject
-      I18n.t('admin_mailer.new_appeal.subject', username: user.account.acct, instance: Rails.configuration.x.local_domain)
+      # 메일은 화면과 달리 받는 사람의 로캘(없으면 기본 로캘)로 나간다.
+      I18n.t('admin_mailer.new_appeal.subject', username: user.account.acct, instance: Rails.configuration.x.local_domain, locale: ApplicationMailer::MAIL_LOCALE)
     end
 
     def submit_form

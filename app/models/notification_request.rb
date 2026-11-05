@@ -5,12 +5,12 @@
 # Table name: notification_requests
 #
 #  id                  :bigint(8)        not null, primary key
-#  account_id          :bigint(8)        not null
-#  from_account_id     :bigint(8)        not null
-#  last_status_id      :bigint(8)
 #  notifications_count :bigint(8)        default(0), not null
 #  created_at          :datetime         not null
 #  updated_at          :datetime         not null
+#  account_id          :bigint(8)        not null
+#  from_account_id     :bigint(8)        not null
+#  last_status_id      :bigint(8)
 #
 
 class NotificationRequest < ApplicationRecord
@@ -27,6 +27,8 @@ class NotificationRequest < ApplicationRecord
   before_save :prepare_notifications_count
 
   scope :without_suspended, -> { joins(:from_account).merge(Account.without_suspended) }
+  # @_longwhile — 알림과 같은 기준. 탈퇴(익명화)한 사람은 걸러진 알림 목록에도
+  # 뜨지 않는다. 근거는 Notification.without_unavailable 위의 주석.
   scope :without_unavailable, -> { joins(:from_account).merge(Account.without_unavailable) }
 
   def self.preload_cache_collection(requests)
@@ -50,6 +52,6 @@ class NotificationRequest < ApplicationRecord
   private
 
   def prepare_notifications_count
-    self.notifications_count = Notification.where(account: account, from_account: from_account, type: :mention, filtered: true).limit(MAX_MEANINGFUL_COUNT).count
+    self.notifications_count = Notification.where(account: account, from_account: from_account, type: [:mention, :quote], filtered: true).limit(MAX_MEANINGFUL_COUNT).count
   end
 end

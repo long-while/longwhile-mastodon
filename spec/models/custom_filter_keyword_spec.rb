@@ -4,8 +4,8 @@ require 'rails_helper'
 
 RSpec.describe CustomFilterKeyword do
   describe 'Validations' do
+    it { is_expected.to validate_length_of(:keyword).is_at_most(described_class::KEYWORD_LENGTH_LIMIT) }
     it { is_expected.to validate_presence_of(:keyword) }
-    it { is_expected.to validate_length_of(:keyword).is_at_most(512) }
   end
 
   describe '#to_regex' do

@@ -1,3 +1,7 @@
+-# @_longwhile — 워드마크 칸 아래. 여백을 맞출 수 있게 지금 그림을 템플릿으로
+-# 내준다. 모바일 미리보기는 show.html.haml 에서 두 칸을 따로 한 줄로 모은다.
+-#
+-# locals: attribute, input_id, shown_url
 - template_url = site_upload_default_url(attribute)
 - if template_url.present?
   = link_to t('admin.settings.uploads.wordmark_template'), template_url, download: "#{attribute}_template.png", target: '_blank', rel: 'noopener', class: 'image-picker__template'

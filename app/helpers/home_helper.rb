@@ -21,7 +21,13 @@ module HomeHelper
                         end
                     end
                   else
-                    link_to(path || ActivityPub::TagManager.instance.url_for(account), class: 'account__display-name') do
+                    account_url = if account.suspended?
+                                    ActivityPub::TagManager.instance.url_for(account)
+                                  else
+                                    web_url("@#{account.pretty_acct}")
+                                  end
+
+                    link_to(path || account_url, class: 'account__display-name') do
                       content_tag(:div, class: 'account__avatar-wrapper') do
                         image_tag(full_asset_url(current_account&.user&.setting_auto_play_gif ? account.avatar_original_url : account.avatar_static_url), class: 'account__avatar', width: 46, height: 46)
                       end +
@@ -39,18 +45,8 @@ module HomeHelper
     end
   end
 
-  def obscured_counter(count)
-    if count <= 0
-      '0'
-    elsif count == 1
-      '1'
-    else
-      '1+'
-    end
-  end
-
-  def custom_field_classes(field)
-    if field.verified?
+  def field_verified_class(verified)
+    if verified
       'verified'
     else
       'emojify'
@@ -65,5 +61,13 @@ module HomeHelper
     elsif approved_registrations?
       t('auth.apply_for_account')
     end
+  end
+
+  # @_longwhile — 가입이 닫혀 있어도 유효한 초대로 들어왔으면 가입할 수 있다. 심사를 건너뛰지 못하는 초대면 심사 신청이다.
+  def sign_up_button_label(invite)
+    return t('auth.register') if open_registrations? || invite&.bypass_approval?
+    return t('auth.apply_for_account') if invite.present?
+
+    sign_up_message
   end
 end

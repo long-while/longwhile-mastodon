@@ -19,6 +19,9 @@ class UpdateScheduledStatusService < BaseService
     # worker publishes the old content and then destroys the record.
     raise Mastodon::ValidationError, I18n.t('scheduled_statuses.publishing_in_progress') if @scheduled_status.publishing?
 
+    # 대화 안내문 표식은 서버만 붙인다(DmRoom.reserved_event_marker?).
+    raise Mastodon::ValidationError, I18n.t('dm_rooms.errors.reserved_spoiler_text') if DmRoom.reserved_event_marker?(@options[:spoiler_text])
+
     ApplicationRecord.transaction do
       resolve_media!
       validate_as_status!

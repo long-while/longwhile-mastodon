@@ -11,6 +11,7 @@ describe('<Column />', () => {
   describe('<ColumnHeader /> click handler', () => {
     it('runs the scroll animation if the column contains scrollable content', () => {
       const scrollToMock = vi.fn();
+      // 칼럼 헤더가 모바일 메뉴 사진을 그리려고 스토어를 읽는다.
       const { container } = render(
         <Provider store={store}>
           <Column heading='notifications' icon='notifications' iconComponent={fakeIcon}>

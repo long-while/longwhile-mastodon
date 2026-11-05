@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
-# @_longwhile custom feature
+# @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 채팅
+#   dm:rebuild_status_ids  account_conversations.status_ids 재구성 (상한 롤백용)
+#   dm:repair_misplaced    다른 방의 스레드에 잘못 들어간 메시지를 제 방으로 옮김
+#   dm:seed                개발·스테이징용 테스트 데이터 생성
+#   근거: dm-chat-phase-0.md P0-2 §2.4, P0-4
 
 namespace :dm do
   desc 'account_conversations.status_ids 를 statuses 로부터 다시 채운다 (STATUS_IDS_LIMIT 롤백용)'
@@ -29,9 +33,18 @@ namespace :dm do
         rebuilt = AccountConversation.remaining_status_ids(conversation)
 
         if rebuilt.empty?
+          # 되찾을 메시지가 없다. 두 경우를 구분한다.
+          #
+          #   last_status 가 아직 있다  버려졌을 뿐 남아 있는 대화다. 건드리지 않는다.
+          #                            재구성은 복구 도구이지 정리 도구가 아니다.
+          #   last_status 가 사라졌다  뜬 참조다. belongs_to :last_status 가 required 라
+          #                            이 행은 update 마다 예외를 낸다. 지운다.
           if Status.unscoped.exists?(id: conversation.last_status_id)
             skipped += 1
           elsif AccountConversation::REFILL_SCAN_LIMIT
+            # 되찾기가 창(REFILL_SCAN_LIMIT) 안에서만 돌았으므로 "정말 0건" 이라고
+            # 단정할 수 없다. 창 밖에 메시지가 남아 있는데 지우면 데이터 손실이다.
+            # 수리는 STATUS_IDS_LIMIT=0 으로 다시 돌릴 때만 한다.
             skipped += 1
             $stdout.puts "  ? id=#{conversation.id} 는 last_status 가 사라졌지만 창 안에서 대체를 못 찾았습니다. STATUS_IDS_LIMIT=0 으로 다시 돌리십시오."
           else
@@ -39,11 +52,14 @@ namespace :dm do
             repaired += 1
           end
         elsif rebuilt != conversation.status_ids
+          # set_last_status 콜백이 정렬·중복 제거·상한을 다시 적용하고 last_status_id 도
+          # 함께 맞춘다. 여기서는 원본만 넣는다.
           conversation.status_ids = rebuilt
           conversation.save!
           changed += 1
         end
       rescue => e
+        # 한 행 때문에 전체가 죽으면 어디까지 처리했는지 알 수 없게 된다.
         failed += 1
         $stdout.puts "  ! id=#{conversation.id} 실패: #{e.class} #{e.message}"
       end
@@ -75,6 +91,9 @@ namespace :dm do
       last_id = conversation.id
 
       begin
+        # participant_account_ids 는 수신자 본인을 뺀 목록이다. 방의 키는 본인을
+        # 포함해야 하므로 여기서 정규화한다. 이 차이를 놓치면 백필 결과가 통째로
+        # 어긋난다. (dm-chat-phase-1.md §1.3)
         member_ids = conversation.participant_account_ids + [conversation.account_id]
 
         if member_ids.uniq.size < 2
@@ -84,9 +103,15 @@ namespace :dm do
 
         room = DmRoom.find_or_create_for(member_ids)
 
+        # 이미 붙어 있으면 update_all 이 0행을 고친다. 재실행해도 중복 방이 생기지
+        # 않는다.
         room.attach_conversation!(conversation.conversation_id)
         attached += 1
 
+        # 방에 실제로 속한 글로만 last_status 를 세운다. conversation 안에는 답글로
+        # 딸려 들어온 다른 공개 범위의 글이나 멘션 구성이 다른 글이 섞여 있는데,
+        # 그것을 방의 마지막 메시지로 잡으면 목록 미리보기가 전 멤버에게 그 내용을
+        # 보여준다. rewind_last_status! 가 참여자 조합까지 확인한다.
         room.rewind_last_status!
       rescue => e
         failed += 1
@@ -126,6 +151,8 @@ namespace :dm do
     $stdout.puts passed ? '통과' : '실패 — 위 숫자를 확인하세요.'
   end
 
+  # 기본은 미리보기다. 무엇을 옮길지 확인한 뒤 APPLY=true 로 다시 돌린다.
+  # 두 번 돌려도 된다 — 옮긴 메시지는 제 방에 붙어 다음 실행에서 걸리지 않는다.
   desc '다른 방의 스레드에 잘못 들어간 DM 을 제 방으로 옮긴다 (APPLY=true 로 실행)'
   task repair_misplaced: :environment do
     apply  = ENV['APPLY'] == 'true'
@@ -156,6 +183,9 @@ namespace :dm do
 
   desc '개발·스테이징용 DM 테스트 데이터 생성'
   task seed: :environment do
+    # 환경 가드는 Mastodon::DmSeeder#call 안에 있다. 여기에 또 두면 두 조건이
+    # 서로 다른 ALLOW_DM_SEED 값을 요구해 정상 경로가 막힌다. 가드는 쓰기 지점
+    # 하나에만 둔다 — 콘솔이나 `bin/rails runner` 로도 비켜갈 수 없어야 한다.
     require_relative '../mastodon/dm_seeder'
 
     Mastodon::DmSeeder.new(

@@ -69,6 +69,17 @@ RSpec.describe Notification do
       end
     end
 
+    context 'when the notification is a quoted post update notification' do
+      it 'sets the notification from_account correctly' do
+        status = Fabricate(:status)
+        quote = Fabricate(:quote, quoted_status: status)
+
+        notification = Fabricate.build(:notification, activity_type: 'Status', type: 'quoted_update', activity: quote.status)
+
+        expect(notification.from_account).to eq(status.account)
+      end
+    end
+
     context 'when activity_type is a Follow' do
       it 'sets the notification from_account correctly' do
         follow = Fabricate(:follow)
@@ -321,6 +332,10 @@ RSpec.describe Notification do
       end
     end
   end
+  # @_longwhile — 탈퇴(익명화)한 사람의 알림은 목록에 올리지 않는다.
+  # 탈퇴는 정지가 아니라서 without_suspended 로는 걸리지 않는다 —
+  # DeleteAccountService 가 글을 남기는 모드에서 suspended_at 을 nil 로 두고
+  # anonymized_at 만 채운다.
   describe '.browserable with a departed sender' do
     let(:receiver) { Fabricate(:account) }
     let(:departed) { Fabricate(:account, anonymized_at: Time.now.utc, display_name: Account::ANONYMIZED_DISPLAY_NAME) }

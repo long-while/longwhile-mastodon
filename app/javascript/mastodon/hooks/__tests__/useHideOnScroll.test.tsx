@@ -22,7 +22,7 @@ describe('nextHeaderState', () => {
   });
 
   it('ignores a tiny nudge down but hides after a real scroll down', () => {
-    expect(scrollThrough([200, 205]).hidden).toBe(true);
+    expect(scrollThrough([200, 205]).hidden).toBe(true); // 200 이 이미 큰 이동
     expect(scrollThrough([200, 400, 405]).hidden).toBe(true);
     expect(nextHeaderState({ ...start, lastY: 300 }, 304, HEADER).hidden).toBe(
       false,
@@ -37,6 +37,7 @@ describe('nextHeaderState', () => {
   });
 
   it('starts counting again when the direction changes', () => {
+    // 위로 100 → 아래로 조금 → 위로 100: 합치면 200 이지만 끊겼으니 안 나온다.
     expect(scrollThrough([500, 1000, 900, 910, 810]).hidden).toBe(true);
   });
 
@@ -61,6 +62,7 @@ const Bar = () => {
   return <div className='ui__navigation-bar' ref={ref} />;
 };
 
+// 브라우저처럼 콜백을 모아 두었다가 "다음 프레임" 에 한꺼번에 돌린다.
 let frames: FrameRequestCallback[] = [];
 
 const scrollTo = (y: number) => {

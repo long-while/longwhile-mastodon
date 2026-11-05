@@ -34,11 +34,11 @@ module ApplicationHelper
     Setting.registrations_mode == 'none'
   end
 
-  def available_sign_up_path
+  def available_sign_up_url
     if closed_registrations? || omniauth_only?
-      'https://joinmastodon.org/#getting-started'
+      'https://joinmastodon.org/'
     else
-      ENV.fetch('SSO_ACCOUNT_SIGN_UP', new_user_registration_path)
+      ENV.fetch('SSO_ACCOUNT_SIGN_UP', new_user_registration_url)
     end
   end
 
@@ -66,7 +66,7 @@ module ApplicationHelper
 
   def provider_sign_in_link(provider)
     label = Devise.omniauth_configs[provider]&.strategy&.display_name.presence || I18n.t("auth.providers.#{provider}", default: provider.to_s.chomp('_oauth2').capitalize)
-    link_to label, omniauth_authorize_path(:user, provider), class: "button button-#{provider}", method: :post
+    link_to label, omniauth_authorize_path(:user, provider), class: "btn button-#{provider}", method: :post
   end
 
   def locale_direction
@@ -102,7 +102,18 @@ module ApplicationHelper
     policy(record).public_send(:"#{action}?")
   end
 
+  def conditional_link_to(condition, name, options = {}, html_options = {}, &block)
+    if condition && !current_page?(block_given? ? name : options)
+      link_to(name, options, html_options, &block)
+    elsif block_given?
+      content_tag(:span, options, html_options, &block)
+    else
+      content_tag(:span, name, html_options)
+    end
+  end
+
   def material_symbol(icon, attributes = {})
+    whitespace = attributes.delete(:whitespace) { true }
     safe_join(
       [
         inline_svg_tag(
@@ -111,9 +122,13 @@ module ApplicationHelper
           role: :img,
           data: attributes[:data]
         ),
-        ' ',
+        whitespace ? ' ' : '',
       ]
     )
+  end
+
+  def emptyphaunt
+    inline_svg_tag 'elephant_ui.svg'
   end
 
   def check_icon
@@ -142,15 +157,44 @@ module ApplicationHelper
     tag.meta(content: content, property: property)
   end
 
+  def html_attributes
+    base = {
+      lang: I18n.locale,
+      class: html_classes,
+      'data-contrast': contrast.parameterize,
+      'data-color-scheme': page_color_scheme.parameterize,
+    }
+
+    base[:'data-system-theme'] = 'true' if page_color_scheme == 'auto'
+
+    base
+  end
+
+  # @_longwhile — 화면 설정 클래스는 <body> 에만 단다(body_classes). <html> 에도 달면
+  # `.custom-scrollbars ::-webkit-scrollbar-thumb`(후손 선택자)가 <body> 자신의 스크롤바에도
+  # 걸려 4.5 와 스크롤바 모양이 달라진다. 고정 프런트는 <html> 의 클래스를 읽지 않는다.
+  def html_classes
+    content_for(:html_classes).to_s
+  end
+
+  # @_longwhile — 4.6 은 아래 클래스들을 <html>(html_classes)로 옮기고 theme-* 를 없앴다.
+  # 고정 프런트와 bird-ui·theme-ui 테마는 <body> 에서 찾으므로(body.theme-…, body.rtl,
+  # emoji.js 의 테마 판별) 4.5 처럼 <body> 에도 계속 낸다. 빠지면 라이트 테마가 통째로 깨진다.
   def body_classes
     output = []
     output << content_for(:body_classes)
     output << "theme-#{current_theme.parameterize}"
+    output.concat(display_setting_classes)
+    output.compact_blank.join(' ')
+  end
+
+  def display_setting_classes
+    output = []
     output << 'system-font' if current_account&.user&.setting_system_font_ui
     output << 'custom-scrollbars' unless current_account&.user&.setting_system_scrollbars_ui
     output << (current_account&.user&.setting_reduce_motion ? 'reduce-motion' : 'no-reduce-motion')
     output << 'rtl' if locale_direction == 'rtl'
-    output.compact_blank.join(' ')
+    output
   end
 
   def cdn_host
@@ -180,6 +224,9 @@ module ApplicationHelper
       text: [params[:title], params[:text], params[:url]].compact.join(' '),
     }
 
+    # 공유 인텐트(?visibility=)로 기본값보다 더 좁은 범위만 고를 수 있게 한다.
+    # 공지 계정의 기본값은 unlisted 라 목록에 함께 둔다 — 빼면 index 가 nil 이 되어
+    # 그 계정의 모든 페이지 렌더가 터진다.
     permit_visibilities = %w(unlisted private direct)
     default_privacy     = current_account&.user&.setting_default_privacy
     default_index       = permit_visibilities.index(default_privacy)
@@ -234,6 +281,10 @@ module ApplicationHelper
     tag.input(type: :text, maxlength: 999, spellcheck: false, readonly: true, **options)
   end
 
+  def recent_tag_users(tag)
+    tag.statuses.public_visibility.joins(:account).merge(Account.without_suspended.without_silenced).includes(:account).limit(3).map(&:account)
+  end
+
   def recent_tag_usage(tag)
     people = tag.history.aggregate(2.days.ago.to_date..Time.zone.today).accounts
     I18n.t 'user_mailer.welcome.hashtags_recent_count', people: number_with_delimiter(people), count: people
@@ -245,6 +296,10 @@ module ApplicationHelper
 
   def app_store_url_android
     'https://play.google.com/store/apps/details?id=org.joinmastodon.android'
+  end
+
+  def within_authorization_flow?
+    session[:user_return_to].present? && Rails.application.routes.recognize_path(session[:user_return_to])[:controller] == 'oauth/authorizations'
   end
 
   private

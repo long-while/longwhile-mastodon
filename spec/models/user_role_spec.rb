@@ -3,6 +3,20 @@
 require 'rails_helper'
 
 RSpec.describe UserRole do
+  # @_longwhile — 포크 권한이 업스트림 비트와 겹치면 저장된 권한의 뜻이 조용히 바뀐다
+  #   (4.5 의 view_feeds 가 1 << 20 을 가져갔다). 비트가 서로 겹치지 않는지 지킨다.
+  describe 'FLAGS' do
+    it 'gives every permission its own bit' do
+      expect(described_class::FLAGS.values.uniq.size).to eq(described_class::FLAGS.size)
+      expect(described_class::FLAGS.values).to all(satisfy { |value| value.nobits?(value - 1) })
+    end
+
+    it 'keeps can_be_private_account clear of the bits upstream uses' do
+      expect(described_class::FLAGS[:can_be_private_account]).to eq(1 << 30)
+      expect(described_class::FLAGS[:view_feeds]).to eq(1 << 20)
+    end
+  end
+
   describe 'Validations' do
     describe 'name' do
       context 'when everyone' do
@@ -31,6 +45,12 @@ RSpec.describe UserRole do
       it { is_expected.to_not allow_values('x', '112233445566', '#xxyyzz').for(:color) }
     end
 
+    describe 'collection_limit' do
+      subject { Fabricate.build :user_role }
+
+      it { is_expected.to validate_numericality_of(:collection_limit).only_integer.is_greater_than_or_equal_to(0) }
+    end
+
     context 'when current_account is set' do
       subject { Fabricate :user_role }
 
@@ -47,6 +67,17 @@ RSpec.describe UserRole do
 
         it { is_expected.to_not allow_value(100).for(:permissions).against(:permissions_as_keys).with_message(:own_role) }
         it { is_expected.to_not allow_value(100).for(:position).with_message(:own_role) }
+        it { is_expected.to_not allow_value(true).for(:require_2fa).with_message(:own_role) }
+      end
+
+      context 'when current_account is changing their own role and is an admin' do
+        subject { Fabricate(:user_role, permissions: UserRole::FLAGS[:administrator]) }
+
+        let(:account) { Fabricate :account, user: Fabricate(:user, role: subject) }
+
+        it { is_expected.to_not allow_value(100).for(:permissions).against(:permissions_as_keys).with_message(:own_role) }
+        it { is_expected.to_not allow_value(100).for(:position).with_message(:own_role) }
+        it { is_expected.to allow_value(true).for(:require_2fa) }
       end
     end
   end

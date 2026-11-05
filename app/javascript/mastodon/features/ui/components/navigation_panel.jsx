@@ -59,9 +59,29 @@ import { FollowersCounter, FollowingCounter } from 'mastodon/components/counters
 import { ShortNumber } from 'mastodon/components/short_number';
 import { me } from 'mastodon/initial_state';
 
+// @_longwhile — 운영진의 "모든 채팅" 아이콘.
+//   답장할 멘션과 **같은 그림**을 쓴다. 같은 파일을 두 번 import 하면 중복
+//   import 로 잡히므로 별칭만 둔다.
+//   두 항목이 한 내비에 나란히 서면 그림이 겹친다 — 운영진에게만 보이는 항목이라
+//   당장은 헷갈릴 자리가 좁지만, 서로 다른 그림을 쓰는 편이 낫다.
 const MessagesAllIcon = PendingMentionsIcon;
 const MessagesAllActiveIcon = PendingMentionsActiveIcon;
 
+// @_longwhile — 채팅 두 항목의 활성 판정.
+//
+//   상류의 `exact` 로는 `/messages/3` 에서 "채팅" 이 꺼진다. 그렇다고 접두사
+//   일치로 두면 `/messages/all/3` 에서 **둘 다** 켜진다 — 두 항목이 경로를
+//   나눠 갖고 있기 때문이다. 그래서 판정을 여기서 직접 적는다.
+//
+//     /messages          채팅
+//     /messages/3        채팅
+//     /messages/all      모든 채팅
+//     /messages/all/3    모든 채팅
+//
+//   `/messages/all` 로 시작하는지를 먼저 본다. 순서를 뒤집으면 "채팅" 이 운영진
+//   화면까지 가져간다.
+//   시그니처는 react-router 의 것이다 — `(match, location)`. NavLink 는 경로가
+//   맞지 않아도 이 함수를 부르므로(`match` 가 null 인 채로) `location` 만 본다.
 const isAllMessagesPathname = (pathname) =>
   pathname === '/messages/all' || pathname.startsWith('/messages/all/');
 
@@ -130,6 +150,7 @@ const ProfileSummary = connect((state) => {
         </div>
       </Link>
 
+      {/* 카드 바깥에 둔다 — 카드 전체가 링크라 안에 넣으면 링크가 겹친다. */}
       {showCounts && (
         <ProfileCounts
           acct={acct}
@@ -187,6 +208,11 @@ const AccountSwitcherMenuItem = () => {
   );
 };
 
+// @_longwhile — 모바일 서랍 맨 위(하단 막대로 옮겨 간 "홈" 이 있던 자리)의 내 프로필.
+//   이 항목에는 테마의 `order` 규칙이 없어 기본값 0 이 되므로 홈(1)보다 위,
+//   맨 위에 온다 — 여기서는 **일부러** 그렇게 둔다(CLAUDE.md 의 내비게이션 순서).
+//   아이콘은 테마가 원본 path 를 지우므로 `.icon-profile` 마스크 규칙이 테마
+//   single-column 두 파일에 함께 있다. 서랍은 단일 칼럼에서만 그려진다.
 const ProfileLink = () => {
   const intl = useIntl();
   const acct = useSelector(state => state.getIn(['accounts', me, 'acct']));
@@ -229,12 +255,37 @@ const NotificationsLink = () => {
   );
 };
 
+// ─── @_longwhile — 안 읽은 DM 배지 ───
+//   알림과 같은 모양으로 안 읽은 **메시지 수**를 띄운다. 방 수가 아니라 메시지
+//   수인 이유는 목록 카드가 방마다 같은 기준으로 숫자를 보이기 때문이다 — 두
+//   숫자가 다른 것을 세면 배지와 목록이 어긋나 보인다.
+//
+//   **항목 자체는 늘 보인다.** 팔로우 요청과 다르다. 그쪽은 승인제를 안 쓰면
+//   평생 0 이라 감췄지만, 메시지는 배지가 0 이어도 들어갈 일이 있는 화면이다.
+//
+//   개수는 목록에서 센다. 서버가 총합만 주는 API 가 따로 없고, 어차피 눌러
+//   들어가면 같은 목록을 쓴다. 새 DM 이 오면 user 스트림의 `conversation` 이
+//   dmChatStreamUpdate 를 깨워 목록을 다시 읽으므로(actions/streaming.js) 새로
+//   고치지 않아도 배지가 는다. 읽으면 markDmRoomRead 응답이 그 방의 unread_count
+//   를 0 으로 만들어 배지가 준다.
+//
+//   아이콘은 테마 SCSS 가 mask-image 로 갈아 끼운다(.icon-messages →
+//   bird-theme-svg/envelope). IconWithBadge 가 감싸도 `.icon-messages` 는 그대로
+//   붙으므로 알림(.icon-bell)과 같은 방식으로 동작한다.
 const MessagesLink = () => {
   const dispatch = useDispatch();
   const count = useSelector(selectUnreadDmCount);
   const intl = useIntl();
   const label = intl.formatMessage(messages.messages);
 
+  // **인자 없이 부르지 않는다.** createAsyncThunk 는 넘긴 것을 그대로 `meta.arg`
+  // 로 싣는데, 아무것도 안 넘기면 그것이 `undefined` 가 된다. fulfilled 리듀서가
+  // 거기서 `meta.arg.refresh` 를 읽으므로 **리듀서가 통째로 터지고**, 상태가
+  // pending 인 채로 남아 목록이 비고 배지가 0 이 된다.
+  //
+  // 새로고침하면 배지가 사라지던 것이 이것이다. 스트림이 부르는 쪽은
+  // `{ refresh: true }` 를 넘겨서 멀쩡했고, 그래서 **DM 이 새로 와야만 배지가
+  // 살아나는** 모양이 됐다.
   useEffect(() => {
     dispatch(fetchDmRooms({}));
   }, [dispatch]);
@@ -251,6 +302,13 @@ const MessagesLink = () => {
   );
 };
 
+// ─── @_longwhile — 들어온 팔로우 요청 ───
+//   **요청이 하나라도 있을 때만 나타난다.** 승인제를 쓰지 않는 사용자에게는
+//   평생 0 인 항목이라, 늘 띄워두면 자리만 차지한다.
+//
+//   개수는 목록에서 센다. 서버가 개수만 주는 API 가 따로 없고, 어차피 눌러
+//   들어가면 같은 목록을 쓴다. 새 요청은 알림 스트림을 타고 리듀서가 목록 앞에
+//   끼워 넣으므로(reducers/user_lists.js), 새로고침하지 않아도 배지가 는다.
 const FollowRequestsLink = () => {
   const dispatch = useDispatch();
   const count = useSelector(state => state.getIn(['user_lists', 'follow_requests', 'items'])?.size ?? 0);
@@ -303,6 +361,9 @@ class NavigationPanel extends Component {
     renderComposeButton: PropTypes.bool,
     isBelowFullBreakpoint: PropTypes.bool,
     isMobileBreakpoint: PropTypes.bool,
+    // 모바일 서랍 안에 그려질 때(CollapsibleNavigationPanel). 폭이 아니라 이것으로
+    // 정한다 — 폭 기준(760)과 레이아웃 기준(759)이 1px 어긋나, 760px 에서는
+    // 오른쪽 고정 패널이 서랍 모양으로 그려졌다.
     drawer: PropTypes.bool,
   };
 
@@ -313,6 +374,7 @@ class NavigationPanel extends Component {
     isMobileBreakpoint: false,
   };
 
+  // 퍼블릭은 홈 위의 탭으로 간다(TimelineTabs). 그 탭에 있을 때도 홈을 켠다.
   isTimelineTabActive = (match, location) => {
     return match || TIMELINE_TAB_PATHS.includes(location.pathname);
   };
@@ -326,6 +388,8 @@ class NavigationPanel extends Component {
     const isFullView = !isBelowFullBreakpoint;
     const showIdentitySection = signedIn && !isFullView;
     const profileAvatarSize = isFullView ? 48 : 36;
+    // @_longwhile — 모바일 서랍은 X 처럼 내 프로필로 시작한다. 로고는 빼고,
+    // 프로필을 검색칸보다 위로 올리고, 팔로잉·팔로워 수를 함께 보인다.
     const isMobileDrawer = !!this.props.drawer;
     const profileSection = showIdentitySection && (
       <ProfileSection
@@ -407,12 +471,18 @@ class NavigationPanel extends Component {
         : '';
     const settingsHref = `${origin}/settings/profile`;
 
+    // @_longwhile — 모바일 서랍에서는 하단 막대에 이미 있는 넷(홈·답장할 멘션·
+    //   알림·채팅)을 빼고 그린다. 두 군데에 같은 항목이 있으면 서랍만 길어진다.
+    //   하단 막대와 짝이다(navigation_bar.tsx). PC 사이드바는 그대로다.
+    //   JSX 에서 빼므로 테마의 `order` 규칙은 건드리지 않는다 — PC 에서 쓴다.
     const inBottomBar = !!this.props.drawer;
 
     return (
       <>
         {inBottomBar && <ProfileLink />}
 
+        {/* 퍼블릭 항목은 없앴다 — 홈 위의 탭으로 간다. 테마의 `order` 규칙도
+            네 파일에서 함께 지웠다(CLAUDE.md 의 내비게이션 순서 항목). */}
         {!inBottomBar && (
           <>
             <ColumnLink transparent to='/home' isActive={this.isTimelineTabActive} icon='home' iconComponent={HomeIcon} activeIconComponent={HomeActiveIcon} text={homeLabel} />
@@ -420,11 +490,23 @@ class NavigationPanel extends Component {
             <ColumnLink transparent to='/pending-mentions' icon='pending' iconComponent={PendingMentionsIcon} activeIconComponent={PendingMentionsActiveIcon} text={pendingMentionsLabel} />
           </>
         )}
+        {/* @_longwhile — 채팅과 기존 다이렉트 타임라인을 최상위에 함께 두지 않는다.
+            둘 다 있으면 사용자가 차이를 알 수 없다. 채팅이 켜져 있으면 그것만
+            내비에 두고, 기존 화면은 /conversations 로 여전히 열린다 —
+            3인 이상 대화가 그리로 떨어지므로 경로 자체는 살아 있어야 한다.
+            (기획서 오픈 이슈 OI-10)
+
+            아이콘은 테마 SCSS 가 mask-image 로 갈아 끼운다
+            (.icon-messages → bird-theme-svg/envelope). 아래의 MailIcon 은
+            테마를 쓰지 않는 기본 화면용 원본이다. */}
         {dmChatEnabled ? (
           !inBottomBar && <MessagesLink />
         ) : (
           <ColumnLink transparent to='/conversations' icon='at' iconComponent={AlternateEmailIcon} text={directLabel} />
         )}
+        {/* @_longwhile — 운영진의 DM 전체 열람. 판정은 서버의
+            Admin::DirectMessagePolicy(`administrator` 또는 `manage_roles`)와 같게
+            맞춘다. 여기서 감추는 것은 편의일 뿐이고, 진짜 방어선은 API 쪽이다. */}
         {dmChatEnabled && canManageDirectMessages(permissions) && (
           <ColumnLink transparent to='/messages/all' isActive={isMessagesAllPath} icon='messages-all' iconComponent={MessagesAllIcon} activeIconComponent={MessagesAllActiveIcon} text={intl.formatMessage(messages.messagesAll)} />
         )}
@@ -432,6 +514,11 @@ class NavigationPanel extends Component {
         <ColumnLink transparent to='/bookmarks' icon='bookmarks' iconComponent={BookmarksIcon} activeIconComponent={BookmarksActiveIcon} text={bookmarksLabel} />
         <ColumnLink transparent to='/lists' icon='list-ul' iconComponent={ListAltIcon} activeIconComponent={ListAltActiveIcon} text={listsLabel} />
         <ColumnLink transparent href={settingsHref} icon='cog' iconComponent={SettingsIcon} text={preferencesLabel} />
+        {/* 계정 전환 **위**. 요청이 없으면 아무것도 그리지 않는다.
+            실제 순서는 테마 SCSS 의 `order` 가 정하므로(CLAUDE.md 맨 앞의 함정)
+            네 파일에서 팔로우 요청 12 / 계정 전환 13 으로 함께 바꿨다. 여기
+            순서는 DOM 순서일 뿐이지만, 둘이 어긋나 있으면 다음 사람이 JSX 만
+            보고 잘못 읽는다. */}
         <FollowRequestsLink />
         {includeAccountSwitcher && <AccountSwitcherMenuItem />}
       </>
@@ -455,6 +542,10 @@ const NavigationPanelWithBreakpoints = (props) => {
 
 export default NavigationPanelWithBreakpoints;
 
+// 서랍이 열려 있는 동안: 뒤의 페이지가 스크롤되지 않게 막고(iOS 에서 어두운
+// 바깥을 끌면 타임라인이 움직였다), 포커스를 서랍으로 옮겼다가 닫히면 연
+// 자리(헤더의 사진)로 돌려준다. 서랍 안의 첫 링크가 아니라 서랍 자체에 둔다 —
+// 검색칸이 먼저 잡히면 모바일 키보드가 튀어나온다.
 const useDrawerFocusAndScrollLock = (active, wrapperRef) => {
   useEffect(() => {
     if (!active) return undefined;
@@ -470,6 +561,8 @@ const useDrawerFocusAndScrollLock = (active, wrapperRef) => {
 
       if (!wrapperRef.current?.contains(document.activeElement)) return;
 
+      // 링크를 눌러 화면이 바뀌었으면 연 단추는 이미 사라졌다. 새 화면 헤더의
+      // 사진으로 돌려준다(iOS 에서는 연 자리가 body 인 경우도 있다).
       const target = returnFocus instanceof HTMLElement && returnFocus.isConnected && returnFocus !== document.body
         ? returnFocus
         : document.querySelector('.column-header__avatar-menu');
@@ -479,8 +572,12 @@ const useDrawerFocusAndScrollLock = (active, wrapperRef) => {
   }, [active, wrapperRef]);
 };
 
+// 서랍 위에 뜬 창(계정 관리, 일반 모달)이 Esc 를 먼저 쓴다.
 const OVERLAY_ABOVE_DRAWER = '.account-switcher__manage-overlay, .modal-root__container';
 
+// 위의 창들은 `keydown` 에서 닫히고 서랍은 `keyup` 에서 닫혀서, Esc 한 번에
+// 둘 다 닫혔다. 키를 누른 순간(캡처 단계 — 그 창이 닫히기 전)에 위에 창이
+// 있었으면 그 Esc 는 서랍 몫이 아니다.
 const useCloseOnEscape = (open, dispatch) => {
   useEffect(() => {
     if (!open) return undefined;
@@ -525,6 +622,7 @@ export const CollapsibleNavigationPanel = () => {
 
   openRef.current = navigationOpen;
 
+  // 코드로 화면이 바뀌어도(검색 등) 닫는다. 닫혀 있으면 아무것도 보내지 않는다.
   useEffect(() => {
     if (openRef.current) dispatch(closeNavigation());
   }, [location.pathname, dispatch]);
@@ -538,6 +636,8 @@ export const CollapsibleNavigationPanel = () => {
     }
   }, [isMobile, navigationOpen, dispatch]);
 
+  // 열린 채로 사라지면(화면을 넓혀 모바일 레이아웃을 벗어나면) 닫아 둔다. 안
+  // 그러면 `navigation.open` 이 남아, 다시 좁혔을 때 서랍이 저절로 열린다.
   useEffect(() => () => {
     dispatch(closeNavigation());
   }, [dispatch]);
@@ -548,6 +648,8 @@ export const CollapsibleNavigationPanel = () => {
     }
   }, [dispatch]);
 
+  // 서랍 안의 링크를 누르면 닫는다. 주소가 바뀔 때만 닫으면, 지금 보고 있는
+  // 화면의 항목(홈에서 "홈")을 눌렀을 때 서랍이 그대로 남는다.
   const handleLinkClickCapture = useCallback((event) => {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     if (event.target instanceof Element && event.target.closest('a[href]')) {
@@ -563,6 +665,15 @@ export const CollapsibleNavigationPanel = () => {
     'navigation-panel__wrapper--open': !isMobile || navigationOpen,
   });
 
+  // @_longwhile — 서랍은 `document.body` 로 꺼낸다.
+  //
+  //   제자리(`.columns-area__panels` 안)에 두면 하단 막대 위로 올라갈 수 없다.
+  //   bird-ui 가 그 요소에 `z-index: 2` 를 주는데, `.ui` 의 flex 자식이라 거기서
+  //   쌓임 맥락이 새로 생긴다. 그 안에서는 z-index 를 얼마로 올려도 바깥의
+  //   막대(z 40)와는 2 로 비교된다.
+  //
+  //   닫혀 있을 때 화면 밖의 링크로 포커스가 들어가지 않는 것은 CSS 의
+  //   `visibility` 가 맡는다(components.scss 의 서랍 블록).
   return createPortal(
     <div
       className={containerClassName}
@@ -577,6 +688,8 @@ export const CollapsibleNavigationPanel = () => {
         aria-label={shouldShowOverlay ? intl.formatMessage(messages.menu) : undefined}
         onClickCapture={handleLinkClickCapture}
       >
+        {/* @_longwhile — 모바일 서랍에서는 '새 게시물' 단추와 로고를 두지 않는다.
+            같은 화면 오른쪽 아래에 띄우기 단추(FAB)가 이미 있어 둘이 겹친다. */}
         <NavigationPanelWithBreakpoints
           renderSearch
           renderComposeButton={!isMobile}

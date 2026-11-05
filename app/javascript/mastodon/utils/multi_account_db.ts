@@ -199,12 +199,11 @@ export const loadAllEntries = async (): Promise<Record<string, MultiAccountEntry
       payload: EncryptedPayload;
     }> = [];
 
-    // Records whose key and `entry.id` disagree are repaired here. The two
-    // should always match, but older switch code keyed by "the account that
-    // was asked for" while writing "the token's real owner" into the entry.
-    // Left alone, the list draws rows by owner id while the switch looks the
-    // token up by key, so clicking only ever says the stored token is
-    // missing.
+    // @_longwhile — 키와 `entry.id` 가 어긋난 기록은 **여기서 고친다.**
+    //   저장할 때 둘은 늘 같아야 하는데, 옛 전환 코드가 "요청한 계정" 을 키로
+    //   쓰면서 "토큰의 실제 주인" 을 entry 에 적어 둔 적이 있다. 그대로 두면
+    //   목록은 주인(id)으로 줄을 그리고 전환은 키로 토큰을 찾아, 눌러도
+    //   "저장된 토큰을 찾을 수 없습니다" 만 나온다.
     const misKeyedRecords: { key: string; record: StoredAccountRecord }[] = [];
 
     for (const key of keys) {
@@ -238,7 +237,7 @@ export const loadAllEntries = async (): Promise<Record<string, MultiAccountEntry
       }
 
       try {
-        // If a correct record already exists, keep it and drop this row.
+        // 제대로 된 기록이 이미 있으면 그쪽을 남기고 이 줄만 버린다.
         if (!entries[entry.id]) {
           await db.put(STORE_NAME, record, entry.id);
           entries[entry.id] = entry;

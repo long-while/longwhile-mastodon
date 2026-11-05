@@ -6,12 +6,23 @@ RSpec.describe EmailAddressValidator do
   let(:record_class) do
     Class.new do
       include ActiveModel::Validations
+
+      def self.name = 'Record'
+
       attr_accessor :email
 
       validates :email, email_address: true
     end
   end
   let(:record) { record_class.new }
+
+  context 'with no options' do
+    subject { record_class.new }
+
+    it { is_expected.to allow_value('foo@example.com').for(:email) }
+    it { is_expected.to_not allow_value('foo @ example.com').for(:email) }
+    it { is_expected.to_not allow_value('foo@example.com%foo.example.com').for(:email) }
+  end
 
   describe '#validate_each' do
     context 'with a well-formed address' do

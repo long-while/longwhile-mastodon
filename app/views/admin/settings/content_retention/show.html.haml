@@ -4,6 +4,8 @@
 - content_for :heading do
   = render partial: 'admin/settings/shared/heading'
 
+-# @_longwhile — 원격 캐시 보관 기간 둘(미디어 · 콘텐츠)을 걷어냈다. 연합하지
+-# 않으므로 캐시할 원격 콘텐츠 자체가 없다. "위험 구역" 소제목도 함께 사라졌다.
 = simple_form_for @admin_settings, url: admin_settings_content_retention_path, html: { id: 'edit_admin_settings', method: :patch } do |f|
   = render 'shared/error_messages', object: @admin_settings
 

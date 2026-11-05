@@ -33,7 +33,7 @@ class Api::V2::NotificationsController < Api::BaseController
         'app.notification_grouping.expand_accounts_param' => expand_accounts_param
       )
 
-      render json: @presenter, serializer: REST::DedupNotificationGroupSerializer, relationships: @relationships, expand_accounts: expand_accounts_param
+      render json: @presenter, serializer: REST::DedupNotificationGroupSerializer, relationships: @relationships, expand_accounts: expand_accounts_param, supported_notification_types: params[:supported_types]
     end
   end
 
@@ -48,7 +48,7 @@ class Api::V2::NotificationsController < Api::BaseController
   def show
     @notification = current_account.notifications.without_unavailable.by_group_key(params[:group_key]).take!
     presenter = GroupedNotificationsPresenter.new(NotificationGroup.from_notifications([@notification]))
-    render json: presenter, serializer: REST::DedupNotificationGroupSerializer
+    render json: presenter, serializer: REST::DedupNotificationGroupSerializer, supported_notification_types: params[:supported_types]
   end
 
   def clear
@@ -105,6 +105,9 @@ class Api::V2::NotificationsController < Api::BaseController
     params[:min_id].present?
   end
 
+  # @_longwhile — DM 을 뺄지 말지는 **요청이 정한다.** 근거는 Notification.browserable
+  #   의 주석. 기본은 **포함**이고, 빼는 쪽이 `exclude_direct_messages=true` 를 보낸다.
+  #   웹 UI 만 그것을 보낸다(api/notifications.ts).
   def browserable_account_notifications
     current_account.notifications.without_suspended.browserable(
       types: Array(browserable_params[:types]),
@@ -142,8 +145,12 @@ class Api::V2::NotificationsController < Api::BaseController
     params.slice(:include_filtered, :exclude_direct_messages, :types, :exclude_types, :grouped_types).permit(:include_filtered, :exclude_direct_messages, types: [], exclude_types: [], grouped_types: [])
   end
 
+  # `exclude_direct_messages` 를 여기에도 싣는다. 빠지면 **다음 페이지부터 DM 이
+  # 섞여 들어온다** — 웹의 알림함이 아래로 내려갈수록 DM 이 나타난다.
   def pagination_params(core_params)
-    params.slice(:limit, :include_filtered, :exclude_direct_messages, :types, :exclude_types, :grouped_types).permit(:limit, :include_filtered, :exclude_direct_messages, types: [], exclude_types: [], grouped_types: []).merge(core_params)
+    params.slice(:limit, :include_filtered, :exclude_direct_messages, :types, :exclude_types, :grouped_types, :supported_types)
+      .permit(:limit, :include_filtered, :exclude_direct_messages, types: [], exclude_types: [], grouped_types: [], supported_types: [])
+      .merge(core_params)
   end
 
   def expand_accounts_param

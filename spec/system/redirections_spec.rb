@@ -12,7 +12,7 @@ RSpec.describe 'redirection confirmations' do
         visit "/@#{account.pretty_acct}"
 
         expect(page)
-          .to have_content(redirect_title) # Redirect explanation
+          .to have_text(redirect_title) # Redirect explanation
           .and have_link(account.url, href: account.url) # Appropriate account link
           .and have_css('body', class: 'app-body')
       end
@@ -23,7 +23,7 @@ RSpec.describe 'redirection confirmations' do
         visit "/@#{account.pretty_acct}/#{status.id}"
 
         expect(page)
-          .to have_content(redirect_title) # Redirect explanation
+          .to have_text(redirect_title) # Redirect explanation
           .and have_link(status.url, href: status.url) # Appropriate status link
           .and have_css('body', class: 'app-body')
       end
@@ -31,6 +31,6 @@ RSpec.describe 'redirection confirmations' do
   end
 
   def redirect_title
-    I18n.t('redirects.title', instance: 'cb6e6126.ngrok.io')
+    I18n.t('redirects.title', instance: local_domain_uri.host)
   end
 end

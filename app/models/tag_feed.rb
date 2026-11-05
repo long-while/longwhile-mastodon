@@ -23,11 +23,14 @@ class TagFeed < PublicFeed
   # @param [Integer] min_id
   # @return [Array<Status>]
   def get(limit, max_id = nil, since_id = nil, min_id = nil)
+    return [] if incompatible_feed_settings?
+
     scope = public_scope
 
     scope.merge!(tagged_with_any_scope)
     scope.merge!(tagged_with_all_scope)
     scope.merge!(tagged_with_none_scope)
+    scope.merge!(tagged_with_cursor_scope(max_id, since_id, min_id))
     scope.merge!(local_only_scope) if local_only?
     scope.merge!(remote_only_scope) if remote_only?
     scope.merge!(account_filters_scope) if account?
@@ -38,8 +41,19 @@ class TagFeed < PublicFeed
 
   private
 
+  # 퍼블릭 툿의 산개 멘션 차단은 여기에 물려받지 않는다. 태그를 눌러 찾아온
+  # 화면에서 "멘션이 달렸다"는 이유로 툿이 사라지면 태그 기능 자체가 반쪽이 된다.
+  # 팔로우 범위·재게시 겹팔로워 규칙은 public_scope 에서 그대로 상속받는다.
   def exclude_mentioning_statuses?
     false
+  end
+
+  def local_feed_setting
+    Setting.local_topic_feed_access
+  end
+
+  def remote_feed_setting
+    Setting.remote_topic_feed_access
   end
 
   def tagged_with_any_scope
@@ -52,6 +66,14 @@ class TagFeed < PublicFeed
 
   def tagged_with_none_scope
     Status.group(:id).tagged_with_none(tags_for(options[:none]))
+  end
+
+  def tagged_with_cursor_scope(max_id, since_id, min_id)
+    lower_id = min_id.presence || since_id.presence
+    scope = Status.all
+    scope = scope.where(statuses_tags: { status_id: ...max_id }) if max_id.present?
+    scope = scope.where('statuses_tags.status_id > ?', lower_id) if lower_id.present?
+    scope
   end
 
   def tags_for(names)

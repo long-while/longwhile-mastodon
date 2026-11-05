@@ -5,9 +5,21 @@ require 'rails_helper'
 RSpec.describe 'Invites' do
   include ActionView::RecordIdentifier
 
-  let(:user) { Fabricate :user }
+  # 이 포크는 초대를 운영진 전용으로 돌렸다(UserRole::Flags::DEFAULT = NONE). 운영진으로 본다.
+  let(:user) { Fabricate :moderator_user }
 
   before { sign_in user }
+
+  describe 'Viewing invites as a regular user' do
+    let(:user) { Fabricate :user }
+
+    it 'is forbidden' do
+      visit invites_path
+
+      expect(page)
+        .to have_title(I18n.t('errors.403'))
+    end
+  end
 
   describe 'Viewing invites' do
     it 'Lists existing user invites' do
@@ -17,7 +29,7 @@ RSpec.describe 'Invites' do
 
       within css_id(invite) do
         expect(page)
-          .to have_content(invite.uses)
+          .to have_text(invite.uses)
           .and have_private_cache_control
         expect(copyable_field.value)
           .to eq(public_invite_url(invite_code: invite.code))
@@ -46,7 +58,7 @@ RSpec.describe 'Invites' do
         .to change { invite.reload.expired? }.to(true)
 
       within css_id(invite) do
-        expect(page).to have_content I18n.t('invites.expired')
+        expect(page).to have_text I18n.t('invites.expired')
       end
     end
   end

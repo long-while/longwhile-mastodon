@@ -13,10 +13,48 @@
   --modal-border-color: #{rgba(lighten($ui-base-color, 4%), 1)};
   --background-border-color: #{lighten($ui-base-color, 4%)};
 
+  /* @_longwhile — 커스텀 테마(bird-ui / theme-ui)가 타임라인 경계선용으로 쓰던
+     변수인데 **그 두 테마에만** 있었다. 그것을 쓰는 규칙이 기본 테마에서는
+     var() 가 통째로 무효가 되어 테두리가 조용히 사라진다(DM 목록의 필터 알약이
+     실제로 그랬다). 기본값을 여기에 둔다. */
   --color-border: var(--background-border-color);
 
+  /* @_longwhile — `--color-border` 와 같은 사정. 가라앉은 보조 글자용으로 커스텀
+     테마가 쓰던 변수인데 그 두 테마에만 있었다. 기본 테마에서는 var() 가 무효가
+     되어 글자색이 통째로 상속값으로 남는다. 저장소가 이미 같은 역할로 쓰는
+     $darker-text-color 를 기본값으로 둔다. */
   --color-dim: #{$darker-text-color};
 
+  /* @_longwhile — 아이콘 단추의 원형 반투명 호버.
+
+     **색을 하드코딩하지 않고 $primary-text-color 에서 뽑는다.** 그 변수는
+     다크에서 흰색, 라이트에서 검정이고, 이 파일은 **두 테마 각각의 변수 집합으로
+     따로 컴파일된다**(라이트 번들에서는 바로 아래 --background-color 도
+     hsl(0,0%,108%) 로 나온다). 그래서 정의 하나로 양쪽이 맞는다.
+
+     **커스텀 테마의 :root 에 두면 안 된다.** bird-ui 는 라이트와 다크가 같은
+     layout-single-column.scss 를 읽어 그 안의 :root 값이 **양쪽에 똑같이**
+     걸린다(실측: 라이트 테마에서도 --color-fg 가 #fff). 거기 있는
+     --color-profile-button-hover 같은 반투명 변수가 라이트에서 안 보이는 이유가
+     그것이다.
+
+     mastodon-light/css_variables.scss 에 넣는 것도 답이 아니다. 그쪽은 `body`
+     (0,0,1)이고 여기는 `:root`(0,1,0)라 순서와 무관하게 여기가 이긴다.
+
+     **--color-light-shade 를 그대로 쓰지 않는다.** 한 번 그렇게 두었다가
+     되돌렸다 — 그 토큰은 타임라인 **줄 전체**에 까는 값이라 아주 옅고
+     (theme-ui 라이트에서 #efedd32e = 18%), 크림 칼럼 위에 겹치면 실측 대비가
+     **1.00** 이다. 넓은 면에서는 그 정도로 충분하지만 20px 단추에서는 호버가
+     통째로 사라진다.
+
+     **전경색에서 뽑는다.** --color-fg 는 라이트에서 검정, 다크에서 흰색이라
+     8% 를 섞으면 양쪽 모두 배경과 갈린다. 팔레트를 어떻게 바꾸든 따라오므로
+     테마마다 값을 하나 더 적어 둘 필요가 없다.
+
+     **`var()` 의 기본값을 반드시 남긴다.** --color-fg 는 bird-ui 와 theme-ui
+     에만 있다. 기본/mastodon-light 테마에서는 var() 가 통째로 무효가 되어
+     background-color 가 사라지고 **호버가 아무 반응 없는 것처럼 보인다** —
+     색이 어긋나는 것이 아니라 없어지는 쪽이라 원인을 찾기 어렵다. */
   --color-icon-button-hover: color-mix(
     in srgb,
     var(--color-fg, #{$primary-text-color}) 8%,
@@ -29,6 +67,37 @@
   --surface-variant-background-color: #{$ui-base-color};
   --surface-variant-active-background-color: #{lighten($ui-base-color, 4%)};
 
+  /* @_longwhile — DM 말풍선 색. **이 다섯 개가 정의되는 유일한 자리다.**
+     예전에는 bird-ui / theme-ui 가 각자 `:root` 와 라이트 블록에 값을 또 적어
+     덮었는데, 그 하드코딩(#1e9cf1 파랑, #202327 회색)이 팔레트를 바꿔도 따라오지
+     않아 채팅만 옛 색으로 남았다. 그래서 테마 쪽 정의를 걷어내고 여기서 **팔레트
+     토큰을 통해** 뽑는다 — 테마가 브랜드색을 바꾸면 말풍선도 함께 바뀐다.
+
+     **`var()` 의 기본값을 반드시 남긴다.** 팔레트 토큰은 bird-ui / theme-ui 에만
+     있다. 기본·mastodon-light 테마에서는 var() 가 무효가 되어 말풍선이 배경과
+     같은 색으로 사라진다.
+
+     **대비(WCAG AA 본문 4.5:1)** — 말풍선 본문은 14px/500 이라 large text
+     예외에 들지 않는다. 보낸 말풍선 배경이 되는 --color-brand-longwhile 실측:
+
+       theme-ui  라이트 #ff7f40  검정 8.36:1 ✔   흰색 2.51:1 ✘
+       bird-ui   라이트 #1d9bf0  검정 7.00:1 ✔   흰색 3.00:1 ✘
+       theme-ui  다크   #6c6c6c  흰색 5.25:1 ✔   검정 4.00:1 ✘
+       bird-ui   다크   #1d9bf0  흰색 3.00:1 ✘   검정 7.00:1 ✔
+
+     즉 **라이트에서는 검정, 다크에서는 흰색**이어야 한다. 그래서 글자색을
+     흰색으로 굳히지 않고 `$primary-text-color` 로 둔다 — 이 파일이 두 팔레트로
+     각각 컴파일되므로 그 변수가 알아서 갈린다. (예전 주석은 반대로 "흰색으로
+     고정한다" 였는데, 그때는 배경이 라이트·다크 모두 짙은 파랑이라 그것이 맞았다.
+     배경이 브랜드색을 따라가게 된 지금은 뒤집힌다.)
+
+     남는 구멍이 하나 있다 — **bird-ui 다크**. 브랜드색이 #1d9bf0 라 흰 글자가
+     3.00:1 이다. 그 값은 파일에 "잠깐!!! 컨트롤 F로 바꾸세요" 라고 적힌 자리
+     표시라, 브랜드색을 정하면 같이 풀린다. 고치려면 한 단계 어두운 색으로
+     내리면 된다(#0d86d6 가 4.5:1 을 넘는다).
+
+     변수 이름의 `recieve` 오타는 components.scss 의 참조와 맞춘 것이다.
+     고치려면 그쪽 35곳을 함께 고쳐야 한다. */
   --color-recieve-message-text: var(--color-fg, #{$primary-text-color});
   --color-recieve-message-background: var(--color-thread-line, #{$ui-base-color});
   --color-sent-message-text: #{$primary-text-color};
@@ -37,6 +106,13 @@
     #{$long-while-600}
   );
 
+  /* @_longwhile — 대화 목록에서 **지금 열려 있는 방**의 배경. 타임라인 줄에
+     커서를 댔을 때와 같은 판을 쓴다(--color-light-shade). 바로 아래
+     --color-noti-hover 도 테마에서 같은 토큰을 가리키고 있다.
+     `lighten()` 이 아니라 `color.scale()` 을 쓴다. 이 파일은 라이트 팔레트로도
+     한 번 더 컴파일되는데, 거기서 $ui-base-color 는 거의 흰색이라 lighten 은
+     `hsl(0, 0%, 102%)` 같은 범위 밖 값을 뱉는다. scale 은 남은 여지에 비례해
+     움직여 100% 를 넘지 않는다. */
   --color-hover-message-list-background: var(
     --color-light-shade,
     #{color.scale($ui-base-color, $lightness: 4%)}

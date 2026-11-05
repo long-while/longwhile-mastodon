@@ -165,6 +165,7 @@ export const Footer: React.FC<{
   const publicStatus = ['public', 'unlisted'].includes(
     status.get('visibility') as string,
   );
+  // status_action_bar.jsx 와 같은 이유로 작성자 조건을 뺐다 — 남기면 버튼이 비활성이 된다.
   const reblogPrivate = status.get('visibility') === 'private';
 
   let replyIcon, replyIconComponent, replyTitle;

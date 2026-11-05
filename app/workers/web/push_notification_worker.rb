@@ -9,11 +9,24 @@ class Web::PushNotificationWorker
   TTL     = 48.hours
   URGENCY = 'normal'
 
+  # FCM data messages are not end-to-end encrypted: Google sees them in plaintext.
+  FCM_REDACTED_DIRECT_BODY  = '새 메시지가 왔습니다'
+  FCM_REDACTED_PRIVATE_BODY = '새 글이 있습니다'
+
   def perform(subscription_id, notification_id)
     @subscription = Web::PushSubscription.find(subscription_id)
     @notification = Notification.find(notification_id)
 
     return if @notification.updated_at < TTL.ago
+
+    # Clean up old Web::PushSubscriptions that were added before validation of
+    # the endpoint and keys: #30542, #30540
+    unless @subscription.valid?
+      Rails.logger.debug { "Web::PushSubscription is invalid, removing: #{subscription_id}" }
+      @subscription.destroy!
+
+      return
+    end
 
     # Polymorphically associated activity could have been deleted
     # in the meantime, so we have to double-check before proceeding
@@ -33,11 +46,8 @@ class Web::PushNotificationWorker
   private
 
   def perform_fcm_native_request
-    # Native apps use their own locally-stored session, not the access_token
-    # embedded for the web push service worker's benefit - drop it so it isn't
-    # sent through Google's servers unnecessarily.
     payload = I18n.with_locale(@subscription.locale.presence || I18n.default_locale) do
-      serialized_notification.as_json.except('access_token').to_json
+      fcm_native_payload.to_json
     end
     data = {
       payload: payload,
@@ -47,6 +57,25 @@ class Web::PushNotificationWorker
     Fcm::MessageSender.new.send_data_message(web_push_request.fcm_device_token, data)
   rescue Fcm::MessageSender::UnregisteredError
     @subscription.destroy!
+  end
+
+  # Native apps use their own locally-stored session, not the access_token
+  # embedded for the web push service worker's benefit - drop it so it isn't
+  # sent through Google's servers. The serializer's keys are symbols, so they
+  # are stringified first (a string `except` alone silently kept the token).
+  def fcm_native_payload
+    payload = serialized_notification.as_json.deep_stringify_keys.except('access_token')
+    redacted_body = fcm_redacted_body
+    redacted_body ? payload.merge('body' => redacted_body) : payload
+  end
+
+  # `body` is the only field carrying status text (spoiler_text or text);
+  # the title only names the sender.
+  def fcm_redacted_body
+    status = @notification.target_status
+    return if status.nil? || status.distributable?
+
+    status.direct_visibility? ? FCM_REDACTED_DIRECT_BODY : FCM_REDACTED_PRIVATE_BODY
   end
 
   def perform_legacy_request
@@ -111,7 +140,7 @@ class Web::PushNotificationWorker
 
   def push_notification_json
     I18n.with_locale(@subscription.locale.presence || I18n.default_locale) do
-      Oj.dump(serialized_notification.as_json)
+      serialized_notification.to_json
     end
   end
 

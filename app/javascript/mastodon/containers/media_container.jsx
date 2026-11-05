@@ -32,6 +32,10 @@ export default class MediaContainer extends PureComponent {
     options: null,
   };
 
+  // @_longwhile — marginRight 보정을 뺐다. 근거는 modal_root.jsx 의 같은 자리에
+  // 적어 두었다. 요약하면 `html` 의 `scrollbar-gutter: stable` 이 이미 자리를
+  // 잡아 두므로, 마진까지 더하면 없어지지 않은 스크롤바를 두 번 보정해 화면이
+  // 밀린다.
   handleOpenMedia = (media, index, lang) => {
     document.body.classList.add('with-modals--active');
 

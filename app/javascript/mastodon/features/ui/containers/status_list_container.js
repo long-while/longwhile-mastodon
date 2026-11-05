@@ -6,7 +6,9 @@ import { debounce } from 'lodash';
 
 import { scrollTopTimeline, loadPending } from '../../../actions/timelines';
 import StatusList from '../../../components/status_list';
+import { dedupeThreadHeads } from '../../../components/thread_preview_dedupe';
 import { me } from '../../../initial_state';
+import { getFilters } from '../../../selectors/filters';
 
 const makeGetStatusIds = (pending = false) => createSelector([
   (state, { type }) => state.getIn(['settings', type], ImmutableMap()),
@@ -33,18 +35,48 @@ const makeGetStatusIds = (pending = false) => createSelector([
   });
 });
 
+// @_longwhile — 타래 한 갈래는 가장 최근 글 한 칸으로만 보인다(위 답글의 조상은 뺀다).
+//   `components/thread_preview_dedupe.ts`
+const isHiddenByFilter = (statuses, filters, id) => {
+  if (!filters) return false;
+
+  const status = statuses.get(id);
+  const target = statuses.get(status?.get('reblog')) ?? status;
+  if (!target || target.get('account') === me) return false;
+
+  const results = target.get('filtered') ?? status.get('filtered') ?? ImmutableList();
+  return results.some(result => filters.getIn([result.get('filter'), 'filter_action']) === 'hide');
+};
+
+const makeDedupeThreadHeads = () => createSelector([
+  (_, statusIds) => statusIds,
+  (state) => state.get('thread_heads'),
+  (state) => state.get('statuses'),
+  (state, _, timelineId) => getFilters(state, { contextType: timelineId }),
+], (statusIds, threadHeads, statuses, filters) => dedupeThreadHeads(statusIds, threadHeads, {
+  reblogOf: id => statuses.getIn([id, 'reblog']),
+  inReplyTo: id => statuses.getIn([id, 'in_reply_to_id']),
+  isHidden: id => isHiddenByFilter(statuses, filters, id),
+}));
+
 const makeMapStateToProps = () => {
   const getStatusIds = makeGetStatusIds();
   const getPendingStatusIds = makeGetStatusIds(true);
+  const withoutShownThreadHeads = makeDedupeThreadHeads();
 
-  const mapStateToProps = (state, { timelineId }) => ({
-    statusIds: getStatusIds(state, { type: timelineId }),
-    lastId:    state.getIn(['timelines', timelineId, 'items'])?.last(),
-    isLoading: state.getIn(['timelines', timelineId, 'isLoading'], true),
-    isPartial: state.getIn(['timelines', timelineId, 'isPartial'], false),
-    hasMore:   state.getIn(['timelines', timelineId, 'hasMore']),
-    numPending: getPendingStatusIds(state, { type: timelineId }).size,
-  });
+  const mapStateToProps = (state, ownProps) => {
+    const { timelineId } = ownProps;
+    const statusIds = getStatusIds(state, { type: timelineId });
+
+    return {
+      statusIds: ownProps.threadPreview ? withoutShownThreadHeads(state, statusIds, timelineId) : statusIds,
+      lastId:    state.getIn(['timelines', timelineId, 'items'])?.last(),
+      isLoading: state.getIn(['timelines', timelineId, 'isLoading'], true),
+      isPartial: state.getIn(['timelines', timelineId, 'isPartial'], false),
+      hasMore:   state.getIn(['timelines', timelineId, 'hasMore']),
+      numPending: getPendingStatusIds(state, { type: timelineId }).size,
+    };
+  };
 
   return mapStateToProps;
 };

@@ -36,15 +36,15 @@ export const clearActiveAccountIdInStorage = (): void => {
   }
 };
 
-// Carries "which account we meant to reach" across the reload that follows a
-// switch. It only has to survive inside the tab, so sessionStorage.
+// 전환 직후 새로고침을 사이에 두고 "어느 계정으로 가려 했는지" 를 넘긴다.
+// 탭 안에서만 살면 되므로 sessionStorage 를 쓴다.
 const SWITCH_INTENT_KEY = 'MA_SWITCH_INTENT';
 
 export const markSwitchIntent = (accountId: string): void => {
   try {
     window.sessionStorage.setItem(SWITCH_INTENT_KEY, accountId);
   } catch {
-    // Without sessionStorage we only lose the check; the switch goes on.
+    // sessionStorage 를 못 쓰면 확인만 못 할 뿐이다. 전환 자체는 진행한다.
   }
 };
 
@@ -79,21 +79,20 @@ import { loadAllEntries } from './multi_account_db';
 /**
  * Hydrate the Redux store with data from IndexedDB
  *
- * The global token is never touched here. This function used to decrypt the
- * stored token and call `setActiveAccountToken` as well, but the boot code in
- * `main.tsx` did the same thing, so whichever finished last won. When the two
- * pointed at different accounts, the account posts went out as changed on
- * every reload. Exactly one place decides the token: `main.tsx`.
+ * @_longwhile — **여기서 전역 토큰을 건드리지 않는다.** 예전에는 이 함수가
+ *   저장된 토큰을 복호화해 `setActiveAccountToken` 까지 했는데, `main.tsx` 의
+ *   부팅 코드도 같은 일을 하고 있어서 **둘 중 늦게 끝난 쪽이 이겼다.** 둘이
+ *   다른 계정을 가리키면 새로고침할 때마다 글이 올라가는 계정이 바뀌었다.
+ *   토큰은 `main.tsx` 한 곳에서만 정한다.
  */
 export const hydrateStore = async (store: Store) => {
   try {
     const storedEntries = await loadAllEntries();
 
-    // A record's IndexedDB key and its entry `id` can disagree (the key used
-    // when storing differed from the account the server returned). The
-    // reducer keys by `id`, so follow `id` here too - otherwise the same
-    // account shows as two rows, or clicking one looks up an account that is
-    // not there.
+    // IndexedDB 의 키와 항목의 `id` 가 어긋난 기록이 남아 있을 수 있다
+    // (저장할 때 쓴 키와 서버가 돌려준 계정이 다른 경우). 리듀서는 `id` 로
+    // 키를 잡으므로 여기서도 `id` 를 따른다 — 아니면 목록에서 같은 계정이
+    // 두 줄로 보이거나, 눌러도 없는 계정을 찾는다.
     const accounts: Record<string, MultiAccountEntry> = {};
 
     Object.entries(storedEntries).forEach(([key, entry]) => {
@@ -105,8 +104,7 @@ export const hydrateStore = async (store: Store) => {
       accounts[id] = { ...entry, id };
     });
 
-    // The account the session decided is the active one. Synthesise an entry
-    // when none is stored.
+    // 세션이 정한 계정이 곧 활성 계정이다. 저장된 항목이 없으면 만들어 둔다.
     const sessionAccountId = me ?? null;
 
     if (sessionAccountId && !accounts[sessionAccountId]) {

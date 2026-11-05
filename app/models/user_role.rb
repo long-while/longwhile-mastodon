@@ -4,15 +4,16 @@
 #
 # Table name: user_roles
 #
-#  id          :bigint(8)        not null, primary key
-#  name        :string           default(""), not null
-#  color       :string           default(""), not null
-#  position    :integer          default(0), not null
-#  permissions :bigint(8)        default(0), not null
-#  highlighted :boolean          default(FALSE), not null
-#  created_at  :datetime         not null
-#  updated_at  :datetime         not null
-#  require_2fa :boolean          default(FALSE), not null
+#  id               :bigint(8)        not null, primary key
+#  collection_limit :integer          default(10), not null
+#  color            :string           default(""), not null
+#  highlighted      :boolean          default(FALSE), not null
+#  name             :string           default(""), not null
+#  permissions      :bigint(8)        default(0), not null
+#  position         :integer          default(0), not null
+#  require_2fa      :boolean          default(FALSE), not null
+#  created_at       :datetime         not null
+#  updated_at       :datetime         not null
 #
 
 class UserRole < ApplicationRecord
@@ -37,7 +38,14 @@ class UserRole < ApplicationRecord
     manage_roles: (1 << 17),
     manage_user_access: (1 << 18),
     delete_user_data: (1 << 19),
-    can_be_private_account: (1 << 20),
+    view_feeds: (1 << 20),
+    invite_bypass_approval: (1 << 21),
+    manage_email_subscriptions: (1 << 22),
+    # @_longwhile — 원래 1 << 20 이었는데 업스트림 4.5 가 그 자리에 view_feeds 를 넣었다.
+    #   업스트림은 비트를 차례로 쓰므로 멀리 떨어진 자리로 옮긴다. 30 은 웹 앱이
+    #   권한을 32비트 정수로 다뤄도 양수로 남는 가장 높은 비트다. 옛 비트는
+    #   마이그레이션 MoveCanBePrivateAccountPermissionBit 가 옮긴다.
+    can_be_private_account: (1 << 30),
   }.freeze
 
   EVERYONE_ROLE_ID = -99
@@ -55,11 +63,19 @@ class UserRole < ApplicationRecord
     #   생성할 수 없게 하고, 운영진(Owner/Admin/Moderator) 역할에만 부여한다.
     #   NONE 으로 두면 validate_dangerous_permissions 가 everyone 역할에 invite_users
     #   를 다시 추가하는 것도 차단한다.
+    #   4.6 부터 그 검사는 DEFAULT 가 아니라 SAFE 를 본다(업스트림은 invite_users·
+    #   invite_bypass_approval 을 허용). 같은 이유로 SAFE 도 NONE 이다.
     DEFAULT = NONE
+    SAFE = NONE
 
     CATEGORIES = {
       invites: %i(
         invite_users
+        invite_bypass_approval
+      ).freeze,
+
+      email: %i(
+        manage_email_subscriptions
       ).freeze,
 
       moderation: %i(
@@ -74,6 +90,7 @@ class UserRole < ApplicationRecord
         manage_blocks
         manage_taxonomies
         manage_invites
+        view_feeds
       ).freeze,
 
       administration: %i(
@@ -104,6 +121,7 @@ class UserRole < ApplicationRecord
   validates :name, presence: true, unless: :everyone?
   validates :color, format: { with: CSS_COLORS }, if: :color?
   validates :position, numericality: { in: (-POSITION_LIMIT..POSITION_LIMIT) }
+  validates :collection_limit, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
   validate :validate_permissions_elevation
   validate :validate_position_elevation
@@ -173,7 +191,7 @@ class UserRole < ApplicationRecord
     @computed_permissions ||= begin
       permissions = self.class.everyone.permissions | self.permissions
 
-      if permissions & FLAGS[:administrator] == FLAGS[:administrator]
+      if administrator?
         Flags::ALL
       else
         permissions
@@ -183,6 +201,10 @@ class UserRole < ApplicationRecord
 
   def to_log_human_identifier
     name
+  end
+
+  def administrator?
+    permissions & FLAGS[:administrator] == FLAGS[:administrator]
   end
 
   private
@@ -202,7 +224,7 @@ class UserRole < ApplicationRecord
 
     errors.add(:permissions_as_keys, :own_role) if permissions_changed?
     errors.add(:position, :own_role) if position_changed?
-    errors.add(:require_2fa, :own_role) if self.class.column_names.include?('require_2fa') && require_2fa_changed? && !administrator?
+    errors.add(:require_2fa, :own_role) if require_2fa_changed? && !administrator?
   end
 
   def validate_permissions_elevation
@@ -214,6 +236,6 @@ class UserRole < ApplicationRecord
   end
 
   def validate_dangerous_permissions
-    errors.add(:permissions_as_keys, :dangerous) if everyone? && Flags::DEFAULT & permissions != permissions
+    errors.add(:permissions_as_keys, :dangerous) if everyone? && Flags::SAFE & permissions != permissions
   end
 end

@@ -1,4 +1,4 @@
-// @_longwhile custom feature
+// @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 채팅
 
 import { stripLeadingMentions } from '../util/strip_leading_mentions';
 
@@ -23,6 +23,8 @@ describe('stripLeadingMentions', () => {
     );
   });
 
+  // 핸들 다음이 줄바꿈이면 그 줄바꿈은 사용자가 쓴 것이다. `\s` 로 잘라내면
+  // 문단이 통째로 붙는다.
   it('핸들 뒤의 줄바꿈은 남긴다', () => {
     expect(stripLeadingMentions('@alice \n\n안녕')).toBe('\n\n안녕');
   });
@@ -31,6 +33,7 @@ describe('stripLeadingMentions', () => {
     expect(stripLeadingMentions('안녕')).toBe('안녕');
   });
 
+  // 이메일 주소처럼 앞에 공백 없이 오는 것은 멘션이 아니다.
   it('본문이 @ 로 시작하지 않으면 아무것도 떼지 않는다', () => {
     expect(stripLeadingMentions('메일은 a@b.com 으로')).toBe(
       '메일은 a@b.com 으로',

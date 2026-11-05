@@ -11,17 +11,6 @@ RSpec.describe User do
 
   it_behaves_like 'two_factor_backupable'
 
-  describe 'legacy_otp_secret' do
-    it 'is encrypted with OTP_SECRET environment variable' do
-      user = Fabricate(:user,
-                       encrypted_otp_secret: "Fttsy7QAa0edaDfdfSz094rRLAxc8cJweDQ4BsWH/zozcdVA8o9GLqcKhn2b\nGi/V\n",
-                       encrypted_otp_secret_iv: 'rys3THICkr60BoWC',
-                       encrypted_otp_secret_salt: '_LMkAGvdg7a+sDIKjI3mR2Q==')
-
-      expect(user.send(:legacy_otp_secret)).to eq 'anotpsecretthatshouldbeencrypted'
-    end
-  end
-
   describe 'otp_secret' do
     it 'encrypts the saved value' do
       user = Fabricate(:user, otp_secret: '123123123')
@@ -35,6 +24,7 @@ RSpec.describe User do
 
   describe 'Associations' do
     it { is_expected.to belong_to(:account).required }
+    it { is_expected.to have_many(:login_activities) }
   end
 
   describe 'Validations' do
@@ -47,6 +37,15 @@ RSpec.describe User do
     end
 
     it { is_expected.to allow_value('admin@localhost').for(:email) }
+
+    context 'when registration form time is present' do
+      subject { Fabricate.build :user }
+
+      before { stub_const 'RegistrationFormTimeValidator::REGISTRATION_FORM_MIN_TIME', 3.seconds }
+
+      it { is_expected.to allow_value(10.seconds.ago).for(:registration_form_time) }
+      it { is_expected.to_not allow_value(1.second.ago).for(:registration_form_time).against(:base) }
+    end
   end
 
   describe 'Normalizations' do
@@ -75,44 +74,19 @@ RSpec.describe User do
       end
     end
 
-    describe 'confirmed' do
-      it 'returns an array of users who are confirmed' do
-        Fabricate(:user, confirmed_at: nil)
-        confirmed_user = Fabricate(:user, confirmed_at: Time.zone.now)
-        expect(described_class.confirmed).to contain_exactly(confirmed_user)
-      end
-    end
-
-    describe 'signed_in_recently' do
-      it 'returns a relation of users who have signed in during the recent period' do
-        recent_sign_in_user = Fabricate(:user, current_sign_in_at: within_duration_window_days.ago)
-        Fabricate(:user, current_sign_in_at: exceed_duration_window_days.ago)
-
-        expect(described_class.signed_in_recently)
-          .to contain_exactly(recent_sign_in_user)
-      end
-    end
-
-    describe 'not_signed_in_recently' do
-      it 'returns a relation of users who have not signed in during the recent period' do
-        no_recent_sign_in_user = Fabricate(:user, current_sign_in_at: exceed_duration_window_days.ago)
-        Fabricate(:user, current_sign_in_at: within_duration_window_days.ago)
-
-        expect(described_class.not_signed_in_recently)
-          .to contain_exactly(no_recent_sign_in_user)
-      end
-    end
-
-    describe 'account_not_suspended' do
+    describe 'account_available' do
       it 'returns with linked accounts that are not suspended' do
         suspended_account = Fabricate(:account, suspended_at: 10.days.ago)
         non_suspended_account = Fabricate(:account, suspended_at: nil)
         suspended_user = Fabricate(:user, account: suspended_account)
         non_suspended_user = Fabricate(:user, account: non_suspended_account)
+        deleted_account = Fabricate(:account, requested_deletion_at: 10.days.ago)
+        deleted_user = Fabricate(:user, account: deleted_account)
 
-        expect(described_class.account_not_suspended)
+        expect(described_class.account_available)
           .to include(non_suspended_user)
           .and not_include(suspended_user)
+          .and not_include(deleted_user)
       end
     end
 
@@ -136,14 +110,6 @@ RSpec.describe User do
 
         expect(described_class.matches_ip('2160:2160::/32')).to contain_exactly(user1)
       end
-    end
-
-    def exceed_duration_window_days
-      described_class::ACTIVE_DURATION + 2.days
-    end
-
-    def within_duration_window_days
-      described_class::ACTIVE_DURATION - 2.days
     end
   end
 
@@ -177,14 +143,43 @@ RSpec.describe User do
     end
   end
 
+  describe '#email_domain' do
+    subject { described_class.new(email: email).email_domain }
+
+    context 'when value is nil' do
+      let(:email) { nil }
+
+      it { is_expected.to be_nil }
+    end
+
+    context 'when value is blank' do
+      let(:email) { '' }
+
+      it { is_expected.to be_nil }
+    end
+
+    context 'when value has valid domain' do
+      let(:email) { 'user@host.example' }
+
+      it { is_expected.to eq('host.example') }
+    end
+
+    context 'when value has no split' do
+      let(:email) { 'user$host.example' }
+
+      it { is_expected.to be_nil }
+    end
+  end
+
   describe '#update_sign_in!' do
     context 'with an existing user' do
-      let!(:user) { Fabricate :user, last_sign_in_at: 10.days.ago, current_sign_in_at: 1.hour.ago, sign_in_count: 123 }
+      let!(:user) { Fabricate :user, last_sign_in_at: 10.days.ago, current_sign_in_at:, sign_in_count: 123 }
+      let(:current_sign_in_at) { 1.hour.ago }
 
       context 'with new sign in false' do
         it 'updates timestamps but not counts' do
           expect { user.update_sign_in!(new_sign_in: false) }
-            .to change(user, :last_sign_in_at)
+            .to change(user, :last_sign_in_at).to(current_sign_in_at)
             .and change(user, :current_sign_in_at)
             .and not_change(user, :sign_in_count)
         end
@@ -193,9 +188,20 @@ RSpec.describe User do
       context 'with new sign in true' do
         it 'updates timestamps and counts' do
           expect { user.update_sign_in!(new_sign_in: true) }
-            .to change(user, :last_sign_in_at)
+            .to change(user, :last_sign_in_at).to(current_sign_in_at)
             .and change(user, :current_sign_in_at)
             .and change(user, :sign_in_count).by(1)
+        end
+      end
+
+      context 'when the user does not have a current_sign_in_at value' do
+        let(:current_sign_in_at) { nil }
+
+        before { travel_to(1.minute.ago) }
+
+        it 'updates last sign in to now' do
+          expect { user.update_sign_in! }
+            .to change(user, :last_sign_in_at).to(Time.now.utc)
         end
       end
     end
@@ -203,82 +209,13 @@ RSpec.describe User do
     context 'with a new user' do
       let(:user) { Fabricate.build :user }
 
+      before { allow(ActivityTracker).to receive(:record) }
+
       it 'does not persist the user' do
         expect { user.update_sign_in! }
           .to_not change(user, :persisted?).from(false)
-      end
-    end
-  end
-
-  describe '#confirmed?' do
-    it 'returns true when a confirmed_at is set' do
-      user = Fabricate.build(:user, confirmed_at: Time.now.utc)
-      expect(user.confirmed?).to be true
-    end
-
-    it 'returns false if a confirmed_at is nil' do
-      user = Fabricate.build(:user, confirmed_at: nil)
-      expect(user.confirmed?).to be false
-    end
-  end
-
-  describe '#confirm' do
-    subject { user.confirm }
-
-    let(:new_email) { 'new-email@example.com' }
-
-    before do
-      allow(TriggerWebhookWorker).to receive(:perform_async)
-    end
-
-    context 'when the user is already confirmed' do
-      let!(:user) { Fabricate(:user, confirmed_at: Time.now.utc, approved: true, unconfirmed_email: new_email) }
-
-      it 'sets email to unconfirmed_email and does not trigger web hook' do
-        expect { subject }.to change { user.reload.email }.to(new_email)
-
-        expect(TriggerWebhookWorker).to_not have_received(:perform_async).with('account.approved', 'Account', user.account_id)
-      end
-    end
-
-    context 'when the user is a new user' do
-      let(:user) { Fabricate(:user, confirmed_at: nil, unconfirmed_email: new_email) }
-
-      context 'when the user is already approved' do
-        before do
-          Setting.registrations_mode = 'approved'
-          user.approve!
-        end
-
-        it 'sets email to unconfirmed_email and triggers `account.approved` web hook' do
-          expect { subject }.to change { user.reload.email }.to(new_email)
-
-          expect(TriggerWebhookWorker).to have_received(:perform_async).with('account.approved', 'Account', user.account_id).once
-        end
-      end
-
-      context 'when the user does not require explicit approval' do
-        before do
-          Setting.registrations_mode = 'open'
-        end
-
-        it 'sets email to unconfirmed_email and triggers `account.approved` web hook' do
-          expect { subject }.to change { user.reload.email }.to(new_email)
-
-          expect(TriggerWebhookWorker).to have_received(:perform_async).with('account.approved', 'Account', user.account_id).once
-        end
-      end
-
-      context 'when the user requires explicit approval but is not approved' do
-        before do
-          Setting.registrations_mode = 'approved'
-        end
-
-        it 'sets email to unconfirmed_email and does not trigger web hook' do
-          expect { subject }.to change { user.reload.email }.to(new_email)
-
-          expect(TriggerWebhookWorker).to_not have_received(:perform_async).with('account.approved', 'Account', user.account_id)
-        end
+        expect(ActivityTracker)
+          .to_not have_received(:record).with('activity:logins', anything)
       end
     end
   end
@@ -354,11 +291,13 @@ RSpec.describe User do
     end
   end
 
+  # 이 포크의 일반 글은 private 하나뿐이고 unlisted 는 공지 계정 전용이다(943745d134).
+  # 저장된 값과 잠금 여부는 보지 않는다(User::HasSettings#setting_default_privacy 의 주석).
   describe '#setting_default_privacy' do
-    it 'returns default privacy setting if user has configured' do
+    it "returns 'private' even if user has configured another privacy" do
       user = Fabricate(:user)
       user.settings[:default_privacy] = 'unlisted'
-      expect(user.setting_default_privacy).to eq 'unlisted'
+      expect(user.setting_default_privacy).to eq 'private'
     end
 
     it "returns 'private' if user has not configured default privacy setting and account is locked" do
@@ -366,9 +305,15 @@ RSpec.describe User do
       expect(user.setting_default_privacy).to eq 'private'
     end
 
-    it "returns 'public' if user has not configured default privacy setting and account is not locked" do
+    it "returns 'private' if user has not configured default privacy setting and account is not locked" do
       user = Fabricate(:account, locked: false).user
-      expect(user.setting_default_privacy).to eq 'public'
+      expect(user.setting_default_privacy).to eq 'private'
+    end
+
+    it "returns 'unlisted' for the announcement account" do
+      user = Fabricate(:user)
+      allow(user.account).to receive(:announcement_account?).and_return(true)
+      expect(user.setting_default_privacy).to eq 'unlisted'
     end
   end
 
@@ -459,12 +404,40 @@ RSpec.describe User do
 
     let(:current_sign_in_at) { Time.zone.now }
 
-    before do
+    it 'disables user' do
+      allow(redis).to receive(:publish)
+
       user.disable!
+
+      expect(user).to have_attributes(disabled: true)
+
+      expect(redis)
+        .to have_received(:publish).with("timeline:system:#{user.account.id}", { event: :kill }.to_json).once
+    end
+  end
+
+  describe '#revoke_access!' do
+    subject(:user) { Fabricate(:user, disabled: false, current_sign_in_at: current_sign_in_at, last_sign_in_at: nil) }
+
+    let(:current_sign_in_at) { Time.zone.now }
+
+    let!(:token) { Fabricate(:accessible_access_token, resource_owner_id: user.id) }
+
+    let(:redis_pipeline_stub) { instance_double(Redis::PipelinedConnection, publish: nil) }
+
+    before do
+      allow(redis)
+        .to receive(:pipelined)
+        .and_yield(redis_pipeline_stub)
     end
 
-    it 'disables user' do
-      expect(user).to have_attributes(disabled: true)
+    it 'revokes tokens' do
+      user.revoke_access!
+
+      expect(redis_pipeline_stub)
+        .to have_received(:publish).with("timeline:access_token:#{token.id}", { event: :kill }.to_json).once
+
+      expect(token.reload.revoked?).to be true
     end
   end
 
@@ -489,7 +462,7 @@ RSpec.describe User do
     let!(:access_token) { Fabricate(:access_token, resource_owner_id: user.id) }
     let!(:web_push_subscription) { Fabricate(:web_push_subscription, access_token: access_token) }
 
-    let(:redis_pipeline_stub) { instance_double(Redis::Namespace, publish: nil) }
+    let(:redis_pipeline_stub) { instance_double(Redis::PipelinedConnection, publish: nil) }
 
     before { stub_redis }
 
@@ -506,7 +479,7 @@ RSpec.describe User do
       expect { web_push_subscription.reload }
         .to raise_error(ActiveRecord::RecordNotFound)
       expect(redis_pipeline_stub)
-        .to have_received(:publish).with("timeline:access_token:#{access_token.id}", Oj.dump(event: :kill)).once
+        .to have_received(:publish).with("timeline:access_token:#{access_token.id}", { event: :kill }.to_json).once
     end
 
     def remove_activated_sessions
@@ -528,7 +501,7 @@ RSpec.describe User do
     end
   end
 
-  describe '#revoke_access!' do
+  describe '#revoke_access! and multi-account tokens' do
     subject(:user) { Fabricate(:user) }
 
     let!(:multi_account_token) { Fabricate(:access_token, resource_owner_id: user.id, multi_account: true, revoked_at: nil) }
@@ -541,21 +514,27 @@ RSpec.describe User do
                 long_lived: true,
                 revoked_at: nil)
     end
-    let(:redis_pipeline_stub) { instance_double(Redis::Namespace, publish: nil) }
+    let(:redis_pipeline_stub) { instance_double(Redis::PipelinedConnection, publish: nil) }
 
     before do
       allow(redis).to receive(:pipelined).and_yield(redis_pipeline_stub)
     end
 
+    # 보존 기본값은 켜짐이다(config/initializers/multi_account.rb 의 default_settings).
+    # 꺼진 경우를 보려면 명시적으로 꺼야 한다.
     context 'when multi-account retention is disabled' do
+      before do
+        allow(MultiAccountConfig).to receive(:retain_tokens?).and_return(false)
+      end
+
       it 'revokes all access tokens' do
         user.revoke_access!
 
         expect(multi_account_token.reload.revoked_at).to be_present
         expect(standard_token.reload.revoked_at).to be_present
         expect(long_lived_refresh_token.reload.revoked_at).to be_nil
-        expect(redis_pipeline_stub).to have_received(:publish).with("timeline:access_token:#{multi_account_token.id}", Oj.dump(event: :kill))
-        expect(redis_pipeline_stub).to have_received(:publish).with("timeline:access_token:#{standard_token.id}", Oj.dump(event: :kill))
+        expect(redis_pipeline_stub).to have_received(:publish).with("timeline:access_token:#{multi_account_token.id}", { event: :kill }.to_json)
+        expect(redis_pipeline_stub).to have_received(:publish).with("timeline:access_token:#{standard_token.id}", { event: :kill }.to_json)
       end
     end
 
@@ -570,9 +549,9 @@ RSpec.describe User do
         expect(multi_account_token.reload.revoked_at).to be_nil
         expect(standard_token.reload.revoked_at).to be_present
         expect(long_lived_refresh_token.reload.revoked_at).to be_nil
-        expect(redis_pipeline_stub).to have_received(:publish).with("timeline:access_token:#{standard_token.id}", Oj.dump(event: :kill))
-        expect(redis_pipeline_stub).not_to have_received(:publish).with("timeline:access_token:#{multi_account_token.id}", anything)
-        expect(redis_pipeline_stub).not_to have_received(:publish).with("timeline:access_token:#{long_lived_refresh_token.id}", anything)
+        expect(redis_pipeline_stub).to have_received(:publish).with("timeline:access_token:#{standard_token.id}", { event: :kill }.to_json)
+        expect(redis_pipeline_stub).to_not have_received(:publish).with("timeline:access_token:#{multi_account_token.id}", anything)
+        expect(redis_pipeline_stub).to_not have_received(:publish).with("timeline:access_token:#{long_lived_refresh_token.id}", anything)
       end
     end
   end
@@ -594,7 +573,7 @@ RSpec.describe User do
         expect(emails.first)
           .to have_attributes(
             to: contain_exactly(user.email),
-            subject: eq(I18n.t('user_mailer.welcome.subject'))
+            subject: eq(I18n.t('user_mailer.welcome.subject', locale: ApplicationMailer::MAIL_LOCALE))
           )
       end
     end

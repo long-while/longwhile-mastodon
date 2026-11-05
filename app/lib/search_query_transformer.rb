@@ -35,7 +35,7 @@ class SearchQueryTransformer < Parslet::Transform
     private
 
     def clauses_by_operator
-      @clauses_by_operator ||= @clauses.compact.chunk(&:operator).to_h
+      @clauses_by_operator ||= @clauses.compact.group_by(&:operator)
     end
 
     def flags_from_clauses!
@@ -65,7 +65,7 @@ class SearchQueryTransformer < Parslet::Transform
       end
     end
 
-    # ─── @_longwhile custom feature
+    # ─── @_longwhile custom feature / 한참(longwhile) 제작 기능 — 검색 범위 제한(나+팔로잉) ───
     # 사용·재사용 시 서버 내 출처 표기 필수 / Credit required to use or reuse:
     #   Twitter/X @_longwhile · Crepe https://kre.pe/QTRx
     def default_filter
@@ -76,6 +76,7 @@ class SearchQueryTransformer < Parslet::Transform
       {
         bool: {
           should: [
+            # PublicStatusesIndex: 나+팔로잉 유저의 public/unlisted 툿
             {
               bool: {
                 must: [
@@ -92,6 +93,8 @@ class SearchQueryTransformer < Parslet::Transform
                 ],
               },
             },
+            # StatusesIndex: 나+팔로잉 유저가 작성한 모든 visibility 툿
+            # OR 나를 멘션/마음에 들어요/북마크한 툿
             {
               bool: {
                 must: [
@@ -229,6 +232,8 @@ class SearchQueryTransformer < Parslet::Transform
       username, domain = term.gsub(/\A@/, '').split('@')
       domain = nil if TagManager.instance.local_domain?(domain)
       account = Account.find_remote(username, domain)
+      # @_longwhile — 익명화(탈퇴) 계정의 글을 옛 이름으로 모아 볼 수 없게 한다.
+      account = nil if account&.anonymized?
 
       # If the account is not found, we want to return empty results, so return
       # an ID that does not exist

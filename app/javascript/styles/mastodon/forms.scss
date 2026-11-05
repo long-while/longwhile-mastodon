@@ -321,7 +321,7 @@ code {
       display: block;
       font-weight: 600;
       line-height: 20px;
-      margin-bottom: 6px;
+      margin-bottom: 6px; // @_longwhile — 없으면 라벨이 입력에 딱 붙는다
     }
 
     .hint {
@@ -544,8 +544,10 @@ code {
   input[type='email'],
   input[type='password'],
   input[type='datetime-local'] {
-    &:focus:invalid:not(:placeholder-shown),
-    &:required:invalid:not(:placeholder-shown) {
+    // @_longwhile — 4.6 이 로그인 칸의 placeholder 를 라벨로 바꾸면서
+    // :not(:placeholder-shown) 이 빈 칸에도 늘 참이 됐다. 페이지를 열자마자 빨갛던 것.
+    // :user-invalid 는 사용자가 손댄 뒤(또는 제출한 뒤)에만 걸린다.
+    &:user-invalid {
       border-color: lighten($error-red, 12%);
     }
   }
@@ -636,6 +638,34 @@ code {
       &:active,
       &:focus {
         background-color: $ui-button-destructive-focus-background-color;
+      }
+    }
+
+    &.secondary {
+      color: $ui-button-secondary-color;
+      background: transparent;
+      border: 1px solid transparent;
+      border-color: $ui-button-secondary-border-color;
+
+      &:active,
+      &:focus,
+      &:hover {
+        border-color: $ui-button-secondary-border-color;
+        color: $ui-button-secondary-color;
+        background-color: transparent;
+        text-decoration: none;
+      }
+
+      &:disabled {
+        border-color: $ui-button-disabled-color;
+        color: $ui-button-disabled-color;
+
+        &:active,
+        &:focus,
+        &:hover {
+          border-color: $ui-button-disabled-color;
+          color: $ui-button-disabled-color;
+        }
       }
     }
   }
@@ -1216,6 +1246,8 @@ code {
 }
 
 .progress-tracker {
+  --circle-size: 30px;
+
   display: flex;
   align-items: center;
   padding-bottom: 30px;
@@ -1225,14 +1257,22 @@ code {
   li {
     flex: 0 0 auto;
     position: relative;
-  }
 
-  .separator {
-    height: 2px;
-    background: $ui-base-lighter-color;
-    flex: 1 1 auto;
+    &:not(:last-child) {
+      flex: 1 1 auto;
 
-    &.completed {
+      &::after {
+        content: '';
+        display: block;
+        position: absolute;
+        inset-inline: var(--circle-size) 0;
+        top: calc((var(--circle-size) - 2px) / 2);
+        height: 2px;
+        background: $ui-base-lighter-color;
+      }
+    }
+
+    &.completed::after {
       background: $highlight-text-color;
     }
   }
@@ -1240,8 +1280,8 @@ code {
   .circle {
     box-sizing: border-box;
     position: relative;
-    width: 30px;
-    height: 30px;
+    width: var(--circle-size);
+    height: var(--circle-size);
     border-radius: 50%;
     border: 2px solid $ui-base-lighter-color;
     flex: 0 0 auto;
@@ -1261,8 +1301,9 @@ code {
     color: $secondary-text-color;
     padding-top: 10px;
     text-align: center;
-    width: 100px;
-    left: 50%;
+    width: max-content;
+    white-space: nowrap;
+    inset-inline-start: calc(var(--circle-size) / 2);
     transform: translateX(-50%);
   }
 
@@ -1280,7 +1321,7 @@ code {
     transform: none;
   }
 
-  .active .circle {
+  [aria-current='step'] .circle {
     border-color: $highlight-text-color;
 
     &::before {

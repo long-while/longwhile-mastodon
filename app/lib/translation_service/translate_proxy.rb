@@ -38,7 +38,8 @@ class TranslationService::TranslateProxy < TranslationService
     # List all language codes that supported by google translate in 2 letter format
     # https://cloud.google.com/translate/docs/languages
     # Papago is not considered because papago has smaller set of supported languages
-    target_languages = %w(af sq am ar hy as ay az bm eu be bn bho bs bg ca ceb zh zh-CN zh-TW co hr cs da dv doi nl en eo et ee fil fi fr fy gl ka de el gn gu ht ha haw he hi hmn hu is ig ilo id ga it ja jv kn kk km rw gom ko kri ku ckb ky lo la lv ln lt lg lb mk mai mg ms ml mt mi mr mni-Mtei lus mn my ne no ny or om ps fa pl pt pa qu ro ru sm sa gd nso sr st sn sd si sk sl so es su sw sv tl tg ta tt te th ti ts tr tk ak uk ur ug uz vi cy xh yi yo zu)
+    target_languages = %w(af sq am ar hy as ay az bm eu be bn bho bs bg ca ceb zh zh-CN zh-TW co hr cs da dv doi nl en eo et ee fil fi fr fy gl ka de el gn gu ht ha haw he hi hmn hu is ig ilo id ga it ja jv kn kk km rw gom ko kri ku ckb ky lo la lv ln lt lg lb mk mai mg ms ml mt mi mr mni-Mtei lus
+                          mn my ne no ny or om ps fa pl pt pa qu ro ru sm sa gd nso sr st sn sd si sk sl so es su sw sv tl tg ta tt te th ti ts tr tk ak uk ur ug uz vi cy xh yi yo zu)
     source_languages = [nil] + target_languages
 
     source_languages.index_with { |language| target_languages.without(nil, language) }
@@ -59,7 +60,7 @@ class TranslationService::TranslateProxy < TranslationService
 
   def restore_text(text)
     # Restore newline
-    text.gsub("\n", '<br />') if text.present?
+    text.presence&.gsub("\n", '<br />')
   end
 
   def translate_papago(text, source_language, target_language)
@@ -99,7 +100,7 @@ class TranslationService::TranslateProxy < TranslationService
   end
 
   def transform_response_papago(str, source_language)
-    json = Oj.load(str, mode: :strict)
+    json = JSON.parse(str)
 
     raise UnexpectedResponseError unless json.is_a?(Hash)
 
@@ -113,12 +114,12 @@ class TranslationService::TranslateProxy < TranslationService
       detected_source_language: source_language,
       provider: provider
     )
-  rescue Oj::ParseError
+  rescue JSON::ParserError
     raise UnexpectedResponseError
   end
 
   def transform_response_gproxy(str, source_language)
-    json = Oj.load(str, mode: :strict)
+    json = JSON.parse(str)
 
     raise UnexpectedResponseError unless json.is_a?(Hash)
 
@@ -133,7 +134,7 @@ class TranslationService::TranslateProxy < TranslationService
       detected_source_language: source_language,
       provider: provider
     )
-  rescue Oj::ParseError
+  rescue JSON::ParserError
     raise UnexpectedResponseError
   end
 end

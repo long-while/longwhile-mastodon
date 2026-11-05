@@ -1,12 +1,9 @@
 # frozen_string_literal: true
 
 require 'doorkeeper/grape/authorization_decorator'
-require_relative '../../app/helpers/email_helper'
 
 class Rack::Attack
   class Request
-    include ::EmailHelper
-
     def authenticated_token
       return @authenticated_token if defined?(@authenticated_token)
 
@@ -70,7 +67,7 @@ class Rack::Attack
       user_params = params['user']
       email = user_params['email'] if user_params.is_a?(Hash)
 
-      email_to_canonical_email(email) if email.is_a?(String) && email.present?
+      CanonicalEmailBlock.canonicalize_email(email) if email.is_a?(String) && email.present?
     end
   end
 
@@ -87,7 +84,7 @@ class Rack::Attack
     req.authenticated_token_id if req.api_request? && req.authenticated_user_id
   end
 
-  throttle('throttle_unauthenticated_api', limit: 30000, period: 5.minutes) do |req|
+  throttle('throttle_unauthenticated_api', limit: 300, period: 5.minutes) do |req|
     req.throttleable_remote_ip if req.api_request? && req.unauthenticated?
   end
 

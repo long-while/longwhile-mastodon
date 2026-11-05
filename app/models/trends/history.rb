@@ -27,7 +27,9 @@ class Trends::History
     def initialize(prefix, id, day)
       @prefix = prefix
       @id     = id
-      @day    = day.beginning_of_day
+      # Day keys are UTC midnights (see Aggregate). Time.zone is Asia/Seoul here,
+      # so zoned times and Dates must not pick the local midnight.
+      @day    = day.in_time_zone('UTC').beginning_of_day
     end
 
     attr_reader :day
@@ -40,11 +42,11 @@ class Trends::History
       with_redis { |redis| redis.get(key_for(:uses)).to_i }
     end
 
-    def add(account_id)
+    def add(value)
       with_redis do |redis|
         redis.pipelined do |pipeline|
           pipeline.incrby(key_for(:uses), 1)
-          pipeline.pfadd(key_for(:accounts), account_id)
+          pipeline.pfadd(key_for(:accounts), value)
           pipeline.expire(key_for(:uses), EXPIRE_AFTER)
           pipeline.expire(key_for(:accounts), EXPIRE_AFTER)
         end

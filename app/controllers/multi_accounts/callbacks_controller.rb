@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 class MultiAccounts::CallbacksController < ApplicationController
-  # This view is a complete HTML document on its own. Wrapping it in the
-  # application layout nests <html>, and worse, makes a popup that is about to
-  # close download the entire JS/CSS bundle. The window sat blank meanwhile.
+  # @_longwhile — 이 뷰는 그 자체로 완성된 HTML 문서다. 앱 레이아웃에
+  #   싸이면 `<html>` 이 중첩되고, 무엇보다 **바로 닫힐 팝업이 전체 JS·CSS
+  #   번들을 다운로드한다.** 그동안 창은 하얗게 비어 있었다.
   layout false
 
   skip_before_action :verify_authenticity_token

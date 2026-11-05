@@ -3,15 +3,14 @@
 require 'tty-prompt'
 
 namespace :mastodon do
-  # Settings for the features built for this instance that cannot fall back to
-  # a code default.  DM chat is one: lib/mastodon/dm_chat.rb reads the variable
-  # every time it is asked, and treats anything but 'true' as off, so leaving it
-  # unset is indistinguishable from turning the feature off.
+  # 이 인스턴스용으로 만든 기능 중, 코드 기본값으로 대신할 수 없는 설정.
+  # DM 채팅이 그렇다 — lib/mastodon/dm_chat.rb 가 물을 때마다 ENV 를 읽고
+  # 'true' 가 아니면 전부 꺼짐으로 보므로, 값을 안 넣은 것과 꺼 둔 것이
+  # 구분되지 않는다.
   #
-  # Everything else the features read (DM_RATE_LIMIT, STATUS_IDS_LIMIT, the
-  # SCHEDULED_STATUS_* limits, COUNT_DIRECT_STATUSES) already defaults to the
-  # value documented in .env.production.sample, so it is only worth writing here
-  # when the instance wants something different.
+  # 나머지(DM_RATE_LIMIT, STATUS_IDS_LIMIT, SCHEDULED_STATUS_* , COUNT_DIRECT_STATUSES)
+  # 는 이미 .env.production.sample 에 적힌 값이 코드 기본값이라, 다르게 쓰고
+  # 싶을 때만 적으면 된다.
   LONGWHILE_DEFAULTS = {
     'DM_CHAT_ENABLED' => 'true',
   }.freeze
@@ -40,11 +39,25 @@ namespace :mastodon do
         q.messages[:valid?] = 'Invalid domain. If you intend to use unicode characters, enter punycode here'
       end
 
+      begin
+        # This strips subdomains, only keeping one label + a public suffix
+        domain = Addressable::URI.new(host: env['LOCAL_DOMAIN']).domain
+        if domain.include?('masto') || domain.include?('mstdn')
+          prompt.warn 'The Mastodon name is a trademark and its use is restricted.'
+          prompt.warn 'You can read the trademark policy at https://joinmastodon.org/trademark'
+          next prompt.warn 'Nothing saved. Bye!' if prompt.no?('Continue anyway?')
+        end
+      rescue Addressable::URI::InvalidURIError
+        nil
+      end
+
       prompt.say "\n"
 
+      # Single user mode 안내만 출력하고, 기본값으로 비활성화
+      prompt.say('Single user mode disables registrations and redirects the landing page to your public profile.')
       env['SINGLE_USER_MODE'] = false
 
-      %w(SECRET_KEY_BASE OTP_SECRET).each do |key|
+      %w(SECRET_KEY_BASE).each do |key|
         env[key] = SecureRandom.hex(64)
       end
 
@@ -64,6 +77,8 @@ namespace :mastodon do
 
       prompt.say "\n"
 
+      # Docker는 사용하지 않는 고정값
+      using_docker        = false
       db_connection_works = false
 
       prompt.say "\n"
@@ -74,7 +89,7 @@ namespace :mastodon do
       env['DB_NAME'] = 'mastodon_production'
       env['DB_USER'] = 'mastodon'
 
-      # PostgreSQL 비밀번호는 자동으로 공백 처리 (빈 문자열로 설정)
+      # 비밀번호는 설정하지 않음 (peer 인증 사용)
       env['DB_PASS'] = ''
 
       # The chosen database may not exist yet. Connect to default database
@@ -85,10 +100,8 @@ namespace :mastodon do
         host: env['DB_HOST'],
         port: env['DB_PORT'],
         user: env['DB_USER'],
+        password: env['DB_PASS'],
       }
-
-      # 비밀번호가 있을 때만 password 옵션 추가
-      db_options[:password] = env['DB_PASS'] if env['DB_PASS'].present?
 
       begin
         ActiveRecord::Base.establish_connection(db_options)
@@ -103,20 +116,15 @@ namespace :mastodon do
 
       prompt.say "\n"
 
-      # Redis 설정: 호스트/포트는 고정, 비밀번호만 입력
+      # Redis 설정: 호스트/포트는 고정, 비밀번호 없음
       env['REDIS_HOST'] = 'localhost'
       env['REDIS_PORT'] = 6379
-      # Redis 비밀번호는 자동으로 공백 처리 (빈 문자열로 설정)
-      env['REDIS_PASSWORD'] = ''
 
       redis_options = {
         host: env['REDIS_HOST'],
         port: env['REDIS_PORT'],
         driver: :hiredis,
       }
-
-      # 비밀번호가 있을 때만 password 옵션 추가
-      redis_options[:password] = env['REDIS_PASSWORD'] if env['REDIS_PASSWORD'].present?
 
       begin
         redis = Redis.new(redis_options)
@@ -341,12 +349,17 @@ namespace :mastodon do
         q.modify :strip
       end
 
-      env['SMTP_FROM_ADDRESS'] = "마스토돈 <mastodon@#{env['LOCAL_DOMAIN']}>"
+      env['SMTP_FROM_ADDRESS'] = "마스토돈 <mastodon@longwhile.xyz>"
+
+      # 테스트 메일은 발송하지 않음
 
       prompt.say "\n"
 
       # 업데이트 체크는 항상 비활성화
       env['UPDATE_CHECK_URL'] = ''
+
+      # 4.6 이메일 구독(비로그인 구독자에게 글을 메일로 보냄)은 항상 비활성화
+      env['DISABLE_EMAIL_SUBSCRIPTIONS'] = 'true'
 
       # Multi-account 기본값
       env['MA_MULTI_ACCOUNT_REFRESH_FLOW'] ||= 'true'
@@ -359,100 +372,125 @@ namespace :mastodon do
       env['AUTHORIZED_FETCH'] ||= 'true'
       env['LIMITED_FEDERATION_MODE'] ||= 'true'
       env['DISALLOW_UNAUTHENTICATED_API_ACCESS'] ||= 'true'
-      env['THROTTLE_API_REQUESTS_PER_PERIOD'] ||= '3000'
-      env['THROTTLE_API_PERIOD'] ||= '300'
-      env['BOT_THROTTLE_API_REQUESTS_PER_PERIOD'] ||= '5000'
-      env['BOT_THROTTLE_API_PERIOD'] ||= '300'
 
       LONGWHILE_DEFAULTS.each { |key, value| env[key] ||= value }
 
       prompt.say "\n"
-      prompt.say 'Saving configuration to .env.production...'
+      prompt.say 'This configuration will be written to .env.production'
 
-      incompatible_syntax = false
+      # 항상 저장
+      begin
+        incompatible_syntax = false
 
-      env_contents = env.each_pair.map do |key, value|
-        value = value.to_s
-        escaped = dotenv_escape(value)
-        incompatible_syntax = true if value != escaped
+        env_contents = env.each_pair.map do |key, value|
+          value = value.to_s
+          escaped = dotenv_escape(value)
+          incompatible_syntax = true if value != escaped
 
-        "#{key}=#{escaped}"
-      end.join("\n")
+          "#{key}=#{escaped}"
+        end.join("\n")
 
-      generated_header = generate_header(incompatible_syntax)
+        generated_header = generate_header(incompatible_syntax)
 
-      Rails.root.join('.env.production').write("#{generated_header}#{env_contents}\n")
+        Rails.root.join('.env.production').write("#{generated_header}#{env_contents}\n")
 
-      prompt.ok 'Configuration saved.'
-
-      prompt.say "\n"
-      prompt.say 'Preparing the database (create if missing, then migrate)...'
-      prompt.say 'Running `RAILS_ENV=production rails db:prepare` ...'
-      prompt.say "\n\n"
-
-      if system(env.transform_values(&:to_s).merge({ 'RAILS_ENV' => 'production', 'SAFETY_ASSURED' => '1' }), 'rails db:prepare')
-        prompt.ok 'Database prepared successfully.'
-      else
-        prompt.error 'Database preparation (`rails db:prepare`) did not complete successfully. Please review the output above.'
-        errors << 'Preparing the database failed'
-      end
-
-      prompt.say "\n"
-
-      # Multi-account OAuth client 자동 설정
-      if db_connection_works
-        prompt.say 'Configuring multi-account OAuth client...'
-        begin
-          ensure_multi_account_client!(env, prompt)
-        rescue => e
-          prompt.error 'Failed to set up multi-account OAuth client automatically.'
-          prompt.error e.message
-          errors << 'Multi-account OAuth client setup failed.'
-        end
-      end
-
-      if errors.any?
-        prompt.warn 'Your Mastodon server is set up, but there were some errors along the way, you may have to fix them:'
-        errors.each { |error| prompt.warn "- #{error}" }
-      else
-        prompt.ok 'All done! You can now power on the Mastodon server 🐘'
-      end
-      prompt.say "\n"
-
-      if db_connection_works
-        prompt.say 'Creating admin user...'
-        env.each_pair do |key, value|
-          ENV[key] = value.to_s
+        if using_docker
+          prompt.ok 'Below is your configuration, save it to an .env.production file outside Docker:'
+          prompt.say "\n"
+          prompt.say "#{generated_header}#{env.each_pair.map { |key, value| "#{key}=#{value}" }.join("\n")}"
+          prompt.say "\n"
+          prompt.ok 'It is also saved within this container so you can proceed with this wizard.'
         end
 
-        unless defined?(Rails) && Rails.application&.initialized?
+        prompt.say "\n"
+        prompt.say 'Now that configuration is saved, the database will be prepared (create if missing, then migrate).'
+
+        # 데이터베이스 준비는 항상 실행
+        prompt.say 'Running `RAILS_ENV=production rails db:prepare` ...'
+        prompt.say "\n\n"
+
+        if system(env.transform_values(&:to_s).merge({ 'RAILS_ENV' => 'production', 'SAFETY_ASSURED' => '1' }), 'rails db:prepare')
+          prompt.ok 'Database prepared successfully.'
+        else
+          prompt.error 'Database preparation (`rails db:prepare`) did not complete successfully. Please review the output above.'
+          errors << 'Preparing the database failed'
+        end
+
+        # Asset compile은 캐시 정리 등을 위해 항상 수동으로 수행
+        unless using_docker
+          prompt.say "\n"
+          prompt.say 'Skipping asset compilation. Run `RAILS_ENV=production rails assets:precompile` manually.'
+        end
+
+        prompt.say "\n"
+
+        # Multi-account OAuth client 자동 설정 (항상 실행)
+        if db_connection_works
+          begin
+            ensure_multi_account_client!(env, prompt)
+          rescue => e
+            prompt.error 'Failed to set up multi-account OAuth client automatically.'
+            prompt.error e.message
+            errors << 'Multi-account OAuth client setup failed.'
+          end
+        end
+
+        if errors.any?
+          prompt.warn 'Your Mastodon server is set up, but there were some errors along the way, you may have to fix them:'
+          errors.each { |error| prompt.warn "- #{error}" }
+        else
+          prompt.ok 'All done! You can now power on the Mastodon server 🐘'
+        end
+        prompt.say "\n"
+
+        if db_connection_works && prompt.yes?('Do you want to create an admin user straight away?')
+          env.each_pair do |key, value|
+            ENV[key] = value.to_s
+          end
+
           require_relative '../../config/environment'
+          disable_log_stdout!
+
+          ActiveRecord::Encryption.configure(
+            primary_key: ENV.fetch('ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY'),
+            deterministic_key: ENV.fetch('ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY'),
+            key_derivation_salt: ENV.fetch('ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT')
+          )
+
+          username = prompt.ask('Username:') do |q|
+            q.required true
+            q.default 'longwhile'
+            q.validate(/\A[a-z0-9_]+\z/i)
+            q.modify :strip
+          end
+
+          email = prompt.ask('E-mail:') do |q|
+            q.required true
+            q.default 'longwhile.dev@gmail.com'
+            q.modify :strip
+          end
+
+          password = SecureRandom.hex(16)
+
+          owner_role = UserRole.find_by(name: 'Owner')
+          account = Account.find_local(username)
+
+          if account&.user.present?
+            user = account.user
+            user.update!(email: email, password: password, confirmed_at: Time.now.utc, role: owner_role)
+            user.approve! unless user.approved?
+            prompt.ok "Existing admin user '#{username}' has been updated with a new password."
+          else
+            user = User.new(email: email, password: password, confirmed_at: Time.now.utc, account_attributes: { username: username }, bypass_registration_checks: true, role: owner_role)
+            user.save(validate: false)
+            user.approve!
+          end
+
+          Setting.site_contact_username = username
+
+          prompt.ok "You can login with the password: #{password}"
+          prompt.warn 'You can change your password once you login.'
         end
-        disable_log_stdout!
-
-        username = prompt.ask('Username:') do |q|
-          q.required true
-          q.default 'NOTICE'
-          q.validate(/\A[a-z0-9_]+\z/i)
-          q.modify :strip
-        end
-
-        email = prompt.ask('E-mail:') do |q|
-          q.required true
-          q.modify :strip
-        end
-
-        password = SecureRandom.hex(16)
-
-        owner_role = UserRole.find_by(name: 'Owner')
-        user = User.new(email: email, password: password, confirmed_at: Time.now.utc, account_attributes: { username: username }, bypass_registration_checks: true, role: owner_role)
-        user.save(validate: false)
-        user.approve!
-
-        Setting.site_contact_username = username
-
-        prompt.ok "You can login with the password: #{password}"
-        prompt.warn 'You can change your password once you login.'
       end
     rescue TTY::Reader::InputInterrupt
       prompt.ok 'Aborting. Bye!'
@@ -471,15 +509,14 @@ namespace :mastodon do
   namespace :longwhile do
     desc 'Add any missing longwhile settings to .env.production'
     task :env do
-      # mastodon:setup writes these, but it may only be run on a fresh install
-      # -- it rewrites .env.production from scratch, which on a running server
-      # would replace SECRET_KEY_BASE and the VAPID keys and so log everyone
-      # out.  This task exists for the upgrade path: it only appends what is
-      # missing and never touches a line that is already there.
+      # mastodon:setup 도 이 값을 쓰지만 그것은 새로 설치할 때만 돌릴 수 있다 —
+      # .env.production 을 통째로 다시 쓰기 때문에, 돌아가는 서버에서 돌리면
+      # SECRET_KEY_BASE 와 VAPID 키가 갈려 전원이 로그아웃된다. 이 태스크는
+      # 업그레이드용이다. 없는 것만 덧붙이고 이미 있는 줄은 건드리지 않는다.
       env_path = Rails.root.join('.env.production')
 
       unless env_path.exist?
-        warn "#{env_path} does not exist. Run `rails mastodon:setup` first."
+        warn "#{env_path} 이 없습니다. 먼저 `rails mastodon:setup` 을 돌리십시오."
         exit 1
       end
 
@@ -487,18 +524,18 @@ namespace :mastodon do
       added = LONGWHILE_DEFAULTS.reject { |key, _| contents.match?(/^\s*#{Regexp.escape(key)}=/) }
 
       if added.empty?
-        puts 'Nothing to add; .env.production already has every longwhile setting.'
+        puts '더할 것이 없습니다. .env.production 에 이미 다 들어 있습니다.'
         next
       end
 
       contents << "\n" unless contents.end_with?("\n")
-      contents << "\n# Added by mastodon:longwhile:env on #{Time.now.utc}\n"
+      contents << "\n# mastodon:longwhile:env 가 #{Time.now.utc} 에 추가\n"
       added.each { |key, value| contents << "#{key}=#{dotenv_escape(value)}\n" }
 
       env_path.write(contents)
 
-      added.each_key { |key| puts "added #{key}" }
-      puts "\nRestart for this to take effect:"
+      added.each_key { |key| puts "추가: #{key}" }
+      puts "\n적용하려면 재시작하십시오:"
       puts '  sudo systemctl restart mastodon-web mastodon-sidekiq mastodon-streaming'
     end
   end

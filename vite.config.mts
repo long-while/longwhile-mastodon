@@ -1,4 +1,3 @@
-import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { optimizeLodashImports } from '@optimize-lodash/rollup-plugin';
@@ -9,43 +8,19 @@ import { visualizer } from 'rollup-plugin-visualizer';
 import RailsPlugin from 'vite-plugin-rails';
 import { VitePWA } from 'vite-plugin-pwa';
 import tsconfigPaths from 'vite-tsconfig-paths';
-import yaml from 'js-yaml';
+import legacy from '@vitejs/plugin-legacy';
 
 import { defineConfig, UserConfigFnPromise, UserConfig } from 'vite';
 import postcssPresetEnv from 'postcss-preset-env';
 
 import { MastodonServiceWorkerLocales } from './config/vite/plugin-sw-locales';
 import { MastodonEmojiCompressed } from './config/vite/plugin-emoji-compressed';
+import { MastodonThemes } from './config/vite/plugin-mastodon-themes';
+import { MastodonNameLookup } from './config/vite/plugin-name-lookup';
 
 const jsRoot = path.resolve(__dirname, 'app/javascript');
-const themesFile = path.resolve(__dirname, 'config/themes.yml');
 
 export const config: UserConfigFnPromise = async ({ mode, command }) => {
-  const entrypoints: Record<string, string> = {}; // All JS entrypoints are taken care of by Vite Ruby
-
-  // Get all files mentioned in the themes.yml file.
-  const themesString = await fs.readFile(themesFile, 'utf8');
-  const themes = yaml.load(themesString, {
-    filename: 'themes.yml',
-    schema: yaml.FAILSAFE_SCHEMA,
-  });
-
-  if (!themes || typeof themes !== 'object') {
-    throw new Error('Invalid themes.yml file');
-  }
-
-  for (const themePath of Object.values(themes)) {
-    if (
-      typeof themePath !== 'string' ||
-      themePath.split('.').length !== 2 || // Ensure it has exactly one period
-      !themePath.endsWith('css')
-    ) {
-      console.warn(`Invalid theme path "${themePath}" in themes.yml, skipping`);
-      continue;
-    }
-    entrypoints[path.basename(themePath)] = path.resolve(jsRoot, themePath);
-  }
-
   return {
     root: jsRoot,
     css: {
@@ -71,7 +46,6 @@ export const config: UserConfigFnPromise = async ({ mode, command }) => {
       chunkSizeWarningLimit: 1 * 1024 * 1024, // 1MB
       sourcemap: true,
       rollupOptions: {
-        input: entrypoints,
         output: {
           chunkFileNames({ facadeModuleId, name }) {
             if (!facadeModuleId) {
@@ -112,6 +86,7 @@ export const config: UserConfigFnPromise = async ({ mode, command }) => {
           manifestPaths: ['.vite/manifest.json', '.vite/manifest-assets.json'],
         },
       }),
+      MastodonThemes(),
       react({
         babel: {
           plugins: ['formatjs', 'transform-react-remove-prop-types'],
@@ -119,6 +94,10 @@ export const config: UserConfigFnPromise = async ({ mode, command }) => {
       }),
       MastodonServiceWorkerLocales(),
       MastodonEmojiCompressed(),
+      legacy({
+        renderLegacyChunks: false,
+        modernPolyfills: true,
+      }),
       VitePWA({
         srcDir: 'mastodon/service_worker',
         // We need to use injectManifest because we use our own service worker
@@ -147,6 +126,7 @@ export const config: UserConfigFnPromise = async ({ mode, command }) => {
       // Old library types need to be converted
       optimizeLodashImports() as PluginOption,
       !!process.env.ANALYZE_BUNDLE_SIZE && (visualizer() as PluginOption),
+      MastodonNameLookup(),
     ],
   } satisfies UserConfig;
 };

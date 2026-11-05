@@ -33,6 +33,10 @@ Rails.delegate(
   },
 );
 
+// @_longwhile — 서버 설정의 그림 올리기(admin/settings/shared/_upload).
+// 고르는 즉시 미리보기를 바꾸고, 입력에 조건(data-expected-* 등)이 적혀 있으면
+// 저장 전에 검사한다. 서버에서 거절되면 같은 화면의 다른 입력까지 저장되지
+// 않고 고른 파일도 다시 골라야 하므로, 여기서 먼저 막는다.
 const SITE_UPLOAD_INPUT = '#edit_admin_settings input[type="file"]';
 
 const loadImageSize = (url: string) =>
@@ -112,6 +116,7 @@ const setSiteUploadPreviews = (input: HTMLInputElement, url?: string) => {
 Rails.delegate(document, SITE_UPLOAD_INPUT, 'change', ({ target }) => {
   if (!(target instanceof HTMLInputElement)) return;
 
+  // 지난 저장의 오류는 새 파일을 고른 순간 더 이상 맞는 말이 아니다.
   document
     .querySelectorAll<HTMLElement>(`[data-server-error="${target.id}"]`)
     .forEach((element) => {

@@ -188,7 +188,7 @@ RSpec.describe MoveWorker do
       end
 
       it 'clears the stale relationship cache for the rewritten follow' do
-        cache_key = ['relationship', local_follower.id, source_account.id]
+        cache_key = ['relationships', local_follower.id, source_account.id]
         Rails.cache.write(cache_key, 'stale')
 
         subject.perform(source_account.id, target_account.id)

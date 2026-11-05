@@ -160,6 +160,10 @@ export const Account: React.FC<{
     );
   }
 
+  // @_longwhile — 잠금 자물쇠. 변수로 빼서 타입을 명시한다.
+  //   이 파일의 `account` 는 immutable 모델이라 타입이 풀려 있어, JSX 안에서
+  //   바로 조립하면 prop 대입까지 `unsafe assignment` 로 잡힌다. 여기서 한 번
+  //   ReactNode 로 못박아 두면 그 경고가 접근 한 곳으로만 남는다.
   const lockedIcon: React.ReactNode = account?.locked ? (
     <Icon
       id='lock'
@@ -243,6 +247,11 @@ export const Account: React.FC<{
             {/* @_longwhile custom feature / 한참(longwhile) 제작 기능 — 프로텍트(잠금) 계정 표시 아이콘.
                 사용·재사용 시 서버 내 출처 표기 필수 / Credit required: Twitter/X @_longwhile · Crepe https://kre.pe/QTRx */}
             <div className='account__display-name-row'>
+              {/* 자물쇠는 **닉네임 옆**이다. 핸들 뒤가 아니다. 잠금은 그
+                  사람의 성질이라 이름에 붙어야 읽힌다.
+                  `.display-name` 이 닉네임과 핸들을 함께 감싸고 있어 밖에서
+                  형제로 붙이면 반드시 핸들 뒤로 간다. 그래서 그 사이에 끼우는
+                  `afterName` 을 DisplayName 에 두었다. */}
               <DisplayName account={account} afterName={lockedIcon} />
             </div>
 
@@ -262,6 +271,7 @@ export const Account: React.FC<{
               </div>
             )}
 
+            {/* 바이오를 account__contents 안으로 이동 */}
             {account?.note && (
               <div className="account__bio" dangerouslySetInnerHTML={{ __html: account.note }} />
             )}

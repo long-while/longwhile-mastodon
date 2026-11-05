@@ -32,7 +32,7 @@ class Statuses extends PureComponent {
     onNextStep('comment');
   };
 
-  render () {
+  render() {
     const { availableStatusIds, selectedStatusIds, onToggle, isLoading } = this.props;
 
     return (

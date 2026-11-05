@@ -1,11 +1,13 @@
 # frozen_string_literal: true
 
-class Oauth::AuthorizationsController < Doorkeeper::AuthorizationsController
-  skip_before_action :authenticate_resource_owner!
+class OAuth::AuthorizationsController < Doorkeeper::AuthorizationsController
+  # 4.6 은 상류가 skip/before 대신 prepend 로 바꿨다. prepend 는 나중에 쓴 것이 먼저 돈다.
+  # 순서는 store_current_location(new 만) → 다중 계정 강제 로그인 → 부모의
+  # authenticate_resource_owner!. 강제 로그인은 인증 전에 로그아웃해야 로그인 화면으로 간다.
+  prepend_before_action :handle_multi_account_force_login
+  prepend_before_action :store_current_location, only: :new
 
-  before_action :store_current_location, only: :new
-  before_action :handle_multi_account_force_login
-  before_action :authenticate_resource_owner!
+  layout 'modal'
 
   content_security_policy do |p|
     p.form_action(false)
@@ -15,28 +17,21 @@ class Oauth::AuthorizationsController < Doorkeeper::AuthorizationsController
 
   private
 
-  # `only: :new` is the whole point. This hook used to run on `create` (the
-  # consent POST) and `destroy` (the deny DELETE) as well. Neither carries a
-  # query string, so `user_return_to` ended up holding a bare
-  # `/oauth/authorize`, and any later sign-in was sent there, where Doorkeeper
-  # answers "missing required parameter: client_id".
+  # @_longwhile — **`only: :new` 가 핵심이다.** 예전에는 이 훅이 `create`(동의
+  #   버튼의 POST)와 `destroy`(거부의 DELETE)에도 걸렸다. 그 두 요청에는
+  #   쿼리스트링이 없으므로 `user_return_to` 에 **`/oauth/authorize` 가 파라미터
+  #   없이** 적혔고, 그 뒤 아무 때나 로그인하면 Devise 가 거기로 보내
+  #   Doorkeeper 가 "필수 매개변수 누락: client_id." 를 띄웠다.
   #
-  # POST and DELETE have already cleared `authenticate_resource_owner!`, so
-  # there is no reason to record a place to come back to. In the rare case
-  # where the session died in between, the user lands on home instead of the
-  # consent screen - better than a broken link.
+  #   POST/DELETE 는 어차피 `authenticate_resource_owner!` 를 이미 통과한
+  #   요청이라 돌아갈 곳을 적어 둘 이유가 없다. 세션이 그 사이 끊긴 드문
+  #   경우에는 동의 화면 대신 홈으로 가는데, 끊긴 링크로 보내는 것보다 낫다.
   def store_current_location
     store_location_for(:user, request.url)
   end
 
-  def render_success
-    if skip_authorization? || (matching_token? && !truthy_param?('force_login'))
-      redirect_or_render authorize_response
-    elsif Doorkeeper.configuration.api_only
-      render json: pre_auth
-    else
-      render :new
-    end
+  def can_authorize_response?
+    !truthy_param?('force_login') && super
   end
 
   def truthy_param?(key)
@@ -77,17 +72,19 @@ class Oauth::AuthorizationsController < Doorkeeper::AuthorizationsController
     sign_out(:user)
     store_location_for(:user, request.original_fullpath)
 
-    # This marker must always carry a timestamp.
-    #
-    # It is not only the popup that gets signed out here. The popup and the
-    # main tab share the session cookie, so the main tab goes with it. If the
-    # user simply closes the popup at the login screen, all that is left in
-    # the session is "signed out, and go back to this authorize URL". Signing
-    # in on the main screen much later then dragged the user to an OAuth
-    # consent screen instead of home. The timestamp lets
-    # `Auth::SessionsController#after_sign_in_path_for` throw away a stale
-    # marker.
+    # @_longwhile — **이 표식에는 반드시 시각을 같이 적는다.**
+    #   여기서 로그아웃되는 것은 팝업만이 아니다. 팝업과 메인 탭은 세션 쿠키를
+    #   공유하므로 **메인 탭도 같이 로그아웃된다.** 사용자가 팝업의 로그인
+    #   화면에서 그냥 창을 닫아 버리면, 세션에는 "로그아웃 + 이 authorize 로
+    #   돌아가라" 만 남는다. 그 상태로 한참 뒤에 메인 화면에서 로그인하면
+    #   메인이 아니라 OAuth 동의 화면으로 끌려갔다. 시각을 함께 적어
+    #   `Auth::SessionsController#after_sign_in_path_for` 가 늙은 표식을
+    #   버릴 수 있게 한다.
     session[:multi_account_return_to] = request.original_fullpath
     session[:multi_account_return_to_at] = Time.now.utc.to_i
+  end
+
+  def mfa_setup_path
+    super({ oauth: true })
   end
 end

@@ -3,6 +3,10 @@
 require 'rails_helper'
 
 RSpec.describe AdminMailer do
+  # 메일은 받는 사람의 locale 과 무관하게 한국어다(ApplicationMailer::MAIL_LOCALE).
+  # 받는 사람이 en 을 골라 두었어도(아래 before) 한국어다. 기대값도 같은 로캘로 계산한다.
+  around { |example| I18n.with_locale(:ko) { example.run } }
+
   describe '.new_report' do
     let(:sender)    { Fabricate(:account, username: 'John') }
     let(:recipient) { Fabricate(:account, username: 'Mike') }
@@ -14,12 +18,16 @@ RSpec.describe AdminMailer do
     end
 
     it 'renders the email' do
-      expect(mail)
-        .to be_present
-        .and(deliver_to(recipient.user_email))
-        .and(deliver_from('notifications@localhost'))
-        .and(have_subject("New report for cb6e6126.ngrok.io (##{report.id})"))
-        .and(have_body_text("Mike,\r\n\r\nJohn has reported Mike\r\n\r\nView: https://cb6e6126.ngrok.io/admin/reports/#{report.id}\r\n"))
+      expect { mail.deliver }
+        .to send_email(
+          to: recipient.user_email,
+          from: 'notifications@localhost',
+          subject: I18n.t('admin_mailer.new_report.subject', instance: Rails.configuration.x.local_domain, id: report.id)
+        )
+      expect(mail.body)
+        .to match(I18n.t('application_mailer.salutation', name: 'Mike'))
+        .and match(I18n.t('admin_mailer.new_report.body', reporter: 'John', target: 'Mike'))
+        .and match("#{I18n.t('application_mailer.view')} #{admin_report_url(report)}")
     end
   end
 
@@ -33,12 +41,14 @@ RSpec.describe AdminMailer do
     end
 
     it 'renders the email' do
-      expect(mail)
-        .to be_present
-        .and(deliver_to(recipient.user_email))
-        .and(deliver_from('notifications@localhost'))
-        .and(have_subject("#{appeal.account.username} is appealing a moderation decision on cb6e6126.ngrok.io"))
-        .and(have_body_text("#{appeal.account.username} is appealing a moderation decision by #{appeal.strike.account.username}"))
+      expect { mail.deliver }
+        .to send_email(
+          to: recipient.user_email,
+          from: 'notifications@localhost',
+          subject: I18n.t('admin_mailer.new_appeal.subject', instance: Rails.configuration.x.local_domain, username: appeal.account.username)
+        )
+      expect(mail.body)
+        .to match("#{appeal.account.username} 님이 #{appeal.strike.account.username} 님에 의해")
     end
   end
 
@@ -52,12 +62,14 @@ RSpec.describe AdminMailer do
     end
 
     it 'renders the email' do
-      expect(mail)
-        .to be_present
-        .and(deliver_to(recipient.user_email))
-        .and(deliver_from('notifications@localhost'))
-        .and(have_subject("New account up for review on cb6e6126.ngrok.io (#{user.account.username})"))
-        .and(have_body_text('The details of the new account are below. You can approve or reject this application.'))
+      expect { mail.deliver }
+        .to send_email(
+          to: recipient.user_email,
+          from: 'notifications@localhost',
+          subject: I18n.t('admin_mailer.new_pending_account.subject', instance: Rails.configuration.x.local_domain, username: user.account.username)
+        )
+      expect(mail.body)
+        .to match(I18n.t('admin_mailer.new_pending_account.body'))
     end
   end
 
@@ -70,12 +82,14 @@ RSpec.describe AdminMailer do
     end
 
     it 'renders the email' do
-      expect(mail)
-        .to be_present
-        .and(deliver_to(recipient.user_email))
-        .and(deliver_from('notifications@localhost'))
-        .and(have_subject('New Mastodon versions are available for cb6e6126.ngrok.io!'))
-        .and(have_body_text('New Mastodon versions have been released, you may want to update!'))
+      expect { mail.deliver }
+        .to send_email(
+          to: recipient.user_email,
+          from: 'notifications@localhost',
+          subject: I18n.t('admin_mailer.new_software_updates.subject', instance: Rails.configuration.x.local_domain)
+        )
+      expect(mail.body)
+        .to match(I18n.t('admin_mailer.new_software_updates.body'))
     end
   end
 
@@ -88,15 +102,18 @@ RSpec.describe AdminMailer do
     end
 
     it 'renders the email' do
+      expect { mail.deliver }
+        .to send_email(
+          to: recipient.user_email,
+          from: 'notifications@localhost',
+          subject: I18n.t('admin_mailer.new_critical_software_updates.subject', instance: Rails.configuration.x.local_domain)
+        )
+      expect(mail.body)
+        .to match(I18n.t('admin_mailer.new_critical_software_updates.body'))
       expect(mail)
-        .to be_present
-        .and(deliver_to(recipient.user_email))
-        .and(deliver_from('notifications@localhost'))
-        .and(have_subject('Critical Mastodon updates are available for cb6e6126.ngrok.io!'))
-        .and(have_body_text('New critical versions of Mastodon have been released, you may want to update as soon as possible!'))
-        .and(have_header('Importance', 'high'))
-        .and(have_header('Priority', 'urgent'))
-        .and(have_header('X-Priority', '1'))
+        .to have_header('Importance', 'high')
+        .and have_header('Priority', 'urgent')
+        .and have_header('X-Priority', '1')
     end
   end
 
@@ -109,12 +126,14 @@ RSpec.describe AdminMailer do
     end
 
     it 'renders the email' do
-      expect(mail)
-        .to be_present
-        .and(deliver_to(recipient.user_email))
-        .and(deliver_from('notifications@localhost'))
-        .and(have_subject('Registrations for cb6e6126.ngrok.io have been automatically switched to requiring approval'))
-        .and(have_body_text('have been automatically switched'))
+      expect { mail.deliver }
+        .to send_email(
+          to: recipient.user_email,
+          from: 'notifications@localhost',
+          subject: I18n.t('admin_mailer.auto_close_registrations.subject', instance: Rails.configuration.x.local_domain)
+        )
+      expect(mail.body)
+        .to match('자동으로 변경되었습니다')
     end
   end
 end

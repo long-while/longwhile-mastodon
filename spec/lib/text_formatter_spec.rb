@@ -29,7 +29,10 @@ RSpec.describe TextFormatter do
       let(:text) { '@alice' }
 
       it 'creates a mention link' do
-        expect(subject).to include '<a href="https://cb6e6126.ngrok.io/@alice" class="u-url mention">@<span>alice</span></a></span>'
+        expect(subject)
+          .to include(<<~LINK.squish)
+            <a href="https://#{Rails.configuration.x.local_domain}/@alice" class="u-url mention">@<span>alice</span></a>
+          LINK
       end
     end
 
@@ -39,6 +42,20 @@ RSpec.describe TextFormatter do
 
       it 'does not create a mention link' do
         expect(subject).to include '@alice'
+      end
+    end
+
+    # @_longwhile — DM 화면은 탈퇴(익명화) 멤버에게도 `@deleted` 를 붙여 보낸다. 예약된 이름이라
+    # 계정으로 풀리지 않는다.
+    context 'when given the reserved handle of anonymized accounts' do
+      let(:preloaded_accounts) { [] }
+      let(:text) { '@deleted 안녕 @Deleted@elsewhere.example' }
+
+      it 'shows it as the anonymized display name, leaving remote handles alone' do
+        expect(subject)
+          .to include("@#{Account::ANONYMIZED_DISPLAY_NAME} 안녕")
+          .and include('@Deleted@elsewhere.example')
+          .and not_include('@deleted ')
       end
     end
 
@@ -369,15 +386,18 @@ RSpec.describe TextFormatter do
       let(:text) { '[color:red]텍스트[/color]' }
 
       it 'does not process the invalid tag' do
-        expect(subject).not_to include '<span style='
+        expect(subject).to_not include '<span style='
       end
     end
 
     context 'when given a CSS injection attempt in color tag' do
       let(:text) { '[color:ff0000;background:url(evil)]텍스트[/color]' }
 
+      # 처리되지 않은 태그는 글자 그대로 남으므로 'background' 라는 단어 자체는 본문에 있다.
+      # 막아야 하는 것은 그것이 style 속성으로 들어가는 것이다.
       it 'does not process the injection' do
-        expect(subject).not_to include 'background'
+        expect(subject).to_not include '<span'
+        expect(subject).to_not match(/style="[^"]*background/)
       end
     end
 
@@ -409,7 +429,7 @@ RSpec.describe TextFormatter do
       let(:text) { '[bg:yellow]텍스트[/bg]' }
 
       it 'does not process the invalid tag' do
-        expect(subject).not_to include 'background-color'
+        expect(subject).to_not include 'background-color'
       end
     end
 
@@ -417,7 +437,7 @@ RSpec.describe TextFormatter do
       let(:text) { '[bg:000;color:red]텍스트[/bg]' }
 
       it 'does not process the injection' do
-        expect(subject).not_to include 'background-color'
+        expect(subject).to_not include 'background-color'
       end
     end
 
@@ -464,7 +484,7 @@ RSpec.describe TextFormatter do
       end
 
       it 'does not insert a <br /> between consecutive alignment blocks' do
-        expect(subject).not_to include '</span><br />'
+        expect(subject).to_not include '</span><br />'
       end
     end
 
@@ -489,7 +509,7 @@ RSpec.describe TextFormatter do
       let(:text) { '[center]중앙' }
 
       it 'does not render an alignment span' do
-        expect(subject).not_to include 'text-align'
+        expect(subject).to_not include 'text-align'
       end
 
       it 'preserves the literal bracket text' do
@@ -501,7 +521,7 @@ RSpec.describe TextFormatter do
       let(:text) { '[Center]중앙[/Center]' }
 
       it 'does not render an alignment span' do
-        expect(subject).not_to include 'text-align'
+        expect(subject).to_not include 'text-align'
       end
     end
   end

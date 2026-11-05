@@ -12,18 +12,27 @@ RSpec.describe Settings::TwoFactorAuthentication::ConfirmationsController do
       expect(response).to have_http_status(200)
       expect(response.body)
         .to include(qr_code_markup)
-        .and include(I18n.t('settings.two_factor_authentication'))
+      expect(response.parsed_body)
+        .to have_title(I18n.t('settings.two_factor_authentication'))
     end
 
     def qr_code_markup
-      RQRCode::QRCode.new(
-        'otpauth://totp/cb6e6126.ngrok.io:local-part%40domain?secret=thisisasecretforthespecofnewview&issuer=cb6e6126.ngrok.io'
-      ).as_svg(padding: 0, module_size: 4, use_path: true)
+      RQRCode::QRCode
+        .new(totp_provisioning_uri)
+        .as_svg(padding: 0, module_size: 4, use_path: true)
+    end
+
+    def totp_provisioning_uri
+      ROTP::TOTP
+        .new(otp_secret_value, issuer: Rails.configuration.x.local_domain)
+        .provisioning_uri(user.email)
     end
   end
 
   [true, false].each do |with_otp_secret|
     let(:user) { Fabricate(:user, email: 'local-part@domain', otp_secret: with_otp_secret ? 'oldotpsecret' : nil) }
+
+    let(:otp_secret_value) { 'thisisasecretforthespecofnewview' }
 
     context 'when signed in' do
       before { sign_in user, scope: :user }
@@ -31,7 +40,7 @@ RSpec.describe Settings::TwoFactorAuthentication::ConfirmationsController do
       describe 'GET #new' do
         context 'when a new otp secret has been set in the session' do
           subject do
-            get :new, session: { challenge_passed_at: Time.now.utc, new_otp_secret: 'thisisasecretforthespecofnewview' }
+            get :new, session: { challenge_passed_at: Time.now.utc, new_otp_secret: otp_secret_value }
           end
 
           it_behaves_like 'renders expected page'
@@ -47,7 +56,7 @@ RSpec.describe Settings::TwoFactorAuthentication::ConfirmationsController do
       describe 'POST #create' do
         describe 'when form_two_factor_confirmation parameter is not provided' do
           it 'raises ActionController::ParameterMissing' do
-            post :create, params: {}, session: { challenge_passed_at: Time.now.utc, new_otp_secret: 'thisisasecretforthespecofnewview' }
+            post :create, params: {}, session: { challenge_passed_at: Time.now.utc, new_otp_secret: otp_secret_value }
 
             expect(response).to have_http_status(400)
           end
@@ -64,7 +73,7 @@ RSpec.describe Settings::TwoFactorAuthentication::ConfirmationsController do
 
           it 'renders page with success' do
             expect { post_create_with_options }
-              .to change { user.reload.otp_secret }.to 'thisisasecretforthespecofnewview'
+              .to change { user.reload.otp_secret }.to otp_secret_value
 
             expect(flash[:notice])
               .to eq(I18n.t('two_factor_authentication.enabled_success'))
@@ -72,7 +81,8 @@ RSpec.describe Settings::TwoFactorAuthentication::ConfirmationsController do
               .to have_http_status(200)
             expect(response.body)
               .to include(*otp_backup_codes)
-              .and include(I18n.t('settings.two_factor_authentication'))
+            expect(response.parsed_body)
+              .to have_title(I18n.t('settings.two_factor_authentication'))
           end
         end
 
@@ -90,8 +100,8 @@ RSpec.describe Settings::TwoFactorAuthentication::ConfirmationsController do
           it 'renders page with error message' do
             subject
 
-            expect(response.body)
-              .to include(I18n.t('otp_authentication.wrong_code'))
+            expect(response.parsed_body)
+              .to have_css('.flash-message', text: I18n.t('otp_authentication.wrong_code'))
           end
 
           it_behaves_like 'renders expected page'
@@ -102,7 +112,7 @@ RSpec.describe Settings::TwoFactorAuthentication::ConfirmationsController do
         def post_create_with_options
           post :create,
                params: { form_two_factor_confirmation: { otp_attempt: '123456' } },
-               session: { challenge_passed_at: Time.now.utc, new_otp_secret: 'thisisasecretforthespecofnewview' }
+               session: { challenge_passed_at: Time.now.utc, new_otp_secret: otp_secret_value }
         end
 
         def prepare_user_otp_generation
@@ -112,7 +122,7 @@ RSpec.describe Settings::TwoFactorAuthentication::ConfirmationsController do
         end
 
         def prepare_user_otp_consumption_response(result)
-          options = { otp_secret: 'thisisasecretforthespecofnewview' }
+          options = { otp_secret: otp_secret_value }
           allow(user)
             .to receive(:validate_and_consume_otp!)
             .with('123456', options)

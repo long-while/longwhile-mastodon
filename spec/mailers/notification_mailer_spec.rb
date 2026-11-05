@@ -3,6 +3,10 @@
 require 'rails_helper'
 
 RSpec.describe NotificationMailer do
+  # 메일은 받는 사람의 locale 과 무관하게 한국어다(ApplicationMailer::MAIL_LOCALE).
+  # 기대값도 같은 로캘로 계산한다.
+  around { |example| I18n.with_locale(:ko) { example.run } }
+
   shared_examples 'delivery to non functional user' do
     context 'when user is not functional' do
       before { receiver.update(confirmed_at: nil) }
@@ -38,13 +42,40 @@ RSpec.describe NotificationMailer do
     it_behaves_like 'localized subject', 'notification_mailer.mention.subject', name: 'bob'
 
     it 'renders the email' do
+      expect { mail.deliver }
+        .to send_email(
+          subject: I18n.t('notification_mailer.mention.subject', name: 'bob')
+        )
+      expect(mail.text_part.body)
+        .to match(I18n.t('notification_mailer.mention.body', name: 'bob'))
+        .and match('The body of the foreign status')
       expect(mail)
-        .to be_present
-        .and(have_subject('You were mentioned by bob'))
-        .and(have_body_text('You were mentioned by bob'))
-        .and(have_body_text('The body of the foreign status'))
-        .and have_thread_headers
+        .to have_thread_headers
         .and have_standard_headers('mention').for(receiver)
+    end
+
+    it_behaves_like 'delivery to non functional user'
+    it_behaves_like 'delivery without status'
+  end
+
+  describe 'quote' do
+    let(:quote) { Fabricate(:quote, state: :accepted, status: foreign_status, quoted_status: own_status) }
+    let(:notification) { Notification.create!(account: receiver.account, activity: quote) }
+    let(:mail) { prepared_mailer_for(own_status.account).quote }
+
+    it_behaves_like 'localized subject', 'notification_mailer.quote.subject', name: 'bob'
+
+    it 'renders the email' do
+      expect { mail.deliver }
+        .to send_email(
+          subject: I18n.t('notification_mailer.quote.subject', name: 'bob')
+        )
+      expect(mail.text_part.body)
+        .to match(I18n.t('notification_mailer.quote.body', name: 'bob'))
+        .and match('The body of the foreign status')
+      expect(mail)
+        .to have_thread_headers
+        .and have_standard_headers('quote').for(receiver)
     end
 
     it_behaves_like 'delivery to non functional user'
@@ -59,11 +90,14 @@ RSpec.describe NotificationMailer do
     it_behaves_like 'localized subject', 'notification_mailer.follow.subject', name: 'bob'
 
     it 'renders the email' do
+      expect { mail.deliver }
+        .to send_email(
+          subject: I18n.t('notification_mailer.follow.subject', name: 'bob')
+        )
+      expect(mail.text_part.body)
+        .to match(I18n.t('notification_mailer.follow.body', name: 'bob'))
       expect(mail)
-        .to be_present
-        .and(have_subject('bob is now following you'))
-        .and(have_body_text('bob is now following you'))
-        .and have_standard_headers('follow').for(receiver)
+        .to have_standard_headers('follow').for(receiver)
     end
 
     it_behaves_like 'delivery to non functional user'
@@ -77,12 +111,15 @@ RSpec.describe NotificationMailer do
     it_behaves_like 'localized subject', 'notification_mailer.favourite.subject', name: 'bob'
 
     it 'renders the email' do
+      expect { mail.deliver }
+        .to send_email(
+          subject: I18n.t('notification_mailer.favourite.subject', name: 'bob')
+        )
+      expect(mail.text_part.body)
+        .to match(I18n.t('notification_mailer.favourite.body', name: 'bob'))
+        .and match('The body of the own status')
       expect(mail)
-        .to be_present
-        .and(have_subject('bob favorited your post'))
-        .and(have_body_text('Your post was favorited by bob'))
-        .and(have_body_text('The body of the own status'))
-        .and have_thread_headers
+        .to have_thread_headers
         .and have_standard_headers('favourite').for(receiver)
     end
 
@@ -98,12 +135,15 @@ RSpec.describe NotificationMailer do
     it_behaves_like 'localized subject', 'notification_mailer.reblog.subject', name: 'bob'
 
     it 'renders the email' do
+      expect { mail.deliver }
+        .to send_email(
+          subject: I18n.t('notification_mailer.reblog.subject', name: 'bob')
+        )
+      expect(mail.text_part.body)
+        .to match(I18n.t('notification_mailer.reblog.body', name: 'bob'))
+        .and match('The body of the own status')
       expect(mail)
-        .to be_present
-        .and(have_subject('bob boosted your post'))
-        .and(have_body_text('Your post was boosted by bob'))
-        .and(have_body_text('The body of the own status'))
-        .and have_thread_headers
+        .to have_thread_headers
         .and have_standard_headers('reblog').for(receiver)
     end
 
@@ -119,11 +159,14 @@ RSpec.describe NotificationMailer do
     it_behaves_like 'localized subject', 'notification_mailer.follow_request.subject', name: 'bob'
 
     it 'renders the email' do
+      expect { mail.deliver }
+        .to send_email(
+          subject: I18n.t('notification_mailer.follow_request.subject', name: 'bob')
+        )
+      expect(mail.text_part.body)
+        .to match(I18n.t('notification_mailer.follow_request.body', name: 'bob'))
       expect(mail)
-        .to be_present
-        .and(have_subject('Pending follower: bob'))
-        .and(have_body_text('bob has requested to follow you'))
-        .and have_standard_headers('follow_request').for(receiver)
+        .to have_standard_headers('follow_request').for(receiver)
     end
 
     it_behaves_like 'delivery to non functional user'

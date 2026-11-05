@@ -13,12 +13,14 @@ RSpec.describe 'Admin Rules' do
         visit admin_rules_path
 
         expect(page)
-          .to have_content(I18n.t('admin.rules.title'))
-          .and have_content(rule.text)
+          .to have_text(I18n.t('admin.rules.title'))
+          .and have_text(rule.text)
 
         click_on(rule.text)
+        # 업스트림은 사이드바의 "서버 규칙" 항목에 걸렸다. 이 포크는 그 항목을 뺐으므로
+        # (config/navigation.rb, DECISIONS A-54) 수정 화면에 왔는지를 제목으로 본다.
         expect(page)
-          .to have_content(I18n.t('admin.rules.title'))
+          .to have_title(I18n.t('admin.rules.edit'))
       end
     end
 
@@ -33,18 +35,41 @@ RSpec.describe 'Admin Rules' do
         expect { submit_form }
           .to_not change(Rule, :count)
         expect(page)
-          .to have_content(/error below/)
+          .to have_text(/아래 \d+개 오류/) # 화면은 한국어 고정(Localized#requested_locale)
 
         # Valid submission
         fill_in 'rule_text', with: 'No yelling on the bus!'
         expect { submit_form }
           .to change(Rule, :count).by(1)
         expect(page)
-          .to have_content(I18n.t('admin.rules.title'))
+          .to have_text(I18n.t('admin.rules.title'))
       end
 
       def submit_form
         click_on I18n.t('admin.rules.add_new')
+      end
+    end
+
+    describe 'Moving down an existing rule' do
+      let!(:first_rule) { Fabricate(:rule, text: 'This is another rule') }
+      let!(:second_rule) { Fabricate(:rule, text: 'This is a rule') }
+
+      it 'moves the rule down' do
+        visit admin_rules_path
+
+        expect(page)
+          .to have_text(I18n.t('admin.rules.title'))
+
+        expect(Rule.ordered.pluck(:text)).to eq ['This is another rule', 'This is a rule']
+
+        click_on(I18n.t('admin.rules.move_down'))
+
+        expect(page)
+          .to have_text(I18n.t('admin.rules.title'))
+          .and have_text(first_rule.text)
+          .and have_text(second_rule.text)
+
+        expect(Rule.ordered.pluck(:text)).to eq ['This is a rule', 'This is another rule']
       end
     end
 

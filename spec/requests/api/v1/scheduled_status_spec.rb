@@ -3,9 +3,7 @@
 require 'rails_helper'
 
 RSpec.describe 'Scheduled Statuses' do
-  let(:user)    { Fabricate(:user) }
-  let(:token)   { Fabricate(:accessible_access_token, resource_owner_id: user.id, scopes: scopes) }
-  let(:headers) { { 'Authorization' => "Bearer #{token.token}" } }
+  include_context 'with API authentication'
 
   describe 'GET /api/v1/scheduled_statuses' do
     context 'when not authorized' do
@@ -133,6 +131,40 @@ RSpec.describe 'Scheduled Statuses' do
       scheduled_status.reload
       expect(scheduled_status.failed_at).to be_nil
       expect(scheduled_status.last_error).to be_nil
+    end
+
+    # 예약 글을 만들 때는 StatusesController#set_thread 가 답글 대상을 볼 수 있는지
+    # 확인한다. 수정에서 그 검사가 빠지면, 볼 수 없는 글(팔로우하지 않은 사람의 팔로워
+    # 전용 글, 남의 DM)에 답글을 달아 그 스레드에 끼어들 수 있다.
+    context 'when changing the post being replied to' do
+      it 'refuses a post the author cannot see' do
+        hidden = Fabricate(:status, account: Fabricate(:account), visibility: :private)
+
+        put api_v1_scheduled_status_path(scheduled_status), headers: headers, params: { in_reply_to_id: hidden.id }
+
+        expect(response).to have_http_status(404)
+        expect(scheduled_status.reload.params['in_reply_to_id']).to be_nil
+      end
+
+      it 'refuses a direct message between other people' do
+        other_dm = Fabricate(:status, account: Fabricate(:account), visibility: :direct)
+
+        put api_v1_scheduled_status_path(scheduled_status), headers: headers, params: { in_reply_to_id: other_dm.id }
+
+        expect(response).to have_http_status(404)
+        expect(scheduled_status.reload.params['in_reply_to_id']).to be_nil
+      end
+
+      it 'accepts a post the author can see' do
+        followed = Fabricate(:account)
+        user.account.follow!(followed)
+        visible = Fabricate(:status, account: followed, visibility: :private)
+
+        put api_v1_scheduled_status_path(scheduled_status), headers: headers, params: { in_reply_to_id: visible.id }
+
+        expect(response).to have_http_status(200)
+        expect(scheduled_status.reload.params['in_reply_to_id'].to_s).to eq visible.id.to_s
+      end
     end
 
     it 'rejects a time below the minimum offset' do

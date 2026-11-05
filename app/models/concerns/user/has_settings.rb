@@ -15,6 +15,10 @@ module User::HasSettings
     settings['noindex']
   end
 
+  def email_subscriptions_enabled?
+    settings['email_subscriptions']
+  end
+
   def preferred_posting_language
     valid_locale_cascade(settings['default_language'], locale, I18n.locale)
   end
@@ -29,6 +33,10 @@ module User::HasSettings
 
   def setting_boost_modal
     settings['web.reblog_modal']
+  end
+
+  def setting_quick_boosting
+    settings['web.quick_boosting']
   end
 
   def setting_delete_modal
@@ -53,6 +61,14 @@ module User::HasSettings
 
   def setting_theme
     settings['theme']
+  end
+
+  def setting_color_scheme
+    settings['web.color_scheme']
+  end
+
+  def setting_contrast
+    settings['web.contrast']
   end
 
   def setting_display_media
@@ -103,8 +119,15 @@ module User::HasSettings
     settings['always_send_emails']
   end
 
+  # 저장된 값을 읽지 않고 항상 private 을 돌려준다. 기존 사용자의 settings JSON 에는
+  # 아직 'unlisted' 가 남아 있는데, 그걸 신뢰하면 잠금 여부에 따라 공개 범위가
+  # 갈리던 옛 동작이 되살아난다. locked? 는 이제 팔로우 승인 여부만 결정한다.
   def setting_default_privacy
     account.announcement_account? ? 'unlisted' : 'private'
+  end
+
+  def setting_default_quote_policy
+    settings['default_quote_policy'] || 'public'
   end
 
   def allows_report_emails?

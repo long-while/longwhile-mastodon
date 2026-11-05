@@ -198,6 +198,11 @@ class ActionBar extends PureComponent {
 
     menu.push({ text: intl.formatMessage(messages.copy), action: this.handleCopy });
 
+    // @_longwhile — "공유" 와 "임베드 코드 보기" 를 뺐다. 연합하지 않는 비공개
+    //   인스턴스라 밖으로 내보낼 링크도, 바깥 웹에 붙일 코드도 뜻이 없다.
+    //   타임라인 쪽(components/status_action_bar.jsx)과 함께 걷었다 — 한쪽만
+    //   지우면 같은 게시물의 메뉴가 화면에 따라 달라진다.
+
     if (signedIn) {
       menu.push(null);
 
@@ -267,6 +272,7 @@ class ActionBar extends PureComponent {
       replyIconComponent = ReplyAllIcon;
     }
 
+    // status_action_bar.jsx 와 같은 이유로 작성자 조건을 뺐다 — 남기면 버튼이 비활성이 된다.
     const reblogPrivate = status.get('visibility') === 'private';
 
     let reblogTitle, reblogIconComponent;

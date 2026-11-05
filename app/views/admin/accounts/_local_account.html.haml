@@ -19,6 +19,7 @@
     = table_link_to 'contact_mail', t('admin.accounts.change_role.label'), admin_user_role_path(account.user) if can?(:change_role, account.user)
 - if can?(:toggle_protect, account)
   %tr
+    -# 게시물은 이 토글과 무관하게 언제나 팔로워 전용이다. 여기서 정하는 건 팔로우 승인 여부뿐.
     %th 팔로우 승인제
     %td= account.locked? ? '켜짐 (승인 필요)' : '꺼짐 (바로 팔로우)'
     %td
@@ -32,10 +33,10 @@
   %td{ rowspan: can?(:create, :email_domain_block) ? 3 : 2 }= account.user_email
   %td= table_link_to 'edit', t('admin.accounts.change_email.label'), admin_account_change_email_path(account.id) if can?(:change_email, account.user)
 %tr
-  %td= table_link_to 'search', t('admin.accounts.search_same_email_domain'), admin_accounts_path(email: "%@#{account.user_email.split('@').last}")
+  %td= table_link_to 'search', t('admin.accounts.search_same_email_domain'), admin_accounts_path(email: "%@#{account.user_email_domain}")
 - if can?(:create, :email_domain_block)
   %tr
-    %td= table_link_to 'hide_source', t('admin.accounts.add_email_domain_block'), new_admin_email_domain_block_path(_domain: account.user_email.split('@').last)
+    %td= table_link_to 'hide_source', t('admin.accounts.add_email_domain_block'), new_admin_email_domain_block_path(_domain: account.user_email_domain)
 - if account.user_unconfirmed_email.present?
   %tr
     %th= t('admin.accounts.unconfirmed_email')
@@ -44,7 +45,7 @@
 %tr
   %th= t('admin.accounts.email_status')
   %td
-    - if account.user&.confirmed?
+    - if account.user_confirmed?
       = t('admin.accounts.confirmed')
     - else
       = t('admin.accounts.confirming')
@@ -56,9 +57,15 @@
       = t 'admin.accounts.security_measures.password_and_2fa'
     - else
       = t 'admin.accounts.security_measures.only_password'
-  %td
-    - if account.user&.two_factor_enabled? && can?(:disable_2fa, account.user)
+  - if account.user&.two_factor_enabled? && can?(:disable_2fa, account.user)
+    %td
       = table_link_to 'lock_open', t('admin.accounts.disable_two_factor_authentication'), admin_user_two_factor_authentication_path(account.user.id), method: :delete
+  - elsif account.user&.suspicious_inactive_sign_in? && can?(:disable_sign_in_token, account.user)
+    %td
+      = table_link_to 'lock_open', t('admin.accounts.disable_sign_in_token'), admin_user_sign_in_token_authentication_path(account.user.id), method: :delete, data: { confirm: t('admin.accounts.are_you_sure') }
+  - elsif account.user&.sign_in_token_disabled? && can?(:enable_sign_in_token, account.user)
+    %td
+      = table_link_to 'lock', t('admin.accounts.enable_sign_in_token'), admin_user_sign_in_token_authentication_path(account.user.id), method: :post, data: { confirm: t('admin.accounts.are_you_sure') }
 - if can?(:reset_password, account.user)
   %tr
     %td

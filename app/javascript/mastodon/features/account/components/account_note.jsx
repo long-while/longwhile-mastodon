@@ -149,6 +149,17 @@ class AccountNote extends ImmutablePureComponent {
 
     return (
       <div className='account__header__account-note'>
+        {/* @_longwhile — 보이는 "개인 메모" 라벨을 없앴다(2026-08-13 요청).
+            입력창의 플레이스홀더("클릭하여 노트 추가")가 같은 말을 하고 있어
+            제목이 한 번 더 있을 이유가 없다.
+
+            **두 가지를 라벨이 대신하고 있었으므로 그것만 남긴다.**
+
+              이름  라벨이 사라지면 입력창에 이름이 없어져 스크린 리더가
+                    "편집" 이라고만 읽는다. `aria-label` 로 옮긴다.
+                    플레이스홀더는 이름이 아니다 — 글자를 넣으면 사라진다.
+              저장  이 메모는 포커스를 잃을 때 저장되고, 그 알림이 라벨 안에
+                    있었다. 화면에서는 사라지지만 낭독은 남긴다. */}
         <span className='account__header__account-note__status'>
           <InlineAlert show={saved} />
         </span>
