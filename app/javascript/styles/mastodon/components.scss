@@ -13503,10 +13503,10 @@ div.compose-panel .account__bio {
   padding: 16px;
   border-bottom: 1px solid var(--background-border-color);
 
-  /* The bird-ui and theme-ui skins paint their own glyph as a background-image
-     on the icon classes they know (.icon-ellipsis-h, .icon-globe, …). They hide
-     the original SVG path only inside the containers they were written for, and
-     this list is not one of them — so both copies drew at once: the "more" dots
+  /* The bird-ui skin paints its own glyph as a background-image on the icon
+     classes it knows (.icon-ellipsis-h, .icon-globe, …). It hides the original
+     SVG path only inside the containers it was written for, and this list is
+     not one of them — so both copies drew at once: the "more" dots
      came out doubled and the visibility icon in the skin's own colour.
 
      Turning the painted copy off leaves the Material icon that the component

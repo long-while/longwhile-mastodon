@@ -2217,8 +2217,6 @@ ko:
     mastodon-bird-ui-dark: 유사 트위터 (어두움)
     mastodon-bird-ui-light: 유사 트위터 (밝음)
     mastodon-light: 마스토돈 (밝음)
-    # theme-ui-light: 커스텀 (낮)
-    # theme-ui-dark: 커스텀 (밤)
   time:
     formats:
       default: "%Y-%m-%d %H:%M"

@@ -49,7 +49,6 @@ module Admin::Settings::UploadsHelper
   def site_upload_default_asset(var)
     return DEFAULT_ASSETS[var.to_sym] unless SiteUpload::WORDMARK_VARS.include?(var.to_s)
 
-    folder = Setting.theme.to_s.start_with?('theme-ui') ? 'theme' : 'logos'
-    "images/#{folder}/#{var}.png"
+    "images/logos/#{var}.png"
   end
 end

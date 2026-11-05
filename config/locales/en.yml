@@ -2261,8 +2261,6 @@ en:
     mastodon-bird-ui-dark: Twitter (Dark)
     mastodon-bird-ui-light: Twitter (Light)
     mastodon-light: Mastodon (Light)
-    # theme-ui-light: Custom (Light)
-    # theme-ui-dark: Custom (Dark)
   time:
     formats:
       default: "%b %d, %Y, %H:%M"

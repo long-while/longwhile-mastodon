@@ -36,10 +36,10 @@ RSpec.describe Admin::Settings::UploadsHelper do
       expect(helper.site_upload_default_asset(:wordmark_light)).to eq 'images/logos/wordmark_light.png'
     end
 
-    it 'follows the theme-ui images when that theme is active' do
-      Setting.theme = 'theme-ui-dark'
+    it 'uses the bundled logo for every theme' do
+      Setting.theme = 'mastodon-bird-ui-dark'
 
-      expect(helper.site_upload_default_asset(:wordmark_dark)).to eq 'images/theme/wordmark_dark.png'
+      expect(helper.site_upload_default_asset(:wordmark_dark)).to eq 'images/logos/wordmark_dark.png'
     end
   end
 end
