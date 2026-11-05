@@ -147,7 +147,6 @@ RSpec.describe AccountConversation do
     end
   end
 
-  # @_longwhile custom — dm-chat-phase-0.md P0-2
   describe 'STATUS_IDS_LIMIT' do
     it 'keeps only the most recent ids and still points last_status at the newest' do
       stub_const("#{described_class}::STATUS_IDS_LIMIT", 3)
