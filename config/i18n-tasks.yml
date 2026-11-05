@@ -65,8 +65,8 @@ ignore_unused:
   - 'move_handler.carry_{mutes,blocks}_over_text'
   - 'admin_mailer.*.subject'
   - 'user_mailer.*.subject'
-  - 'user_mailer.welcome.*' # 환영 메일을 가이드 단추 하나로 줄여 나머지 키는 안 쓴다
-  - 'application_mailer.{settings,notification_preferences}' # 메일 푸터에서 '이메일 설정 변경' 을 뺐다
+  - 'user_mailer.welcome.*'
+  - 'application_mailer.{settings,notification_preferences}'
   - 'email_subscription_mailer.*'
   - 'notification_mailer.*'
   - 'imports.overwrite_preambles.{following,blocking,muting,domain_blocking,bookmarks,lists,custom_filters}_html.*'

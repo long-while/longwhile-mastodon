@@ -4,11 +4,6 @@
 - content_for :heading do
   = render partial: 'admin/settings/shared/heading'
 
--# @_longwhile — 머리말과 "중재 팀을 데리고 있는지 확인하세요" 경고를 걷어냈다.
--# 초대로만 들어오는 서버라 그 경고가 겨냥한 상황이 오지 않는다.
--#
--# 최소 연령 제한과 캡차도 걷어냈다. 초대장을 받아야 들어오는 사람에게
--# 생일을 묻고 캡차를 풀게 할 이유가 없다. 값은 그대로 남는다.
 = simple_form_for @admin_settings, url: admin_settings_registrations_path, html: { id: 'edit_admin_settings', method: :patch } do |f|
   = render 'shared/error_messages', object: @admin_settings
 

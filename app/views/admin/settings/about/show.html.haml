@@ -4,10 +4,6 @@
 - content_for :heading do
   = render partial: 'admin/settings/shared/heading'
 
--# @_longwhile — 걷어낸 것 셋.
--#   · 도메인 차단 공개 여부 둘 — 연합하지 않아 차단할 도메인이 없다.
--#   · 상태 페이지 주소 — 이 서버에 그런 페이지가 없다.
--#   · 규칙 화면으로 가는 안내 링크 — 그 화면을 메뉴에서 걷어냈다 (A-54).
 = simple_form_for @admin_settings, url: admin_settings_about_path, html: { id: 'edit_admin_settings', method: :patch } do |f|
   = render 'shared/error_messages', object: @admin_settings
 

@@ -4,9 +4,6 @@
 - content_for :heading_actions do
   = button_tag t('generic.save_changes'), class: 'button', form: 'edit_user'
 
--# @_longwhile — Phase 2 가 언어 둘과 시간대를 걷어냈다가 되살렸다. 선택지가
--# 많은 것과 고를 수 없는 것은 다른 문제다 — 한 번 고르면 다시 열 일이 없는
--# 자리라 화면 맨 위에 두 줄로 눕혀 둔다.
 = simple_form_for current_user, url: settings_display_path, html: { id: :edit_user } do |f|
   .fields-row
     .fields-group.fields-row__column.fields-row__column-6
@@ -74,4 +71,3 @@
     .fields-group
       = ff.input :'web.expand_content_warnings', wrapper: :with_label, label: I18n.t('simple_form.labels.defaults.setting_expand_spoilers')
       = ff.input :'web.delete_modal', wrapper: :with_label, label: I18n.t('simple_form.labels.defaults.setting_delete_modal')
-

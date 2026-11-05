@@ -6,9 +6,6 @@
   .flash-message.warning
     = t('auth.status.pending')
 - elsif user.account.moved_to_account_id.present?
-  -# @_longwhile — 계정 이동 화면을 걷어냈으므로 취소 링크가 없다. 연합하지
-  -# 않는 인스턴스라 새 이동은 생기지 않지만, 옛 데이터가 남아 있을 수 있어
-  -# 안내는 남긴다 (settings-phase-3.md).
   .flash-message.warning
     = t('auth.status.redirecting_to', acct: user.account.moved_to_account.pretty_acct)
 

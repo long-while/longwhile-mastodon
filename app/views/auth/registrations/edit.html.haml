@@ -1,8 +1,6 @@
 - content_for :page_title do
   = t('settings.account_settings')
 
--# @_longwhile — 저장을 제목 옆으로 올렸다. 이 화면에는 폼이 하나(로그인)뿐이고
--# 나머지는 링크 묶음이라, 아래 길쭉한 단추가 무엇을 저장하는지 오히려 흐렸다.
 - content_for :heading_actions do
   = button_tag t('generic.save_changes'), class: 'button', form: 'edit_account', disabled: current_account.suspended?
 
@@ -12,10 +10,6 @@
 - else
   = render partial: 'status', locals: { user: @user, strikes: @strikes }
 
--# @_longwhile — 계정 화면을 소제목 셋(로그인 · 보안 · 내 데이터)으로 다시 짰다.
--# 본문의 작은 링크로만 닿던 것들(로그인 기록 · 계정 삭제)과 사이드바에만
--# 있던 것들(2단계 인증 · 연결된 앱 · 오래된 게시물 자동 삭제 · 데이터 내려받기)을
--# 한 화면에서 보이게 모았다 (settings-phase-4.md §2).
 %h3= t('auth.login')
 
 = simple_form_for(resource, as: resource_name, url: registration_path(resource_name), html: { id: 'edit_account', method: :put, class: 'auth_edit', novalidate: false }) do |f|

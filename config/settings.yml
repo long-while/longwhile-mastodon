@@ -41,8 +41,6 @@ defaults: &defaults
     retain_tokens: <%= ENV.fetch('MA_MULTI_ACCOUNT_RETAIN_TOKENS', 'true') %>
     refresh_flow: <%= ENV.fetch('MA_MULTI_ACCOUNT_REFRESH_FLOW', 'true') %>
     scopes: <%= ENV.fetch('MA_MULTI_ACCOUNT_SCOPES', 'read write follow push') %>
-  # @_longwhile — 연말 보고서(wrapstodon)는 끈다. 4.6 이 보고서 스키마를 새로 썼고, 고정
-  # 프런트(features/annual_report)는 옛 스키마를 기대한다.
   wrapstodon: false
 
 development:
