@@ -41,12 +41,6 @@ class FanOutOnWriteService < BaseService
     when :limited
       deliver_to_mentioned_followers!
     else
-      # ─── @_longwhile — DM 은 타임라인에 넣지 않는다 ───
-      # 보낸 사람도, 받은 사람도, 운영진도 마찬가지다. DM 을 보는 곳은 /messages
-      # 하나뿐이고, 운영진 열람은 /admin/direct_messages 와 /messages/all 이
-      # 맡는다. 홈에 섞이면 "타임라인에 DM 이 보인다" 는 사고로 읽힌다.
-      #
-      # 알림은 그대로 간다 — 위의 notify_mentioned_accounts! 는 이 분기와 무관하다.
       deliver_to_conversation!
     end
   end
@@ -115,10 +109,6 @@ class FanOutOnWriteService < BaseService
     end
   end
 
-  # 재게시는 부스터의 팔로워 ∩ 원작자의 팔로워에게만 내려간다. B 를 팔로우하지만
-  # A 는 팔로우하지 않는 사람은 B 가 재게시한 A 의 툿을 받지 않는다.
-  # 읽기 쪽(StatusPolicy#show?, FeedManager#filter_from_home)에도 같은 규칙이 있다 —
-  # 여기만 막으면 백필(merge_into_home)이나 퍼머링크로 새어 나간다.
   def distribution_followers_scope
     return @account.followers_for_local_distribution unless @status.reblog?
 
@@ -130,11 +120,6 @@ class FanOutOnWriteService < BaseService
     )
   end
 
-  # ─── @_longwhile custom feature / 한참(longwhile) 제작 기능 — 공지 계정 전체 브로드캐스트 ───
-  # 사용·재사용 시 서버 내 출처 표기 필수 / Credit required to use or reuse:
-  #   Twitter/X @_longwhile · Crepe https://kre.pe/QTRx
-  # 공지용 계정(@longwhile)의 unlisted(로컬 범위) 툿은 모든 로컬 활성 사용자의
-  # 홈 피드에 푸시한다. zadd 기반이므로 팔로워와 중복돼도 안전함.
   def deliver_to_all_local_accounts!
     Account.local
            .without_suspended
@@ -170,7 +155,6 @@ class FanOutOnWriteService < BaseService
     end
   end
 
-  # 리스트도 마찬가지다. 리스트 주인이 원작자를 팔로우하지 않으면 재게시가 안 들어간다.
   def distribution_lists_scope
     return @account.lists_for_local_distribution unless @status.reblog?
 
@@ -214,9 +198,6 @@ class FanOutOnWriteService < BaseService
 
     AccountConversation.add_status(@account, @status)
 
-    # @_longwhile — DM 채팅. PostStatusService 가 이미 붙였으면 멱등하게 통과한다.
-    #   여기 두는 것은 그 서비스를 타지 않는 작성 경로를 위한 안전망이다.
-    #   (dm-chat-phase-1.md §3.3)
     DmRoom.attach_status!(@status) if Mastodon::DmChat.enabled?
   end
 

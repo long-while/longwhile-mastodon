@@ -12,7 +12,6 @@ RSpec.describe MoveCanBePrivateAccountPermissionBit do
   let!(:role_without_bit) { Fabricate(:user_role, permissions: other_permissions) }
 
   before do
-    # 옛 코드가 저장한 값을 흉내 낸다. 지금의 FLAGS 로는 이 비트를 만들 수 없다.
     role_with_bit.update_columns(permissions: other_permissions | old_bit)
   end
 

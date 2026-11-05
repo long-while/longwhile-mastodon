@@ -45,8 +45,6 @@ RSpec.describe TextFormatter do
       end
     end
 
-    # @_longwhile — DM 화면은 탈퇴(익명화) 멤버에게도 `@deleted` 를 붙여 보낸다. 예약된 이름이라
-    # 계정으로 풀리지 않는다.
     context 'when given the reserved handle of anonymized accounts' do
       let(:preloaded_accounts) { [] }
       let(:text) { '@deleted 안녕 @Deleted@elsewhere.example' }
@@ -393,8 +391,6 @@ RSpec.describe TextFormatter do
     context 'when given a CSS injection attempt in color tag' do
       let(:text) { '[color:ff0000;background:url(evil)]텍스트[/color]' }
 
-      # 처리되지 않은 태그는 글자 그대로 남으므로 'background' 라는 단어 자체는 본문에 있다.
-      # 막아야 하는 것은 그것이 style 속성으로 들어가는 것이다.
       it 'does not process the injection' do
         expect(subject).to_not include '<span'
         expect(subject).to_not match(/style="[^"]*background/)

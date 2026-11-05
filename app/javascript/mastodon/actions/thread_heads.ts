@@ -8,12 +8,6 @@ import type { AppDispatch, RootState } from 'mastodon/store';
 
 import { importFetchedStatuses } from './importer';
 
-// @_longwhile — 홈·퍼블릭 타임라인 답글 위의 "타래 시작 글" (X 처럼).
-//
-//   타임라인 한 페이지를 받을 때, 스트리밍으로 글이 들어올 때 그 답글들의 id 를 모아
-//   한 번에 묻는다. 이미 물어본 id(답을 받았든, 묻는 중이든, 실패했든)는 다시 묻지 않는다.
-//   실패해도 알림을 띄우지 않는다 — 미리보기가 없으면 예전처럼 "~님에게" 줄이 남을 뿐이다.
-
 export interface ThreadHeadEntry {
   statusId: string;
   headId: string;
@@ -31,7 +25,6 @@ export const threadHeadsFailed = createAction<{ ids: string[] }>(
   'thread_heads/failed',
 );
 
-// 타임라인 이름에서 미리보기를 붙일 곳만 고른다. `public:media` 같은 변형도 포함.
 const PREVIEW_TIMELINES = ['home', 'public', 'community'];
 
 export const timelineHasThreadPreview = (timelineId: string) =>
@@ -44,7 +37,6 @@ interface StatusLike {
   reblog?: StatusLike | null;
 }
 
-// 부스트는 감싼 글이 아니라 부스트된 글로 묻는다. DM 은 서버가 어차피 빼지만 묻지도 않는다.
 export const threadHeadTargetIds = (statuses: StatusLike[]) =>
   statuses
     .map((status) => status.reblog ?? status)
@@ -96,7 +88,6 @@ export const fetchThreadHeads =
     );
   };
 
-// 타임라인 액션에서 부른다. 로그인하지 않았거나 미리보기를 쓰지 않는 타임라인이면 아무것도 안 한다.
 export const fetchThreadHeadsForTimeline =
   (timelineId: string, statuses: StatusLike[]) =>
   (dispatch: AppDispatch, getState: () => RootState) => {

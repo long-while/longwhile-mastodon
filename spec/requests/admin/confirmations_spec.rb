@@ -49,7 +49,7 @@ RSpec.describe 'Admin Confirmations' do
         follow_redirect!
 
         expect(response.body)
-          .to include(I18n.t('admin.accounts.resend_confirmation.already_confirmed', locale: :ko)) # 화면 언어는 한국어 고정
+          .to include(I18n.t('admin.accounts.resend_confirmation.already_confirmed', locale: :ko))
       end
     end
   end

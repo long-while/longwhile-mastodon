@@ -2,15 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile — 서버가 그리는 화면(운영·환경설정·인증)은 상류 4.7 의 HAML 을 그대로 받았다.
-# 포크가 지운 헬퍼·키·라우트를 상류 뷰가 찾거나, 포크 뷰가 상류에서 사라진 것을 찾으면 그
-# 화면만 조용히 500 이 된다. GET 화면을 전부 한 번씩 열어 본다.
-#
-#   주소를 손으로 적지 않고 라우트에서 뽑는다 — 상류가 화면을 더하면 저절로 여기 들어온다.
-#   :id 가 필요한 화면은 param_pages 에서 레코드를 만들어 연다.
-#
-#   "translation missing" 도 본다. 영어 원문에도 없는 키(상류 누락)는 운영에서 그 문구가
-#   그대로 화면에 나온다 — 4.7 의 read:collections 범위, update_tag 운영 기록 종류가 그랬다.
 RSpec.describe 'Server-rendered pages' do
   def self.get_paths_under(prefixes)
     Rails.application.routes.routes.filter_map do |route|
@@ -37,7 +28,6 @@ RSpec.describe 'Server-rendered pages' do
 
     before do
       sign_in owner
-      # 운영 첫 화면의 시스템 점검이 미디어 목록 주소를 실제로 불러 본다(공개돼 있으면 경고).
       stub_request(:get, %r{/system/media_attachments/files/}).to_return(status: 403)
     end
 
@@ -85,7 +75,6 @@ RSpec.describe 'Server-rendered pages' do
     end
   end
 
-  # 로그인하면 인증 화면은 홈으로 돌려보내므로 로그아웃 상태로 따로 연다.
   describe 'signed out' do
     get_paths_under(%w(auth about privacy-policy terms)).each do |path|
       it "renders GET #{path}" do

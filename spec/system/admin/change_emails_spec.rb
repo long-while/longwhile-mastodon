@@ -17,7 +17,7 @@ RSpec.describe 'Admin Change Emails' do
 
       fill_in 'user_unconfirmed_email', with: 'test@host.example'
       expect { process_change_email }
-        .to send_email(to: 'test@host.example', subject: /이메일 확인/) # 메일은 한국어 고정(ApplicationMailer::MAIL_LOCALE)
+        .to send_email(to: 'test@host.example', subject: /이메일 확인/)
       expect(page)
         .to have_title(user.account.pretty_acct)
     end

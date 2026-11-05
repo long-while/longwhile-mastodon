@@ -94,9 +94,7 @@ const reducers = {
   dmRooms: dmRoomsReducer,
   dmMessages: dmMessagesReducer,
   dmDrafts: dmDraftsReducer,
-  // @_longwhile — 운영진 DM 열람(/messages/all). 일반 채팅과 따로 든다.
   adminDmRooms: adminDmRoomsReducer,
-  // @_longwhile — 홈·퍼블릭 답글 위의 타래 시작 글(답글 id → 시작 글).
   thread_heads: threadHeadsReducer,
 };
 
@@ -118,8 +116,6 @@ const RootStateRecord = ImmutableRecord(initialRootState, 'RootState');
 
 const combinedReducer = combineReducers(reducers, RootStateRecord);
 
-// `combineReducers` 의 타입은 각 리듀서 상태를 모은 평범한 객체를 돌려준다고 적혀 있지만,
-// 위에서 RootStateRecord 를 넘겼으므로 실제 값은 그 Record 인스턴스다.
 type RootStateShape = ReturnType<typeof combinedReducer>;
 type RootStateRecordType = RecordOf<RootStateShape>;
 
@@ -127,7 +123,6 @@ const rootReducer = (
   state: RootStateRecordType | undefined,
   action: UnknownAction,
 ): RootStateRecordType => {
-  // 아래 `?.` 와 평범한 객체 분기는 타입상 필요 없는 방어 코드다. 동작을 바꾸지 않으려고 둔다.
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (action?.type === RESET_ALL) {
     const nextState = combinedReducer(undefined, action) as RootStateRecordType;

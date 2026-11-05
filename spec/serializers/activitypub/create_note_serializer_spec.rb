@@ -13,7 +13,7 @@ RSpec.describe ActivityPub::CreateNoteSerializer do
       'id' => tag_manager.activity_uri_for(status),
       'type' => 'Create',
       'actor' => tag_manager.uri_for(status.account),
-      'published' => Time.utc(2026, 1, 27, 15, 29, 31).in_time_zone.iso8601, # 포크의 Time.zone(Asia/Seoul) 오프셋으로 나간다
+      'published' => Time.utc(2026, 1, 27, 15, 29, 31).in_time_zone.iso8601,
       'to' => ['https://www.w3.org/ns/activitystreams#Public'],
       'cc' => [a_string_matching(/followers$/)],
       'object' => a_hash_including(

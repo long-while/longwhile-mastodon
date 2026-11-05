@@ -163,10 +163,6 @@ Rails.application.routes.draw do
     }
   end
 
-  # @_longwhile — 익명화(탈퇴) 계정의 웹 주소. 옛 사용자명을 담지 않는다.
-  # - 아이디 주소: ActivityPub::TagManager#url_for 가 계정·글 주소로 내보낸다.
-  # - `@deleted`(Account::ANONYMIZED_USERNAME): 웹 화면이 acct 로 그리는 링크. 새로고침해도 열려야 한다.
-  #   이 이름은 예약돼 있어(UnreservedUsernameValidator) 실제 계정이 없으므로 아래 `/@:username` 보다 먼저 받는다.
   with_options to: 'home#index', format: false do
     get '/accounts/:id', as: :web_account, constraints: { id: /\d+/ }
     get '/statuses/:id', as: :web_status, constraints: { id: /\d+/ }
@@ -184,8 +180,6 @@ Rails.application.routes.draw do
       get '/@:username/tagged/:tag', as: :short_account_tag
     end
 
-    # @_longwhile — 포크의 프로필 '마음에 들어요' 탭. 아래 `/@:account_username/:id` 가
-    #   `favourites` 를 글 id 로 받아 새로고침하면 404 였다(ui/index.jsx 와 같은 순서 문제).
     get '/@:username/favourites', to: 'home#index', format: false
   end
 

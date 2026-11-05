@@ -36,7 +36,6 @@ RSpec.describe 'Domain Allows' do
           {
             id: domain_allow.id.to_s,
             domain: domain_allow.domain,
-            # 시간대가 Asia/Seoul 이라(config/application.rb) 'Z' 를 박지 않고 오프셋째 비교한다.
             created_at: domain_allow.created_at.iso8601(3),
           }
         end

@@ -53,7 +53,7 @@ RSpec.describe 'Security Key Options' do
           expect(response.media_type)
             .to eq('application/json')
           expect(response.parsed_body)
-            .to include(error: I18n.t('webauthn_credentials.not_enabled', locale: :ko)) # 응답 언어는 한국어 고정
+            .to include(error: I18n.t('webauthn_credentials.not_enabled', locale: :ko))
         end
       end
     end
@@ -67,7 +67,7 @@ RSpec.describe 'Security Key Options' do
         expect(response.media_type)
           .to eq('application/json')
         expect(response.parsed_body)
-          .to include(error: I18n.t('webauthn_credentials.not_enabled', locale: :ko)) # 응답 언어는 한국어 고정
+          .to include(error: I18n.t('webauthn_credentials.not_enabled', locale: :ko))
       end
     end
   end

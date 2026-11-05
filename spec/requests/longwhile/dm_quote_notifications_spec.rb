@@ -2,10 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile — DM 은 알림함에 올리지 않는다(Notification.without_direct_messages).
-#   4.5 의 인용이 그 규칙을 비켜 갔다. 공지 글을 인용한 DM 을 보내면 공지 계정에 `quote`
-#   알림이, 공지 글을 고치면 DM 을 보낸 쪽에 `quoted_update` 알림이 생기는데, 둘 다 멘션이
-#   아니어서 웹 알림함과 안 읽은 개수에 그 DM 이 떴다.
 RSpec.describe 'Quote notifications of direct messages', :inline_jobs do
   let(:user)              { Fabricate(:user) }
   let(:headers)           { auth_headers(user) }

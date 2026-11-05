@@ -15,7 +15,7 @@ RSpec.describe ActivityPub::AnnounceNoteSerializer do
       'id' => tag_manager.activity_uri_for(reblog),
       'type' => 'Announce',
       'actor' => tag_manager.uri_for(reblog.account),
-      'published' => Time.utc(2026, 1, 27, 16, 21, 44).in_time_zone.iso8601, # 포크의 Time.zone(Asia/Seoul) 오프셋으로 나간다
+      'published' => Time.utc(2026, 1, 27, 16, 21, 44).in_time_zone.iso8601,
       'to' => ['https://www.w3.org/ns/activitystreams#Public'],
       'cc' => [tag_manager.uri_for(status.account), a_string_matching(/followers$/)],
       'object' => tag_manager.uri_for(status),
@@ -35,7 +35,7 @@ RSpec.describe ActivityPub::AnnounceNoteSerializer do
             'id' => tag_manager.activity_uri_for(reblog),
             'type' => 'Announce',
             'actor' => tag_manager.uri_for(reblog.account),
-            'published' => Time.utc(2026, 1, 27, 16, 21, 44).in_time_zone.iso8601, # 포크의 Time.zone(Asia/Seoul) 오프셋으로 나간다
+            'published' => Time.utc(2026, 1, 27, 16, 21, 44).in_time_zone.iso8601,
             'to' => ['https://www.w3.org/ns/activitystreams#Public'],
             'cc' => [tag_manager.uri_for(status.account), a_string_matching(/followers$/)],
             'object' => a_hash_including(
@@ -68,7 +68,7 @@ RSpec.describe ActivityPub::AnnounceNoteSerializer do
           'id' => tag_manager.activity_uri_for(reblog),
           'type' => 'Announce',
           'actor' => tag_manager.uri_for(reblog.account),
-          'published' => Time.utc(2026, 1, 27, 16, 21, 44).in_time_zone.iso8601, # 포크의 Time.zone(Asia/Seoul) 오프셋으로 나간다
+          'published' => Time.utc(2026, 1, 27, 16, 21, 44).in_time_zone.iso8601,
           'to' => ['https://www.w3.org/ns/activitystreams#Public'],
           'cc' => [tag_manager.uri_for(status.account), a_string_matching(/followers$/)],
           'object' => tag_manager.uri_for(status),

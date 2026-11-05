@@ -2,11 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile — 타임라인 답글 위에 붙일 스레드 시작 글(ThreadHead).
-#
-#   head 는 "보는 사람이 볼 수 있는 조상 중 맨 위" 다. 볼 수 없는 글은 사슬에서 없는 것으로
-#   치므로, 여기 나오는 글은 전부 글 주소(StatusPolicy#show?)로 열어도 보이는 글이어야 한다.
-#   한 군데라도 정책을 건너뛰면 팔로우하지 않은 사람의 비공개 글이 남의 답글에 실려 나간다.
 RSpec.describe 'Thread heads' do
   let(:user)    { Fabricate(:user) }
   let(:viewer)  { user.account }
@@ -213,8 +208,6 @@ RSpec.describe 'Thread heads' do
     end
   end
 
-  # 미리보기는 사회적 보기라 운영진 열람 특권(StatusPolicy#administrator?)을 쓰지 않는다.
-  # 운영진이 대화 보기로 직접 열면 지금처럼 다 보인다.
   describe 'staff accounts' do
     let(:stranger) { Fabricate(:account, username: 'stranger') }
     let!(:root)    { post_by(stranger, text: 'secret root') }
@@ -316,7 +309,7 @@ RSpec.describe 'Thread heads' do
 
   describe 'query count' do
     def query_count(statuses)
-      thread_heads(*statuses) # 첫 요청의 설정·캐시 조회는 세지 않는다
+      thread_heads(*statuses)
 
       count = 0
       counter = lambda do |*, payload|

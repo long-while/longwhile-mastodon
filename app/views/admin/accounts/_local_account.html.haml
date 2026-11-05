@@ -19,7 +19,6 @@
     = table_link_to 'contact_mail', t('admin.accounts.change_role.label'), admin_user_role_path(account.user) if can?(:change_role, account.user)
 - if can?(:toggle_protect, account)
   %tr
-    -# 게시물은 이 토글과 무관하게 언제나 팔로워 전용이다. 여기서 정하는 건 팔로우 승인 여부뿐.
     %th 팔로우 승인제
     %td= account.locked? ? '켜짐 (승인 필요)' : '꺼짐 (바로 팔로우)'
     %td

@@ -1,17 +1,3 @@
-// @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 운영 관리
-//   전체 메시지. /messages/all
-//
-//   레이아웃은 메시지 화면 것을 그대로 쓴다 — 같은 셸(body.layout-messages),
-//   같은 3열 그리드(.dm-shell). 다른 것은 **데이터와 권한**뿐이다.
-//
-//   라우트도 같은 방식으로 부모/자식이다. 목록이 언마운트되지 않아야 방을 옮길
-//   때마다 다시 불러오지 않는다.
-//
-//   **권한은 두 겹이다.** 여기서 한 번(화면 진입), 서버에서 한 번
-//   (Admin::DirectMessagePolicy). 화면 쪽만 막으면 API 를 직접 부르면 그만이므로
-//   서버 쪽이 진짜 방어선이고, 여기는 "권한 없는 사람에게 빈 화면을 보여주지
-//   않기" 위한 것이다.
-
 import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
 
 import classNames from 'classnames';
@@ -47,8 +33,6 @@ const NoRoomSelected: React.FC = () => (
         />
       </h2>
 
-      {/* 이 화면이 무엇인지와 **다른 계정에 권한을 주는 법**을 함께 적는다.
-          권한을 어디서 주는지 모르면 이 화면의 존재를 알아도 쓸 수가 없다. */}
       <p>
         <FormattedMessage
           id='messages.admin.pick_body'
@@ -71,8 +55,6 @@ const AdminMessages: React.FC = () => {
 
   useMessagesLayout(allowed, Boolean(roomMatch));
 
-  // 권한이 없으면 자기 대화 화면으로 돌린다. 여기가 있다는 사실 자체를 알릴
-  // 이유가 없다.
   if (!allowed) return <Redirect to='/messages' />;
 
   return (

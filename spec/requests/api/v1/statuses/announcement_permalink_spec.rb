@@ -2,8 +2,6 @@
 
 require 'rails_helper'
 
-# 공지 계정(@longwhile)의 unlisted 공지는 모든 로그인 사용자의 피드에 들어간다. 글 주소로도
-# 열려야 한다. 다른 계정의 옛 unlisted 글은 팔로워 전용으로 남는다.
 RSpec.describe 'GET /api/v1/statuses/:id for announcements' do
   let(:announcer) do
     Fabricate.build(:account, username: PublicFeed::ANNOUNCEMENT_USERNAME).tap { |account| account.save!(validate: false) }

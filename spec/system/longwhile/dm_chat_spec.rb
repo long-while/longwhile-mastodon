@@ -2,12 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile — DM 채팅(/messages): 목록 → 방 → 보내기. 보내기는 POST /api/v1/statuses
-#   (visibility: direct) 이고, 서버가 같은 요청 안에서 방에 붙인다(PostStatusService).
-#
-#   :inline_jobs 를 쓰지 않는다. 쓰면 팬아웃이 요청 안에서 스트리밍으로 말풍선을 먼저
-#   보내, 서버가 방에 붙이기 전에 화면이 확정 상태가 된다(검사가 경주한다). 방 귀속은
-#   잡 없이도 PostStatusService 가 동기로 한다.
 RSpec.describe 'DM chat', :js, :streaming do
   let(:user)    { Fabricate(:user, account: Fabricate(:account, username: 'alice')) }
   let(:partner) { Fabricate(:user, account: Fabricate(:account, username: 'partner')).account }

@@ -39,7 +39,7 @@ RSpec.describe 'UnsubscriptionsController' do
       expect(response).to have_http_status(200)
 
       expect(response.body).to include(
-        I18n.t('unsubscriptions.show.action', locale: :ko) # 화면 언어는 한국어 고정
+        I18n.t('unsubscriptions.show.action', locale: :ko)
       )
     end
   end
@@ -59,7 +59,7 @@ RSpec.describe 'UnsubscriptionsController' do
       expect(response).to have_http_status(200)
 
       expect(response.body).to include(
-        I18n.t('unsubscriptions.create.title', locale: :ko) # 화면 언어는 한국어 고정
+        I18n.t('unsubscriptions.create.title', locale: :ko)
       )
     end
 

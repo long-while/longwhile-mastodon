@@ -27,9 +27,6 @@ RSpec.describe 'Tag' do
       end
     end
 
-    # 이 포크에서는 모든 글이 private 이고, 태그 타임라인은 팔로우 중인 계정(+ 본인·공지 계정)의
-    # 글만 보여준다(TagFeed < PublicFeed, 943745d134). 업스트림의 "private 글은 빠진다" 대신
-    # "팔로우하지 않은 사람의 글은 빠진다" 를 같은 자리에서 검사한다.
     let(:account)          { Fabricate(:account) }
     let!(:stranger_status) { PostStatusService.new.call(Fabricate(:account), text: '#life could be a dream') }
     let!(:life_status)     { PostStatusService.new.call(account, text: 'tell me what is my #life without your #love') }
@@ -94,7 +91,6 @@ RSpec.describe 'Tag' do
     end
 
     context 'when the instance allows public preview' do
-      # 보는 사람이 없으면 모집단이 비어 있다. 아무 글도 나가지 않아야 한다.
       context 'when the user is not authenticated' do
         let(:headers) { {} }
         let(:expected_statuses) { [] }

@@ -8,7 +8,7 @@ import InsertChartIcon from '@/material-icons/400-24px/insert_chart.svg?react';
 import PersonAddIcon from '@/material-icons/400-24px/person_add.svg?react';
 import RepeatIcon from '@/material-icons/400-24px/repeat.svg?react';
 import StarIcon from '@/material-icons/400-24px/star.svg?react';
-import AlternateEmailIcon from '@/material-icons/400-24px/alternate_email.svg?react'; // 멘션용 @ 아이콘 추가
+import AlternateEmailIcon from '@/material-icons/400-24px/alternate_email.svg?react';
 import { setNotificationsFilter } from 'mastodon/actions/notification_groups';
 import { Icon } from 'mastodon/components/icon';
 import {
@@ -83,7 +83,6 @@ export const FilterBar: React.FC = () => {
         >
           <Icon id='reply-all' icon={AlternateEmailIcon} />
         </BarButton>
-        {/* @_longwhile — DM 탭을 뺐다. 아래 기본 모드의 DM 탭과 같은 이유다. */}
         <BarButton
           selectedFilter={selectedFilter}
           type='favourite'
@@ -141,9 +140,6 @@ export const FilterBar: React.FC = () => {
             defaultMessage='Mentions'
           />
         </BarButton>
-        {/* @_longwhile — DM 탭을 뺐다. DM 은 /messages 가 맡고, 알림에서 따로
-            거를 이유가 없어졌다. 고급 모드(위)의 봉투 아이콘 탭도 함께 뺐다 —
-            한쪽만 지우면 설정에 따라 있다 없다 한다. */}
       </div>
     );
   };

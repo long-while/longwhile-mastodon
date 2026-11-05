@@ -62,9 +62,6 @@ class REST::AccountSerializer < ActiveModel::Serializer
     object.id.to_s
   end
 
-  # An anonymised account answers to a single shared handle: whatever it used
-  # to be called is exactly what must not leak. (상류 4.7 의 `pretty_username` 은 원격
-  # 계정의 무효 핸들 표시다. 같은 이름의 메서드를 둘 두면 뒤의 것이 익명화를 덮는다.)
   def username
     object.anonymized? ? Account::ANONYMIZED_USERNAME : object.pretty_username
   end
@@ -81,7 +78,6 @@ class REST::AccountSerializer < ActiveModel::Serializer
     ActivityPub::TagManager.instance.url_for(object) || ActivityPub::TagManager.instance.uri_for(object)
   end
 
-  # ActivityPub 주소(/users/옛이름)도 옛 이름을 담는다. 연합하지 않는 인스턴스라 웹 주소로 대신한다.
   def uri
     object.anonymized? ? url : ActivityPub::TagManager.instance.uri_for(object)
   end

@@ -7,7 +7,6 @@ RSpec.describe InitialStateSerializer do
 
   let(:presenter) { InitialStatePresenter.new(settings: {}, token: nil, current_account: nil) }
 
-  # 이 포크의 웹 앱(4.4)은 4.5 에서 사라진 두 값을 아직 읽는다. 새 설정에서 다시 만든다.
   describe 'the 4.4 settings the web app still reads' do
     it 'reports timeline_preview from the local live feed access' do
       Setting.local_live_feed_access = 'public'

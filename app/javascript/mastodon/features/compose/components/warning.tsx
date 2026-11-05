@@ -8,9 +8,6 @@ import { useAppSelector } from 'mastodon/store';
 import type { RootState } from 'mastodon/store';
 import { HASHTAG_PATTERN_REGEX } from 'mastodon/utils/hashtags';
 
-// 잠금 안내(compose_form.lock_disclaimer)는 뺐다. 모든 툿이 팔로워 전용이고
-// 잠금은 팔로우 승인 여부만 정하므로, "누구나 팔로우해 볼 수 있다"는 경고가
-// 이제 사실이 아니다.
 const selector = createSelector(
   (state: RootState) => state.compose.get('privacy') as string,
   (state: RootState) => state.compose.get('text') as string,

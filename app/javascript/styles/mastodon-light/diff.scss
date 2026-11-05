@@ -227,8 +227,6 @@
   }
 }
 
-// @_longwhile — 꺼진 상태의 트랙. components.scss 와 **같은 토큰**을 쓴다.
-//   이 파일이 뒤에 로드되므로, 여기를 두고 가면 그쪽 값이 조용히 덮인다.
 .react-toggle-track {
   background: var(--color-dim, #{$ui-primary-color});
 }
@@ -456,8 +454,6 @@ img.logo--icon {
   .language-dropdown__dropdown__results__item__common-name,
 .language-dropdown__dropdown__results__item.active
   .language-dropdown__dropdown__results__item__common-name {
-  // @_longwhile — 이 항목들의 배경은 강조색(테마에서 브랜드색)이다. 흰색으로
-  // 굳혀 두면 밝은 브랜드색 위에서 2.51:1 까지 떨어진다. 배경과 짝인 토큰을 읽는다.
   color: var(--color-on-brand, #{$white});
 }
 
@@ -471,14 +467,11 @@ img.logo--icon {
   background: darken($ui-base-color, 10%);
 }
 
-// @_longwhile — 하드코딩된 붉은색 두 개였다. 이 파일은 테마 작업이 닿는
-// 곳이 아니라, 팔레트를 바꿔도 이 단추만 옛 빨강으로 남았다. 위험 토큰을 읽는다.
 .dropdown-button.warning {
   border-color: var(--color-brand-longwhile-danger, #{$error-value-color});
   color: var(--color-brand-longwhile-danger, #{$error-value-color});
 
   &.active {
-    // 그 위에 까는 아주 옅은 판. 색을 하나 더 적지 않고 같은 값에서 뽑는다.
     background-color: color-mix(
       in srgb,
       var(--color-brand-longwhile-danger, #{$error-value-color}) 14%,

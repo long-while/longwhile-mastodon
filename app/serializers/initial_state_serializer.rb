@@ -131,18 +131,11 @@ class InitialStateSerializer < ActiveModel::Serializer
       scheduled_status_minimum_offset: ScheduledStatus::MINIMUM_OFFSET.to_i,
       scheduled_status_total_limit: ScheduledStatus::TOTAL_LIMIT,
       scheduled_status_daily_limit: ScheduledStatus::DAILY_LIMIT,
-      # @_longwhile — DM 채팅. 꺼져 있으면 사이드바 진입점을 감추고 /messages 를
-      #   /conversations 로 되돌린다. (dm-chat-plan.md §4.1)
       dm_chat_enabled: Mastodon::DmChat.enabled?,
       local_live_feed_access: Setting.local_live_feed_access,
       remote_live_feed_access: Setting.remote_live_feed_access,
       local_topic_feed_access: Setting.local_topic_feed_access,
       remote_topic_feed_access: Setting.remote_topic_feed_access,
-      # @_longwhile — 이 포크의 웹 앱(4.4)은 아직 4.4 의 두 값을 읽는다
-      #   (initial_state.js 의 timelinePreview · trendsAsLanding). 4.5 가 그 설정을
-      #   위의 피드 접근 설정과 landing_page 로 바꿨으므로, 새 설정에서 옛 뜻을 다시 만든다.
-      #   옛 timeline_preview 가 꺼져 있었으면 마이그레이션이 local_live_feed_access 를
-      #   'authenticated' 로 옮긴다(MigrateTimelinePreviewSetting).
       timeline_preview: Setting.local_live_feed_access == 'public',
       trends_as_landing_page: Setting.landing_page == 'trends',
     }

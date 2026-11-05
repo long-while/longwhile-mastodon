@@ -5,8 +5,6 @@ module Status::ThreadingConcern
 
   class_methods do
     def permitted_statuses_from_ids(ids, account, stable: false)
-      # @_longwhile — mentions 를 미리 읽는다. 아래 StatusFilter 의 StatusPolicy#mention_exists? 가
-      #   direct 글(과 팔로우하지 않은 사람의 비공개 글)마다 exists? 를 부른다 — DM 방 한 페이지면 메시지 수만큼이다.
       statuses    = Status.with_accounts(ids).preload(:mentions).to_a
       account_ids = statuses.map(&:account_id).uniq
       domains     = statuses.filter_map(&:account_domain).uniq

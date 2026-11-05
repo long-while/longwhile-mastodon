@@ -1,11 +1,6 @@
 # frozen_string_literal: true
 
 module ThemeHelper
-  # @_longwhile — 테마는 가상 이름(`themes/<이름>`)이 아니라 manifest 의 실제 키
-  #   (`config/themes.yml` 의 경로)로 찾는다. 가상 이름은 vite_ruby 전용
-  #   manifest-lookup.json 으로만 풀린다. 상류 4.7 의 Vite 연동은 manifest 의
-  #   `name` 으로 푸는데, 이 포크 빌드의 CSS 엔트리에는 `name` 이 없다. 실제 키는
-  #   지금(vite_ruby)과 4.7 모두에서 같은 파일을 가리킨다.
   def theme_style_tags(theme)
     if theme == 'system'
       ''.html_safe.tap do |tags|
@@ -39,9 +34,6 @@ module ThemeHelper
     )
   end
 
-  # @_longwhile — 관리자가 올린 워드마크를 테마에 넘긴다. 테마 SCSS 는
-  # `var(--lw-wordmark-*, <번들 그림>)` 으로 읽으므로, 올린 것이 없으면 아무것도
-  # 내지 않고 번들 그림이 그대로 쓰인다. 재빌드 없이 바뀌는 길은 이것뿐이다.
   def custom_wordmark_tag
     declarations = SiteUpload::WORDMARK_VARS.filter_map do |var|
       upload = InstancePresenter.new.public_send(var)
@@ -54,8 +46,6 @@ module ThemeHelper
     tag.style(":root{#{declarations.join}}".html_safe) # rubocop:disable Rails/OutputSafety
   end
 
-  # 4.6 은 current_theme 을 ApplicationController 에서 이 헬퍼로 옮겼다(상류 그대로).
-  # 테마 체계(R3)는 포크 것이라 레이아웃은 이 값으로 bird-ui 테마를 고른다.
   def current_theme
     available_themes = Themes.instance.names
 
@@ -68,8 +58,6 @@ module ThemeHelper
     'default' # Fallback
   end
 
-  # 상류 4.6 의 색 구성·대비 설정. 고정 프런트와 포크 레이아웃은 쓰지 않지만, 상류
-  # 헬퍼(ApplicationHelper#html_attributes)가 부르므로 정의는 둔다.
   def color_scheme
     current_user&.setting_color_scheme || 'auto'
   end
@@ -84,8 +72,6 @@ module ThemeHelper
 
   private
 
-  # URL 에 쓰는 글자만 그대로 두고 나머지는 CSS 이스케이프한다 — `"` · `\` · `<` 가
-  # 섞여 있어도 문자열이나 <style> 밖으로 나가지 못한다.
   def css_string_escape(value)
     value.to_s.gsub(%r{[^A-Za-z0-9\-._~:/?@!$&'()*+,;=%\[\]#]}) { |char| "\\#{char.ord.to_s(16)} " }
   end

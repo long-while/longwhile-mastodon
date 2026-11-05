@@ -57,9 +57,6 @@ export const accountsReducer: Reducer<typeof initialState> = (
     return state.setIn([action.payload.id, 'hidden'], false);
   else if (importAccounts.match(action))
     return normalizeAccounts(state, action.payload.accounts);
-  // @_longwhile — **실제로 팔로우가 성사됐을 때만** 센다. 승인제 계정은
-  // requested 로만 돌아오는데, 그때도 올리면 팔로워 수가 1 늘어난 채로 남아
-  // 승인 여부와 무관하게 틀린 숫자가 보인다.
   else if (
     followAccountSuccess.match(action) &&
     !action.payload.alreadyFollowing &&

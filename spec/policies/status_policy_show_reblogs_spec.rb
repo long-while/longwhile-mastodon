@@ -2,10 +2,6 @@
 
 require 'rails_helper'
 
-# 부스트는 겹팔로워 전용이고(943745d134), 부스트한 본인은 원작자를 언팔로우해도 자기
-# 부스트를 계속 본다(StatusPolicy#show? 주석). 그 예외가 **원작자가 부스트한 사람을
-# 차단한 경우**까지 덮어, 차단당한 사람이 자기 부스트를 통해 원작자의 비공개 글을 계속
-# 읽던 것의 회귀 스펙.
 RSpec.describe StatusPolicy, '#show?' do
   let(:author) { Fabricate(:account) }
   let(:booster) { Fabricate(:account) }

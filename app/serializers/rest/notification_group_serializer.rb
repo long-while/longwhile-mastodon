@@ -31,7 +31,6 @@ class REST::NotificationGroupSerializer < ActiveModel::Serializer
     object.target_status&.id&.to_s
   end
 
-  # 알림 화면이 DM 알림을 구분하는 데 쓴다(포크 추가 필드).
   def status_visibility
     object.target_status&.visibility
   end

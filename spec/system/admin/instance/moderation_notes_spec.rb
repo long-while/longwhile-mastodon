@@ -16,13 +16,13 @@ RSpec.describe 'Admin::Instances::ModerationNotesController' do
       expect { submit_form }
         .to not_change(InstanceModerationNote, :count)
       expect(page)
-        .to have_text(I18n.t('generic.validation_errors', count: 1)) # 화면은 한국어 고정
+        .to have_text(I18n.t('generic.validation_errors', count: 1))
 
       fill_in 'instance_moderation_note_content', with: 'Test message ' * InstanceModerationNote::CONTENT_SIZE_LIMIT
       expect { submit_form }
         .to not_change(InstanceModerationNote, :count)
       expect(page)
-        .to have_text(I18n.t('generic.validation_errors', count: 1)) # 화면은 한국어 고정
+        .to have_text(I18n.t('generic.validation_errors', count: 1))
 
       fill_in 'instance_moderation_note_content', with: 'Test message'
       expect { submit_form }

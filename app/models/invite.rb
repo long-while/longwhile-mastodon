@@ -39,9 +39,6 @@ class Invite < ApplicationRecord
     (max_uses.nil? || uses < max_uses) && !expired? && user&.functional?
   end
 
-  # @_longwhile — 상류 4.5 는 초대 권한(invite_users)과 심사 생략 권한을 나눴다. 이 포크는 초대를 운영진만 만들므로
-  #   (UserRole::Flags::DEFAULT = NONE) 4.4 처럼 초대할 수 있는 사람의 초대는 심사를 건너뛴다. 안 그러면 역할에 새
-  #   체크박스를 켜지 않은 운영진의 초대로 들어온 사람이 "가입을 받지 않고 있습니다" 단추를 보고 심사 대기로 빠진다.
   def bypass_approval?
     user&.role&.can?(:invite_users, :invite_bypass_approval)
   end

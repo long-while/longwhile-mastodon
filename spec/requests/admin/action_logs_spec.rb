@@ -2,11 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile — 운영진의 DM 열람 기록이 /admin/action_logs 에 어떻게 보이는지.
-#
-#   기록 화면은 view_audit_log 권한(모더레이터 포함)이면 열리지만 DM 은
-#   administrator·manage_roles 만 읽는다. 그래서 "누구와 누구의 대화인지" 는 DM 을
-#   읽을 수 있는 사람에게만 보이고, 나머지에게는 방 번호만 보인다.
 RSpec.describe 'Admin action logs' do
   let(:alice) { Fabricate(:account, username: 'alice') }
   let(:bob)   { Fabricate(:account, username: 'bob') }

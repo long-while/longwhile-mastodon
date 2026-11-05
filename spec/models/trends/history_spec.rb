@@ -5,8 +5,6 @@ require 'rails_helper'
 RSpec.describe Trends::History do
   subject(:history) { described_class.new('tags', 123) }
 
-  # 이 포크는 config.time_zone 이 Asia/Seoul 이다. 쓸 때(UTC 시각)와 읽을 때
-  # (Time.zone 의 시각, Date)가 같은 날 키를 써야 한다. 서울 01:00 은 UTC 로 전날이다.
   before do
     travel_to(Time.find_zone!('Asia/Seoul').local(2026, 10, 29, 1, 0))
     history.add(1)

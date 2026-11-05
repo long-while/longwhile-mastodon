@@ -2,7 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 채팅
 RSpec.describe RepairDmRoomThreadsService do
   subject { described_class.new }
 
@@ -16,8 +15,6 @@ RSpec.describe RepairDmRoomThreadsService do
 
   before { allow(Mastodon::DmChat).to receive(:enabled?).and_return(true) }
 
-  # 수정 이전에 만들어진 상태. 메시지는 group_room 의 conversation 에 있고,
-  # pair_room 은 그 글을 최신 글이자 루트로 들고 있다.
   def misplace!(status)
     pair_room.update_columns(last_status_id: status.id, root_status_id: status.id)
     status
@@ -47,7 +44,6 @@ RSpec.describe RepairDmRoomThreadsService do
     expect(group_room.reload.last_status_id).to eq group_root.id
   end
 
-  # 멤버를 바꾼 방에는 옛 명단의 메시지가 정상 이력으로 남는다. 옮기면 대화가 끊긴다.
   describe 'history of a room whose members changed' do
     let!(:old_pair) { direct_status(alice, to: [bob]) }
 
@@ -64,7 +60,6 @@ RSpec.describe RepairDmRoomThreadsService do
       expect(old_pair.reload.conversation_id).to eq original
     end
 
-    # 안내는 그때의 루트 스레드에만 달린다. 다른 conversation 의 옛 이력도 지켜야 한다.
     it 'keeps them when the member change sits in another conversation of the room' do
       event = member_event(alice, to: [bob, carol])
       group_room.attach_conversation!(event.conversation_id)
@@ -72,7 +67,6 @@ RSpec.describe RepairDmRoomThreadsService do
       expect(subject.call(apply: true).moves).to be_empty
     end
 
-    # 안내가 지워졌거나 발행에 실패해도, 스레드의 처음에서 시작한 사슬은 이력이다.
     it 'keeps them even when no member change was recorded' do
       direct_status(bob, to: [alice], thread: old_pair)
 
@@ -107,8 +101,6 @@ RSpec.describe RepairDmRoomThreadsService do
     expect(subject.call(apply: true).moves).to be_empty
   end
 
-  # 익명화된 멤버를 뺀 명단의 메시지는 그 방의 것이다(DmRoom#accepted_participant_sets).
-  # 남은 멤버끼리의 방(pair_room)이 따로 있어도 그리로 빼 가지 않는다.
   it 'leaves what the remaining members sent after a member was anonymised', :aggregate_failures do
     carol.update!(anonymized_at: Time.now.utc)
     reply = direct_status(bob, to: [alice], thread: group_root)

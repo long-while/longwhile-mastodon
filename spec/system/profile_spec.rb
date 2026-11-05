@@ -20,7 +20,6 @@ RSpec.describe 'Profile' do
   it 'I can change my account' do
     visit settings_profile_path
 
-    # 화면은 한국어 고정(Localized#requested_locale)이라 영어 이름표 대신 번역 키로 찾는다.
     fill_in form_label('defaults.display_name'), with: 'Bob'
     fill_in form_label('defaults.note'), with: 'Bob is silent'
 

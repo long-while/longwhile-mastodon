@@ -56,9 +56,6 @@ class Api::V1::ScheduledStatusesController < Api::BaseController
     @status = current_account.scheduled_statuses.find(params[:id])
   end
 
-  # 만들 때 StatusesController#set_thread 가 하는 검사를 수정에도 건다. 빠지면 볼 수
-  # 없는 글(팔로우하지 않은 사람의 팔로워 전용 글, 남의 DM)에 답글을 달아 그 스레드에
-  # 끼어들 수 있다 — 발행 워커는 답글 대상을 다시 확인하지 않는다.
   def check_thread
     return if params[:in_reply_to_id].blank?
 

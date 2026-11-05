@@ -60,9 +60,6 @@ class MoveWorker
       .where.not(account: @target_account.followers.local)
       .where.not(account_id: @target_account.id)
       .in_batches do |follows|
-        # @_longwhile — update_all 은 RelationshipCacheable 콜백을 건너뛰므로 관계 캐시를
-        # 직접 지운다(#37664). **update_all 전에** 지워야 한다 — 뒤에서 지우는 아래
-        # 블록은 바뀐 target_account_id 로 다시 조회해 아무것도 못 지운다(logs/v4.6.x.md).
         clear_relationship_cache!(follows)
 
         ListAccount.where(follow: follows).in_batches.update_all(account_id: @target_account.id)

@@ -36,8 +36,6 @@ require_relative '../lib/mastodon/middleware/public_file_server'
 require_relative '../lib/mastodon/middleware/socket_cleanup'
 require_relative '../lib/mastodon/email_configuration_helper'
 require_relative '../lib/mastodon/feature'
-# @_longwhile — DM 채팅 기능 플래그. lib/ 는 zeitwerk 가 관리하지 않으므로
-#   (config.autoload_lib 이 꺼져 있다) 여기서 직접 require 해야 app/ 에서 상수를 쓸 수 있다.
 require_relative '../lib/mastodon/dm_chat'
 require_relative '../lib/mastodon/snowflake'
 require_relative '../lib/mastodon/version'

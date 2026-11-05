@@ -136,7 +136,7 @@ RSpec.describe '/api/v1/accounts' do
         expect(response.media_type)
           .to eq('application/json')
         expect(response.parsed_body)
-          .to include( # 응답 문구는 한국어 고정(Localized)
+          .to include(
             error: /\A#{Regexp.escape(I18n.t('activerecord.errors.messages.record_invalid', errors: '', locale: :ko).strip)}/,
             details: include(username: contain_exactly(include(error: 'ERR_BLANK', description: I18n.t('errors.messages.blank', attribute: Account.human_attribute_name(:username, locale: :ko), locale: :ko))))
           )
@@ -163,7 +163,7 @@ RSpec.describe '/api/v1/accounts' do
           expect(response.content_type)
             .to start_with('application/json')
           expect(response.parsed_body)
-            .to include( # 응답 문구는 한국어 고정(Localized)
+            .to include(
               error: /\A#{Regexp.escape(I18n.t('activerecord.errors.messages.record_invalid', errors: '', locale: :ko).strip)}/,
               details: include(date_of_birth: contain_exactly(include(error: 'ERR_BELOW_LIMIT', description: I18n.t('activerecord.errors.models.user.attributes.date_of_birth.below_limit', locale: :ko))))
             )
@@ -299,7 +299,7 @@ RSpec.describe '/api/v1/accounts' do
       it 'returns http forbidden and error message' do
         subject
 
-        error_msg = I18n.t('accounts.self_follow_error', locale: :ko) # 응답 언어는 한국어 고정
+        error_msg = I18n.t('accounts.self_follow_error', locale: :ko)
 
         expect(response).to have_http_status(403)
         expect(response.parsed_body[:error]).to eq(error_msg)

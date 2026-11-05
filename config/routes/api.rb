@@ -28,7 +28,6 @@ namespace :api, format: false do
   # JSON / REST API
   namespace :v1 do
     resources :statuses, only: [:index, :create, :show, :update, :destroy] do
-      # @_longwhile — 타임라인 답글의 스레드 시작 글(ThreadHead). `statuses/:id` 보다 먼저 잡혀야 한다.
       collection do
         get :thread_heads, to: 'statuses/thread_heads#index'
       end
@@ -115,29 +114,19 @@ namespace :api, format: false do
       end
     end
 
-    # @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 채팅
-    #   DM_CHAT_ENABLED 가 꺼져 있으면 전부 404 다 (Api::DmRoomAccess).
-    #   근거: dm-chat-phase-1.md §4.1
     resources :dm_rooms, only: [:index, :show, :create, :destroy] do
       member do
         post :read
 
-        # 방 제목 (Phase 5). 빈 값이면 제목 삭제다.
         patch :title
       end
 
       resources :statuses, only: [:index], controller: 'dm_rooms/statuses' do
         member do
-          # "나에게서만 삭제". 모두에게서 지우는 DELETE /api/v1/statuses/:id 와
-          # 다른 경로다 — 남의 글에도 쓸 수 있어야 하므로 방 안에서만 받는다.
           post :hide
         end
       end
 
-      # 멤버 관리. 초대 · 내보내기 · 별명 (2026-08-12).
-      #
-      # `DELETE …/members/:id` 는 **내보내기**이지 나가기가 아니다. 나가기는
-      # `DELETE /api/v1/dm_rooms/:id` 쪽이고, 그것은 목록에서만 감춘다.
       resources :members, only: [:create, :destroy], controller: 'dm_rooms/members' do
         member do
           put :nickname
@@ -324,10 +313,6 @@ namespace :api, format: false do
     end
 
     namespace :admin do
-      # @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 운영 관리
-      #   운영진이 인스턴스의 모든 DM 을 읽는 화면(/messages/all)이 쓴다.
-      #   권한은 Admin::DirectMessagePolicy, 즉 기존 /admin/direct_messages 와 같다.
-      #   DM_CHAT_ENABLED 가 꺼져 있으면 전부 404 다 (Api::DmRoomAccess).
       resources :dm_rooms, only: [:index, :show] do
         resources :statuses, only: [:index], controller: 'dm_rooms/statuses'
       end

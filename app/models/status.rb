@@ -183,20 +183,6 @@ class Status < ApplicationRecord
   # the `dependent: destroy` callbacks remove relevant records
   before_destroy :unlink_from_conversations!, prepend: true
 
-  # @_longwhile — DM 채팅. 마지막 메시지가 사라지면 방의 last_status_id 를 되감는다.
-  #   외래키(ON DELETE SET NULL)가 하드 삭제의 참조를 끊어 주지만, 그 다음 메시지로
-  #   채우는 것은 여기서 한다.
-  #
-  #   버려지기만 하는 경우(신고된 글은 RemoveStatusService 가 destroy 하지 않는다)는
-  #   discard_with_reblogs 에서 함께 처리한다. after_discard 콜백은 쓸 수 없다 —
-  #   그 메서드가 discard 가 아니라 update_attribute 로 컬럼을 쓰기 때문이다.
-  #
-  #   콜백을 타지 않는 delete_all 경로는 목록 조회 시점에 고쳐진다.
-  #   근거: 기획서 US-09, dm-chat-phase-1.md §1.4
-  #
-  #   이 글을 last_status · root_status 로 든 방은 **destroy 전에** 적어 둔다. 그
-  #   컬럼들은 ON DELETE SET NULL 이라 after_destroy 시점에는 이미 비어 있어 찾을
-  #   수 없다.
   before_destroy :remember_dm_rooms_holding_self, if: :direct_visibility?
   after_destroy :rewind_dm_room!, if: :direct_visibility?
 
@@ -214,15 +200,6 @@ class Status < ApplicationRecord
     "v3:#{super}"
   end
 
-  # @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 채팅
-  #   `rate_limit by: :account, family: :statuses` 는 클래스 선언 시점에 family 를
-  #   고정하므로 공개 범위별로 나눌 수 없다. RateLimitable#rate_limiter 가 인스턴스
-  #   메서드이면서 메모이즈된다는 점을 이용해, direct 일 때만 family 를 갈아끼운다.
-  #
-  #   메모이제이션 덕분에 after_create 와 after_rollback 이 같은 인스턴스를 공유하고,
-  #   따라서 기록과 되돌리기가 항상 같은 family 를 향한다. 공개 글 경로는 super 를
-  #   그대로 타므로 기존 300/3시간 제한이 바뀌지 않는다.
-  #   근거: dm-chat-phase-0.md P0-3, dm-chat-decisions.md D-09
   def rate_limiter(by, options = {})
     return super if defined?(@rate_limiter) || !direct_visibility?
 
@@ -412,8 +389,6 @@ class Status < ApplicationRecord
       unscoped.select(:reblog_of_id).where(reblog_of_id: status_ids).where(account_id: account_id).to_h { |s| [s.reblog_of_id, true] }
     end
 
-    # 삭제한 답글은 세지 않는다(`kept`). 시리얼라이저의 다른 분기(`object.proper.replies`)와
-    # StatusCacheHydrator 가 그렇게 센다 — 어긋나면 같은 멘션이 화면마다 "답장함" 이 달라진다.
     def replies_map(status_ids, account_id)
       unscoped.kept.select(:in_reply_to_id).where(in_reply_to_id: status_ids).where(account_id: account_id).each_with_object({}) { |s, h| h[s.in_reply_to_id] = true }
     end
@@ -450,14 +425,9 @@ class Status < ApplicationRecord
     Status.unscoped.where(reblog_of_id: id, deleted_at: [nil, deleted_at]).in_batches.update_all(deleted_at: discard_time) unless reblog?
     update_attribute(:deleted_at, discard_time)
 
-    # @_longwhile — DM 채팅. 버려진 글은 belongs_to :last_status 의 kept 스코프에
-    #   걸려 nil 로 풀리므로, 방 목록의 미리보기가 빈 채로 남는다. 되감아 준다.
     rewind_dm_room! if direct_visibility?
   end
 
-  # conversation 의 방만 되감으면 부족하다. 다른 방의 스레드에 들어간 글이 그 글의
-  # 방에서 last_status · root_status 로 잡혀 있을 수 있고(DmRoom.thread_accepts?),
-  # 그 방을 놓치면 지워진 글을 루트로 든 채 남아 다시 보내도 같은 곳으로 간다.
   def rewind_dm_room!
     return unless Mastodon::DmChat.enabled?
 
@@ -542,8 +512,6 @@ class Status < ApplicationRecord
     self.local = account.local?
   end
 
-  # 인스턴스 활동량 집계. distributable? 로 두면 이 인스턴스에서는 언제나 거짓이라
-  # 관리 화면의 활동 그래프가 0 으로 고정된다. 내용이 아니라 건수만 세므로 DM 만 뺀다.
   def update_statistics
     return if direct_visibility? || limited_visibility?
 

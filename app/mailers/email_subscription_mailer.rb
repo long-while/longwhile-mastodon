@@ -60,7 +60,6 @@ class EmailSubscriptionMailer < ApplicationMailer
     @skip_preferences_link = true
   end
 
-  # 구독자가 고른 locale 대신 화면·다른 메일처럼 한국어로 고정한다(ApplicationMailer::MAIL_LOCALE).
   def locale
     MAIL_LOCALE
   end

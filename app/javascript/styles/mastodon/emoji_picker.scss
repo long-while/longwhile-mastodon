@@ -47,9 +47,6 @@
 }
 
 .emoji-mart-anchor-selected {
-  // @_longwhile — 지금 보고 있는 에모지 분류. 상류는 파랑 고정이라 크림 팔레트
-  // 에서 이 한 줄만 남았다. 호버도 같은 값으로 둔다 — `lighten()` 은 CSS 변수를
-  // 못 받고, 이미 선택된 칸이라 호버에서 더 밝힐 이유도 없다.
   color: var(--color-brand-longwhile, #{$highlight-text-color});
 
   &:hover {

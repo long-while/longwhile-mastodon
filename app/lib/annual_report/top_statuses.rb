@@ -27,8 +27,6 @@ class AnnualReport::TopStatuses < AnnualReport::Source
       .first
   end
 
-  # 본인에게만 보여주는 결산이라 public_visibility 로 좁힐 이유가 없다. 그대로 두면
-  # 모든 툿이 팔로워 전용인 이 인스턴스에서는 결산이 통째로 빈다. DM 만 제외한다.
   def base_scope
     report_statuses.not_direct_visibility.joins(:status_stat)
   end

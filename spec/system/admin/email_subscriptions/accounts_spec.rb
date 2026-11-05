@@ -23,7 +23,7 @@ RSpec.describe 'Admin Email Subscriptions Accounts' do
       it 'views setting status and toggles enabled' do
         visit admin_email_subscriptions_account_path(account.id)
         expect(page)
-          .to have_title(I18n.t('admin.email_subscriptions.accounts.show.title', name: account.username)) # 화면은 한국어 고정
+          .to have_title(I18n.t('admin.email_subscriptions.accounts.show.title', name: account.username))
 
         # Change from disabled to enabled
         expect { click_on I18n.t('admin.email_subscriptions.accounts.show.enable_feature') }

@@ -2,9 +2,6 @@
 
 require 'rails_helper'
 
-# 운영진 열람(StatusPolicy#administrator?)은 남의 비공개 글과 DM 까지 열어 준다.
-# 로그인이 비활성화된(disabled) 운영진 계정의 토큰으로는 그 권한이 남으면 안 된다
-# (보안 회귀 스펙). 업스트림 정책들은 ApplicationPolicy#role 로 이것을 막는다.
 RSpec.describe StatusPolicy, '#show?' do
   let(:admin) { Fabricate(:admin_user).account }
   let(:direct_status) { Fabricate(:status, visibility: :direct) }

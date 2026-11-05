@@ -291,8 +291,6 @@ RSpec.describe User do
     end
   end
 
-  # 이 포크의 일반 글은 private 하나뿐이고 unlisted 는 공지 계정 전용이다(943745d134).
-  # 저장된 값과 잠금 여부는 보지 않는다(User::HasSettings#setting_default_privacy 의 주석).
   describe '#setting_default_privacy' do
     it "returns 'private' even if user has configured another privacy" do
       user = Fabricate(:user)
@@ -520,8 +518,6 @@ RSpec.describe User do
       allow(redis).to receive(:pipelined).and_yield(redis_pipeline_stub)
     end
 
-    # 보존 기본값은 켜짐이다(config/initializers/multi_account.rb 의 default_settings).
-    # 꺼진 경우를 보려면 명시적으로 꺼야 한다.
     context 'when multi-account retention is disabled' do
       before do
         allow(MultiAccountConfig).to receive(:retain_tokens?).and_return(false)

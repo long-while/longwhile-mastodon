@@ -6,9 +6,6 @@ class Auth::RegistrationsController < Devise::RegistrationsController
 
   layout :determine_layout
 
-  # @_longwhile — Devise 가 prepend_before_action 으로 건 require_no_authentication 등이
-  # Localized 의 around_action 보다 먼저 돌아 "You are already signed in." 같은 플래시를
-  # 영어로 만든다. 같은 이름으로 다시 걸면 앞의 등록이 지워지고 맨 앞으로 온다.
   prepend_around_action :set_locale
 
   before_action :set_invite, only: [:new, :create]
@@ -59,11 +56,6 @@ class Auth::RegistrationsController < Devise::RegistrationsController
   def build_resource(hash = nil)
     super
 
-    # @_longwhile — 브라우저의 Accept-Language 를 따르지 않는다. 따랐다가는 영어
-    # 브라우저로 가입한 사람이 영어에 갇힌다 (settings-phase-2.md §1.3).
-    # I18n.locale 은 Localized 가 요청마다 :ko 로 고정한 값이다. I18n.default_locale 을
-    # 쓰면 안 된다 — DEFAULT_LOCALE 이 없으면 :en 이라(config/initializers/i18n.rb)
-    # 가입자가 모두 en 으로 적혀 Sidekiq 이 보내는 메일이 영어로 나간다.
     resource.locale                 = I18n.locale
     resource.invite_code            = @invite&.code if resource.invite_code.blank?
     resource.registration_form_time = session[:registration_form_time]

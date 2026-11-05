@@ -41,10 +41,6 @@ class UserRole < ApplicationRecord
     view_feeds: (1 << 20),
     invite_bypass_approval: (1 << 21),
     manage_email_subscriptions: (1 << 22),
-    # @_longwhile — 원래 1 << 20 이었는데 업스트림 4.5 가 그 자리에 view_feeds 를 넣었다.
-    #   업스트림은 비트를 차례로 쓰므로 멀리 떨어진 자리로 옮긴다. 30 은 웹 앱이
-    #   권한을 32비트 정수로 다뤄도 양수로 남는 가장 높은 비트다. 옛 비트는
-    #   마이그레이션 MoveCanBePrivateAccountPermissionBit 가 옮긴다.
     can_be_private_account: (1 << 30),
   }.freeze
 
@@ -58,13 +54,6 @@ class UserRole < ApplicationRecord
     NONE = 0
     ALL  = FLAGS.values.reduce(&:|)
 
-    # @_longwhile custom feature / 한참(longwhile) 제작 기능 — 서버 초대 운영진 전용화
-    #   기본(everyone) 역할에서 invite_users 를 제거해 일반 사용자는 초대 링크를
-    #   생성할 수 없게 하고, 운영진(Owner/Admin/Moderator) 역할에만 부여한다.
-    #   NONE 으로 두면 validate_dangerous_permissions 가 everyone 역할에 invite_users
-    #   를 다시 추가하는 것도 차단한다.
-    #   4.6 부터 그 검사는 DEFAULT 가 아니라 SAFE 를 본다(업스트림은 invite_users·
-    #   invite_bypass_approval 을 허용). 같은 이유로 SAFE 도 NONE 이다.
     DEFAULT = NONE
     SAFE = NONE
 

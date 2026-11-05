@@ -3,8 +3,6 @@
 require 'rails_helper'
 
 RSpec.describe UserMailer do
-  # 메일은 받는 사람의 locale 과 무관하게 한국어다(ApplicationMailer::MAIL_LOCALE).
-  # 기대값도 같은 로캘로 계산한다.
   around { |example| I18n.with_locale(:ko) { example.run } }
 
   shared_examples 'delivery to memorialized user' do
@@ -57,7 +55,6 @@ RSpec.describe UserMailer do
 
   let(:receiver) { Fabricate(:user) }
 
-  # 상류 4.6 이 email_spec 젬(have_body_text 등)을 뺐다. 그 매처처럼 HTML 본문을 글자로 본다.
   def html_body(mail)
     CGI.unescapeHTML(mail.html_part.body.decoded)
   end

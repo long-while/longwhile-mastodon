@@ -65,8 +65,6 @@ RSpec.describe EmailDomainBlock do
 
       let(:input) { 'host.example' }
 
-      # 기록은 UTC 자정 기준 키로 쌓인다(Trends::History#add). Date 를 넘기면 Time.zone(Asia/Seoul)
-      # 자정이 되어 키가 어긋나므로 UTC 시각을 넘긴다.
       it 'returns true and records attempt' do
         expect do
           expect(subject).to be(true)

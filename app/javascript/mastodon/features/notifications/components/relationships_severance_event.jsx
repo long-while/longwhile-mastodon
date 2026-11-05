@@ -27,9 +27,6 @@ export const RelationshipsSeveranceEvent = ({ type, target, followingCount, foll
       <div className='notification-group__icon'><Icon id='heart_broken' icon={HeartBrokenIcon} /></div>
 
       <div className='notification-group__main'>
-        {/* @_longwhile — "자세히" 링크가 가리키던 /severed_relationships 화면을
-            걷어냈다. 연합하지 않는 인스턴스라 이 알림 자체가 생기지 않지만,
-            죽은 링크를 남겨 두지는 않는다 (settings-phase-3.md). */}
         <p>{intl.formatMessage(messages[type], { from: <strong>{domain}</strong>, target: <strong>{target}</strong>, followingCount, followersCount })}</p>
       </div>
     </div>

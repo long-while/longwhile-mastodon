@@ -140,7 +140,6 @@ RSpec.describe SearchQueryTransformer do
     end
   end
 
-  # @_longwhile — 탈퇴(익명화) 계정은 옛 이름으로 글을 모아 볼 수 없어야 한다.
   context 'with from: naming an anonymized account' do
     let(:query) { 'from:@formername' }
 

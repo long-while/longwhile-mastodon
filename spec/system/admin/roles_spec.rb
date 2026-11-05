@@ -81,7 +81,7 @@ RSpec.describe 'Admin::Roles' do
       visit edit_admin_role_path(role)
       expect(page)
         .to have_title(I18n.t('admin.roles.edit', name: I18n.t('admin.roles.everyone')))
-        .and have_text(ActionController::Base.helpers.strip_tags(I18n.t('admin.roles.everyone_full_description_html'))) # 화면은 한국어 고정
+        .and have_text(ActionController::Base.helpers.strip_tags(I18n.t('admin.roles.everyone_full_description_html')))
 
       # Update role attribute
       check 'user_role_require_2fa' # Require 2FA for everyone

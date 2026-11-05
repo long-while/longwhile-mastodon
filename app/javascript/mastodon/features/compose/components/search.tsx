@@ -14,10 +14,6 @@ import { isFulfilled } from '@reduxjs/toolkit';
 
 import CancelIcon from '@/material-icons/400-24px/cancel-fill.svg?react';
 import CloseIcon from '@/material-icons/400-24px/close.svg?react';
-// @_longwhile — 돋보기를 선(stroke) 아이콘으로 바꿨다. 커스텀 테마(bird-ui /
-// theme-ui)는 이 자리를 `mask-image` 로 덮으므로, 테마 쪽 마스크도 같은 파일
-// (styles/bird-theme-svg/search.svg)을 가리키게 함께 고쳤다. 한쪽만 바꾸면
-// 테마를 켠 사람과 끈 사람이 서로 다른 돋보기를 본다.
 import SearchIcon from '@/images/search.svg?react';
 import {
   clickSearchResult,
@@ -458,10 +454,6 @@ export const Search: React.FC<{
 
   return (
     <form className={classNames('search', { active: expanded })}>
-      {/* @_longwhile — 돋보기와 지우기(✕)를 **서로 다른 요소로 가른다.**
-          예전에는 둘이 `.search__icon` 버튼 하나 안에 절대 배치로 들어 있어,
-          그 버튼을 왼쪽으로 옮기면 ✕ 가 돋보기 위에 그대로 포개졌다. 이제
-          셋(돋보기 · 입력칸 · ✕)이 `.search` 의 flex 자식이라 겹칠 수 없다. */}
       <span className='search__icon' aria-hidden='true'>
         <Icon id='search' icon={SearchIcon} />
       </span>

@@ -2,10 +2,6 @@
 
 require 'rails_helper'
 
-# unlisted 는 공지 계정 전용이고, 그 글은 팔로우 여부와 무관하게 모든 로컬 계정에 간다
-# (943745d134 — FanOutOnWriteService#announcement_broadcast?, PublicFeed). 그런데 글 주소는
-# StatusPolicy 가 unlisted 를 팔로워 전용으로 막아, 피드에는 보이는 공지가 열면 404 였다.
-# 다른 계정의 unlisted(943745d134 이전 기본값으로 쓴 옛 글)는 계속 팔로워 전용이어야 한다.
 RSpec.describe StatusPolicy, '#show?' do
   let(:announcer) do
     Fabricate.build(:account, username: PublicFeed::ANNOUNCEMENT_USERNAME).tap { |account| account.save!(validate: false) }

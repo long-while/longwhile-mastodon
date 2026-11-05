@@ -2,9 +2,6 @@
 
 require 'rails_helper'
 
-# 이 인스턴스는 화면 언어를 한국어로 고정한다(Localized#requested_locale 이 항상 :ko).
-# 업스트림은 Accept-Language 로 언어를 골랐다. 여기서는 어떤 헤더가 와도 한국어로
-# 나오는지, 그리고 요청한 언어로 바뀌지 않는지를 본다.
 RSpec.describe 'Localization' do
   around do |example|
     I18n.with_locale(I18n.locale) do

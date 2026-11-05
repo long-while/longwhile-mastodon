@@ -157,9 +157,6 @@ RSpec.describe 'Api::V1::Collections' do
 
     it_behaves_like 'forbidden for wrong scope', 'read'
 
-    # @_longwhile — 이 인스턴스에서는 컬렉션을 만들 수 없다(CollectionPolicy#create?).
-    # 이름·설명이 로그인한 모두에게 보이는 공개 글이 되고, 팔로워가 프로텍트 계정을
-    # 동의 없이 담아 숨겨 둔 팔로우 관계를 드러낸다. 고정 프런트에는 컬렉션 화면이 없다.
     context 'with valid params' do
       let(:params) do
         {

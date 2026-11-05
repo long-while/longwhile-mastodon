@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 
-# 이 포크는 메일을 받는 사람의 locale 과 무관하게 한국어로 보낸다(ApplicationMailer::MAIL_LOCALE).
-# 저장된 locale 이 en 이거나 비어 있는 사용자가 많아(가입이 en 을 적던 시기, tootctl·API 가입)
-# 화면은 한국어인데 로그인 보안 코드 같은 메일만 영어로 가던 것을 막는다.
 RSpec.shared_examples 'localized subject' do |*args, **kwrest|
   it 'renders subject in Korean even if the receiver chose another locale' do
     receiver.update!(locale: :de)

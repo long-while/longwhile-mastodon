@@ -14,7 +14,7 @@ RSpec.describe 'Log out' do
       visit settings_path
 
       within '.sidebar' do
-        click_on I18n.t('auth.logout') # 화면은 한국어 고정(Localized#requested_locale)
+        click_on I18n.t('auth.logout')
       end
 
       expect(page)

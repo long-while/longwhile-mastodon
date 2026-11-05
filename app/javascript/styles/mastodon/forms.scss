@@ -321,7 +321,7 @@ code {
       display: block;
       font-weight: 600;
       line-height: 20px;
-      margin-bottom: 6px; // @_longwhile — 없으면 라벨이 입력에 딱 붙는다
+      margin-bottom: 6px;
     }
 
     .hint {
@@ -544,9 +544,6 @@ code {
   input[type='email'],
   input[type='password'],
   input[type='datetime-local'] {
-    // @_longwhile — 4.6 이 로그인 칸의 placeholder 를 라벨로 바꾸면서
-    // :not(:placeholder-shown) 이 빈 칸에도 늘 참이 됐다. 페이지를 열자마자 빨갛던 것.
-    // :user-invalid 는 사용자가 손댄 뒤(또는 제출한 뒤)에만 걸린다.
     &:user-invalid {
       border-color: lighten($error-red, 12%);
     }

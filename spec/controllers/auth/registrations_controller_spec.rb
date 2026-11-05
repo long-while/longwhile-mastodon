@@ -170,9 +170,6 @@ RSpec.describe Auth::RegistrationsController do
 
   describe 'POST #create' do
     let(:accept_language) { 'de' }
-    # 이 포크는 가입 때 Accept-Language 를 따르지 않고 한국어를 적는다
-    # (`Auth::RegistrationsController#build_resource`, settings-phase-2.md §1.3).
-    # I18n.default_locale 이 아니다 — DEFAULT_LOCALE 이 없으면 :en 이라 메일이 영어로 나갔다.
     let(:signup_locale) { 'ko' }
 
     before do
@@ -279,7 +276,6 @@ RSpec.describe Auth::RegistrationsController do
         subject
 
         expect(response).to have_http_status(:success)
-        # 한국어 문구는 속성 이름을 함께 적는다("%{attribute}은(는) 이미 존재합니다").
         expect(username_error_text).to eq(I18n.t('errors.messages.taken', attribute: Account.human_attribute_name(:username)))
       end
 
@@ -310,7 +306,6 @@ RSpec.describe Auth::RegistrationsController do
         expect { subject }.to_not raise_error
 
         expect(response).to have_http_status(:success)
-        # 한국어 문구는 속성 이름을 함께 적는다("%{attribute}은(는) 올바르지 않은 값입니다").
         expect(date_of_birth_error_text).to eq(I18n.t('errors.messages.invalid', attribute: User.human_attribute_name(:date_of_birth)))
         expect(User.find_by(email: 'test@example.com')).to be_nil
       end

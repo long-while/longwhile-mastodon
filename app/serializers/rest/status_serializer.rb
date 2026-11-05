@@ -81,7 +81,6 @@ class REST::StatusSerializer < ActiveModel::Serializer
     end
   end
 
-  # @_longwhile — 익명화(탈퇴) 계정의 글은 ActivityPub 주소(/users/옛이름/statuses/…) 대신 웹 주소를 준다.
   def uri
     object.account.anonymized? ? url : ActivityPub::TagManager.instance.uri_for(object)
   end
@@ -105,7 +104,6 @@ class REST::StatusSerializer < ActiveModel::Serializer
   def replies_count
     object.status_stat&.replies_count || relationships&.attributes_map&.dig(object.id, :replies_count) || object.replies_count
   end
-
 
   def quotes_count
     relationships&.attributes_map&.dig(object.id, :quotes_count) || object.quotes_count
@@ -215,7 +213,6 @@ class REST::StatusSerializer < ActiveModel::Serializer
       object.account_id.to_s
     end
 
-    # @_longwhile — REST::AccountSerializer 와 같은 익명 핸들. 멘션으로 옛 이름이 새지 않게 한다.
     def username
       object.account.anonymized? ? Account::ANONYMIZED_USERNAME : object.account.pretty_username
     end

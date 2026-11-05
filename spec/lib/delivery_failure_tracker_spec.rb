@@ -41,8 +41,6 @@ RSpec.describe DeliveryFailureTracker do
       it 'returns the days on which failures were recorded' do
         track_failure(3, :days)
 
-        # 추적기는 UTC 날짜로 적는다. 이 포크의 Time.zone 은 Asia/Seoul 이라 `Date.yesterday` 같은
-        # 지역 날짜로 비교하면 한국 시간 0~9시에만 하루가 어긋난다.
         expect(subject.exhausted_deliveries_days).to contain_exactly(3.days.ago.utc.to_date, 2.days.ago.utc.to_date, 1.day.ago.utc.to_date)
       end
     end

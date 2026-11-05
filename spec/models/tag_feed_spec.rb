@@ -2,9 +2,6 @@
 
 require 'rails_helper'
 
-# TagFeed 는 PublicFeed 의 모집단을 물려받는다(팔로우 중 + 본인 + 공지 계정, private/unlisted).
-# 그래서 업스트림 예제들은 보는 사람이 글쓴이를 팔로우한 상태에서 검사한다.
-# 상태의 기본 공개 범위는 DB 기본값(public)이라 private 를 명시한다.
 RSpec.describe TagFeed do
   describe '#get' do
     let(:account) { Fabricate(:account) }
@@ -65,8 +62,6 @@ RSpec.describe TagFeed do
       expect(results).to     include both
     end
 
-    # BlockService 는 언팔로우까지 하므로 팔로우 필터만으로 빠져 버린다. 팔로우를 남긴 채
-    # 차단해서 차단 필터가 거르는지 본다.
     it 'can restrict to an account' do
       account.block!(author)
       results = described_class.new(tag_cats, account, none: [tag_dogs.name]).get(20)
@@ -90,8 +85,6 @@ RSpec.describe TagFeed do
       expect(results).to include(status)
     end
 
-    # 상류 4.7.4(#41132) 예제. 상류는 비로그인(nil)으로 보지만 이 포크는 비로그인에게 아무것도
-    # 주지 않으므로(위 'returns nothing without a viewer') 글쓴이를 팔로우한 account 로 본다.
     it 'paginates with max_id' do
       results = described_class.new(tag_cats, account, any: [tag_dogs.name]).get(20, both.id)
       expect(results).to contain_exactly(status_tagged_with_cats, status_tagged_with_dogs)
@@ -107,10 +100,6 @@ RSpec.describe TagFeed do
       expect(results).to contain_exactly(status_tagged_with_dogs, both)
     end
 
-    # @_longwhile — 아래는 업스트림 4.5 의 피드 접근 설정 예제다. 이 포크의 퍼블릭·태그 피드는
-    #   팔로우한 사람의 팔로워 공개 글만 보여 주고(위 'the followed-authors filter'), 로그인하지
-    #   않으면 아무것도 주지 않는다. 그래서 글은 private 로, 보는 사람은 글쓴이를 팔로우한 상태로
-    #   두고 접근 설정이 그 위에서 막는지를 본다. 비로그인 예제는 '보인다' 대신 '안 보인다' 를 본다.
     context 'when both local_topic_feed_access and remote_topic_feed_access are disabled' do
       before do
         Setting.local_topic_feed_access = 'disabled'

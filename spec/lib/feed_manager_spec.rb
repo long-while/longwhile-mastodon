@@ -37,9 +37,6 @@ RSpec.describe FeedManager do
         expect(subject.filter?(:home, status, bob)).to be false
       end
 
-      # 이 포크의 부스트는 겹팔로워 전용이다(943745d134) — 부스터와 원작자를 모두
-      # 팔로우해야 홈에 들어온다. 아래 부스트 예제들은 원작자(jeff)도 팔로우한 상태에서
-      # 원래 검사하려던 필터(차단·뮤트·부스트 끄기)가 거르는지 본다.
       it 'returns false for reblog by followee' do
         status = Fabricate(:status, text: 'Hello world', account: jeff)
         reblog = Fabricate(:status, reblog: status, account: alice)

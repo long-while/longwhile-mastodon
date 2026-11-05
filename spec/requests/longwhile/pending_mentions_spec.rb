@@ -2,26 +2,12 @@
 
 require 'rails_helper'
 
-# @_longwhile — "답장할 멘션" (/pending-mentions) 의 백엔드 계약.
-#
-#   이 화면은 서버에 전용 엔드포인트가 없다. 알림 그룹(/api/v2/notifications)을
-#   받아서 프론트(selectors/notifications.ts 의 isAwaitingReply)가 거른다. 기준은
-#   셋이다.
-#
-#     group.status_visibility    public 이 아니고 비어 있지 않을 것 (포크가 더한 필드)
-#     status.replied             내가 아직 답하지 않았을 것 (포크가 더한 필드)
-#     status.favourited          내가 마음에 들어요 하지 않았을 것
-#
-#   그래서 업스트림 머지가 serializer 에서 두 필드 중 하나만 떨어뜨려도 이 탭은
-#   **오류 없이 조용히** 틀어진다 — 답한 멘션이 남거나, 모든 멘션이 사라진다.
 RSpec.describe 'Pending mentions contract', :inline_jobs do
   let(:alice)   { Fabricate(:user, account_attributes: { username: 'alice' }) }
   let(:bob)     { Fabricate(:account, username: 'bob') }
   let(:token)   { Fabricate(:accessible_access_token, resource_owner_id: alice.id, scopes: 'read write') }
   let(:headers) { { 'Authorization' => "Bearer #{token.token}" } }
 
-  # 공개 범위가 private 로 고정된 인스턴스다(PostStatusService). 멘션 알림이
-  # 걸러지지 않도록 서로 팔로우한 사이로 둔다.
   before do
     alice.account.follow!(bob)
     bob.follow!(alice.account)
@@ -76,8 +62,6 @@ RSpec.describe 'Pending mentions contract', :inline_jobs do
       expect(status_json(notification_groups, status)).to include(replied: false)
     end
 
-    # 탈퇴(글을 남기고 나가기)는 정지가 아니라 anonymized_at 만 채운다. 컨트롤러의
-    # without_suspended 로는 걸리지 않아 답장할 멘션에 "탈퇴한 사용자" 가 남던 것.
     it 'drops mentions from an account that left' do
       mention_from_bob
       bob.update!(anonymized_at: Time.now.utc)

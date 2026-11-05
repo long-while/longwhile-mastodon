@@ -26,7 +26,6 @@ RSpec.describe 'Media API', :attachment_processing do
       end
     end
 
-    # @_longwhile 아이폰은 HEIC 를 그대로 올린다. libvips 가 heifload 를 막으면 500 이 난다.
     context 'when an iPhone HEIC photo is uploaded' do
       let(:params) { { file: fixture_file_upload('600x400.heic', 'image/heic') } }
 
@@ -58,7 +57,6 @@ RSpec.describe 'Media API', :attachment_processing do
         post '/api/v2/media', headers: headers, params: params
 
         expect(response).to have_http_status(422)
-        # 화면 언어는 한국어로 고정돼 있다(Localized#requested_locale).
         expect(response.body).to include I18n.t('errors.messages.too_long', attribute: MediaAttachment.human_attribute_name(:description, locale: :ko), count: MediaAttachment::MAX_DESCRIPTION_LENGTH, locale: :ko)
       end
     end

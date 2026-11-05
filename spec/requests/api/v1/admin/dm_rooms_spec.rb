@@ -2,12 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 운영 관리
-#   운영진이 인스턴스의 모든 DM 을 읽는 API. 권한은 Admin::DirectMessagePolicy 이고,
-#   웹 UI 의 토큰에는 admin 스코프가 없어서 일반 read 스코프로 받는다.
-#
-#   그 대가로 **운영진이 승인한 서드파티 앱**도 read 토큰만으로 모든 DM 을 읽을 수
-#   있었다. 웹 UI(superapp) 토큰이거나 admin:read 를 받은 토큰만 통과시킨다.
 RSpec.describe 'API V1 Admin DM rooms' do
   let(:admin)    { Fabricate(:admin_user) }
   let(:web_app)  { Doorkeeper::Application.create!(name: 'Web', redirect_uri: 'urn:ietf:wg:oauth:2.0:oob', scopes: 'read write follow push', superapp: true) }
@@ -54,8 +48,6 @@ RSpec.describe 'API V1 Admin DM rooms' do
       expect(response).to have_http_status(403)
     end
 
-    # GHSA-62j4-hvj7-px3f(v4.6.7): 로그인이 비활성화된 운영진은 관리 API 를 못 쓴다.
-    # 그 토큰이 admin:read 를 쥐고 있어도 마찬가지다.
     it 'refuses the web interface token of a disabled administrator' do
       admin.update!(disabled: true)
 
@@ -95,9 +87,6 @@ RSpec.describe 'API V1 Admin DM rooms' do
     it_behaves_like 'readable only through the web interface or an admin scope'
   end
 
-  # 운영진이 남의 방을 열면 /admin/action_logs 에 남는다. 페이지를 넘기거나 화면을
-  # 다시 열 때마다 남기면 기록이 묻히므로, 같은 사람이 같은 방을 연 것은
-  # Admin::DmRoomViewLog::WINDOW 동안 한 번만 적는다.
   describe 'the audit trail of staff opening a room' do
     let(:viewer) { admin.account }
 

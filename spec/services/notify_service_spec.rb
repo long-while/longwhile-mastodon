@@ -76,8 +76,6 @@ RSpec.describe NotifyService do
     end
   end
 
-  # 남의 비공개 글을 부스트한 사람은 원작자가 글을 고칠 때마다 'update' 알림으로 새
-  # 본문을 받는다. 원작자가 그 사람을 차단했으면 더는 받으면 안 된다.
   describe 'edit notifications' do
     let(:recipient) { user.account }
     let(:sender) { Fabricate(:account) }
@@ -187,9 +185,6 @@ RSpec.describe NotifyService do
     end
   end
 
-  # @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 채팅
-  #   DM 알림은 만들되 사람이 보는 통로에서만 뺀다. 근거는 DECISIONS.md A-60.
-  #   레코드를 아예 만들지 않으면 API 로 도는 자동봇이 통째로 먹통이 된다.
   context 'with a direct message while DM chat is enabled' do
     let(:unknown)  { Fabricate(:account, username: 'unknown') }
     let(:status)   { Fabricate(:status, account: unknown, visibility: :direct) }
@@ -206,9 +201,6 @@ RSpec.describe NotifyService do
       expect { subject }.to change(Notification, :count).by(1)
     end
 
-    # 필터링은 알림함을 위한 장치인데 DM 은 알림함에 뜨지 않는다. 남겨 두면
-    # for_private_mentions 의 기본값(filter) 때문에 봇이 팔로우하지 않은 사람의
-    # 명령어가 조용히 사라진다.
     it 'never marks it filtered' do
       Fabricate(:notification_policy, account: recipient, filter_private_mentions: true)
 
@@ -233,23 +225,13 @@ RSpec.describe NotifyService do
       expect { subject }.to change(AccountConversation, :count).by(1)
     end
 
-    # @_longwhile — 앱 푸시. **브라우저 구독만 뺀다.** 웹에는 배지와 도착 소리가
-    #   있고, 앱에는 /messages 화면이 없어 푸시가 유일한 통로다.
-    #
-    #   **표준 웹푸시 엔드포인트를 쓰는 앱**이 이 스펙의 핵심이다. 한때 여기서
-    #   `WebPushRequest#fcm_native?`(엔드포인트가 `native-fcm.occm.cc` 로 시작)로
-    #   골랐는데, 공식 iOS·안드로이드는 그 주소를 쓰지 않아 **하나도 안 걸렸고
-    #   푸시가 통째로 안 갔다.** 판정을 엔드포인트 모양이 아니라 등록한
-    #   클라이언트(Doorkeeper 의 `superapp`)로 바꾼 이유가 그것이다.
     context 'with push subscriptions registered' do
       let(:alerts) { { alerts: { mention: true } } }
 
-      # 앱. 엔드포인트는 평범한 웹푸시 주소이고, 앱은 superapp 이 아니다.
       let!(:app_subscription) do
         Fabricate(:web_push_subscription, user: user, data: alerts)
       end
 
-      # 브라우저. 웹 UI 는 `db/seeds/01_web_app.rb` 가 만든 superapp 의 토큰을 쓴다.
       let!(:browser_subscription) do
         Fabricate(:web_push_subscription,
                   user: user,
@@ -278,7 +260,6 @@ RSpec.describe NotifyService do
     end
   end
 
-  # 플래그를 내리면 상류 그대로 돌아와야 되돌리기가 성립한다. (A-60)
   context 'with a direct message while DM chat is disabled' do
     let(:unknown)  { Fabricate(:account, username: 'unknown') }
     let(:status)   { Fabricate(:status, account: unknown, visibility: :direct) }
@@ -297,8 +278,6 @@ RSpec.describe NotifyService do
     end
   end
 
-  # @_longwhile — 공지 글을 인용한 DM 은 멘션과 함께 `quote` 알림도 만든다(4.5). 같은 DM 을
-  #   채팅 경로가 이미 알리므로 사람 통로(푸시·메일·알림 요청함·실시간 알림함)로는 내지 않는다.
   context 'with a quote inside a direct message while DM chat is enabled' do
     let(:unknown)  { Fabricate(:account, username: 'unknown') }
     let(:quoted)   { Fabricate(:status, account: recipient, visibility: :unlisted) }

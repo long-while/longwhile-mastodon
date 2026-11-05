@@ -1,23 +1,3 @@
-// @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 채팅
-//   멤버 관리. 초대 · 별명 · 내보내기.
-//   근거: 2026-08-12 결정, 마이그레이션 20260812100000·20260812100100
-//
-//   **방을 유지하고 참여자 조합만 바꾼다.** 서버가 `participant_key` 를 다시
-//   계산해 같은 행에 쓰므로 방 id 도 URL 도 이력도 그대로다. 새로 들어온 사람은
-//   들어오기 전 메시지를 볼 수 없다 — 따로 막은 것이 아니라, 옛 글에 그 사람이
-//   멘션되어 있지 않아 저절로 그렇게 된다.
-//
-//   권한이 셋으로 갈린다.
-//
-//     초대     멤버 누구나
-//     내보내기 **방장만**. 누구나 할 수 있으면 말다툼이 곧 강퇴가 된다.
-//              `creator_id` 가 null 인 옛 방에서는 아무도 못 한다
-//     별명     누구나. 지정한 본인에게만 보이는 값이라 방에 알리지 않는다
-//
-//   초대는 새 사람을 **검색해서** 고른다. 그 검색·선택 UI 는 이미
-//   `recipient_modal.tsx` 에 있으므로 다시 만들지 않고, "멤버 추가하기" 를
-//   누르면 그 모달을 초대 모드로 연다.
-
 import { useCallback, useMemo, useState } from 'react';
 
 import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
@@ -83,8 +63,6 @@ const MemberRow: React.FC<{
   nickname?: string;
   canRemove: boolean;
   busy: boolean;
-  // 이름을 함께 넘긴다. 별명 입력창의 문구가 "@계정id" 가 아니라 사람 이름이어야
-  // 누구에게 붙이는지 알 수 있다.
   onEditNickname: (accountId: string, name: string) => void;
   onRemove: (accountId: string, name: string) => void;
 }> = ({
@@ -112,8 +90,6 @@ const MemberRow: React.FC<{
     onEditNickname(accountId, displayName);
   }, [accountId, displayName, onEditNickname]);
 
-  // 1대1 방을 찾거나 만들어 그리로 간다. `find_or_create` 라 이미 있으면 그 방이
-  // 열린다 — 같은 사람과의 대화가 새로 쪼개지지 않는다.
   const handleMessage = useCallback(() => {
     const pending = dispatch(
       createDmRoom({ accountIds: [accountId] }),
@@ -138,8 +114,6 @@ const MemberRow: React.FC<{
   const items = useMemo(() => {
     const menu: MenuItem[] = [];
 
-    // 1대1 로 말 거는 경로. 이미 그 방이 있으면 서버가 그 방을 돌려주므로
-    // (find_or_create) 대화가 새로 쪼개지지 않는다.
     if (account && accountId !== me) {
       menu.push({
         text: intl.formatMessage(messages.message),
@@ -181,8 +155,6 @@ const MemberRow: React.FC<{
       <Avatar account={account} size={40} />
 
       <span className='dm-members__row__text'>
-        {/* 별명이 있으면 그것을 앞세우고 본래 이름을 뒤에 작게 남긴다. 본래
-            이름을 지우면 별명을 붙여 놓고 누구인지 잊었을 때 알 방법이 없다. */}
         <span className='dm-members__row__name'>{nickname ?? name}</span>
 
         <span className='dm-members__row__handle'>
@@ -190,12 +162,8 @@ const MemberRow: React.FC<{
         </span>
       </span>
 
-      {/* 내 줄에도 메뉴가 붙는다. 별명은 남에게만 다는 것 같지만, 방장이
-          아닌 사람에게는 "내보내기" 가 없어 메뉴가 비지 않는다. */}
       <Dropdown
         items={items}
-        // 이 모달은 `.modal-root`(z-index 9998) 안에 있는데 메뉴는 body 로
-        // 포탈된다. 아무 것도 안 걸면 메뉴가 **모달 뒤로** 깔려 눌리지 않는다.
         overlayClassName='dm-members__row__menu'
         icon='ellipsis-h'
         iconComponent={MoreHorizIcon}
@@ -213,22 +181,14 @@ const DmMemberModal: React.FC<{
   const intl = useIntl();
   const dispatch = useAppDispatch();
 
-  // 스토어에서 직접 읽는다. 초대·내보내기·별명이 전부 방을 갱신하므로, prop 으로
-  // 받아두면 모달이 자기가 일으킨 변화를 못 본다.
   const room = useAppSelector((state) => selectDmRoom(state, roomId));
 
   const [busy, setBusy] = useState(false);
 
-  // `useMemo` 로 감싼다. 매 렌더마다 새 `{}` 를 만들면 아래 useCallback 의 의존성이
-  // 늘 바뀌어, 별명 핸들러가 렌더마다 새로 만들어지고 Dropdown 이 다시 그려진다.
   const nicknames = useMemo(() => room?.nicknames ?? {}, [room?.nicknames]);
 
-  // 방장만 내보낼 수 있다. `creator_id` 가 null 인 옛 방에서는 아무도 못 한다 —
-  // 모르는 것을 아무에게나 주지 않는다.
   const isCreator = Boolean(room?.creator_id && room.creator_id === me);
 
-  // `me` 는 로그인하지 않았으면 undefined 다. 이 화면은 로그인 뒤에만 열리지만
-  // 타입에는 그것이 적혀 있지 않으므로 여기서 걸러 낸다.
   const memberIds = useMemo(
     () =>
       [me, ...(room?.accounts ?? []).map((account) => account.id)].filter(
@@ -241,15 +201,11 @@ const DmMemberModal: React.FC<{
     dispatch(
       openModal({
         modalType: 'DM_RECIPIENT',
-        // 이미 방에 있는 사람은 기본 목록(팔로잉)에서 뺀다. 서버는 조용히
-        // 건너뛰지만, 목록에 남아 있으면 눌러도 아무 일이 없는 줄이 된다.
         modalProps: { inviteToRoomId: roomId, excludeIds: memberIds },
       }),
     );
   }, [dispatch, memberIds, roomId]);
 
-  // `prompt` 를 쓴다. 별명 하나를 받자고 전용 모달을 하나 더 만들면, 그 모달이
-  // 이 모달 위에 겹쳐 열려야 하는데 상류의 모달 스택은 한 번에 하나다.
   const handleEditNickname = useCallback(
     (accountId: string, name: string) => {
       const current = nicknames[accountId] ?? '';
@@ -257,7 +213,6 @@ const DmMemberModal: React.FC<{
 
       const next = window.prompt(label, current);
 
-      // 취소(null)와 빈 문자열은 다르다. 빈 문자열은 "지우기" 다.
       if (next === null) return;
 
       setBusy(true);
@@ -300,9 +255,6 @@ const DmMemberModal: React.FC<{
     },
     [dispatch, intl, roomId],
   );
-
-  // 나를 포함한 전원. 서버의 `accounts` 는 나를 뺀 목록이라 앞에 붙인다 —
-  // 내 별명을 내가 못 보는 것이 이상하고, 인원수도 화면과 맞아야 한다.
 
   return (
     <div className='modal-root__modal dialog-modal dm-members'>
@@ -352,8 +304,6 @@ const DmMemberModal: React.FC<{
               roomId={roomId}
               accountId={accountId}
               nickname={nicknames[accountId]}
-              // 나 자신은 이 경로로 뺄 수 없다. 그것은 "대화 나가기" 이고,
-              // 그쪽은 목록에서만 감춰 새 메시지가 오면 되돌아온다.
               canRemove={isCreator && accountId !== me}
               busy={busy}
               onEditNickname={handleEditNickname}

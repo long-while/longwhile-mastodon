@@ -3,8 +3,6 @@
 require 'rails_helper'
 
 RSpec.describe EmailSubscriptionMailer do
-  # 구독자의 locale(Fabricator 는 en)과 무관하게 한국어다(ApplicationMailer::MAIL_LOCALE).
-  # 기대값도 같은 로캘로 계산한다.
   around { |example| I18n.with_locale(:ko) { example.run } }
 
   shared_examples 'an absolute privacy policy link' do

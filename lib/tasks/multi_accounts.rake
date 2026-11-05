@@ -46,18 +46,15 @@ namespace :multi_accounts do
       end
     end
 
-    # .env.production에 자동으로 추가
     env_path = Rails.root.join('.env.production')
     if env_path.exist?
       contents = env_path.read
 
-      # client_id가 없으면 추가
       unless contents.match?(/^MA_MULTI_ACCOUNT_CLIENT_ID=/)
         contents << "\nMA_MULTI_ACCOUNT_CLIENT_ID=#{dotenv_escape(client_id)}"
         puts "\nAdded MA_MULTI_ACCOUNT_CLIENT_ID to .env.production"
       end
 
-      # client_secret이 없으면 추가
       unless contents.match?(/^MA_MULTI_ACCOUNT_CLIENT_SECRET=/)
         contents << "\nMA_MULTI_ACCOUNT_CLIENT_SECRET=#{dotenv_escape(client_secret)}"
         puts "Added MA_MULTI_ACCOUNT_CLIENT_SECRET to .env.production"

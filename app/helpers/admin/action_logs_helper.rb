@@ -63,11 +63,6 @@ module Admin::ActionLogsHelper
     log.public_send(key) ? key : :"not_#{key}"
   end
 
-  # @_longwhile — 운영진의 DM 열람 기록(Admin::DmRoomViewLog).
-  #   기록 화면은 view_audit_log 만 있으면 열리지만(모더레이터 포함) DM 은
-  #   Admin::DirectMessagePolicy 가 허락한 사람만 읽는다. "누구와 누구의 대화인지"
-  #   도 DM 의 일부이므로 그 사람에게만 참여자와 방 링크를 보이고, 나머지에게는 방
-  #   번호만 보인다.
   def dm_room_log_target(log)
     label = "##{log.target_id}"
     return label unless policy([:admin, :direct_message]).index?

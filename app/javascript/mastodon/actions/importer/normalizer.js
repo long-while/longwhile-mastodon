@@ -24,8 +24,7 @@ export function normalizeFilterResult(result) {
 /**
  * @param {object} status
  * @param {import('immutable').Map|undefined} normalOldStatus
- * @param {boolean} [expandContentWarnings] 웹 설정의 "콘텐츠 워닝 모두 펼치기".
- *   계정 설정인 expandSpoilers 와 별개이며, 둘 중 하나만 켜도 펼친다. (@_longwhile)
+ * @param {boolean} [expandContentWarnings]
  */
 export function normalizeStatus(status, normalOldStatus, expandContentWarnings = false) {
   const normalStatus   = { ...status };

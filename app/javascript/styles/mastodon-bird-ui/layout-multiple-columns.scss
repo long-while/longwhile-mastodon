@@ -726,12 +726,6 @@ body.embed .status__content a,
   color: var(--color-accent);
 }
 
-/* Toggles
-   꺼진 상태의 트랙에 --color-bg 를 깔지 않는다. 그 변수는 라이트에서 #fff 인데
-   손잡이(.react-toggle-thumb)도 흰색이라, 흰 설정 패널 위에서 토글이 통째로
-   사라진다. 다크에서도 트랙이 배경과 같은 색이라 테두리가 안 보인다.
-   상류 기본값($ui-primary-color, hsl(216 23% 76%))을 그대로 쓴다 —
-   components.scss 의 .react-toggle-track 이 그 값이다. */
 .layout-multiple-columns .search-results__header,
 .layout-multiple-columns .drawer__inner {
   background-color: var(--color-bg);
@@ -2175,8 +2169,6 @@ body.embed .detailed-status__meta .detailed-status__link .icon-retweet,
 }
 
 /* Search icon fix for 4.4.0-alpha.1+mementomods-2024-12-15 changes */
-/* @_longwhile — 검색칸은 이제 flex 다(components.scss `.search`). 돋보기는
-   흐름 안의 자식이라 좌표를 주면 안 된다. 옛 절대 배치를 되돌린다. */
 .layout-multiple-columns .search__icon {
   position: static;
   inset: auto;
@@ -2184,9 +2176,6 @@ body.embed .detailed-status__meta .detailed-status__link .icon-retweet,
 
 /* Search */
 .layout-multiple-columns .search .search__icon .icon-search {
-  /* @_longwhile — 돋보기를 bird-theme-svg/search.svg 로 바꾼다. 데이터 URI 대신
-     파일을 가리키고, 그 안의 색은 CSS 변수를 못 받아 테마마다 어긋났다.
-     currentColor 로 두면 주변 글자색을 그대로 따라간다. */
   mask-image: url('./bird-theme-svg/search.svg');
   -webkit-mask-image: url('./bird-theme-svg/search.svg');
   mask-size: 20px;
@@ -2198,8 +2187,6 @@ body.embed .detailed-status__meta .detailed-status__link .icon-retweet,
   background-color: currentColor;
   background-image: none;
   display: inline-block;
-
-  /* 상자를 `.search__icon` 과 같은 20px 로 맞춘다. */
   height: 20px;
   width: 20px;
 }
@@ -2213,8 +2200,6 @@ body.embed .detailed-status__meta .detailed-status__link .icon-retweet,
   display: none;
 }
 
-/* @_longwhile — 판은 이제 `.search` 가 그린다. `.active` 도 함께 적어 core 의
-   `border-radius: 4px 4px 0 0` 을 덮는다 — 알약이 펼칠 때만 각지면 안 된다. */
 .layout-multiple-columns .search,
 .layout-multiple-columns .search.active,
 .layout-multiple-columns input.setting-text {
@@ -2227,7 +2212,6 @@ body.embed .detailed-status__meta .detailed-status__link .icon-retweet,
   padding: 0 20px;
 }
 
-/* 입력칸은 판 안에서 남는 폭을 채우는 껍데기다. */
 .layout-multiple-columns .search__input {
   background-color: transparent;
   border: 0;
@@ -2238,9 +2222,6 @@ body.embed .detailed-status__meta .detailed-status__link .icon-retweet,
   padding: 0;
 }
 
-/* @_longwhile — 눌러도 테두리를 그리지 않는다. 알약 배경만으로 입력 칸이
-   충분히 구분되고, 바로 아래 펼침 판이 자기 테두리를 갖고 있어 둘이 겹치면
-   선이 두 겹으로 보인다. */
 .layout-multiple-columns .search:focus-within {
   outline: 0;
 }
@@ -2822,8 +2803,6 @@ body.embed .button.logo-button:hover,
   padding-top: 10px;
 }
 
-/* 지우기(✕)는 이제 `.search__icon` 밖의 제 단추다. flex 가 세로를 맞추므로
-   좌표를 주지 않는다. */
 .layout-multiple-columns .search__clear .icon {
   position: static;
   inset: auto;
@@ -3166,6 +3145,7 @@ body .compose-form .compose-form__uploads {
 /* Set size for the column link icons */
 .layout-multiple-columns .column-link .icon {
   --size-icon: 24px;
+
   height: 26px;
   width: 26px;
 }
@@ -3306,6 +3286,7 @@ body .compose-form .compose-form__uploads {
 
 .layout-multiple-columns .list-adder__lists .icon-plus {
   --size-icon: 20px;
+
   mask-image: var(--icon-plus);
   -webkit-mask-image: var(--icon-plus);
   mask-size: contain;
@@ -3320,6 +3301,7 @@ body .compose-form .compose-form__uploads {
 
 .layout-multiple-columns .list-adder__lists .icon-times {
   --size-icon: 20px;
+
   mask-image: var(--icon-checked-green);
   -webkit-mask-image: var(--icon-checked-green);
   mask-size: contain;
@@ -3465,8 +3447,6 @@ body .compose-form .compose-form__uploads {
   -webkit-mask-image: url('./bird-theme-svg/bookmark-fill.svg');
 }
 
-/* Follow requests icon — @_longwhile
-   원본 path 는 `.column-link .icon path { display: none }` 이 이미 지웠다. */
 .layout-multiple-columns .column-link .icon-follow-requests {
   mask-image: url('./bird-theme-svg/follow-request.svg');
   -webkit-mask-image: url('./bird-theme-svg/follow-request.svg');
@@ -3485,9 +3465,6 @@ body .compose-form .compose-form__uploads {
   -webkit-mask-image: url('./bird-theme-svg/follow-request-fill.svg');
 }
 
-/* Messages (DM chat) icon — @_longwhile
-   원본 path 는 `.column-link .icon path { display: none }` 이 이미 지웠다.
-   여기서 대체 그림을 깔지 않으면 아이콘 자리가 통째로 빈 칸으로 남는다. */
 .layout-multiple-columns .column-link .icon-messages {
   mask-image: url('./bird-theme-svg/envelope.svg');
   -webkit-mask-image: url('./bird-theme-svg/envelope.svg');
@@ -3542,6 +3519,7 @@ body .compose-form .compose-form__uploads {
 /* Preferences icon */
 .layout-multiple-columns .column-link .icon-cog {
   --size-icon: 24px;
+
   mask-image: url('./bird-theme-svg/slider.svg');
   -webkit-mask-image: url('./bird-theme-svg/slider.svg');
   mask-size: contain;
@@ -3583,6 +3561,7 @@ body .compose-form .compose-form__uploads {
 /* Settings icon */
 .layout-multiple-columns .column-header__button .icon-sliders {
   --size-icon: 20px;
+
   mask-image: var(--icon-sliders);
   -webkit-mask-image: var(--icon-sliders);
   mask-size: contain;
@@ -3614,6 +3593,7 @@ body .compose-form .compose-form__uploads {
 /* Administration icon */
 .layout-multiple-columns .column-link .icon-tachometer {
   --size-icon: 24px;
+
   mask-image: var(--icon-administration);
   -webkit-mask-image: var(--icon-administration);
   mask-size: contain;
@@ -3629,6 +3609,7 @@ body .compose-form .compose-form__uploads {
 /* Moderation icon */
 .layout-multiple-columns .column-link .icon-flag {
   --size-icon: 24px;
+
   mask-image: var(--icon-moderation);
   -webkit-mask-image: var(--icon-moderation);
   mask-size: contain;
@@ -3717,6 +3698,7 @@ body .compose-form .compose-form__uploads {
 /* stylelint-disable-next-line */
 .layout-multiple-columns button.icon-button .icon-retweet {
   --size-icon: 20px;
+
   mask-image: var(--icon-boost);
   -webkit-mask-image: var(--icon-boost);
   mask-size: contain;
@@ -3850,6 +3832,7 @@ body .compose-form .compose-form__uploads {
 .layout-multiple-columns .notification__filter-bar .icon-reply,
 .layout-multiple-columns .notification__filter-bar .icon-reply-all {
   --size-icon: 19px;
+
   position: relative;
   top: 1px;
 }
@@ -4309,12 +4292,10 @@ body .compose-form .compose-form__uploads {
     order: 4;
   }
 
-  /* @_longwhile — DM 채팅. JSX 에 추가하는 것만으로는 order 0 이 되어 맨 위로 튄다. */
   .layout-multiple-columns .column-link[href="/messages"] {
     order: 5;
   }
 
-  /* @_longwhile — 운영진 전용 "전체 메시지". 메시지 바로 아래. */
   .layout-multiple-columns .column-link[href="/messages/all"] {
     order: 6;
   }
@@ -4343,7 +4324,6 @@ body .compose-form .compose-form__uploads {
     order: 13;
   }
 
-  /* @_longwhile — 팔로우 요청은 계정 전환 **위**. 요청이 있을 때만 나타난다. */
   .layout-multiple-columns .navigation-panel .column-link[href="/follow_requests"] {
     order: 12;
   }
@@ -4875,6 +4855,7 @@ div[tabindex="-1"] + div[tabindex="-1"] > .status__wrapper > .status-reply.statu
 .layout-multiple-columns .detailed-status__action-bar .icon-button .icon-star,
 .layout-multiple-columns .status__action-bar .icon-button .icon-star {
   --size-icon: 20px;
+
   mask-image: var(--icon-star-detailed-status-action-bar);
   -webkit-mask-image: var(--icon-star-detailed-status-action-bar);
   mask-size: contain;
@@ -5615,7 +5596,7 @@ div[tabindex="-1"] + div[tabindex="-1"] > .status__wrapper > .status-reply.statu
 .inline-follow-suggestions {
   display: none;
 }
-/* All messages (DM 운영 열람) icon — @_longwhile */
+
 .layout-multiple-columns .column-link .icon-messages-all {
   mask-image: url('./bird-theme-svg/envelopes.svg');
   -webkit-mask-image: url('./bird-theme-svg/envelopes.svg');
@@ -5634,44 +5615,21 @@ div[tabindex="-1"] + div[tabindex="-1"] > .status__wrapper > .status-reply.statu
   -webkit-mask-image: url('./bird-theme-svg/envelopes-fill.svg');
 }
 
-/* @_longwhile — 아래쪽 경계선은 타임라인이 쓰는 경계선 토큰으로 맞춘다.
-   --color-dark 는 **떠 있는 판의 면 색**이다. 선으로 쓰면 배경과 같은 값이라
-   경계가 통째로 사라진다. */
 .layout-multiple-columns .follow_requests-unlocked_explanation,
 .layout-multiple-columns .scheduled-statuses__summary,
 .layout-multiple-columns .notification-group {
   border-color: var(--color-border);
 }
 
-/* @_longwhile — 펼침 판이 알약을 **파고들지 않게** 한다.
-   core 는 `top: 100%` 에 `margin-top: -2px` 라, 판의 네모난 윗변이 알약의
-   둥근 아랫부분 **안쪽**에서 시작한다. 알약 안에 네모 테두리가 하나 더
-   들어간 것처럼 보였다. 아래로 띄우고 네 귀퉁이를 모두 둥글린다.
-   알약은 테두리를 아예 갖지 않으므로(위) 선은 이 판 하나뿐이다. */
 .layout-multiple-columns .search__popout {
   margin-top: 8px;
   border-radius: 16px;
 }
 
-/* @_longwhile — 돋보기는 흐린 글자와 같은 톤이다. 그림을 mask 로 깔고
-   currentColor 로 칠하므로, 여기서 `color` 만 정하면 색이 따라온다. */
 .layout-multiple-columns .search__icon {
   color: var(--color-dim);
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   @_longwhile — 모바일 뷰(759px 이하)의 검색칸 · 펼침 판
-   ═══════════════════════════════════════════════════════════════════════════
-
-   **이 블록은 파일 맨 끝에 둔다.** 위쪽 `.layout-multiple-columns .search` 와 특정도가 같으므로
-   (미디어 쿼리는 특정도를 올리지 않는다) 순서로만 이긴다.
-
-   · 검색칸 배경은 팔레트를 따르지 않고 `--color-mobile-search-bg` 로 고정한다.
-     라이트 `#f2f4f5ba` · 다크 `#ffffff08`.
-   · 펼침 판(최근 검색 · 검색 옵션)은 **불투명**이어야 한다. 반투명이면 뒤의
-     타임라인 글자가 비쳐 안내가 읽히지 않는다. 어느 층이 투명하든 확실히
-     막으려고 배경 · 테두리 · `backdrop-filter` · `opacity` 를 함께 적는다.
-   ═══════════════════════════════════════════════════════════════════════════ */
 @media screen and (max-width: 759px) {
   .layout-multiple-columns .search,
   .layout-multiple-columns .search.active {
@@ -5688,11 +5646,6 @@ div[tabindex="-1"] + div[tabindex="-1"] > .status__wrapper > .status-reply.statu
   }
 }
 
-/* @_longwhile — 검색칸은 눌러도 아웃라인을 그리지 않는다. 위쪽
-   `.layout-multiple-columns input:focus-visible` 이 모든 입력칸에 `--color-accent` 아웃라인을
-   두는데, 알약 검색칸에서는 그 선이 둥근 배경 밖으로 네모나게 삐져나온다.
-   **검색칸에만** 끈다 — 다른 입력칸의 아웃라인은 키보드 사용자에게 필요하다.
-   `input` 까지 붙여 위 규칙(클래스 2 + 요소 1)보다 특정도를 높인다. */
 .layout-multiple-columns .search .search__input:focus,
 .layout-multiple-columns .search input.search__input:focus-visible,
 .layout-multiple-columns .search:focus-within,

@@ -30,7 +30,6 @@ RSpec.describe 'Settings profile page' do
     form_label('defaults.display_name')
   end
 
-  # 이 포크의 프로필 사진은 사진 자체가 단추라 이름표가 없다(settings/profiles/show). 입력 id 로 찾는다.
   def avatar_field
     'account_avatar'
   end

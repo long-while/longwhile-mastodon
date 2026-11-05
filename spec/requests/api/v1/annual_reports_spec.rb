@@ -105,7 +105,7 @@ RSpec.describe 'API V1 Annual Reports' do
 
       context 'when the feature is enabled and time is within window' do
         before do
-          Setting.wrapstodon = true # 이 포크의 기본값은 꺼짐이다
+          Setting.wrapstodon = true
           travel_to Time.utc(2025, 12, 20)
 
           # Define the ID manually as it is otherwise handled by the database, which is not affected by `travel_to`
@@ -129,7 +129,7 @@ RSpec.describe 'API V1 Annual Reports' do
 
       context 'when the feature is enabled but we are out of the time window' do
         before do
-          Setting.wrapstodon = true # 이 포크의 기본값은 꺼짐이다
+          Setting.wrapstodon = true
           travel_to Time.utc(2025, 6, 20)
 
           # Define the ID manually as it is otherwise handled by the database, which is not affected by `travel_to`
@@ -178,7 +178,7 @@ RSpec.describe 'API V1 Annual Reports' do
 
       context 'when the feature is enabled and time is within window' do
         before do
-          Setting.wrapstodon = true # 이 포크의 기본값은 꺼짐이다
+          Setting.wrapstodon = true
           travel_to Time.utc(2025, 12, 20)
 
           status = Fabricate(:status, visibility: :public, account: user.account)

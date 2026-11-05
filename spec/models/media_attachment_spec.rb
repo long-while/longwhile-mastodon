@@ -149,8 +149,6 @@ RSpec.describe MediaAttachment, :attachment_processing do
     it_behaves_like 'static 600x400 image', 'image/webp', '.webp'
   end
 
-  # @_longwhile 업스트림은 HEIF 를 막고 이 두 예제를 꺼 두었다(3c80fb5dce). 이 인스턴스는
-  # config/initializers/vips.rb 에서 heifload 를 다시 열었으므로 검사한다.
   describe 'avif' do
     let(:media) { Fabricate(:media_attachment, file: attachment_fixture('600x400.avif')) }
 

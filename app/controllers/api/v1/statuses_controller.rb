@@ -13,13 +13,6 @@ class Api::V1::StatusesController < Api::BaseController
   before_action :set_quoted_status, only:    [:create]
   before_action :check_statuses_limit, only: [:index]
 
-  # @_longwhile — DM 은 실제로는 :direct_statuses family 로 제한된다
-  #   (Status#rate_limiter). 여기서 보고하는 X-RateLimit-* 헤더는 :statuses 기준이라
-  #   DM 전송 응답에는 맞지 않는 값이 실린다. family 는 요청 시점의 공개 범위에 따라
-  #   달라지는데, 이 매크로는 클래스 선언 시점에 값을 고정하고 타임라인·검색 등 다른
-  #   컨트롤러도 같은 concern 을 쓴다. 1차에서는 감수하고, 클라이언트가 이 헤더 대신
-  #   429 응답으로 제한 도달을 판단하게 한다.
-  #   근거: dm-chat-phase-0.md §3, docs/dm-chat/ops/dm-chat-development.md
   override_rate_limit_headers :create, family: :statuses
   override_rate_limit_headers :update, family: :statuses
 

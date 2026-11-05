@@ -387,7 +387,6 @@ RSpec.describe Admin::AccountsController do
     context 'when user is admin' do
       let(:role) { UserRole.find_by(name: 'Admin') }
 
-      # 관리자가 누른 삭제는 계정을 익명 처리하고 글은 남긴다(ecfb76663d).
       before do
         allow(Admin::AccountDeletionWorker).to receive(:perform_async).with(account.id, { 'preserve_content' => true })
       end

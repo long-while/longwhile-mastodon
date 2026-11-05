@@ -36,10 +36,6 @@ export const localTimeZone = () => {
   }
 };
 
-/**
- * Human readable time zone name in the given locale, e.g. `한국 표준시`.
- * Falls back to the IANA name when the browser cannot produce one.
- */
 export const localTimeZoneLabel = (locale) => {
   try {
     const parts = new Intl.DateTimeFormat(locale, { timeZoneName: 'long' }).formatToParts(new Date());
@@ -50,8 +46,6 @@ export const localTimeZoneLabel = (locale) => {
 };
 
 /**
- * Localised AM/PM marker, e.g. `오전` / `AM`, for the meridiem select.
- *
  * @param {string} locale
  * @param {number} hour24
  */
@@ -240,9 +234,6 @@ export const validateScheduledAt = (date) => {
 };
 
 /**
- * Renders a publication time the way the schedule dialog and the list show it,
- * e.g. `2026년 8월 7일 (금) 오전 1:04`, in the viewer's locale and time zone.
- *
  * @param {import('react-intl').IntlShape} intl
  * @param {string|Date|null} scheduledAt
  */
@@ -284,10 +275,6 @@ export const fromClockParts = ({ hour12, meridiem }) => {
 };
 
 /**
- * Compact form for the composer's one-line indicator, e.g. `26.08.16 (일) 6:10 AM`.
- * The weekday follows the viewer's locale; the AM/PM marker stays in its English
- * form so the line stays short enough to sit above the post button.
- *
  * @param {import('react-intl').IntlShape} intl
  * @param {string|Date|null} scheduledAt
  */

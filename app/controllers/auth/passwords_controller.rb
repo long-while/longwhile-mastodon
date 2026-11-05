@@ -6,9 +6,6 @@ class Auth::PasswordsController < Devise::PasswordsController
 
   layout 'auth'
 
-  # @_longwhile — Devise 가 prepend_before_action 으로 건 require_no_authentication 등이
-  # Localized 의 around_action 보다 먼저 돌아 "You are already signed in." 같은 플래시를
-  # 영어로 만든다. 같은 이름으로 다시 걸면 앞의 등록이 지워지고 맨 앞으로 온다.
   prepend_around_action :set_locale
 
   def update

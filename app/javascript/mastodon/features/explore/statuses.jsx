@@ -106,5 +106,4 @@ class Statuses extends PureComponent {
 
 }
 
-// JS 클래스라 HOC 를 거치면 받는 prop 이 사라진 타입이 된다. 바깥에서 넘기는 것만 적는다.
 export default /** @type {import('react').ComponentType<{ multiColumn?: boolean }>} */ (connect(mapStateToProps)(withIdentity(withRouter(Statuses))));

@@ -3,8 +3,6 @@
 require 'rails_helper'
 
 RSpec.describe UserRole do
-  # @_longwhile — 포크 권한이 업스트림 비트와 겹치면 저장된 권한의 뜻이 조용히 바뀐다
-  #   (4.5 의 view_feeds 가 1 << 20 을 가져갔다). 비트가 서로 겹치지 않는지 지킨다.
   describe 'FLAGS' do
     it 'gives every permission its own bit' do
       expect(described_class::FLAGS.values.uniq.size).to eq(described_class::FLAGS.size)

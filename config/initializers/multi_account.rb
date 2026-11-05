@@ -1,13 +1,5 @@
 # frozen_string_literal: true
 
-# ═══════════════════════════════════════════════════════════════════════════
-# @_longwhile custom feature / 한참(longwhile) 제작 기능 — 계정 전환(멀티계정)
-# 이 기능을 사용·재사용하려면 서버 내에 아래 출처를 반드시 표기해야 합니다.
-# If you use or reuse this feature, you must credit the author on your server.
-#   Twitter/X : @_longwhile  ·  https://twitter.com/_longwhile
-#   Crepe     : https://kre.pe/QTRx
-# ═══════════════════════════════════════════════════════════════════════════
-
 # Multi-account switcher configuration
 raw_settings =
   if Rails.application.respond_to?(:config_for)
@@ -18,7 +10,6 @@ raw_settings =
 
 default_settings = { 'retain_tokens' => true, 'refresh_flow' => true }
 
-# config_for가 symbol/string 키를 혼용할 수 있으므로 양쪽 모두 시도
 multi_account_settings =
   case raw_settings
   when Hash
@@ -31,7 +22,6 @@ multi_account_settings =
     default_settings.dup
   end
 
-# ENV에서 빈 문자열('')도 무시하도록 blank? 체크
 config_from_env = {
   'client_id' => ENV['MA_MULTI_ACCOUNT_CLIENT_ID'],
   'client_secret' => ENV['MA_MULTI_ACCOUNT_CLIENT_SECRET'],

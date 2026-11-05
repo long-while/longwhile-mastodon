@@ -71,7 +71,6 @@ RSpec.describe AccountConversation do
       expect(described_class.where(id: conversation.id).count).to eq 0
     end
 
-    # @_longwhile — STATUS_IDS_LIMIT 도입에 따른 보정 (dm-chat-phase-0.md §2.2)
     it 'keeps the record when older statuses remain outside the capped array' do
       stub_const("#{described_class}::STATUS_IDS_LIMIT", 2)
 
@@ -80,7 +79,6 @@ RSpec.describe AccountConversation do
 
       conversation = described_class.create!(account: alice, conversation: root.conversation, participant_account_ids: [bob.id], status_ids: ([root.id] + recent.map(&:id)))
 
-      # 상한 때문에 root 는 배열에서 밀려나 있지만 대화에는 여전히 남아 있다.
       expect(conversation.status_ids).to eq recent.map(&:id).sort
 
       recent.each { |status| discard_and_destroy(status) }
@@ -101,8 +99,6 @@ RSpec.describe AccountConversation do
       expect(described_class.where(id: conversation.id).count).to eq 0
     end
 
-    # 되채움은 하드 삭제(discard 없이 destroy)에서도 돌아야 한다. 계정 정리로 상대의
-    # 메시지가 통째로 지워질 때, 내 메시지가 남아 있으면 대화는 살아 있어야 한다.
     it 'refills on hard deletion paths too' do
       stub_const("#{described_class}::STATUS_IDS_LIMIT", 1)
 
@@ -117,7 +113,6 @@ RSpec.describe AccountConversation do
       expect(conversation.reload.status_ids).to eq [mine.id]
     end
 
-    # 되채움이 상한을 지키는지. 창 밖에 여러 건이 남아 있어도 N건만 담아야 한다.
     it 'caps the refilled array at the limit' do
       stub_const("#{described_class}::STATUS_IDS_LIMIT", 2)
 
@@ -135,7 +130,6 @@ RSpec.describe AccountConversation do
       expect(conversation.status_ids).to eq surviving.last(2)
     end
 
-    # 참여자 조합이 다른 형제 행의 메시지를 끌어오면 안 된다.
     it 'does not refill from a sibling conversation with different participants' do
       stub_const("#{described_class}::STATUS_IDS_LIMIT", 1)
 
@@ -149,7 +143,6 @@ RSpec.describe AccountConversation do
 
       discard_and_destroy(solo)
 
-      # root 는 참여자가 [bob, mark] 라 이 행의 것이 아니다.
       expect(described_class.where(id: conversation.id).count).to eq 0
     end
   end
@@ -167,8 +160,6 @@ RSpec.describe AccountConversation do
       expect(conversation.last_status_id).to eq statuses.map(&:id).max
     end
 
-    # 상한이 걸린 뒤에도 add_status 의 append 경로가 배열을 넘치지 않게 유지하는지.
-    # 위 예제들과 달리 실제 쓰기 경로를 지난다.
     it 'keeps the array capped when statuses arrive through add_status' do
       stub_const("#{described_class}::STATUS_IDS_LIMIT", 3)
 
@@ -210,7 +201,6 @@ RSpec.describe AccountConversation do
     status
   end
 
-  # RemoveStatusService 와 같은 순서. discard 가 먼저라야 되채움이 동작한다.
   def discard_and_destroy(status)
     status.discard_with_reblogs
     status.destroy!

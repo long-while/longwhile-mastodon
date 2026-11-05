@@ -1,5 +1,3 @@
-// @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 채팅
-
 import { isOnlyMemberMentions } from '../util/only_mentions';
 
 const ALICE = 'https://example.com/@alice';
@@ -11,7 +9,6 @@ const mention = (url: string, name: string) =>
 describe('isOnlyMemberMentions', () => {
   const members = new Set([ALICE, BOB]);
 
-  // 사진만 보낸 메시지의 본문. 이걸 말풍선으로 그리면 사진 위에 "@alice" 가 뜬다.
   it('is true when the body holds nothing but the members it was addressed to', () => {
     expect(
       isOnlyMemberMentions(
@@ -30,7 +27,6 @@ describe('isOnlyMemberMentions', () => {
     ).toBe(false);
   });
 
-  // 방 밖의 사람을 부른 것은 작성자가 쓴 내용이다.
   it('is false when someone outside the room is mentioned', () => {
     expect(
       isOnlyMemberMentions(

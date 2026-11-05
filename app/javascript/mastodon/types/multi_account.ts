@@ -41,8 +41,6 @@ export enum SwitchErrorCode {
   TOKEN_MISSING = 'token_missing',
   TOKEN_INVALID = 'token_invalid',
   SESSION_TOKEN_MISSING = 'session_token_missing',
-  // 서버가 전환 자체를 거절했다(기능 꺼짐·롤아웃 제외·정지·요청 과다).
-  // 저장된 토큰은 멀쩡하므로 계정을 지우라고 하면 안 된다.
   REFRESH_REJECTED = 'refresh_rejected',
 }
 
@@ -55,7 +53,6 @@ export class MultiAccountSwitchError extends Error {
     this.name = 'MultiAccountSwitchError';
   }
 
-  // 이 코드의 계정은 저장된 토큰이 죽은 상태이므로, UI에서 계정 제거를 제안해야 한다.
   get isDeadToken(): boolean {
     return (
       this.code === SwitchErrorCode.TOKEN_MISSING ||

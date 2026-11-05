@@ -3,7 +3,6 @@ import { List as ImmutableList } from 'immutable';
 import type { ThreadHeadState } from '../../reducers/thread_heads';
 import { dedupeThreadHeads } from '../thread_preview_dedupe';
 
-// A1-A3-A4, A2-B1-A5-B2, A2-C1-A7-C2. 사용자는 A 만 팔로우 — B1·C1 등은 스토어에 없을 수도 있다.
 const parents: Record<string, string> = {
   A3: 'A1',
   A4: 'A3',
@@ -50,7 +49,6 @@ describe('dedupeThreadHeads', () => {
   });
 
   it('drops ancestors even when a gap in the chain is not in the store', () => {
-    // 타임라인에 B1 이 없다 — 사슬은 A5 에서 끊기지만 시작 글 A2 는 안다.
     expect(
       run(['B2', 'A5', 'A2'], loadedHeads, {
         inStore: ['B2', 'A5', 'A3', 'A4'],
@@ -79,7 +77,6 @@ describe('dedupeThreadHeads', () => {
   });
 
   it('lets the next visible reply take over when the newest is filtered', () => {
-    // A4 는 필터로 안 그려지므로 A3 이 갈래의 끝이 된다.
     expect(run(['A4', 'A3', 'A1'], loadedHeads, { hidden: ['A4'] })).toEqual([
       'A4',
       'A3',

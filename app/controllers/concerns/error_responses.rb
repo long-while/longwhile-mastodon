@@ -59,9 +59,6 @@ module ErrorResponses
 
   private
 
-  # @_longwhile — rescue_from 은 예외가 Localized 의 around_action(I18n.with_locale)을
-  # 빠져나온 뒤에 돈다. 그대로 그리면 기본 로캘(DEFAULT_LOCALE 이 없으면 :en)이라
-  # 없는 주소·권한 없음 화면만 "The page you are looking for isn't here." 가 된다.
   def respond_with_error(code)
     I18n.with_locale(error_page_locale) do
       respond_to do |format|

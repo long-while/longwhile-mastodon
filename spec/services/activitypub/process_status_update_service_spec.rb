@@ -527,7 +527,6 @@ RSpec.describe ActivityPub::ProcessStatusUpdateService do
       subject.call(status, json, json)
       expect(status.edits.reload.map(&:text))
         .to eq ['Hello world', 'Hello universe']
-      # 문자열로 비교하면 Time.zone(이 포크는 Asia/Seoul)에 따라 표기가 바뀐다. 시각 자체를 비교한다.
       expect(status.reload.edited_at)
         .to eq Time.utc(2021, 9, 8, 22, 39, 25)
     end

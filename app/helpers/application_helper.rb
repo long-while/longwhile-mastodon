@@ -170,16 +170,10 @@ module ApplicationHelper
     base
   end
 
-  # @_longwhile — 화면 설정 클래스는 <body> 에만 단다(body_classes). <html> 에도 달면
-  # `.custom-scrollbars ::-webkit-scrollbar-thumb`(후손 선택자)가 <body> 자신의 스크롤바에도
-  # 걸려 4.5 와 스크롤바 모양이 달라진다. 고정 프런트는 <html> 의 클래스를 읽지 않는다.
   def html_classes
     content_for(:html_classes).to_s
   end
 
-  # @_longwhile — 4.6 은 아래 클래스들을 <html>(html_classes)로 옮기고 theme-* 를 없앴다.
-  # 고정 프런트와 bird-ui·theme-ui 테마는 <body> 에서 찾으므로(body.theme-…, body.rtl,
-  # emoji.js 의 테마 판별) 4.5 처럼 <body> 에도 계속 낸다. 빠지면 라이트 테마가 통째로 깨진다.
   def body_classes
     output = []
     output << content_for(:body_classes)
@@ -224,9 +218,6 @@ module ApplicationHelper
       text: [params[:title], params[:text], params[:url]].compact.join(' '),
     }
 
-    # 공유 인텐트(?visibility=)로 기본값보다 더 좁은 범위만 고를 수 있게 한다.
-    # 공지 계정의 기본값은 unlisted 라 목록에 함께 둔다 — 빼면 index 가 nil 이 되어
-    # 그 계정의 모든 페이지 렌더가 터진다.
     permit_visibilities = %w(unlisted private direct)
     default_privacy     = current_account&.user&.setting_default_privacy
     default_index       = permit_visibilities.index(default_privacy)

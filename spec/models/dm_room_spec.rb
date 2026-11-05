@@ -2,7 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 채팅
 RSpec.describe DmRoom do
   let!(:alice) { Fabricate(:account, username: 'alice') }
   let!(:bob)   { Fabricate(:account, username: 'bob') }
@@ -19,7 +18,6 @@ RSpec.describe DmRoom do
       expect(described_class.participant_key_for([alice.id, bob.id, alice.id])).to eq described_class.participant_key_for([alice.id, bob.id])
     end
 
-    # 본인을 빼면 A 의 키와 B 의 키가 달라져 같은 방이 둘로 쪼개진다.
     it 'differs when the participant set differs' do
       expect(described_class.participant_key_for([alice.id, bob.id])).to_not eq described_class.participant_key_for([alice.id, bob.id, mark.id])
     end
@@ -41,13 +39,9 @@ RSpec.describe DmRoom do
       expect(described_class.count).to eq 1
     end
 
-    # UNIQUE 제약이 최종 방어선이다. 경합에서 진 쪽은 이긴 쪽의 방을 다시 찾아야 한다.
-    # 목 대신 실제 인덱스 위반을 일으킨다 — 목으로는 제약이 사라져도 통과한다.
     it 'recovers from a real unique violation instead of raising' do
       winner = described_class.find_or_create_for([alice.id, bob.id])
 
-      # 첫 조회에서만 못 본 척해서 INSERT 를 실제로 충돌시킨다. 두 번째부터는 진짜
-      # 값을 돌려줘야 rescue 안의 find_by! 가 이긴 쪽을 찾는다.
       allow(described_class).to receive(:find_by).and_call_original
       allow(described_class).to receive(:find_by).with(participant_key: winner.participant_key).and_return(nil, winner)
 
@@ -109,8 +103,6 @@ RSpec.describe DmRoom do
   end
 
   describe '#register_status!' do
-    # 여러 명이 동시에 보내면 순서가 뒤집혀 도착할 수 있다. 더 작은 id 가 덮어쓰면
-    # 목록 정렬이 흔들린다.
     it 'never moves last_status_id backwards' do
       older  = direct_status_from(alice, to: bob)
       newer  = direct_status_from(alice, to: bob, thread: older)
@@ -121,8 +113,6 @@ RSpec.describe DmRoom do
       expect(room.reload.last_status_id).to eq newer.id
     end
 
-    # 글을 쓴 사람은 자기 글까지 읽은 것으로 친다. 화면 없이 API 로만 도는 자동봇은
-    # 방을 여는 일이 없어 "안 읽은 사람" 으로 영원히 남았다. (A-61)
     it 'advances the read cursor of the person who wrote the message' do
       status = direct_status_from(alice, to: bob)
 
@@ -132,7 +122,6 @@ RSpec.describe DmRoom do
       expect(room.dm_room_reads.find_by(account_id: bob.id)).to be_nil
     end
 
-    # 커서는 뒤로 가지 않는다. 순서가 뒤집혀 도착해도 안전해야 한다.
     it 'never moves the author cursor backwards' do
       older = direct_status_from(alice, to: bob)
       newer = direct_status_from(alice, to: bob, thread: older)
@@ -143,8 +132,6 @@ RSpec.describe DmRoom do
       expect(room.dm_room_reads.find_by(account_id: alice.id).last_read_status_id).to eq newer.id
     end
 
-    # 지연 귀속은 뒤늦게 발견한 과거 이력이라 "지금 그 방을 보고 있다" 는 근거가
-    # 못 된다. 그것으로 커서가 움직이면 남의 안 읽은 메시지까지 읽음이 된다.
     it 'leaves the cursor alone when back-filling history' do
       status = direct_status_from(alice, to: bob)
 
@@ -155,8 +142,6 @@ RSpec.describe DmRoom do
   end
 
   describe '#refresh_root_status!' do
-    # 루트는 "last_status 가 속한 conversation 에서 살아 있는 가장 오래된 status" 다.
-    # 지워지면 그 다음으로 오래된 것이 자동으로 루트가 된다. (D-03)
     it 'heals itself when the root is deleted' do
       root  = direct_status_from(alice, to: bob)
       reply = direct_status_from(alice, to: bob, thread: root)
@@ -170,8 +155,6 @@ RSpec.describe DmRoom do
     end
   end
 
-  # 웹 채팅은 2026-11 부터 루트가 아니라 최근 메시지에 답글을 단다. 답글 사슬이
-  # 1 → 2 → 3 → 4 로 이어져도 방·루트·보이는 메시지는 루트에 달던 때와 같아야 한다.
   describe 'a chain of replies to the latest message' do
     it 'keeps every message in one room with the first message as the root' do
       first  = direct_status_from(alice, to: bob)
@@ -203,13 +186,10 @@ RSpec.describe DmRoom do
       expect(room.reload.last_status_id).to eq first.id
     end
 
-    # 창 안에서 이 방의 메시지를 못 찾아도 이미 있는 값을 null 로 덮으면 안 된다.
-    # 목록이 last_status_id IS NULL 인 방을 빼기 때문에 방이 통째로 사라진다.
     it 'keeps a stale last_status rather than blanking the room' do
       status = direct_status_from(alice, to: bob)
       room   = described_class.attach_status!(status)
 
-      # 이 방의 메시지를 하나도 찾지 못하는 상황을 만든다.
       allow(room).to receive(:latest_room_status_id).and_return(nil)
 
       room.rewind_last_status!
@@ -229,9 +209,6 @@ RSpec.describe DmRoom do
       expect(room.unread_count_for(alice)).to eq 1
     end
 
-    # 글을 쓴 사람은 자기 글까지 읽은 것으로 친다. (A-61)
-    # 예전에는 여기가 1 이었다 — bob 은 alice 에게 답장을 하고도 그 글을 안 읽은
-    # 사람으로 남았다.
     it 'counts nothing for the person who wrote the latest message' do
       mine   = direct_status_from(alice, to: bob)
       theirs = direct_status_from(bob, to: alice, thread: mine)
@@ -253,7 +230,6 @@ RSpec.describe DmRoom do
   end
 
   describe '#visible_statuses_for' do
-    # 방 멤버 확인만으로는 부족하다. 다른 공개 범위의 글이 섞여도 나오면 안 된다.
     it 'excludes statuses that are not direct' do
       direct = direct_status_from(alice, to: bob)
       room   = described_class.attach_status!(direct)
@@ -264,7 +240,6 @@ RSpec.describe DmRoom do
       expect(room.visible_statuses_for(alice).pluck(:id)).to_not include public_status.id
     end
 
-    # 방 멤버여도 자기가 받지 않은 메시지는 보이면 안 된다.
     it 'excludes messages the account was not part of' do
       shared = Fabricate(:status, account: alice, visibility: :direct)
       shared.mentions.create(account: bob)
@@ -292,8 +267,6 @@ RSpec.describe DmRoom do
       expect(described_class.visible_to(alice)).to_not be_empty
     end
 
-    # 되돌리는 조건은 "새 메시지가 붙었을 때" 다. 이미 아는 메시지를 다시 붙이는 것은
-    # 방을 열어보는 것과 같으므로, 그것만으로 나간 사람의 방이 되살아나면 안 된다.
     it 'does not resurrect the room when an already known message is re-attached' do
       first = direct_status_from(alice, to: bob)
       room  = described_class.attach_status!(first)
@@ -306,15 +279,12 @@ RSpec.describe DmRoom do
     end
   end
 
-  # 방 행에 저장되는 last_status 는 전 멤버에게 똑같이 직렬화된다. 여기에 방에 속하지
-  # 않은 글이 들어가면 그 내용이 통째로 새어 나간다.
   describe 'last_status containment' do
     it 'never adopts a non-direct reply that shares the conversation' do
       first  = direct_status_from(alice, to: bob)
       second = direct_status_from(alice, to: bob, thread: first)
       room   = described_class.attach_status!(second)
 
-      # 같은 스레드에 팔로워 공개 글이 달린다. conversation_id 를 물려받는다.
       followers_only = Fabricate(:status, account: alice, visibility: :private, thread: second)
 
       second.destroy!
@@ -328,7 +298,6 @@ RSpec.describe DmRoom do
       second = direct_status_from(alice, to: bob, thread: first)
       room   = described_class.attach_status!(second)
 
-      # 같은 스레드지만 수신자가 mark 로 바뀐 글 — 다른 방의 메시지다.
       to_mark = direct_status_from(alice, to: mark, thread: second)
 
       second.destroy!
@@ -338,8 +307,6 @@ RSpec.describe DmRoom do
     end
   end
 
-  # 계획 문서 §7 이 "가시성 필터를 헬퍼에만 의존" 을 위험으로 지목한 지점.
-  # 멘션 분기가 방 조건을 잃으면 다른 방의 메시지가 통째로 보인다.
   describe 'cross-room isolation' do
     it 'does not leak a message from another room to a mentioned account' do
       room_one = described_class.attach_status!(direct_status_from(alice, to: bob))
@@ -350,8 +317,6 @@ RSpec.describe DmRoom do
   end
 
   describe '#unread_count_for legacy reconciliation' do
-    # ADR-005. 공식 앱이 기존 엔드포인트로 읽으면 unread 만 꺼지고 커서는 안 움직인다.
-    # 그때 우리 배지가 남아 있으면 "읽었는데 안 사라진다" 가 된다.
     it 'reports zero when the legacy client already marked everything read' do
       status = direct_status_from(bob, to: alice)
       room   = described_class.attach_status!(status)
@@ -399,7 +364,6 @@ RSpec.describe DmRoom do
       expect(described_class.unread_counts_for([room], alice)).to eq(room.id => 1)
     end
 
-    # ADR-005 의 화해는 커서가 없는 방에만 적용한다. 커서가 있으면 그것이 기준이다.
     it 'applies the legacy reconciliation only to rooms without a cursor' do
       from_bob  = direct_status_from(bob, to: alice)
       bob_room  = described_class.attach_status!(from_bob)
@@ -416,8 +380,6 @@ RSpec.describe DmRoom do
     end
   end
 
-  # 2026-10 사고. S/A/B 방의 메시지가 S/A/C 방의 conversation 에 들어가, 목록에는
-  # 보이는데 방은 비어 있고(422) 루트까지 끌려가 그 뒤 메시지도 전부 그쪽으로 갔다.
   describe 'messages that arrive in another room\'s thread' do
     let!(:group_root) { group_status_from(alice, to: [bob, mark]) }
     let!(:group_room) { described_class.attach_status!(group_root) }
@@ -493,7 +455,6 @@ RSpec.describe DmRoom do
       described_class.attach_status!(group_root)
       room = described_class.find_or_create_for([alice.id, bob.id])
 
-      # 수정 이전에 만들어진 상태를 그대로 재현한다.
       stray = direct_status_from(alice, to: bob, thread: group_root)
       room.update_columns(last_status_id: stray.id, root_status_id: stray.id)
 
@@ -531,8 +492,6 @@ RSpec.describe DmRoom do
     end
   end
 
-  # 팬아웃이 늦게 돌거나 재시도되어, 멤버를 바꾸기 전의 글이 다시 여기로 오는 경우.
-  # 그 글은 바뀐 방의 정상 이력이다. 옛 명단으로 방을 만들어 빼 가면 안 된다.
   describe 'a pre-change message attached again after the members changed' do
     it 'leaves it in its room and creates no room for the old roster' do
       old  = direct_status_from(alice, to: bob)
@@ -551,7 +510,6 @@ RSpec.describe DmRoom do
   end
 
   describe 'deleting a message that another room holds as its root' do
-    # ON DELETE SET NULL 이 먼저 컬럼을 비우므로, destroy 전에 적어 둔 방을 되감아야 한다.
     it 'rewinds that room on a hard destroy as well' do
       group_root = group_status_from(alice, to: [bob, mark])
       described_class.attach_status!(group_root)
@@ -599,8 +557,6 @@ RSpec.describe DmRoom do
     end
   end
 
-  # 안내문은 부른 쪽의 로케일과 무관하게 한국어로 저장된다. 요청 밖(rails runner,
-  # Sidekiq)의 I18n.locale 은 :en 이라, 시드로 만든 방에 영어 안내가 남았었다.
   describe 'room event notices under an English caller locale' do
     around { |example| I18n.with_locale(:en) { example.run } }
 
@@ -609,7 +565,6 @@ RSpec.describe DmRoom do
       described_class.find_by!(participant_key: described_class.participant_key_for([alice.id, bob.id]))
     end
 
-    # 같은 밀리초에 만든 글끼리는 id 순서가 만든 순서와 다를 수 있다. 순서를 보지 않는다.
     def notice_texts(prefix)
       Status.where(spoiler_text: prefix).pluck(:text)
     end

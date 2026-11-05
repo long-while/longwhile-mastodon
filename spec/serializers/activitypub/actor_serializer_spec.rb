@@ -37,8 +37,6 @@ RSpec.describe ActivityPub::ActorSerializer do
     end
   end
 
-  # header_exists? 조건이 빠져 헤더가 없어도·계정이 정지돼도 image 를 내보내던 것의 회귀 예제.
-  # (기본 어댑터에서는 빈 Paperclip 첨부를 직렬화하다 터졌다.) 실제 응답과 같은 어댑터로 본다.
   describe '#image' do
     subject { serialized_record_json(record, described_class, adapter: ActivityPub::Adapter) }
 

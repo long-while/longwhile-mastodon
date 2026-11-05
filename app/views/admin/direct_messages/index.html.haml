@@ -46,11 +46,6 @@
             %td
               = l(status.created_at, format: :short)
 
--# 전체 페이지 수를 쓰지 않는다. 컨트롤러가 without_count 로 조회하므로 COUNT(*) 가
--# 돌지 않고, 그 대신 이전/다음만 표시한다. (dm-chat-phase-0.md P0-5)
--# prev 는 next_page 처럼 헬퍼에 맡기지 않는다. without_count 에서 결과가 0건인
--# 페이지(범위를 넘긴 ?page=999)는 prev_page 가 nil 이라, 링크가 둘 다 사라져 돌아갈
--# 길이 없어진다. 현재 페이지 번호로 직접 계산한다.
 - if @direct_messages.current_page > 1 || @direct_messages.next_page
   %nav.pagination
     - if @direct_messages.current_page > 1

@@ -7,7 +7,6 @@ import {
   scrollDeltaToAnchor,
 } from '../scroll_anchor';
 
-// jsdom 은 배치를 계산하지 않으므로 글마다 위치를 정해 준다.
 const buildList = (items: { id: string; top: number; height: number }[]) => {
   const list = document.createElement('div');
   const feed = document.createElement('div');
@@ -45,7 +44,6 @@ describe('scroll_anchor', () => {
   });
 
   it('works out how far to scroll to put the anchor back', () => {
-    // 자리를 비운 사이 위에 새 글이 끼어 기준 글이 아래로 밀렸다.
     const list = buildList([
       { id: 'new', top: 0, height: 400 },
       { id: 'b', top: 400, height: 250 },

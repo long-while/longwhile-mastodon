@@ -2,10 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile — 4.6 은 테마·글꼴·스크롤바·모션·rtl 클래스를 <body> 에서 <html> 로 옮기고
-# 테마 클래스(theme-*)는 아예 없앴다. 고정 프런트와 bird-ui·theme-ui 테마는 그 클래스를
-# <body> 에서 찾으므로(body.theme-mastodon-bird-ui-light 등), 빠지면 라이트 테마가 통째로
-# 깨진다. 4.5 에서 렌더되던 <body> 클래스가 그대로 나와야 한다.
 RSpec.describe 'Layout theme classes' do
   let(:user) { Fabricate(:user) }
 
@@ -35,7 +31,7 @@ RSpec.describe 'Layout theme classes' do
     get '/home'
 
     html = response.parsed_body.at_css('html')
-    expect(html['lang']).to eq 'ko' # 화면은 한국어 고정(Localized#requested_locale)
+    expect(html['lang']).to eq 'ko'
     expect(html['data-color-scheme']).to be_present
     expect(html['data-contrast']).to be_present
   end

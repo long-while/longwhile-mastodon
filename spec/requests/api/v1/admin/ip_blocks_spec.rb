@@ -45,7 +45,6 @@ RSpec.describe 'IP Blocks' do
             ip: ip_block.ip,
             severity: ip_block.severity.to_s,
             comment: ip_block.comment,
-            # 시간대가 Asia/Seoul 이라(config/application.rb) 'Z' 를 박지 않고 오프셋째 비교한다.
             created_at: ip_block.created_at.iso8601(3),
             expires_at: ip_block.expires_at&.iso8601(3),
           }

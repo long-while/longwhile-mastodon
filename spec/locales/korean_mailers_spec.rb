@@ -2,11 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile — 메일은 화면과 달리 Localized 의 :ko 고정을 받지 않고 받는 사람의
-# user.locale 을 따른다(대부분 Sidekiq 에서 만들어진다). 상류 ko.yml 에 키가 빠지면
-# 운영 설정의 i18n.fallbacks 가 [:en] 이라 그 부분만 조용히 영어가 된다 — 4.7 의
-# 지원 종료 안내 메일이 그랬다. 한국어 사용자에게 가는 메일을 전부 만들어 보고
-# 제목·본문에 영어 원문이나 "translation missing" 이 없는지 본다.
 RSpec.describe 'I18n' do
   describe 'Mails to Korean users' do
     RSpec::Matchers.define_negated_matcher :not_match, :match
@@ -16,8 +11,6 @@ RSpec.describe 'I18n' do
     let(:agent) { 'Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0' }
     let(:credential) { WebauthnCredential.new(nickname: 'USB Key') }
 
-    # 제목은 영어 원문의 가장 긴 고정 구절이 들어 있지 않은지로 본다(사이트 이름 등 끼워
-    # 넣는 값이 한글이어도 속지 않게).
     def expect_korean(mail, key)
       english = I18n.t(key, locale: :en)
       english_phrases = Array.wrap(english.is_a?(Hash) ? english.values : english).map { |text| text.split(/%\{\w+\}/).map(&:strip).max_by(&:length) }
@@ -87,8 +80,6 @@ RSpec.describe 'I18n' do
       end
     end
 
-    # 64627430fe 부터 웹 가입자가 en 으로, tootctl·API 가입자는 빈 값으로 저장돼 있다.
-    # 저장된 값과 무관하게 한국어로 간다(ApplicationMailer::MAIL_LOCALE).
     describe 'whatever locale the receiver has stored' do
       [nil, 'en', 'de'].each do |stored|
         it "writes the sign-in code mail in Korean for locale #{stored.inspect}" do

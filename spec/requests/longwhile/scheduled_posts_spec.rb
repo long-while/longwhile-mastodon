@@ -2,13 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile — 예약 게시물(/scheduled_statuses). 수정(PUT)·사용량(usage)은
-#   spec/requests/api/v1/scheduled_status_spec.rb 와 update_scheduled_status_service_spec.rb
-#   가 본다. 여기서는 그 둘이 다루지 않는 계약을 본다.
-#
-#     만들기   웹 작성창은 POST /api/v1/statuses 에 scheduled_at 을 실어 보낸다
-#     실패 표시 목록의 failed_at · last_error 로 "게시 실패" 줄을 그린다 (포크가 더한 필드)
-#     게시     예약된 글도 공개 범위 모델(팔로워 전용)을 따른다
 RSpec.describe 'Scheduled posts' do
   let(:user)    { Fabricate(:user) }
   let(:token)   { Fabricate(:accessible_access_token, resource_owner_id: user.id, scopes: 'read write') }

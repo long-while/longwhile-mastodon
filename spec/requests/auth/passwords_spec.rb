@@ -22,7 +22,6 @@ RSpec.describe 'Auth Passwords' do
       it 'renders reset password and retains password' do
         put user_password_path, params: { user: { password: password, password_confirmation: password, reset_password_token: 'some_invalid_value' } }
 
-        # 화면 언어는 한국어로 고정돼 있다(Localized#requested_locale).
         expect(response.body)
           .to include(I18n.t('auth.set_new_password', locale: :ko))
 

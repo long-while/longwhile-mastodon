@@ -56,7 +56,7 @@ RSpec.describe 'OAuth Authorizations' do
             expect(response)
               .to have_http_status(:success)
             expect(response.parsed_body.title)
-              .to match(I18n.t('doorkeeper.authorizations.new.title', locale: :ko)) # 화면 언어는 한국어 고정
+              .to match(I18n.t('doorkeeper.authorizations.new.title', locale: :ko))
           end
         end
       end

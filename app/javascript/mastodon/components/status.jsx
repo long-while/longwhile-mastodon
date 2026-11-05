@@ -123,8 +123,6 @@ class Status extends ImmutablePureComponent {
     avatarSize: PropTypes.number,
     deployPictureInPicture: PropTypes.func,
     unfocusable: PropTypes.bool,
-    // @_longwhile — 타임라인 답글 위에 그리는 타래 시작 글. 항목(article)의 주인은 답글이라
-    //   키보드 탐색(j/k)이 이 글에 멈추지 않게 focusable 을 뺀다.
     threadHead: PropTypes.bool,
     pictureInPicture: ImmutablePropTypes.contains({
       inUse: PropTypes.bool,
@@ -403,8 +401,6 @@ class Status extends ImmutablePureComponent {
 
     const connectUp = previousId && previousId === status.get('in_reply_to_id');
     const connectToRoot = rootId && rootId === status.get('in_reply_to_id');
-    // 타래 시작 글은 언제나 아래 답글로 선을 잇는다. 사이 글이 생략됐거나 볼 수 없어
-    // 답글의 부모가 아닐 수 있으므로 nextInReplyToId 로 판정하지 않는다.
     const connectReply = threadHead || (nextInReplyToId && nextInReplyToId === status.get('id'));
     const matchedFilters = status.get('matched_filters');
 
@@ -554,8 +550,6 @@ class Status extends ImmutablePureComponent {
 
             <div onClick={this.handleHeaderClick} onAuxClick={this.handleHeaderClick} className='status__info'>
               <Link to={`/@${status.getIn(['account', 'acct'])}/${status.get('id')}`} className='status__relative-time'>
-                {/* 공개 범위 아이콘은 뺐다. 모든 툿이 팔로워 전용이라 아이콘이
-                    구분해 줄 것이 없다. */}
                 <RelativeTimestamp timestamp={status.get('created_at')} />{status.get('edited_at') && <abbr title={intl.formatMessage(messages.edited, { date: intl.formatDate(status.get('edited_at'), { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }) })}> *</abbr>}
               </Link>
 

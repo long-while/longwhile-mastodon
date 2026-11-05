@@ -33,7 +33,6 @@ RSpec.describe 'Reports' do
     it_behaves_like 'forbidden for wrong scope', 'read read:reports'
 
     it 'creates a report', :aggregate_failures, :inline_jobs do
-      # 메일 알림은 기본으로 꺼져 있다(UserSettings, 이 서버는 SMTP 가 없다). 켠 관리자에게만 간다.
       admin.settings.update('notification_emails.report': true)
       admin.save!
 

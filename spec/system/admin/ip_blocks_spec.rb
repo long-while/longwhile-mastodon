@@ -22,7 +22,7 @@ RSpec.describe 'Admin::IpBlocks' do
       expect { submit_form }
         .to_not change(IpBlock, :count)
       expect(page)
-        .to have_text(/아래 \d+개 오류/) # 화면은 한국어 고정(Localized#requested_locale)
+        .to have_text(/아래 \d+개 오류/)
 
       # Valid with IP
       fill_in 'ip_block_ip', with: '192.168.1.1'

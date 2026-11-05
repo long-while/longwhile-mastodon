@@ -17,8 +17,6 @@ RSpec.describe 'Admin Rules' do
           .and have_text(rule.text)
 
         click_on(rule.text)
-        # 업스트림은 사이드바의 "서버 규칙" 항목에 걸렸다. 이 포크는 그 항목을 뺐으므로
-        # (config/navigation.rb, DECISIONS A-54) 수정 화면에 왔는지를 제목으로 본다.
         expect(page)
           .to have_title(I18n.t('admin.rules.edit'))
       end
@@ -35,7 +33,7 @@ RSpec.describe 'Admin Rules' do
         expect { submit_form }
           .to_not change(Rule, :count)
         expect(page)
-          .to have_text(/아래 \d+개 오류/) # 화면은 한국어 고정(Localized#requested_locale)
+          .to have_text(/아래 \d+개 오류/)
 
         # Valid submission
         fill_in 'rule_text', with: 'No yelling on the bus!'

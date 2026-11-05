@@ -5,7 +5,6 @@ require 'rails_helper'
 RSpec.describe 'Auth Registration' do
   context 'when there are server rules' do
     let!(:rule) { Fabricate :rule, text: 'You must be seven meters tall' }
-    # 화면은 한국어 고정이라 ko 번역을 고른다(Localized#requested_locale).
     let!(:rule_translation) { Fabricate :rule_translation, rule:, hint: 'Rule translation hint', text: rule.text, language: 'ko' }
     let(:invite) { Fabricate :invite, autofollow: true }
 
@@ -77,7 +76,7 @@ RSpec.describe 'Auth Registration' do
           expect { fill_in_and_submit_form(apply: true) }
             .to_not change(User, :count)
           expect(page)
-            .to have_text(/아래 \d+개 오류/) # 화면은 한국어 고정(Localized#requested_locale)
+            .to have_text(/아래 \d+개 오류/)
 
           # Providing the invite text succeeds
           expect { fill_in_and_submit_form(apply: true, invite_text: 'Hello world') }
@@ -109,7 +108,6 @@ RSpec.describe 'Auth Registration' do
 
       context 'when the invite allows bypassing approval' do
         before do
-          # 이 포크는 기본 역할(everyone)에 초대 권한을 주지 못한다(UserRole::SAFE = NONE). 따로 역할을 준다.
           inviter.update!(role: Fabricate(:user_role, permissions: UserRole::FLAGS[:invite_users] | UserRole::FLAGS[:invite_bypass_approval]))
         end
 
@@ -222,7 +220,7 @@ RSpec.describe 'Auth Registration' do
         expect { fill_in_and_submit_form }
           .to not_change(User, :count)
         expect(page)
-          .to have_text(/아래 \d+개 오류/) # 화면은 한국어 고정(Localized#requested_locale)
+          .to have_text(/아래 \d+개 오류/)
       end
     end
 
@@ -253,7 +251,7 @@ RSpec.describe 'Auth Registration' do
       fill_in 'user_password_confirmation', with: 'Test.123.Pass'
       check 'user_agreement'
 
-      find("input[aria-label=\"#{I18n.t('simple_form.labels.user.date_of_birth_3i')}\"]").fill_in with: date_of_birth.day # 화면은 한국어 고정(Localized#requested_locale)
+      find("input[aria-label=\"#{I18n.t('simple_form.labels.user.date_of_birth_3i')}\"]").fill_in with: date_of_birth.day
       find('input[autocomplete="bday-month"]').fill_in with: date_of_birth.month
       find('input[autocomplete="bday-year"]').fill_in with: date_of_birth.year
 

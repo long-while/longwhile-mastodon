@@ -12,7 +12,7 @@ RSpec.describe 'Self-destruct mode' do
       get path, headers: { 'Accept' => 'text/html' }
 
       expect(response).to have_http_status(410)
-      expect(response.body).to include(I18n.t('self_destruct.title', locale: :ko)) # 화면 언어는 한국어 고정
+      expect(response.body).to include(I18n.t('self_destruct.title', locale: :ko))
     end
   end
 

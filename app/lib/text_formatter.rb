@@ -13,16 +13,6 @@ class TextFormatter
     multiline: true,
   }.freeze
 
-  # ═══════════════════════════════════════════════════════════════════════════
-  # @_longwhile custom feature / 한참(longwhile) 제작 기능
-  #   - 마크다운 서식, [color]/[bg]/[center]/[right]/[left] 정렬 태그, 자동 링크 키워드
-  # 이 기능을 사용·재사용하려면 서버 내에 아래 출처를 반드시 표기해야 합니다.
-  # If you use or reuse this feature, you must credit the author on your server.
-  #   Twitter/X : @_longwhile  ·  https://twitter.com/_longwhile
-  #   Crepe     : https://kre.pe/QTRx
-  # ═══════════════════════════════════════════════════════════════════════════
-  # 공지용 키워드 -> 자동 링크 매핑. 본문에 키워드가 포함되면 해당 키워드만
-  # 지정된 URL 의 링크(언더라인 + --color-brand-longwhile-links 색상)로 치환된다.
   AUTO_LINK_KEYWORDS = {
     '한참 커미션' => 'https://kre.pe/QTRx',
   }.freeze
@@ -57,10 +47,8 @@ class TextFormatter
       end
     end
 
-    # 멘션/해시태그/링크 처리 후에 마크다운 적용
     html = apply_simple_markdown(html)
 
-    # 키워드 자동 링크는 마크다운 적용 후 (기존 <a> 태그 내부는 건너뜀)
     html = apply_auto_link_keywords(html)
 
     html = simple_format(html, {}, sanitize: false).delete("\n") if multiline?
@@ -99,8 +87,6 @@ class TextFormatter
 
     def link_to_mention(account, with_domain: false)
       url = ActivityPub::TagManager.instance.url_for(account)
-      # @_longwhile — 익명화(탈퇴) 계정은 본문에 적힌 옛 이름 대신 "탈퇴한 사용자" 로 그린다.
-      #   href 는 익명 주소(/@deleted)라 화면의 멘션 처리(status_content.jsx)는 그대로 붙는다.
       display_username = if account.anonymized?
                            Account::ANONYMIZED_DISPLAY_NAME
                          else
@@ -116,42 +102,29 @@ class TextFormatter
   private
 
   def apply_simple_markdown(html)
-    # ***텍스트*** -> <strong><em>텍스트</em></strong> (굵은 기울임꼴)
     html = html.gsub(/\*\*\*([^\*\n<>]+)\*\*\*/, '<strong><em>\1</em></strong>')
 
-    # **텍스트** -> <strong>텍스트</strong> (굵게)
     html = html.gsub(/\*\*([^\*\n<>]+)\*\*/, '<strong>\1</strong>')
 
-    # *텍스트* -> <em>텍스트</em> (기울임, HTML 태그 안은 제외)
     html = html.gsub(/(?<!\*)\*([^\*\n<>]+)\*(?!\*)/, '<em>\1</em>')
 
-    # ~~~텍스트~~~ -> <del>텍스트</del> (취소선)
     html = html.gsub(/~~~([^~\n<>]+)~~~/, '<del>\1</del>')
 
-    # Hair Space로 감싼 텍스트 -> 파란색 (#1d9bf0)
     html = html.gsub(/\u200A([^\u200A\n<>]+)\u200A/, '<span style="color: #1d9bf0;">\1</span>')
 
-    # [color:hex]텍스트[/color] -> 사용자 지정 색상
     html = html.gsub(/\[color:([0-9a-fA-F]{3,8})\](.*?)\[\/color\]/, '<span style="color: #\1;">\2</span>')
 
-    # [bg:hex]텍스트[/bg] -> 사용자 지정 배경색
     html = html.gsub(/\[bg:([0-9a-fA-F]{3,8})\](.*?)\[\/bg\]/, '<span style="background-color: #\1;">\2</span>')
 
-    # [center]텍스트[/center] -> 중앙 정렬
     html = html.gsub(/\[center\](.*?)\[\/center\]\n?/, '<span style="display: block; text-align: center;">\1</span>')
 
-    # [right]텍스트[/right] -> 우측 정렬
     html = html.gsub(/\[right\](.*?)\[\/right\]\n?/, '<span style="display: block; text-align: right;">\1</span>')
 
-    # [left]텍스트[/left] -> 좌측 정렬
     html = html.gsub(/\[left\](.*?)\[\/left\]\n?/, '<span style="display: block; text-align: left;">\1</span>')
 
     html
   end
 
-  # AUTO_LINK_KEYWORDS 의 각 키워드를 자동 링크로 치환한다.
-  # 기존 <a>...</a> 블록 내부에 등장한 경우(URL 표시 텍스트 등)는 중첩 링크를
-  # 만들지 않도록 건너뛴다.
   def apply_auto_link_keywords(html)
     return html if html.blank?
 
@@ -235,9 +208,6 @@ class TextFormatter
     TextFormatter.link_to_mention(account, with_domain: same_username_hits&.positive? || with_domains?)
   end
 
-  # @_longwhile — 화면이 DM 수신자 핸들로 탈퇴(익명화) 멤버의 `@deleted` 를 붙여 보낸다
-  #   (api/dm_rooms.ts). 그 이름은 예약돼 있어 계정으로 풀리지 않으므로 글자 그대로 남던 것을
-  #   다른 곳과 같은 "탈퇴한 사용자" 로 보인다. 원문(status.text)은 바꾸지 않는다.
   def anonymized_handle?(username, domain)
     domain.nil? && username.casecmp?(Account::ANONYMIZED_USERNAME)
   end

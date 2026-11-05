@@ -2,10 +2,6 @@
 
 require 'rails_helper'
 
-# rails-i18n 8.1 이 ko 오류 문구에서 %{attribute} 를 뺐다("내용을 입력해 주세요").
-# 화면은 errors.format 이 "%{message}" 라 칸 이름이 아예 사라지고, API 오류
-# 문자열도 어느 칸인지 알려 주지 않는다. config/locales/rails.ko.yml 이 옛 문구를
-# 되살린다. 문구를 글자로 박아 두어 젬이 바뀌어도 조용히 달라지지 않게 한다.
 RSpec.describe 'I18n' do
   describe 'Korean validation messages' do
     around { |example| I18n.with_locale(:ko) { example.run } }
@@ -22,8 +18,6 @@ RSpec.describe 'I18n' do
       expect(keys.reject { |key| I18n.t(key, scope: 'errors.messages').match?(/%{attribute}/) }).to be_empty
     end
 
-    # ActiveModel::ValidationError 는 errors 만 넘긴다. rails-i18n 8.0 의 문구는
-    # %{attribute} 를 요구해서 MissingInterpolationArgument 로 터졌다.
     it 'builds a model_invalid message without an attribute' do
       expect(I18n.t('errors.messages.model_invalid', errors: 'X')).to eq '데이터 검증에 실패하였습니다: X'
     end

@@ -98,7 +98,7 @@ RSpec.describe 'Admin Report Notes' do
         expect { submit_form }
           .to_not change(ReportNote, :count)
         expect(page)
-          .to have_text(/아래 \d+개 오류/) # 화면은 한국어 고정(Localized#requested_locale)
+          .to have_text(/아래 \d+개 오류/)
       end
 
       def submit_form

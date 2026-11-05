@@ -216,7 +216,6 @@ class AccountSearchService < BaseService
             end
 
     match = nil if !match.nil? && !account.nil? && options[:following] && !account.following?(match)
-    # @_longwhile — 익명화(탈퇴) 계정을 옛 이름으로 찾게 하면 익명 처리한 글과 옛 이름이 다시 이어진다.
     match = nil if match&.anonymized?
 
     @exact_match = match

@@ -4,10 +4,6 @@
 - content_for :heading_actions do
   = link_to t('doorkeeper.applications.index.new'), new_settings_application_path, class: 'button'
 
--# @_longwhile — "연결된 앱"(승인된 앱) 절을 걷어냈다. 이 서버에서 계정에
--# 접근하는 앱은 웹과 운영자 봇뿐이라 목록을 보여줄 이유가 없다.
--# 권한 취소는 /oauth/authorized_applications 의 DELETE 가 그대로 받는다.
-
 - if @applications.empty?
   .muted-hint.center-text= t 'doorkeeper.applications.index.empty'
 - else
