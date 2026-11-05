@@ -39,7 +39,6 @@ RSpec.describe 'Admin Disputes Appeals' do
     end
 
     def approve_subject
-      # 메일은 화면(한국어 고정)과 달리 받는 사람의 로캘(없으면 기본 로캘)로 나간다.
       I18n.t('user_mailer.appeal_approved.subject', date: I18n.l(appeal.created_at, locale: ApplicationMailer::MAIL_LOCALE), locale: ApplicationMailer::MAIL_LOCALE)
     end
   end
@@ -59,7 +58,6 @@ RSpec.describe 'Admin Disputes Appeals' do
     end
 
     def reject_subject
-      # 메일은 화면(한국어 고정)과 달리 받는 사람의 로캘(없으면 기본 로캘)로 나간다.
       I18n.t('user_mailer.appeal_rejected.subject', date: I18n.l(appeal.created_at, locale: ApplicationMailer::MAIL_LOCALE), locale: ApplicationMailer::MAIL_LOCALE)
     end
   end

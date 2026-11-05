@@ -36,8 +36,6 @@ RSpec.describe Admin::StatusPolicy do
       context 'with a not public visible status' do
         let(:status_visibility) { :direct }
 
-        # 이 포크는 admin/owner 에게 DM 운영진 열람을 허용한다(StatusPolicy#administrator?, 3b11809336).
-        # 막는 쪽은 아래 모더레이터 예제가 같은 강도로 검사한다.
         it 'permits' do
           expect(policy).to permit(admin, status)
         end

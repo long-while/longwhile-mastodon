@@ -36,7 +36,7 @@ RSpec.describe 'Filters' do
       expect { click_on I18n.t('filters.new.save') }
         .to_not change(CustomFilter, :count)
       expect(page)
-        .to have_text(I18n.t('errors.messages.blank', attribute: '')) # 화면은 한국어 고정(Localized#requested_locale)
+        .to have_text(I18n.t('errors.messages.blank', attribute: ''))
     end
   end
 
@@ -72,7 +72,7 @@ RSpec.describe 'Filters' do
       expect { click_on submit_button }
         .to_not(change { custom_filter.reload.updated_at })
       expect(page)
-        .to have_text(I18n.t('errors.messages.blank', attribute: '')) # 화면은 한국어 고정(Localized#requested_locale)
+        .to have_text(I18n.t('errors.messages.blank', attribute: ''))
     end
   end
 

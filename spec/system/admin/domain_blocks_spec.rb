@@ -66,7 +66,7 @@ RSpec.describe 'blocking domains through the moderation interface' do
       submit_domain_block('example.com', 'noop')
 
       expect(page)
-        .to have_text(/이미 example\.com에 대한 더 강력한 제한이/) # 화면은 한국어 고정(Localized#requested_locale)
+        .to have_text(/이미 example\.com에 대한 더 강력한 제한이/)
     end
   end
 
@@ -77,7 +77,7 @@ RSpec.describe 'blocking domains through the moderation interface' do
       submit_domain_block('', 'noop')
 
       expect(page)
-        .to have_text(/아래 \d+개 오류/) # 화면은 한국어 고정(Localized#requested_locale)
+        .to have_text(/아래 \d+개 오류/)
     end
   end
 

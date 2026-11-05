@@ -14,8 +14,6 @@ RSpec.describe 'API OEmbed' do
       get '/api/oembed', headers: headers, params: { url: short_account_status_url(status.account, status) }
     end
 
-    # @_longwhile — 비로그인 접속을 막는 인스턴스라 oEmbed 도 로그인을 요구한다.
-    # 웹 화면의 퍼 가기 창은 /api/web/embeds/:id 를 쓰므로 영향이 없다.
     context 'when not logged in' do
       let(:status) { Fabricate(:status, visibility: :public) }
 
@@ -68,7 +66,6 @@ RSpec.describe 'API OEmbed' do
       end
     end
 
-    # 미등재는 이 인스턴스에서 팔로워 공개다(StatusPolicy#show?).
     context 'when status is unlisted' do
       let(:status) { Fabricate(:status, visibility: :unlisted) }
 

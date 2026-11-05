@@ -89,7 +89,6 @@ RSpec.describe 'Api::V1::MultiAccountsController', type: :request do
   describe 'POST /api/v1/multi_accounts/session/refresh' do
     let(:user) { Fabricate(:user) }
     let(:access_token) { Fabricate(:access_token, resource_owner_id: user.id, multi_account: true) }
-    # 서비스는 세션을 옮길 user 도 함께 돌려준다(8b0f78d35d). 컨트롤러가 그것으로 sign_in 한다.
     let(:result) { MultiAccounts::RefreshService::Result.new(access_token: access_token, account: user.account, user: user) }
     let(:service_instance) { instance_double(MultiAccounts::RefreshService, call: result) }
 
@@ -150,11 +149,6 @@ RSpec.describe 'Api::V1::MultiAccountsController', type: :request do
     end
   end
 
-  # 전환이 내주는 세션 토큰은 전환 직후 verify_credentials 한 번에만 쓰이고, 페이지는
-  # 곧바로 새로고침해 새 세션의 토큰(meta.access_token)으로 바꿔 탄다
-  # (actions/multi_account.ts 의 reloadToMatchSession). 그런데 이 토큰은 세션과
-  # 묶여 있지 않아 로그아웃해도 폐기되지 않는다. 만료가 없으면 전환할 때마다 영원히
-  # 사는 bearer 토큰이 하나씩 쌓인다.
   describe 'POST /api/v1/multi_accounts/session/refresh with a stored refresh token' do
     let(:user) { Fabricate(:user) }
     let(:multi_account_app) { Doorkeeper::Application.create!(name: 'MultiAccount', redirect_uri: 'https://example.com/callback', scopes: 'read write follow') }
@@ -183,10 +177,6 @@ RSpec.describe 'Api::V1::MultiAccountsController', type: :request do
       end
     end
 
-    # 4.7.4(#40745)의 보안 코드 확인은 **암호 로그인 화면에만** 건다. 전환은 암호가 아니라
-    # 이 브라우저에 저장된 갱신 토큰으로 하고, 그 토큰은 계정 추가 팝업의 로그인(오래 안
-    # 쓴 계정이면 거기서 보안 코드를 거친다)을 통과해야만 생긴다. 막을 위협(새어 나간 암호로
-    # 잠든 계정에 로그인)이 이 경로에는 없다. 상류도 기존 세션·앱 토큰은 다시 묻지 않는다.
     context 'when the account has not signed in for a long time' do
       before do
         user.update!(current_sign_in_at: 7.months.ago)
@@ -203,11 +193,6 @@ RSpec.describe 'Api::V1::MultiAccountsController', type: :request do
     end
   end
 
-  # ═══════════════════════════════════════════════════════════════════════════
-  # @_longwhile — 계정 전환기가 저장해 두는 토큰은 **전부 여기서** 나온다.
-  #   페이지의 세션 토큰을 저장하던 시절에는 그 계정으로 전환할 때마다
-  #   `ensure_refresh_token_valid!` 가 422 로 막았다.
-  # ═══════════════════════════════════════════════════════════════════════════
   describe 'POST /api/v1/multi_accounts/refresh_token' do
     let(:user) { Fabricate(:user) }
 
@@ -248,8 +233,6 @@ RSpec.describe 'Api::V1::MultiAccountsController', type: :request do
     end
 
     context 'without any authentication' do
-      # 예전에는 `require_authenticated_user!` 가 조건부라 여기까지 들어왔고,
-      # `current_user.id` 가 nil 에서 터져 500 이 났다.
       it 'returns 401 and mints nothing' do
         post '/api/v1/multi_accounts/refresh_token'
 
@@ -263,8 +246,6 @@ RSpec.describe 'Api::V1::MultiAccountsController', type: :request do
         Fabricate(:access_token, application: Fabricate(:application), resource_owner_id: user.id, scopes: 'read')
       end
 
-      # 여기서 나온 토큰은 **다중 계정 앱 소유**라, 사용자가 그 서드파티 앱을
-      # 해지해도 살아남는다. 웹 UI 만 부를 수 있어야 한다.
       it 'refuses to mint a long-lived token' do
         post '/api/v1/multi_accounts/refresh_token', headers: { 'Authorization' => "Bearer #{third_party_token.token}" }
 
@@ -292,9 +273,6 @@ RSpec.describe 'Api::V1::MultiAccountsController', type: :request do
         expect(response.parsed_body[:account][:id]).to eq user.account.id.to_s
       end
 
-      # 전환기는 저장된 토큰이 없을 때마다 이걸 부른다(브라우저를 바꾸거나
-      # 시크릿 창을 쓸 때마다). 매번 새로 만들면 폐기되지 않는 10년짜리 토큰이
-      # 끝없이 쌓인다 — `revoke_access!` 가 일부러 건너뛰기 때문이다.
       it 'reuses the existing token instead of piling up new ones' do
         expect { 3.times { post '/api/v1/multi_accounts/refresh_token', headers: headers } }
           .to change { long_lived_tokens.count }.from(0).to(1)

@@ -34,7 +34,6 @@ RSpec.describe 'API V1 Statuses Translations' do
         translation = TranslationService::Translation.new(text: 'Hello')
         service = instance_double(TranslationService::DeepL, translate: [translation])
         allow(TranslationService).to receive_messages(configured?: true, configured: service)
-        # 번역 대상 언어는 요청 언어(I18n.locale)인데, 이 인스턴스는 한국어로 고정돼 있다.
         Rails.cache.write('translation_service/languages', { 'es' => ['ko'] })
       end
 

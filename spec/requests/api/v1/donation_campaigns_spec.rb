@@ -106,7 +106,6 @@ RSpec.describe 'Donation campaigns' do
           expect(response.parsed_body)
             .to match(campaign_json)
 
-          # 요청 로캘은 한국어 고정(Localized)이고, 캠페인 쪽 키는 응답의 locale('en')을 따른다.
           expect(Rails.cache.read("donation_campaign_request:#{seed}:ko", raw: true))
             .to eq 'campaign-1:en'
 

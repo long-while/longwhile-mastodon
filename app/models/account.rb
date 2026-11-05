@@ -163,7 +163,6 @@ class Account < ApplicationRecord
   scope :matches_display_name, ->(value) { where(arel_table[:display_name].matches("#{value}%")) }
   scope :without_unapproved, -> { left_outer_joins(:user).merge(User.approved.confirmed).or(remote) }
   scope :auditable, -> { where(id: Admin::ActionLog.select(:account_id).distinct) }
-  # @_longwhile — 익명화(탈퇴) 계정도 뺀다(검색 색인·추천). 옛 사용자명으로 찾히면 안 된다.
   scope :searchable, -> { without_unapproved.without_unavailable.where(moved_to_account_id: nil) }
   scope :discoverable, -> { searchable.without_silenced.where(discoverable: true).joins(:account_stat) }
   scope :by_recent_status, -> { includes(:account_stat).merge(AccountStat.by_recent_status).references(:account_stat) }
@@ -536,18 +535,10 @@ class Account < ApplicationRecord
   inverse_alias :show_collections, :hide_collections
   inverse_alias :unlocked, :locked
 
-  # ─── @_longwhile custom feature / 한참(longwhile) 제작 기능 — 프로텍트(잠금) 계정 판별/동기화 ───
-  # 사용·재사용 시 서버 내 출처 표기 필수 / Credit required to use or reuse:
-  #   Twitter/X @_longwhile · Crepe https://kre.pe/QTRx
-  # 이제 잠금 여부가 곧 프로텍트 계정이다. 공개 범위는 모든 계정이 팔로워 전용이라
-  # default_privacy 로 구분할 것이 없다.
   def private_account
     locked?
   end
 
-  # 공지용 계정(@longwhile) 여부. 이 계정만 unlisted 로 올릴 수 있고, 그 툿은
-  # 팔로우 여부와 무관하게 모두에게 간다 — FanOutOnWriteService#announcement_broadcast?
-  # 와 PublicFeed 참고.
   def announcement_account?
     local? && username.present? && username.casecmp?(PublicFeed::ANNOUNCEMENT_USERNAME)
   end

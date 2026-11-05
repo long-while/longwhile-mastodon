@@ -92,8 +92,6 @@ RSpec.describe 'Search API' do
         end
       end
 
-      # 검색어가 문자열이 아니면(q[]=…, q[k]=…) 검사 단계의 String 메서드에서
-      # NoMethodError 가 나 500 이었다. 다른 잘못된 파라미터처럼 400 이어야 한다.
       context 'when `q` is not a string' do
         it 'returns http bad request for an array' do
           get '/api/v2/search', headers: headers, params: { q: %w(a b) }
@@ -110,7 +108,6 @@ RSpec.describe 'Search API' do
         end
       end
 
-      # 검색어는 남의 이름·메일·비밀 문구일 수 있다. 실패 로그에 원문을 남기지 않는다.
       context 'when search fails' do
         let(:params) { { q: 'secret-query-text' } }
 

@@ -22,10 +22,6 @@ class Api::V1::Statuses::RebloggedByAccountsController < Api::V1::Statuses::Base
     Account.without_suspended.includes(:statuses, :account_stat, :user).references(:statuses)
   end
 
-  # distributable_visibility(public/unlisted)로 좁히지 않는다. 이 인스턴스의 재게시는
-  # 전부 private 이라 그대로 두면 재게시 수는 3 인데 목록은 비는 화면이 나온다.
-  # 이 엔드포인트는 상위(BaseController#set_status)에서 이미 원본에 대한 열람 권한을
-  # 확인한다 — 마음에 들어요 목록과 같은 기준으로, 원본을 볼 수 있으면 누가 눌렀는지도 본다.
   def paginated_statuses
     Status.where(reblog_of_id: @status.id).not_direct_visibility.paginate_by_max_id(
       limit_param(DEFAULT_ACCOUNTS_LIMIT),

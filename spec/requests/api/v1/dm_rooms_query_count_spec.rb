@@ -2,11 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile — DM 채팅의 목록·메시지 API 가 글마다 연관을 따로 읽지 않는지.
-#   4.5~4.7 이 REST::StatusSerializer 에 인용(quote)·태그된 객체(tagged_objects)를 더해,
-#   미리 읽지 않은 글 하나가 직렬화될 때 나가는 쿼리가 늘었다. 타임라인은 상류의
-#   preload_collection 을 타지만 DM 쪽은 포크가 따로 만든 경로라 빠져 있었다.
-#   (30개 한 페이지에 200 쿼리 넘게 나갔다.)
 RSpec.describe 'API V1 DM rooms query count' do
   let(:user)    { Fabricate(:user) }
   let(:me)      { user.account }
@@ -49,7 +44,7 @@ RSpec.describe 'API V1 DM rooms query count' do
   private
 
   def query_count(path)
-    get path, headers: headers # 첫 요청의 설정·캐시 조회는 세지 않는다
+    get path, headers: headers
     expect(response).to have_http_status(200)
 
     count = 0

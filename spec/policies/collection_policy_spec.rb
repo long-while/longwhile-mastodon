@@ -36,7 +36,6 @@ RSpec.describe CollectionPolicy do
   end
 
   permissions :create? do
-    # @_longwhile — 컬렉션은 이 인스턴스의 공개 범위 규칙 밖의 공개 게시판이 된다. 아무도 만들지 못한다.
     it 'denies everyone, administrators included' do
       expect(policy).to_not permit(nil, Collection)
 

@@ -22,7 +22,7 @@ RSpec.describe 'OCR', :attachment_processing, :inline_jobs, :js, :streaming do
       attach_file('file-upload-input', file_fixture('text.png'), make_visible: true)
 
       within('.compose-form__upload') do
-        click_on(frontend_translations('upload_form.edit')) # 화면은 한국어 고정
+        click_on(frontend_translations('upload_form.edit'))
       end
     end
 

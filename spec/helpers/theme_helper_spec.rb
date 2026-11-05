@@ -6,7 +6,6 @@ RSpec.describe ThemeHelper do
   describe 'theme_style_tags' do
     let(:result) { helper.theme_style_tags(theme) }
 
-    # 헬퍼는 포크(=4.5) 것이라 "system" 테마를 여전히 받는다. 상류 4.6 은 이 예제를 지웠다(R3).
     context 'when using "system" theme' do
       let(:theme) { 'system' }
 
@@ -36,7 +35,6 @@ RSpec.describe ThemeHelper do
     end
 
     context 'when using other theme' do
-      # 이 포크의 config/themes.yml 에는 contrast 가 없다(첫 커밋부터). 포크의 테마로 본다.
       let(:theme) { 'mastodon-bird-ui-dark' }
 
       it 'returns the theme stylesheet without color scheme information' do
@@ -49,9 +47,6 @@ RSpec.describe ThemeHelper do
     end
   end
 
-  # @_longwhile — 상류 4.7 의 Vite 연동은 `themes/<이름>` 같은 가상 이름을 manifest 의
-  #   `name` 으로 푼다. 이 포크 빌드의 CSS 엔트리에는 `name` 이 없어서, 가상 이름으로
-  #   부르면 4.7 에서 모든 화면이 MissingEntryError 가 된다. 실제 키로 부르는지 본다.
   describe 'theme_style_tags manifest lookup' do
     before { allow(helper).to receive(:vite_stylesheet_tag).and_call_original }
 
@@ -70,7 +65,6 @@ RSpec.describe ThemeHelper do
     end
   end
 
-  # 테마 이름으로 색을 고르는 포크(=4.5) 형태다. 상류 4.6 은 color_scheme 을 받는다(R3).
   describe 'theme_color_tags' do
     let(:result) { helper.theme_color_tags(theme) }
 
@@ -178,7 +172,6 @@ RSpec.describe ThemeHelper do
 
     context 'when the URL carries characters that could end the string or the tag' do
       let(:dark) { instance_double(SiteUpload, file: instance_double(Paperclip::Attachment, url: url)) }
-      # %() 안의 `\c<` 는 제어 문자 하나가 되어 `\` 와 `<` 가 사라진다. 글자 그대로 넣는다.
       let(:url) { %q(/a"b\c</style><script>) }
 
       it 'escapes them' do
@@ -193,7 +186,6 @@ RSpec.describe ThemeHelper do
     subject { helper.current_theme }
 
     context 'when user is not signed in' do
-      # 이 포크의 기본 테마는 config/settings.yml 의 mastodon-bird-ui-light 다(상류는 default).
       context 'when theme was not changed in settings' do
         it { is_expected.to eq('mastodon-bird-ui-light') }
       end
@@ -223,8 +215,6 @@ RSpec.describe ThemeHelper do
         it { is_expected.to eq('mastodon-bird-ui-light') }
       end
 
-      # 포크 테마는 config/themes.yml 에 실제로 있다. 상류 4.6 은 테마를 default 하나로 줄였지만
-      # 이 포크는 테마 선택을 지킨다(R3).
       context 'when user picked one of the fork themes' do
         before { current_user.settings.update(theme: 'mastodon-bird-ui-dark', noindex: false) }
 

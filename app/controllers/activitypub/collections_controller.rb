@@ -35,7 +35,6 @@ class ActivityPub::CollectionsController < ActivityPub::BaseController
     case params[:id]
     when 'featured'
       @items = for_signed_account { preload_collection(@account.pinned_statuses, Status) }
-      # @_longwhile — 미등재는 팔로워 전용이라 본문은 public 만 싣고 나머지는 주소만 준다.
       @items = @items.map { |item| item.public_visibility? ? item : ActivityPub::TagManager.instance.uri_for(item) }
     when 'tags'
       @items = for_signed_account { @account.featured_tags }

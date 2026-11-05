@@ -34,7 +34,7 @@ RSpec.describe 'Admin::DomainAllows' do
       expect { submit_form }
         .to not_change(DomainAllow, :count)
       expect(page)
-        .to have_text(/아래 \d+개 오류/) # 화면은 한국어 고정(Localized#requested_locale)
+        .to have_text(/아래 \d+개 오류/)
 
       # Submit valid with domain present
       fill_in 'domain_allow_domain', with: domain

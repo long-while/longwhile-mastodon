@@ -237,10 +237,5 @@ module Vite
 
       strategies.all? { |s| s.respond_to?(method, include_private) }
     end
-
-    # @_longwhile — 위의 `(*)` 세 곳을 `(*_args, **_options)` 로 바꿨다. Ruby 3.4.4 에서
-    #   익명 `*` 만 받는 메서드에 키워드를 넘기면, method_missing 이 같은 인자로 부르는 **다음**
-    #   전략에 키워드가 위치 인자로 넘어가 ArgumentError 가 난다(모든 화면 500).
-    #   상류는 Ruby 4.0 을 전제로 한다. 운영을 Ruby 4.0 으로 올리면 되돌려도 된다.
   end
 end

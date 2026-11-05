@@ -16,7 +16,7 @@ RSpec.describe 'Admin::AccountModerationNotes' do
       expect { submit_form }
         .to not_change(AccountModerationNote, :count)
       expect(page)
-        .to have_text(/아래 \d+개 오류/) # 화면은 한국어 고정(Localized#requested_locale)
+        .to have_text(/아래 \d+개 오류/)
 
       fill_in 'account_moderation_note_content', with: 'Test message'
       expect { submit_form }

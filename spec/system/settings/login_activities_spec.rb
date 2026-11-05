@@ -17,7 +17,7 @@ RSpec.describe 'Login activities page' do
 
         expect(page)
           .to have_text(browser_description)
-          .and have_text(I18n.t("login_activities.authentication_methods.#{login_activity.authentication_method}")) # 화면은 한국어 고정
+          .and have_text(I18n.t("login_activities.authentication_methods.#{login_activity.authentication_method}"))
           .and have_text(login_activity.ip)
           .and have_private_cache_control
       end

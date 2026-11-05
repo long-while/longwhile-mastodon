@@ -55,9 +55,6 @@ class Api::V1::NotificationsController < Api::BaseController
     end
   end
 
-  # @_longwhile — DM 을 뺄지 말지는 **요청이 정한다.** 근거는 Notification.browserable
-  #   의 주석. 기본은 **포함**이고, 빼는 쪽이 `exclude_direct_messages=true` 를 보낸다.
-  #   웹 UI 만 그것을 보낸다(api/notifications.ts).
   def browserable_account_notifications
     current_account.notifications.without_suspended.browserable(
       types: Array(browserable_params[:types]),
@@ -96,8 +93,6 @@ class Api::V1::NotificationsController < Api::BaseController
     params.permit(:account_id, :include_filtered, :exclude_direct_messages, types: [], exclude_types: [])
   end
 
-  # `exclude_direct_messages` 를 여기에도 싣는다. 빠지면 **다음 페이지부터 DM 이
-  # 섞여 들어온다** — 웹의 알림함이 아래로 내려갈수록 DM 이 나타난다.
   def pagination_params(core_params)
     params.slice(:limit, :account_id, :types, :exclude_types, :include_filtered, :exclude_direct_messages, :supported_types)
       .permit(:limit, :account_id, :include_filtered, :exclude_direct_messages, types: [], exclude_types: [], supported_types: [])

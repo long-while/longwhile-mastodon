@@ -2,18 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile — 홈/퍼블릭 탭의 "퍼블릭" (/public). 웹은
-#   GET /api/v1/timelines/public?remote=false&only_media=false 를 부른다
-#   (features/firehose, actions/timelines.js 의 expandPublicTimeline). 옛 주소 /local
-#   은 같은 API 에 local=true 를 붙인다.
-#
-#   이 피드는 이름과 달리 "내가 팔로우하는 사람(과 나, 공지 계정)의 글" 이다.
-#   규칙은 PublicFeed#standard_public_scope 에 있고, 실시간 갱신은 프론트의
-#   acceptsIntoPublicTootTimeline(actions/streaming.js) 이 **같은 규칙**을 다시 건다.
-#
-#   조건들은 원시 SQL 로 적혀 있다. merge! 가 같은 컬럼의 앞 조건을 지우기 때문이다
-#   (CLAUDE.md "피드의 보안 조건"). 여기서는 그 결과를 API 로 본다 — 모델 스펙
-#   (spec/models/public_feed_spec.rb 의 the followed-authors filter)과 짝이다.
 RSpec.describe 'Public tab timeline' do
   let(:viewer_user) { Fabricate(:user) }
   let(:viewer)      { viewer_user.account }
@@ -96,7 +84,6 @@ RSpec.describe 'Public tab timeline' do
     expect(ids).to_not include(hidden_boost.id.to_s)
   end
 
-  # merge! 가 팔로우 필터를 지우던 회귀. 차단 목록이 비어 있지 않을 때 Arel 노드가 달라진다.
   it 'still hides strangers when the viewer has blocked someone' do
     viewer.block!(Fabricate(:account))
     from_stranger = private_status(stranger)

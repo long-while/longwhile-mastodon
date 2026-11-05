@@ -2,9 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile — 로그인 → 홈 → 퍼블릭 탭. 탭은 TimelineTabs(features/ui/components/
-#   timeline_tabs.tsx)의 링크 둘이고, 퍼블릭은 팔로우한 사람의 글만 보인다
-#   (PublicFeed). 선택자만 쓴다 — 문구는 로케일을 따라 바뀐다.
 RSpec.describe 'Home and public tabs', :inline_jobs, :js, :streaming do
   let(:password) { 'longwhile-password' }
   let(:user)     { Fabricate(:user, password: password, account: Fabricate(:account, username: 'alice')) }

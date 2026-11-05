@@ -119,9 +119,6 @@ module User::HasSettings
     settings['always_send_emails']
   end
 
-  # 저장된 값을 읽지 않고 항상 private 을 돌려준다. 기존 사용자의 settings JSON 에는
-  # 아직 'unlisted' 가 남아 있는데, 그걸 신뢰하면 잠금 여부에 따라 공개 범위가
-  # 갈리던 옛 동작이 되살아난다. locked? 는 이제 팔로우 승인 여부만 결정한다.
   def setting_default_privacy
     account.announcement_account? ? 'unlisted' : 'private'
   end

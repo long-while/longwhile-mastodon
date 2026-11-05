@@ -35,7 +35,6 @@ RSpec.describe 'Settings applications page' do
 
       expect { submit_form }
         .to change(Doorkeeper::Application, :count).by(1)
-      # 목록 화면의 제목은 "개발" 이다(settings: Phase 4, 8bcadda03d).
       expect(page)
         .to have_text(I18n.t('settings.development'))
         .and have_text('My new app')
@@ -50,7 +49,7 @@ RSpec.describe 'Settings applications page' do
       expect { submit_form }
         .to not_change(Doorkeeper::Application, :count)
       expect(page)
-        .to have_text(I18n.t('errors.messages.blank', attribute: '')) # 화면은 한국어 고정(Localized#requested_locale)
+        .to have_text(I18n.t('errors.messages.blank', attribute: ''))
     end
 
     def fill_in_form
@@ -93,7 +92,7 @@ RSpec.describe 'Settings applications page' do
       submit_form
 
       expect(page)
-        .to have_text(I18n.t('errors.messages.blank', attribute: '')) # 화면은 한국어 고정(Localized#requested_locale)
+        .to have_text(I18n.t('errors.messages.blank', attribute: ''))
     end
 
     def submit_form

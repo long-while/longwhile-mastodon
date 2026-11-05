@@ -7,9 +7,6 @@ RSpec.describe 'Notifications' do
 
   let(:user)    { Fabricate(:user, account_attributes: { username: 'alice' }) }
 
-  # 이 포크는 모든 글을 팔로워 전용으로 올린다(943745d134). 남의 글을 부스트하거나
-  # 관심글로 찍으려면 그 글을 볼 수 있어야 하므로 먼저 팔로우한 계정을 쓴다.
-  # follow! 는 알림을 만들지 않아 알림 개수에 끼지 않는다.
   def follower_of(account)
     Fabricate(:account).tap { |follower| follower.follow!(account) }
   end
@@ -111,8 +108,6 @@ RSpec.describe 'Notifications' do
     let(:params) { {} }
 
     before do
-      # 글이 전부 팔로워 전용이라 부스트·관심글 전에 팔로우가 먼저다. 그래서 bob 의 팔로우를
-      # 맨 앞으로 옮기고, tom 은 알림 없이(follow!) 팔로우시킨다.
       FollowService.new.call(bob.account, user.account)
       tom.account.follow!(user.account)
       first_status = PostStatusService.new.call(user.account, text: 'Test')
@@ -153,12 +148,6 @@ RSpec.describe 'Notifications' do
       end
     end
 
-    # @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 채팅
-    #   DM 은 **기본으로 보인다.** 빼는 쪽이 `exclude_direct_messages` 를 보낸다 —
-    #   그 하나를 보내는 것은 우리 웹 UI 뿐이고, 파라미터를 모르는 공식 모바일 앱은
-    #   그대로 받는다. 판정은 계정이 아니라 **요청**에 건다 — 자동봇을 돌리는 계정이
-    #   사람도 함께 쓰는 계정인 경우가 흔해 "봇 계정" 플래그로는 가를 수 없다.
-    #   (DECISIONS.md A-62 — A-60 의 방향을 뒤집었다)
     context 'when DM chat is enabled' do
       before { allow(Mastodon::DmChat).to receive(:enabled?).and_return(true) }
 

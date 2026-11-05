@@ -9,7 +9,6 @@ RSpec.describe 'OAuth Authorized Applications' do
     context 'when signed in' do
       before { sign_in Fabricate(:user) }
 
-      # 목록은 /settings/applications 한 화면으로 합쳤다(settings-phase-4.md §3.1).
       it 'redirects to the connected apps page with private cache control headers' do
         subject
 

@@ -421,7 +421,6 @@ RSpec.describe 'Accounts' do
         expect(response).to have_http_status(200)
         expect(response.content_type)
           .to start_with('application/json')
-        # 관리자가 누른 삭제는 계정을 익명 처리하고 글은 남긴다(ecfb76663d).
         expect(Admin::AccountDeletionWorker).to have_received(:perform_async).with(account.id, { 'preserve_content' => true }).once
       end
     end

@@ -16,7 +16,7 @@ RSpec.describe ActivityPub::FeaturedItemSerializer do
         'id' => ActivityPub::TagManager.instance.uri_for(collection_item),
         'featuredObject' => ActivityPub::TagManager.instance.uri_for(collection_item.account),
         'featureAuthorization' => ap_account_feature_authorization_url(collection_item.account_id, collection_item),
-        'published' => Time.utc(2026, 4, 16, 1, 0, 0).in_time_zone.iso8601, # 포크의 Time.zone(Asia/Seoul) 오프셋으로 나간다
+        'published' => Time.utc(2026, 4, 16, 1, 0, 0).in_time_zone.iso8601,
       })
     end
   end

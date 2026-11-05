@@ -5,7 +5,6 @@ class PostStatusService < BaseService
   include Lockable
   include LanguagesHelper
 
-  # 이 인스턴스에서 사용자가 직접 만들 수 있는 공개 범위. 그 밖의 값은 private 로 내린다.
   PERMITTED_VISIBILITIES = %i(private direct).freeze
 
   # How much to delay sending an e-mail about a new post, to allow grouping multiple posts
@@ -89,9 +88,6 @@ class PostStatusService < BaseService
     @text         = @options.delete(:spoiler_text) if @text.blank? && @options[:spoiler_text].present? && @quoted_status.blank?
     @visibility   = @options[:visibility] || @account.user&.setting_default_privacy
     @visibility   = :private if @quoted_status&.private_visibility? && %i(public unlisted).include?(@visibility&.to_sym)
-    # 작성란에 공개 범위 선택지가 없으므로 클라이언트가 뭘 보내든 여기서 못 박는다.
-    # API 를 직접 호출해 public/unlisted 로 올리는 경로를 막는 유일한 지점이다.
-    # 포크의 강제가 마지막 결정이어야 하므로 업스트림 줄들보다 뒤에 둔다.
     @visibility   = :private unless permitted_visibility?(@visibility)
     @scheduled_at = @options[:scheduled_at]&.to_datetime
     @scheduled_at = nil if scheduled_in_the_past?
@@ -99,10 +95,6 @@ class PostStatusService < BaseService
     raise ActiveRecord::RecordInvalid
   end
 
-  # unlisted 는 공지 계정(@longwhile) 전용이다. 그 계정의 unlisted 툿만
-  # FanOutOnWriteService#announcement_broadcast? 를 타고 전체 홈 피드로 나가고,
-  # PublicFeed 도 팔로우 여부와 무관하게 노출한다. 다른 계정이 쓰면 팔로워 전용이라는
-  # 전제가 깨지므로 private 로 내린다.
   def permitted_visibility?(visibility)
     symbol = visibility&.to_sym
 
@@ -130,11 +122,6 @@ class PostStatusService < BaseService
     end
   end
 
-  # @_longwhile — DM 채팅. 답글이 **다른 방의 스레드**로 들어가지 않게, 저장 전에
-  #   새 conversation 을 쥐여 준다. 이유는 DmRoom.thread_accepts? 에 적었다.
-  #
-  #   conversation 을 미리 만들어 둔다. Conversation.new 로 넘기면 아직 id 가 없어
-  #   Status#set_conversation 이 부모의 conversation_id 로 덮어쓴다.
   def start_separate_dm_thread!(status)
     return unless Mastodon::DmChat.enabled? && status.direct_visibility? && @in_reply_to.present?
     return if DmRoom.thread_accepts?(@in_reply_to, dm_participant_ids(status))
@@ -142,8 +129,6 @@ class PostStatusService < BaseService
     status.conversation = Conversation.create!
   end
 
-  # 저장 전이라 active_mentions 를 쓸 수 없다. ProcessMentionsService 가 메모리에
-  # 만들어 둔 멘션에서, 차단으로 떨어진 것과 silent 를 뺀다.
   def dm_participant_ids(status)
     mentioned = status.mentions.reject { |mention| mention.destroyed? || mention.silent? }.map(&:account_id)
 
@@ -223,13 +208,6 @@ class PostStatusService < BaseService
     attach_to_dm_room!
   end
 
-  # @_longwhile — DM 채팅. 동기로 붙인다. 팬아웃(비동기)에만 맡기면 전송 직후 방을
-  #   열었을 때 방금 보낸 메시지가 없는 창이 생긴다. (dm-chat-phase-1.md §3.3)
-  #
-  #   맨 끝에 두고 예외를 삼킨다. 이 시점에는 status 가 이미 커밋되어 있어서, 여기서
-  #   터지면 글은 저장됐는데 배포도 안 되고 응답은 500 인 상태가 된다. 방 귀속은
-  #   FanOutOnWriteService 와 조회 시점 지연 귀속이 다시 시도하므로, 실패해도 화면이
-  #   비는 일은 없다.
   def attach_to_dm_room!
     return unless Mastodon::DmChat.enabled?
 

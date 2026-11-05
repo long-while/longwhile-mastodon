@@ -3,22 +3,13 @@
 class Api::V1::MultiAccountsController < Api::BaseController
   include Api::MultiAccountResponse
 
-  # 전환에 쓸 수 있는 장기 토큰의 기본 스코프. 호출자가 더 좁은 토큰을 들고 있으면
-  # 그쪽을 따른다 — 여기서 권한을 넓혀 주지 않는다.
   DEFAULT_REFRESH_SCOPES = 'read write follow'
 
-  # 재사용할 토큰을 찾을 때 훑어볼 최대 개수. 스코프 문자열은 순서가 다를 수 있어
-  # SQL 로 정확히 맞추기 어려우므로 최근 것부터 몇 개만 꺼내 루비에서 비교한다.
   REUSABLE_TOKEN_LOOKUP_LIMIT = 20
 
-  # 다중 계정 consume 엔드포인트는 팝업에서 이미 인증된 authorization code를 처리하므로
-  # 별도의 doorkeeper 인증이나 로그인 세션을 요구하지 않는다.
   skip_before_action :require_authenticated_user!, only: [:consume]
   skip_before_action :require_not_suspended!, only: [:consume]
 
-  # @_longwhile — 콜백 이름을 `require_authenticated_user!` 로 재사용하면 안 된다.
-  #   Rails 의 콜백 체인은 **같은 심볼 필터를 중복으로 보고 앞의 것을 지우므로**,
-  #   그렇게 적으면 `Api::BaseController` 의 조건부 등록을 통째로 대체해 버린다.
   before_action :require_refresh_token_caller!, only: [:refresh_token]
 
   def consume
@@ -26,8 +17,6 @@ class Api::V1::MultiAccountsController < Api::BaseController
     # state and nonce, all of which are live credentials.
     Rails.logger.debug { 'MultiAccountsController#consume called' }
 
-    # NOTE: :code_verifier는 현재 프론트가 PKCE를 쓰지 않아 항상 비어 있지만,
-    # 아래 토큰 교환에서 참조하므로 향후 PKCE 도입 시 동작하도록 permit에 포함해 둔다.
     payload_params = params.require(:payload).permit(:state, :nonce, :authorization_code, :code_verifier)
 
     # Verify and consume state from Redis
@@ -82,8 +71,6 @@ class Api::V1::MultiAccountsController < Api::BaseController
     begin
       updates = {}
       updates[:multi_account] = true if access_token.respond_to?(:multi_account=)
-      # 장기 갱신 토큰(10년, 로그아웃해도 안 지워진다)으로 올리는 것은 갱신 흐름이 켜져 있을
-      # 때뿐이다. 꺼져 있으면 /session/refresh 가 403 이라 쓸 곳이 없는 토큰만 남는다.
       if MultiAccountConfig.refresh_flow_enabled?
         updates[:purpose] = 'multi_account_refresh' if access_token.respond_to?(:purpose=)
         updates[:long_lived] = true if access_token.respond_to?(:long_lived=)
@@ -143,14 +130,6 @@ class Api::V1::MultiAccountsController < Api::BaseController
     render json: { error: '계정을 추가 중 오류가 발생했습니다. 다시 시도해주세요.' }, status: 500
   end
 
-  # ═════════════════════════════════════════════════════════════════════════
-  # @_longwhile — **계정 전환에 쓸 수 있는 토큰을 내주는 유일한 곳.**
-  #
-  #   페이지의 세션 토큰(`meta.access_token`)은 `SessionActivation` 이 웹
-  #   superapp 으로 만든 것이라 `long_lived`·`purpose`·`multi_account` 가 전부
-  #   비어 있고, `MultiAccounts::RefreshService#ensure_refresh_token_valid!` 가
-  #   **422** 로 막는다. 프런트가 저장해 두는 토큰은 반드시 여기서 나와야 한다.
-  # ═════════════════════════════════════════════════════════════════════════
   def refresh_token
     application = multi_account_application
 
@@ -190,19 +169,6 @@ class Api::V1::MultiAccountsController < Api::BaseController
     Doorkeeper::Application.find_by(uid: client_id)
   end
 
-  # @_longwhile — 이 엔드포인트는 **10년짜리 토큰**을 내준다. 두 가지를 막는다.
-  #
-  #   1. **비로그인.** `Api::BaseController` 의
-  #      `require_authenticated_user!` 는 `disallow_unauthenticated_api_access?`
-  #      일 때만 걸린다. 그래서 보통의 인스턴스에서는 로그인하지 않고도
-  #      여기까지 들어왔고, `current_user.id` 가 nil 에서 터져 500 이 났다.
-  #   2. **서드파티 앱.** 그 앱의 토큰으로 부를 수 있으면, 사용자가 나중에
-  #      그 앱을 해지해도 여기서 나온 토큰은 **다중 계정 앱 소유**라 살아남는다.
-  #
-  #   통과시키는 셋:
-  #     · doorkeeper 토큰 없음 = 세션 인증(웹에서 직접 부른 경우)
-  #     · superapp 토큰 = 페이지가 들고 있는 세션 토큰
-  #     · multi_account 토큰 = 계정 전환 직후 잠깐 깔려 있는 세션 토큰
   def require_refresh_token_caller!
     unless current_user
       render json: { error: 'This method requires an authenticated user' }, status: 401
@@ -216,12 +182,6 @@ class Api::V1::MultiAccountsController < Api::BaseController
     render json: { error: 'This endpoint is only available to the web interface' }, status: 403
   end
 
-  # @_longwhile — **이미 있는 장기 토큰을 다시 쓴다.**
-  #   예전에는 부를 때마다 10년짜리 토큰을 새로 만들었다. 전환기는 저장된 토큰이
-  #   없을 때마다(브라우저를 바꾸거나 시크릿 창을 쓰거나 저장소를 비울 때마다)
-  #   이걸 부르므로, 폐기되지 않는 토큰이 끝없이 쌓였다 — `User#revoke_access!` 가
-  #   `excluding_long_lived_refresh` 로 일부러 건너뛰기 때문에 **로그아웃해도
-  #   남는다.** 같은 (사용자 · 앱 · 스코프) 조합이면 있는 것을 돌려준다.
   def reusable_refresh_token(application, scopes)
     wanted = scopes.to_s.split.sort
 

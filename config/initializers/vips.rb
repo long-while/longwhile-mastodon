@@ -12,10 +12,6 @@ end
 
 Vips.block('VipsForeign', true)
 
-# @_longwhile 업스트림은 HEIF 로더를 막지만 우리는 연다. 아이폰은 사진을 HEIC 로 올리고
-# (작성창이 IMAGE_MIME_TYPES 의 image/heic 을 받는다), 막으면 업로드가 500 이 된다.
-# 운영은 원래 ImageMagick 이 같은 libheif 로 HEIC·AVIF 를 읽어 왔으므로 공격면이 늘지 않는다.
-# heifload 는 untrusted 표시가 없어 아래 block_untrusted 에도 막히지 않는다.
 %w(
   VipsForeignLoadNsgif
   VipsForeignLoadJpeg

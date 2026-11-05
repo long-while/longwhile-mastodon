@@ -46,7 +46,6 @@ RSpec.describe 'Domain Blocks' do
             id: domain_block.id.to_s,
             domain: domain_block.domain,
             digest: domain_block.domain_digest,
-            # 시간대가 Asia/Seoul 이라(config/application.rb) 'Z' 를 박지 않고 오프셋째 비교한다.
             created_at: domain_block.created_at.iso8601(3),
             severity: domain_block.severity.to_s,
             reject_media: domain_block.reject_media,
@@ -103,7 +102,6 @@ RSpec.describe 'Domain Blocks' do
         id: domain_block.id.to_s,
         domain: domain_block.domain,
         digest: domain_block.domain_digest,
-        # 시간대가 Asia/Seoul 이라(config/application.rb) 'Z' 를 박지 않고 오프셋째 비교한다.
         created_at: domain_block.created_at.iso8601(3),
         severity: domain_block.severity.to_s,
         reject_media: domain_block.reject_media,
@@ -228,7 +226,6 @@ RSpec.describe 'Domain Blocks' do
         expect(response).to have_http_status(422)
         expect(response.content_type)
           .to start_with('application/json')
-        # 화면 언어는 한국어로 고정돼 있다(Localized#requested_locale).
         expect(response.parsed_body[:error])
           .to eq(I18n.t('activerecord.errors.messages.record_invalid', errors: I18n.t('errors.messages.inclusion', attribute: DomainBlock.human_attribute_name(:severity, locale: :ko), locale: :ko), locale: :ko))
       end

@@ -138,8 +138,6 @@ group :test do
   # Browser integration testing
   gem 'capybara', '~> 3.39'
   gem 'capybara-playwright-driver'
-  # 포크는 package.json(프런트 동결)의 playwright 1.55 드라이버를 쓴다. 1.61 이상의
-  # 클라이언트는 그 드라이버와 프로토콜이 맞지 않는다("timeout: expected float").
   gem 'playwright-ruby-client', '< 1.61', require: false
 
   # Used to reset the database between system tests

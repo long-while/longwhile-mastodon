@@ -38,9 +38,6 @@ class MultiAccounts::EntriesController < ApplicationController
 
   private
 
-  # client_id(또는 그에 해당하는 Doorkeeper 앱)가 없으면 빈 client_id로 authorize URL이
-  # 만들어져 /oauth/authorize 에서 "Missing required parameter: client_id"로 터진다.
-  # 깨진 URL을 내보내는 대신, 운영자가 조치할 수 있도록 명확한 로그/에러를 반환한다.
   def require_multi_account_client!
     client_id = Rails.configuration.x.multi_account[:client_id]
     return if client_id.present? && Doorkeeper::Application.exists?(uid: client_id)

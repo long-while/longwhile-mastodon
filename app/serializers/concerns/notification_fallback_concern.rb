@@ -79,7 +79,6 @@ module NotificationFallbackConcern
         'notification_fallbacks.severed_relationships.summary_html',
         from: Rails.configuration.x.local_domain,
         target: object.account_relationship_severance_event.target_name,
-        # @_longwhile — /severed_relationships 화면은 이 포크에서 지웠다(8bcadda03d). 첫 화면으로 보낸다.
         link: link_to(I18n.t('notification_fallbacks.generic.sign_in'), root_url)
       )
     when :moderation_warning

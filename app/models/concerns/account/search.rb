@@ -49,8 +49,6 @@ module Account::Search
     )
   SQL
 
-  # @_longwhile — 아래 세 질의는 익명화(탈퇴) 계정도 뺀다. 레코드에 옛 사용자명이 남아 있어서
-  # 그 이름을 치면 "탈퇴한 사용자" 가 나와 익명 처리한 글과 옛 이름이 이어진다.
   BASIC_SEARCH_SQL = <<~SQL.squish
     SELECT
       accounts.*,

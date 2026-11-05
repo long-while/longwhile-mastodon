@@ -126,8 +126,6 @@ RSpec.describe PostStatusService do
     expect(status.visibility).to eq 'private'
   end
 
-  # 이 포크는 클라이언트가 보낸 공개 범위가 private·direct(공지 계정은 unlisted 까지)가
-  # 아니면 오류 대신 private 로 내린다(PostStatusService#permitted_visibility?, 943745d134).
   it 'coerces an invalid visibility to private' do
     status = create_status_with_options(visibility: :xxx)
 
@@ -160,10 +158,7 @@ RSpec.describe PostStatusService do
     expect(status.language).to eq 'en'
   end
 
-  # 이 포크에서 인용 정책이 살아남는 것은 공지 계정의 unlisted 글뿐이다. 다른 글은 모두 private 로
-  # 올라가고, 업스트림이 private 글의 정책을 nobody 로 내린다(downgrade_quote_policy).
   it 'creates a status with the quote approval policy set' do
-    # 예약된 아이디라 검증을 건너뛰고 만든다(운영에서는 관리자가 만든 계정이다).
     announcer = Fabricate.build(:account, username: PublicFeed::ANNOUNCEMENT_USERNAME).tap { |a| a.save!(validate: false) }
     status = subject.call(announcer, text: 'test', visibility: 'unlisted', quote_approval_policy: InteractionPolicy::POLICY_FLAGS[:followers] << 16)
 
@@ -357,10 +352,7 @@ RSpec.describe PostStatusService do
     expect(status2.id).to eq status1.id
   end
 
-  # @_longwhile — DM 채팅. 답글은 부모의 conversation 을 물려받는데, 그것이 다른
-  #   방의 것이면 메시지가 그 방으로 새고 이 방은 비어 버린다. (DmRoom.thread_accepts?)
   context 'when replying with a direct message into another room\'s thread' do
-    # let! — 멘션은 본문의 @이름 으로 찾으므로, 서비스를 부르기 전에 계정이 있어야 한다.
     let!(:alice) { Fabricate(:account, username: 'alice') }
     let!(:bob)   { Fabricate(:account, username: 'bob') }
 
@@ -385,7 +377,6 @@ RSpec.describe PostStatusService do
       expect(reply.conversation_id).to eq root.conversation_id
     end
 
-    # 웹 채팅은 최근 메시지에 답글을 단다(2026-11). 사슬이 길어져도 한 conversation 이다.
     it 'stays in the thread when each message replies to the latest one' do
       root   = subject.call(alice, text: '@bob 1', visibility: 'direct')
       second = subject.call(bob, text: '@alice 2', visibility: 'direct', thread: root)
@@ -405,8 +396,6 @@ RSpec.describe PostStatusService do
       expect(reply.conversation_id).to eq group_root.conversation_id
     end
 
-    # 익명화(글 남기고 탈퇴)된 멤버는 방 JSON 에 acct `deleted` 로 나가고, 화면이 붙여 보내는
-    # `@deleted` 는 해석되지 않는다. 그 멤버를 뺀 명단도 같은 방으로 받아야 방이 안 쪼개진다.
     context 'when a member of the group room has been anonymised' do
       let!(:mark) { Fabricate(:account, username: 'mark') }
       let!(:group_root) { subject.call(alice, text: '@bob @carol hi', visibility: 'direct') }

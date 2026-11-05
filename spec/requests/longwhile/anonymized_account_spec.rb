@@ -2,15 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile — 탈퇴(익명화) 계정의 옛 사용자명이 어디에도 나오지 않아야 한다.
-#
-#   관리자가 "글은 남기고 익명화" 로 지운 계정(Admin::AccountDeletionWorker 의
-#   preserve_content)은 레코드와 사용자명을 그대로 둔다 — 이름을 예약하고, 남은 글의
-#   옛 주소(/@옛이름/글)가 계속 열리게 하려는 것이다. 그래서 사용자명을 쓰는 곳마다
-#   따로 가려야 하고, 하나라도 빠지면 그 필드로 옛 이름이 샌다.
-#
-#   예전에는 username·acct·display_name 만 가려져 있었고, 계정·글의 url/uri, 멘션의
-#   username/acct/url, 본문의 멘션 링크, 계정 검색, oEmbed 로 옛 이름이 나갔다.
 RSpec.describe 'Anonymized accounts', :inline_jobs do
   let(:viewer)  { Fabricate(:user, account_attributes: { username: 'viewer' }) }
   let(:former)  { Fabricate(:user, account_attributes: { username: 'formername' }).account }
@@ -63,7 +54,6 @@ RSpec.describe 'Anonymized accounts', :inline_jobs do
 
       body = response.parsed_body
       expect(body[:mentions]).to contain_exactly(id: former.id.to_s, username: 'deleted', acct: 'deleted', url: account_url)
-      # 웹 화면은 본문 링크의 href 가 멘션의 url 과 같아야 프로필 링크로 바꾼다(status_content.jsx).
       expect(body[:content]).to include(%(href="#{account_url}"), "@<span>#{Account::ANONYMIZED_DISPLAY_NAME}</span>")
       expect(response.body).to_not include('formername')
     end

@@ -2,13 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile — 고정된 4.4 웹 화면이 보내는 쓰기 요청의 계약.
-#
-#   G4(API 스냅숏)는 GET 과 몇몇 쓰기만 실제로 부른다. 나머지 쓰기는 라우터에
-#   있는지만 본다. 상류가 파라미터 이름·필수 값·응답 모양을 바꾸면 화면의 단추가
-#   **오류 없이** 죽는다(화면은 대부분 실패를 삼킨다). 그래서 화면 코드가 실제로
-#   보내는 몸통 그대로 보내고, 화면이 응답에서 다시 읽는 키를 확인한다.
-#   몸통은 app/javascript 의 해당 호출을 옮겨 적은 것이다(주석에 출처).
 RSpec.describe 'Frozen web frontend write contract' do
   let(:web_app) { Doorkeeper::Application.create!(name: 'Web', redirect_uri: 'urn:ietf:wg:oauth:2.0:oob', scopes: 'read write follow push', superapp: true) }
   let(:user)    { Fabricate(:user) }

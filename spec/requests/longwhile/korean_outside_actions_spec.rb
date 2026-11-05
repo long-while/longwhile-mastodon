@@ -2,13 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile — 화면을 한국어로 고정하는 것은 Localized 의 around_action(I18n.with_locale)이다.
-# 그 바깥에서 만들어지는 문장은 기본 로캘(DEFAULT_LOCALE 이 없으면 :en)로 나온다.
-#
-#   - rescue_from 으로 그리는 404·403 화면: 예외가 around_action 을 빠져나온 뒤에 그린다
-#     (ErrorResponses#respond_with_error).
-#   - Devise 가 prepend_before_action 으로 건 require_no_authentication 의 플래시:
-#     around_action 보다 앞에 돈다(가입·비밀번호 재설정 컨트롤러의 prepend_around_action).
 RSpec.describe 'Korean text produced outside the controller action' do
   let(:user) { Fabricate(:user) }
 

@@ -2,8 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile — 환경설정 수정. 저장 단추는 폼 밖(머리말)에 있고 `form` 속성으로 폼을
-#   가리킨다(settings/display/show.html.haml). 그래서 브라우저로 누른다.
 RSpec.describe 'Preferences', :js, :streaming do
   let(:user) { Fabricate(:user) }
 

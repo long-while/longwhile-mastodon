@@ -2,12 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile — 웹 앱 껍데기(home#index)가 고정된 프론트에 넘기는 것.
-#
-#     라우트      포크가 더한 화면 주소가 서버에도 있어야 새로고침·직접 입력이 404 가 아니다
-#                (config/routes/web_app.rb, CLAUDE.md "새 화면을 추가하면")
-#     초기 상태   initial_state.js 가 meta 에서 읽는 포크 필드
-#     테마        사용자 설정의 테마가 그 스타일시트로 이어진다(config/themes.yml)
 RSpec.describe 'Web app shell' do
   let(:user) { Fabricate(:user) }
 
@@ -91,7 +85,6 @@ RSpec.describe 'Web app shell' do
       expect(initial_state['meta']).to include('advanced_layout' => true)
     end
 
-    # 프론트는 role.permissions 로 운영진 메뉴(전체 메시지 등)를 띄운다.
     it 'carries the role permissions as a string' do
       get '/home'
 

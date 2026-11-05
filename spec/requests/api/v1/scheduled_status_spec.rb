@@ -133,9 +133,6 @@ RSpec.describe 'Scheduled Statuses' do
       expect(scheduled_status.last_error).to be_nil
     end
 
-    # 예약 글을 만들 때는 StatusesController#set_thread 가 답글 대상을 볼 수 있는지
-    # 확인한다. 수정에서 그 검사가 빠지면, 볼 수 없는 글(팔로우하지 않은 사람의 팔로워
-    # 전용 글, 남의 DM)에 답글을 달아 그 스레드에 끼어들 수 있다.
     context 'when changing the post being replied to' do
       it 'refuses a post the author cannot see' do
         hidden = Fabricate(:status, account: Fabricate(:account), visibility: :private)

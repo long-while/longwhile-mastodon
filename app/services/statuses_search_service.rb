@@ -56,10 +56,8 @@ class StatusesSearchService < BaseService
   end
 
   def build_optimized_search_request
-    # 기존 파싱된 쿼리 사용
     base_request = parsed_query.request
 
-    # 한국어 최적화 쿼리 추가
     if contains_korean?(@query)
       add_korean_optimized_query(base_request)
     elsif contains_only_english?(@query)
@@ -70,39 +68,26 @@ class StatusesSearchService < BaseService
   end
 
   def add_korean_optimized_query(base_request)
-    # 한국어 검색 시 다중 필드 전략 적용
     base_request.query(
       bool: {
         should: [
-          # 1. 원본 파싱된 쿼리 (기본 점수)
           base_request.render[:body][:query],
           
-          # 2. 한국어 특화 필드 검색 (부스팅)
           {
             multi_match: {
               query: clean_query,
               fields: [
-                'text.korean^3.0',      # 한국어 전용 필드에 가장 높은 가중치
-                'text.content^2.5',     # 하이브리드 필드
-                'text.personal^2.0',    # 개인 검색 특화 필드
-                'text.social^1.5',      # SNS 특화 필드
-                'account_display_name^1.2', # 계정명도 검색
+                'text.korean^3.0',
+                'text.content^2.5',
+                'text.personal^2.0',
+                'text.social^1.5',
+                'account_display_name^1.2',
               ],
               type: 'most_fields',
               minimum_should_match: '70%'
             }
           },
 
-          # 3. 동의어 확장 검색 - 주석처리됨
-          # {
-          #   multi_match: {
-          #     query: expand_synonyms(clean_query),
-          #     fields: ['text.content^1.5', 'text.social^1.2'],
-          #     type: 'phrase_prefix'
-          #   }
-          # },
-
-          # 4. 해시태그 검색 (# 제거해서 검색)
           {
             match: {
               tags: {
@@ -118,7 +103,6 @@ class StatusesSearchService < BaseService
   end
 
   def add_english_optimized_query(base_request)
-    # 영어 검색 시 최적화
     base_request.query(
       bool: {
         should: [
@@ -127,9 +111,9 @@ class StatusesSearchService < BaseService
             multi_match: {
               query: clean_query,
               fields: [
-                'text.english^3.0',     # 영어 전용 필드
-                'text.content^2.0',     # 하이브리드 필드
-                'text^1.0'              # 원본 필드
+                'text.english^3.0',
+                'text.content^2.0',
+                'text^1.0'
               ],
               type: 'best_fields',
               tie_breaker: 0.3
@@ -142,7 +126,6 @@ class StatusesSearchService < BaseService
   end
 
   def add_multilingual_query(base_request)
-    # 다국어 혼합 검색
     base_request.query(
       bool: {
         should: [
@@ -169,7 +152,6 @@ class StatusesSearchService < BaseService
   def build_sort_criteria
     base_sort = { id: { order: :desc } }
     
-    # 한국어 쿼리인 경우 추가 정렬 기준
     if contains_korean?(@query)
       {
         _score: { order: :desc },
@@ -206,52 +188,23 @@ class StatusesSearchService < BaseService
     @query = "#{@query} #{syntax_options.join(' ')}".strip if syntax_options.any?
   end
 
-  # === 헬퍼 메소드들 ===
-
   def contains_korean?(text)
     return false if text.blank?
-    # 한글 유니코드 범위 체크 (Elasticsearch 호환)
     !!(text =~ /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/)
   end
 
   def contains_only_english?(text)
     return false if text.blank?
-    # 영어와 공통 기호만 포함
     !!(text =~ /\A[a-zA-Z0-9\s\-_@#.!?]+\z/)
   end
 
   def clean_query
     return '' if @query.blank?
     
-    # 검색 쿼리 정리
-    @query.gsub(/[^\w가-힣\s#@]/, ' ')  # 특수문자 제거 (한글, 영문, 숫자, #, @ 제외)
-          .squeeze(' ')                  # 연속 공백 제거
+    @query.gsub(/[^\w가-힣\s#@]/, ' ')
+          .squeeze(' ')
           .strip
   end
-
-  # expand_synonyms 주석처리됨
-  # def expand_synonyms(query)
-  #   return query if query.blank?
-  #
-  #   # 한국어 동의어 확장 (안전한 버전 - 단일 단어만)
-  #   synonyms = {
-  #     'ㅋㅋ' => '웃김 funny lol',
-  #     'ㅠㅠ' => '슬픔 sad crying',
-  #     'ㄷㄷ' => '대단 amazing wow',
-  #     '마스토돈' => 'mastodon 매스토돈',
-  #     '감사' => 'thanks 고마워',
-  #     '안녕' => 'hello hi bye',
-  #   }
-  #
-  #   expanded_query = query
-  #   synonyms.each do |original, expansion|
-  #     if expanded_query.include?(original)
-  #       expanded_query += " #{expansion}"
-  #     end
-  #   end
-  #
-  #   expanded_query
-  # end
 
   def detect_query_language(query)
     return 'unknown' if query.blank?

@@ -14,7 +14,6 @@ RSpec.describe ApplicationHelper do
         helper.extend controller_helpers
       end
 
-      # 포크: 설정 클래스는 <body> 에만 단다. <html> 에도 달면 body 의 스크롤바 모양이 4.5 와 달라진다.
       it 'leaves the user settings classes to body_classes' do
         expect(helper.html_classes)
           .to not_include('system-font')
@@ -38,7 +37,6 @@ RSpec.describe ApplicationHelper do
   end
 
   describe 'body_classes' do
-    # body_classes 는 포크에서 테마·사용자 설정을 읽는다(아래). 로그인하지 않은 화면으로 둔다.
     before do
       helper.extend(Module.new do
         def current_account = nil
@@ -55,8 +53,6 @@ RSpec.describe ApplicationHelper do
       end
     end
 
-    # @_longwhile — 고정 프런트와 테마 SCSS 는 이 클래스들을 <body> 에서 찾는다(body.theme-…,
-    # body.rtl, emoji.js 의 테마 판별, columns_area.jsx 의 rtl). 4.6 은 html_classes 로 옮겼다.
     context 'with the frozen web frontend' do
       it 'keeps the theme and the user setting classes on the body' do
         expect(helper.body_classes.split)

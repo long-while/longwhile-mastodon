@@ -2,12 +2,6 @@
 
 require 'rails_helper'
 
-# 이 포크의 퍼블릭 타임라인은 업스트림과 모집단이 다르다(943745d134, 133d438e14).
-#   - 보는 사람이 없으면 아무것도 없다.
-#   - 글쓴이는 팔로우 중인 계정 + 본인 + 공지 계정뿐이다.
-#   - 공개 범위는 private(일반 글) 과 unlisted(공지 계정) 만이다. direct·limited 는 없다.
-# 그래서 업스트림 예제들은 "보는 사람이 글쓴이를 팔로우한 상태" 에서 같은 것을 검사하고,
-# 팔로우하지 않은 사람의 글이 섞이지 않는지를 함께 본다.
 RSpec.describe PublicFeed do
   let(:account) { Fabricate(:account) }
 
@@ -165,8 +159,6 @@ RSpec.describe PublicFeed do
       end
     end
 
-    # 업스트림 예제는 모르는 사람의 글로 검사해서, 이 포크에서는 팔로우 필터 때문에
-    # 저절로 통과해 버린다. 팔로우한 뒤 차단·뮤트해서 그 필터가 실제로 거르는지 본다.
     describe 'with an account passed in' do
       subject { described_class.new(account).get(20).map(&:id) }
 
@@ -248,18 +240,6 @@ RSpec.describe PublicFeed do
       end
     end
 
-    # @_longwhile custom feature / 한참(longwhile) 제작 기능
-    #   퍼블릭 타임라인은 **팔로우 중 + 본인 + 공지 계정**의 글만 보여준다.
-    #
-    #   팔로우 필터를 컬럼 조건(`where(account_id:)` 이나 Arel 노드)으로 적으면
-    #   `get` 의 `merge!(account_filters_scope)` 가 그것을 **같은 컬럼을 건드린다는
-    #   이유로 지워버린다**(`WhereClause#merge` → `except_predicates`).
-    #
-    #   **차단·뮤트가 없어도 지워진다** — `where.not(account_id: [])` 역시
-    #   `NotIn(statuses.account_id, [])` 라 그 컬럼을 가리킨다. 그래서 첫 예제
-    #   하나로도 회귀가 잡힌다. 그런데도 차단·뮤트 예제를 함께 두는 것은, 빈
-    #   목록과 아닌 목록이 **서로 다른 Arel 노드**(`NotIn` vs `HomogeneousIn`)가
-    #   되기 때문이다. 한쪽만 보면 다른 쪽에서 규칙이 바뀌어도 모른다.
     describe 'the followed-authors filter' do
       subject { described_class.new(viewer).get(20).map(&:id) }
 
@@ -294,8 +274,6 @@ RSpec.describe PublicFeed do
       end
     end
 
-    # 운영진 갈래는 "자기가 멘션된 글" 을 뺀다. 4.5 의 Quote#ensure_quoted_access 는 인용당한 사람에게
-    # silent 멘션을 달아 주므로, 그것까지 세면 운영진의 글을 인용한 글(자기 인용 포함)이 사라진다.
     describe 'mentions of an administrator viewer' do
       subject { described_class.new(viewer).get(20).map(&:id) }
 
@@ -319,10 +297,6 @@ RSpec.describe PublicFeed do
       end
     end
 
-    # @_longwhile — 아래는 업스트림 4.5 의 피드 접근 설정 예제다. 이 포크의 퍼블릭·태그 피드는
-    #   팔로우한 사람의 팔로워 공개 글만 보여 주고(위 'the followed-authors filter'), 로그인하지
-    #   않으면 아무것도 주지 않는다. 그래서 글은 private 로, 보는 사람은 글쓴이를 팔로우한 상태로
-    #   두고 접근 설정이 그 위에서 막는지를 본다. 비로그인 예제는 '보인다' 대신 '안 보인다' 를 본다.
     context 'when both local_live_feed_access and remote_live_feed_access are disabled' do
       before do
         Setting.local_live_feed_access = 'disabled'
@@ -674,8 +648,6 @@ RSpec.describe PublicFeed do
       end
     end
 
-    # 공지 계정의 글은 팔로우하지 않아도 보이는데, 그 예외는 **unlisted(공지)에만** 걸린다.
-    # 공지 계정이 팔로워 전용(private)으로 쓴 글까지 모두에게 흐르던 것의 회귀 스펙.
     describe 'the announcement account' do
       subject { described_class.new(viewer, with_reblogs: true).get(20).map(&:id) }
 
@@ -718,8 +690,6 @@ RSpec.describe PublicFeed do
       end
     end
 
-    # 운영진용 범위는 팔로우하지 않은 원작자의 재게시를 거르지 않는다. 로그인이 막힌
-    # (disabled 등) 운영진 계정에 남은 토큰은 AccountStatusesFilter 처럼 일반 범위로 내린다.
     describe 'the administrator scope' do
       subject { described_class.new(viewer, with_reblogs: true).get(20).map(&:id) }
 

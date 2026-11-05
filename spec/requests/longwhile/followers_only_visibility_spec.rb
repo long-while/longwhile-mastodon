@@ -2,19 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile — 공개 범위 모델 (943745d134, c510d868bd).
-#
-#   이 인스턴스의 일반 글은 전부 private(팔로워 전용)이다. 잠금은 팔로우 승인 여부만
-#   정한다. 그 위에 세 가지 규칙이 있다.
-#
-#     쓰기  PostStatusService 가 public·unlisted 를 private 로 내린다. 공지 계정
-#           (@longwhile)만 unlisted 를 쓸 수 있다
-#     읽기  미등재(unlisted)도 비공개처럼 팔로워·멘션된 사람에게만 보인다.
-#           글 하나(StatusPolicy#show?)와 프로필 목록(AccountStatusesFilter)이 짝이다
-#     부스트 원작자와 부스터를 **둘 다** 팔로우한 사람에게만 보인다
-#
-#   업스트림 머지가 이 파일들의 조건 하나만 되돌려도 팔로우하지 않은 사람에게 글이
-#   샌다. 오류는 나지 않는다.
 RSpec.describe 'Followers-only visibility' do
   let(:author_user) { Fabricate(:user) }
   let(:author)      { author_user.account }
@@ -46,7 +33,6 @@ RSpec.describe 'Followers-only visibility' do
     end
 
     it 'lets only the announcement account post unlisted' do
-      # 예약어라 검증을 거치지 않고 이름을 붙인다. 운영에서는 관리자가 만든 계정이다.
       announcer = Fabricate(:user).account
       announcer.update_columns(username: PublicFeed::ANNOUNCEMENT_USERNAME)
 

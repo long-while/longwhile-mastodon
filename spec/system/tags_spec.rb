@@ -12,7 +12,7 @@ RSpec.describe 'Tags' do
       visit tag_path(tag)
 
       expect(page)
-        .to have_css('noscript', text: /마스토돈/) # 화면은 한국어 고정(Localized#requested_locale)
+        .to have_css('noscript', text: /마스토돈/)
         .and have_css('body', class: 'app-body')
         .and have_private_cache_control
     end

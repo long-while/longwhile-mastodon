@@ -64,7 +64,6 @@ RSpec.describe StatusCacheHydrator do
         end
       end
 
-      # `replied` 는 포크가 더한 필드다. 캐시(비로그인 렌더)에는 없으므로 하이드레이터가 채워야 한다.
       context 'when the account has replied to the status' do
         before { Fabricate(:status, account: account, thread: status) }
 
@@ -334,7 +333,6 @@ RSpec.describe StatusCacheHydrator do
           end
         end
 
-        # 감싸는 쪽은 favourited 와 마찬가지로 원본의 값을 따른다(전체 렌더의 `object.proper.replies`).
         context 'when the account has replied to the reblogged status' do
           before { Fabricate(:status, account: account, thread: reblog) }
 

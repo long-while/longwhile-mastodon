@@ -63,7 +63,6 @@ module HomeHelper
     end
   end
 
-  # @_longwhile — 가입이 닫혀 있어도 유효한 초대로 들어왔으면 가입할 수 있다. 심사를 건너뛰지 못하는 초대면 심사 신청이다.
   def sign_up_button_label(invite)
     return t('auth.register') if open_registrations? || invite&.bypass_approval?
     return t('auth.apply_for_account') if invite.present?

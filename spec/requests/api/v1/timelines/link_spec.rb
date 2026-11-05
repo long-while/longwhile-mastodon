@@ -26,11 +26,6 @@ RSpec.describe 'Link' do
       get '/api/v1/timelines/link', headers: headers, params: params
     end
 
-    # LinkFeed 도 PublicFeed 의 모집단을 물려받는다 — 팔로우 중인 계정(+ 본인·공지 계정)의
-    # private/unlisted 글만 나온다(943745d134). 그래서 사용자가 글쓴이들을 팔로우한 상태에서
-    # 검사하고, private_status 는 "팔로우하지 않은 사람의 글" 로 빠지는지 본다.
-    # undiscoverable_status 의 글쓴이도 팔로우해서, 팔로우 필터가 아니라 discoverable 필터로
-    # 빠지는지 확인한다.
     let(:url) { 'https://example.com/' }
     let(:private_status) { Fabricate(:status, visibility: :private) }
     let(:undiscoverable_status) { Fabricate(:status, visibility: :private, account: Fabricate.build(:account, domain: nil, discoverable: false)) }
@@ -135,7 +130,6 @@ RSpec.describe 'Link' do
         it_behaves_like 'a successful request to the link timeline'
       end
 
-      # 보는 사람이 없으면 모집단이 비어 있다. 아무 글도 나가지 않아야 한다.
       context 'with an anonymous user' do
         let(:headers) { {} }
         let(:expected_statuses) { [] }

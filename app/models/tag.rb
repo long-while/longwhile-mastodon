@@ -41,8 +41,6 @@ class Tag < ApplicationRecord
   HASHTAG_LAST_SEQUENCE = '([[:word:]_]*[[:alpha:]][[:word:]_]*)'
   HASHTAG_NAME_PAT = "#{HASHTAG_FIRST_SEQUENCE}|#{HASHTAG_LAST_SEQUENCE}".freeze
 
-  # @_longwhile — 상류 4.6 은 # 앞에 줄 시작이나 공백만 허용한다. 이 포크는 [center]·[color:…]
-  # 같은 서식 태그를 쓰므로 닫는 대괄호 바로 뒤의 해시태그(`[center]#태그[/center]`)도 받는다.
   HASHTAG_RE = /(?<=^|[[:space:]]|\])[#＃](#{HASHTAG_NAME_PAT})/
   HASHTAG_NAME_RE = /\A(#{HASHTAG_NAME_PAT})\z/i
   HASHTAG_INVALID_CHARS_RE = /[^[:alnum:]\u0E47-\u0E4E#{HASHTAG_SEPARATORS}]/

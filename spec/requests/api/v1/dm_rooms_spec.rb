@@ -2,9 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 채팅
-#   여기서 지키는 것 중 가장 중요한 것은 **비멤버가 남의 방에 닿을 수 없다**는 것이다.
-#   방 id 는 순차 증가하는 정수라 열거가 가능하다. (기획서 §11.1)
 RSpec.describe 'API V1 DM rooms' do
   let(:user)     { Fabricate(:user) }
   let(:token)    { Fabricate(:accessible_access_token, resource_owner_id: user.id, scopes: 'read:statuses write:conversations') }
@@ -44,8 +41,6 @@ RSpec.describe 'API V1 DM rooms' do
       expect(response.parsed_body).to be_empty
     end
 
-    # last_status_id 가 null 로 남은 방은 목록 쿼리에서 빠진다. 그래서 페이지를 만들기
-    # 전에 따로 고쳐 주지 않으면 영영 돌아오지 않는다. (delete_all 경로, 플래그 토글)
     it 'brings back a room whose last_status_id was blanked out of band' do
       room = attach(direct_status(me, partner))
       DmRoom.where(id: room.id).update_all(last_status_id: nil)
@@ -76,9 +71,6 @@ RSpec.describe 'API V1 DM rooms' do
       expect(response.parsed_body).to be_empty
     end
 
-    # 차단·뮤트한 사람은 방을 만들고 메시지를 보낼 수는 있다(상류의 DM 과 같다). 하지만
-    # 그 메시지가 목록 미리보기와 안 읽은 개수로 새어 나오면 차단이 무의미해진다.
-    # 상류의 /conversations 는 이런 DM 을 아예 보여주지 않는다.
     context 'when a message comes from someone I block or mute' do
       it 'does not list a room whose only messages come from an account I block' do
         me.block!(partner)
@@ -131,8 +123,6 @@ RSpec.describe 'API V1 DM rooms' do
       expect(response).to have_http_status(404)
     end
 
-    # 루트가 다른 방의 스레드를 가리키면 클라이언트가 거기에 답글을 달아 같은 사고를
-    # 되풀이한다. 방을 여는 순간 바로잡는다. (DmRoom#heal_thread!)
     it "repairs a root that points into another room's thread" do
       group_root = direct_status(me, partner)
       group_root.mentions.create(account: stranger)
@@ -148,7 +138,6 @@ RSpec.describe 'API V1 DM rooms' do
       expect(response.parsed_body['root_status_id']).to be_nil
     end
 
-    # 나간 방도 URL 로 직접 열면 보여야 한다. 목록에만 없는 상태다. (FR-27)
     it 'still returns a room I left' do
       room = attach(direct_status(me, partner))
       room.dm_room_members.find_by(account_id: me.id).hide!
@@ -178,15 +167,12 @@ RSpec.describe 'API V1 DM rooms' do
       expect(response.parsed_body.pluck('id')).to eq [status.id.to_s]
     end
 
-    # 조회 시점 지연 귀속은 뒤늦게 발견한 과거 이력을 붙이는 것이다. 그것이 나간
-    # 사람의 방을 되살리면, 아무도 말을 걸지 않았는데 방이 다시 나타난다. (FR-27)
     it 'does not resurrect a room I left when someone reads it' do
       first = direct_status(me, partner)
       room  = attach(first)
 
       delete "/api/v1/dm_rooms/#{room.id}", headers: headers
 
-      # 아직 방에 붙지 않은 과거 conversation 을 하나 만든다.
       orphan = direct_status(partner, me)
       expect(orphan.conversation.reload.dm_room_id).to be_nil
 
@@ -196,7 +182,6 @@ RSpec.describe 'API V1 DM rooms' do
       expect(response.parsed_body).to be_empty
     end
 
-    # 방에 다른 공개 범위의 글이 섞여 들어와도 나오면 안 된다.
     it 'never leaks a non-direct status that shares the conversation' do
       status = direct_status(me, partner)
       room   = attach(status)
@@ -231,7 +216,6 @@ RSpec.describe 'API V1 DM rooms' do
       expect(response).to have_http_status(422)
     end
 
-    # 상한이 없으면 요청 하나로 인스턴스 전원에게 멤버 행을 만들 수 있다.
     it 'rejects a participant list that is too long' do
       ids = Array.new(Api::V1::DmRoomsController::MAX_PARTICIPANTS) { Fabricate(:account).id }
 
@@ -267,8 +251,6 @@ RSpec.describe 'API V1 DM rooms' do
       expect(AccountConversation.find_by(account_id: me.id).unread).to be false
     end
 
-    # 다른 방의 id 를 넣으면 커서가 이 방보다 앞으로 밀려 배지가 영원히 0 이 된다.
-    # 커서는 뒤로 가지 않으므로 되돌릴 방법도 없다.
     it 'rejects a status that does not belong to the room' do
       room  = attach(direct_status(me, partner))
       other = direct_status(partner, stranger)
@@ -278,8 +260,6 @@ RSpec.describe 'API V1 DM rooms' do
       expect(response).to have_http_status(422)
     end
 
-    # 방을 열면 클라이언트는 last_status 의 id 를 보낸다. 그 글이 이 방의 conversation
-    # 밖에 있어도 방의 머리이므로 받는다 — 막으면 방을 열 때마다 422 가 났다.
     it "accepts the room's own last status even when it sits outside the room" do
       group_root = direct_status(partner, me)
       group_root.mentions.create(account: stranger)
@@ -343,7 +323,6 @@ RSpec.describe 'API V1 DM rooms' do
       expect(room.dm_room_members.find_by(account_id: partner.id).hidden?).to be false
     end
 
-    # 나간 방도 이력은 그대로 읽혀야 한다. 목록에만 없는 상태다.
     it 'still serves the message history after leaving' do
       status = direct_status(me, partner)
       room   = attach(status)
@@ -365,7 +344,6 @@ RSpec.describe 'API V1 DM rooms' do
       expect(room.dm_room_reads.find_by(account_id: me.id).last_read_status_id).to eq status.id
     end
 
-    # 나간 뒤 상대가 말을 걸면 목록에 다시 나타나야 한다. (FR-27)
     it 'comes back when a new message arrives' do
       first = direct_status(me, partner)
       room  = attach(first)

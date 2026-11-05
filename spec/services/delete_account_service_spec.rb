@@ -181,8 +181,6 @@ RSpec.describe DeleteAccountService do
     end
   end
 
-  # 4.7 의 자기 삭제 표시(requested_deletion_at)는 피드·계정 API 에서 그 계정을 숨긴다.
-  # 표시가 남은 채 익명화하면 남기기로 한 글이 다시 숨는다.
   describe 'anonymising an account that had requested deletion' do
     subject { described_class.new }
 

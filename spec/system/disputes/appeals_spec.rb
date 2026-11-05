@@ -4,8 +4,6 @@ require 'rails_helper'
 
 RSpec.describe 'Dispute Appeals' do
   let(:user) { Fabricate(:user) }
-  # 이 포크는 알림 메일을 모두 꺼 둔 채로 시작한다(UserSettings 의 notification_emails 기본값).
-  # 소명 알림을 켠 운영진에게 메일이 가는지를 본다.
   let!(:admin) do
     Fabricate(:admin_user).tap do |admin|
       admin.settings.update('notification_emails.appeal': true)
@@ -30,7 +28,7 @@ RSpec.describe 'Dispute Appeals' do
       expect(emails)
         .to be_empty
       expect(page)
-        .to have_text(I18n.t('errors.messages.blank', attribute: '')) # 화면은 한국어 고정(Localized#requested_locale)
+        .to have_text(I18n.t('errors.messages.blank', attribute: ''))
 
       # Valid with text
       fill_in 'appeal_text', with: 'It wasnt me this time!'
@@ -42,7 +40,6 @@ RSpec.describe 'Dispute Appeals' do
     end
 
     def new_appeal_subject
-      # 메일은 화면과 달리 받는 사람의 로캘(없으면 기본 로캘)로 나간다.
       I18n.t('admin_mailer.new_appeal.subject', username: user.account.acct, instance: Rails.configuration.x.local_domain, locale: ApplicationMailer::MAIL_LOCALE)
     end
 

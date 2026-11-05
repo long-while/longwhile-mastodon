@@ -30,7 +30,6 @@ RSpec.describe 'API Web Push Subscriptions' do
           poll: true,
           status: false,
           quote: true,
-          # 이 포크의 알림 종류(DM 채팅의 direct). 아래 alert_types 가 LEGACY_TYPE_CLASS_MAP 에서 뽑으므로 함께 둔다.
           direct: true,
         },
       },
@@ -177,7 +176,6 @@ RSpec.describe 'API Web Push Subscriptions' do
     before { sign_in user }
 
     let(:user) { Fabricate :user }
-    # 남의 구독은 찾지 못한다(보안 백포트 bbb345a174 의 user_id 조건). 본인 구독으로 파라미터 검사를 본다.
     let(:subscription) { Fabricate :web_push_subscription, user: user }
 
     it 'does not update a subscription that belongs to someone else' do

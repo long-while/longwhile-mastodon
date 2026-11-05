@@ -33,13 +33,10 @@ Rails.application.config.content_security_policy do |p|
   p.connect_src :self, :data, :blob, *media_hosts, Rails.configuration.x.streaming_api_base_url
   p.script_src  :self, assets_host, "'wasm-unsafe-eval'"
   p.frame_src   :self, :https
-  # @_longwhile — 마크다운의 색·정렬은 인라인 style 이다. 아래 nonce 지시어를 비워 둔 것과
-  #   짝이다(nonce 가 있으면 브라우저가 'unsafe-inline' 을 무시한다).
   p.style_src   :self, assets_host, :unsafe_inline
 
   next unless Rails.env.development?
 
-  # Vite.config 은 config/initializers/vite.rb 에서 채워진다. 이 파일이 먼저 로드되므로 미룬다.
   Rails.application.config.to_prepare do
     vite_public_host = "#{Vite.config.host}:#{Vite.config.port}"
     front_end_build_urls = %w(ws http).map { |protocol| "#{protocol}#{'s' if Vite.config.https?}://#{vite_public_host}" }

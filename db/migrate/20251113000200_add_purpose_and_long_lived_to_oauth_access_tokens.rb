@@ -4,7 +4,6 @@ class AddPurposeAndLongLivedToOAuthAccessTokens < ActiveRecord::Migration[8.0]
   disable_ddl_transaction!
 
   def change
-    # 이미 스키마에 반영된 경우가 있으므로, 존재 여부를 확인한 뒤에만 추가
     unless column_exists?(:oauth_access_tokens, :purpose)
       add_column :oauth_access_tokens, :purpose, :string, limit: 50
     end
@@ -22,4 +21,3 @@ class AddPurposeAndLongLivedToOAuthAccessTokens < ActiveRecord::Migration[8.0]
     end
   end
 end
-

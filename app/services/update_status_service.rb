@@ -23,7 +23,6 @@ class UpdateStatusService < BaseService
     @media_attachments_changed = false
     @poll_changed              = false
 
-    # 대화 안내문 표식은 서버만 붙인다(DmRoom.reserved_event_marker?).
     raise Mastodon::ValidationError, I18n.t('dm_rooms.errors.reserved_spoiler_text') if DmRoom.reserved_event_marker?(@options[:spoiler_text])
 
     Status.transaction do

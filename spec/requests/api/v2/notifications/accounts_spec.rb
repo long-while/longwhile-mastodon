@@ -17,8 +17,6 @@ RSpec.describe 'Accounts in grouped notifications' do
 
     before do
       first_status = PostStatusService.new.call(user.account, text: 'Test')
-      # 글이 전부 팔로워 전용이라(943745d134) 관심글·부스트는 팔로워만 할 수 있다.
-      # follow! 는 알림을 만들지 않으므로 묶음 구성은 그대로다.
       FavouriteService.new.call(Fabricate(:account).tap { |a| a.follow!(user.account) }, first_status)
       FavouriteService.new.call(Fabricate(:account).tap { |a| a.follow!(user.account) }, first_status)
       ReblogService.new.call(Fabricate(:account).tap { |a| a.follow!(user.account) }, first_status)

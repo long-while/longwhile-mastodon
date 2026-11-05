@@ -3,8 +3,6 @@
 require 'rails_helper'
 
 RSpec.describe AdminMailer do
-  # 메일은 받는 사람의 locale 과 무관하게 한국어다(ApplicationMailer::MAIL_LOCALE).
-  # 받는 사람이 en 을 골라 두었어도(아래 before) 한국어다. 기대값도 같은 로캘로 계산한다.
   around { |example| I18n.with_locale(:ko) { example.run } }
 
   describe '.new_report' do

@@ -54,7 +54,6 @@ RSpec.describe 'Tags' do
             .and have_cacheable_headers.with_vary('Accept, Accept-Language, Cookie')
           expect(response.content_type)
             .to start_with('application/rss+xml')
-          # 이 포크의 글은 모두 팔로워 전용이라(Status::Visibility) 태그 RSS 에 나오지 않는다.
           expect(response.body)
             .to_not include(status.text)
         end

@@ -10,7 +10,6 @@ RSpec.describe CopyReservedUsernamesToUsernameBlocks do
     ActiveRecord::Migration.suppress_messages { migration.up }
   end
 
-  # 4.4 의 Setting 은 값을 YAML 로 적는다. 지금의 Setting 에는 이 키가 없으므로 행을 직접 만든다.
   def store_setting(value)
     Setting.where(var: 'reserved_usernames').delete_all
     Setting.new(var: 'reserved_usernames').tap { |setting| setting[:value] = value }.save!(validate: false)

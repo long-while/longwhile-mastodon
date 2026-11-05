@@ -74,10 +74,6 @@ RSpec.describe OAuth::AuthorizationsController do
     end
   end
 
-  # @_longwhile — 동의 폼의 POST(그리고 거부의 DELETE)에는 쿼리스트링이 없다.
-  #   여기서도 돌아갈 곳을 적어 두던 시절에는 `user_return_to` 가 **파라미터
-  #   없는 `/oauth/authorize`** 가 됐고, 그 뒤 아무 때나 로그인하면 Devise 가
-  #   거기로 보내 Doorkeeper 가 "필수 매개변수 누락: client_id." 를 띄웠다.
   describe 'the stored return location' do
     let!(:user) { Fabricate(:user) }
 

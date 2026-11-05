@@ -28,7 +28,6 @@ RSpec.describe 'API Markers' do
 
     it 'uses a specific style of IS08601 timestamps' do
       expect(response.parsed_body)
-        # 이 포크는 Time.zone 이 Asia/Seoul 이라 오프셋이 붙어 나간다(4.5 부터 같다). 형식(밀리초 세 자리)만 본다.
         .to include(home: include(updated_at: eq(Time.zone.parse('2026-03-15T12:34:56.789Z').iso8601(3))))
     end
   end

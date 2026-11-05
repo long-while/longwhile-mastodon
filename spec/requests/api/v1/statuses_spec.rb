@@ -142,9 +142,6 @@ RSpec.describe '/api/v1/statuses' do
 
       it_behaves_like 'forbidden for wrong scope', 'read read:statuses'
 
-      # 메시지 화면은 이 표식이 붙은 DM 을 말풍선이 아닌 가운데 안내문으로 그리고,
-      # 제목 변경 표식이 붙으면 알림도 만들지 않는다(DmRoom::*_EVENT_PREFIX). 표식은
-      # 서버가 남기는 안내문 전용이다 — 사용자가 붙이면 가짜 안내문을 꾸밀 수 있다.
       context 'with a spoiler text reserved for conversation notices' do
         let(:recipient) { Fabricate(:account) }
 
@@ -194,9 +191,6 @@ RSpec.describe '/api/v1/statuses' do
           expect(response).to have_http_status(200)
           expect(response.content_type)
             .to start_with('application/json')
-          # 이 포크는 모든 글을 private 로 올린다(PostStatusService#permitted_visibility?). 업스트림은
-          # private 글의 인용 정책을 nobody 로 내리므로(Status::InteractionPolicyConcern#downgrade_quote_policy)
-          # 정책을 무엇으로 주든 automatic 은 비어 있다.
           expect(response.parsed_body[:quote_approval]).to include({
             automatic: [],
             manual: [],
@@ -244,9 +238,6 @@ RSpec.describe '/api/v1/statuses' do
           expect(response).to have_http_status(200)
           expect(response.content_type)
             .to start_with('application/json')
-          # 이 포크는 모든 글을 private 로 올린다(PostStatusService#permitted_visibility?). 업스트림은
-          # private 글의 인용 정책을 nobody 로 내리므로(Status::InteractionPolicyConcern#downgrade_quote_policy)
-          # 정책을 무엇으로 주든 automatic 은 비어 있다.
           expect(response.parsed_body[:quote_approval]).to include({
             automatic: [],
             manual: [],
@@ -315,8 +306,6 @@ RSpec.describe '/api/v1/statuses' do
             .to start_with('application/json')
           expect(response.parsed_body[:quote]).to be_present
           expect(response.headers['X-RateLimit-Limit']).to eq RateLimiter::FAMILIES[:statuses][:limit].to_s
-          # DM 은 :direct_statuses 로 센다(Status#rate_limiter). 헤더는 :statuses 기준이라 줄지 않는다
-          # (Api::V1::StatusesController 의 override_rate_limit_headers 주석).
           expect(response.headers['X-RateLimit-Remaining']).to eq RateLimiter::FAMILIES[:statuses][:limit].to_s
         end
       end

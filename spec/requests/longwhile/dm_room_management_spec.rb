@@ -2,13 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile — DM 채팅(/messages)의 백엔드 계약 중 spec/requests/api/v1/dm_rooms_spec.rb
-#   가 다루지 않는 것: 보내기(실제 경로), 방 JSON 의 모양, 제목, 멤버 관리, 별명,
-#   "나에게서만 삭제", 읽음 표시의 상호주의.
-#
-#   채팅 화면은 방 JSON 의 키를 그대로 읽는다(api_types/dm_rooms.ts). 시스템 메시지는
-#   spoiler_text 의 접두어로 가려낸다(features/messages/util/title_event.ts). 둘 다
-#   서버와 프론트가 같은 문자열을 따로 들고 있어서, 한쪽이 바뀌면 오류 없이 틀어진다.
 RSpec.describe 'DM room management' do
   let(:user)    { Fabricate(:user) }
   let(:me)      { user.account }
@@ -28,7 +21,6 @@ RSpec.describe 'DM room management' do
     DmRoom.find(response.parsed_body[:id])
   end
 
-  # 웹의 보내기와 같은 요청(api/dm_rooms.ts 의 apiSendDmMessage).
   def send_dm(text, to:, from_headers: headers, in_reply_to_id: nil)
     post '/api/v1/statuses', headers: from_headers, params: {
       status: "#{to.map { |account| "@#{account.acct}" }.join(' ')} #{text}",
@@ -220,7 +212,6 @@ RSpec.describe 'DM room management' do
     end
   end
 
-  # 읽음 표시는 상호주의다(FR-19). 판정은 서버가 한다 — 클라이언트 판정은 우회된다.
   describe 'participant_read_states' do
     it "shows the partner's cursor and never the time it was read" do
       room    = create_room(partner)

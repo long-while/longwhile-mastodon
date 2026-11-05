@@ -44,7 +44,7 @@ RSpec.describe 'Instances' do
 
     context 'when wrapstodon is enabled' do
       before do
-        Setting.wrapstodon = true # 이 포크의 기본값은 꺼짐이다
+        Setting.wrapstodon = true
         travel_to Time.utc(2025, 12, 20)
       end
 

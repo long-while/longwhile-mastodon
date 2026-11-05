@@ -81,8 +81,6 @@ RSpec.describe AccountStatusesFilter do
       let(:current_account) { nil }
       let(:direct_status) { nil }
 
-      # 이 포크에서 미등재는 팔로워 전용이라 익명 방문자에게는 public 만 보인다
-      # (AccountStatusesFilter#initial_scope 의 주석).
       context 'when rejecting direct messages' do
         let(:params) { { exclude_direct: true } }
 
@@ -103,8 +101,6 @@ RSpec.describe AccountStatusesFilter do
         expect(results_reblog_of_ids).to_not be_empty
       end
 
-      # 프로필 API 는 늘 no_direct 를 넣는다. 그 스코프가 같은 visibility 컬럼을 건드려
-      # merge! 가 "public 만" 조건을 지우고 private·unlisted 를 비로그인에게 내주던 것.
       %i(no_direct only_direct).each do |key|
         context "with #{key}" do
           let(:params) { { key => true } }
@@ -155,7 +151,6 @@ RSpec.describe AccountStatusesFilter do
     context 'when accessed by a follower' do
       let(:current_account) { Fabricate(:account) }
 
-      # 부스트는 겹팔로워 전용이라(943745d134) 부스트된 글쓴이도 팔로우해야 보인다.
       before do
         current_account.follow!(account)
         current_account.follow!(reblogged_author)
@@ -194,9 +189,6 @@ RSpec.describe AccountStatusesFilter do
       it_behaves_like 'filter params'
     end
 
-    # 이 포크에서 미등재는 팔로워 전용이고(initial_scope·filtered_scope 의 주석), 부스트는
-    # 부스트된 글쓴이를 팔로우해야 보인다(943745d134). 그래서 부스트된 글쓴이는 팔로우한
-    # 상태에서 원래 검사하려던 필터(차단·뮤트·도메인 차단)가 거르는지 본다.
     context 'when accessed by a non-follower' do
       let(:current_account) { Fabricate(:account) }
 
@@ -216,9 +208,6 @@ RSpec.describe AccountStatusesFilter do
         end
       end
 
-      # 프로필 API 는 늘 no_direct 를 넣고(Api::V1::Accounts::StatusesController#filter_params),
-      # exclude_direct 는 요청 파라미터로 그대로 들어온다. 둘이 겹치면 no_direct 의
-      # where.not(visibility:) 가 exclude_direct 갈래의 visibility 조건을 merge! 로 지운다.
       context 'when the client also asks to exclude direct messages on the profile API' do
         let(:params) { { exclude_direct: true, no_direct: true } }
 
@@ -252,9 +241,6 @@ RSpec.describe AccountStatusesFilter do
 
         it_behaves_like 'filter params'
 
-        # 상류 4.7.4(#41019): exclude_direct 를 걸어도 나를 멘션한 팔로워 전용 글은 남는다.
-        # 이 포크에서는 미등재도 팔로워 전용이라 같은 규칙을 받는다. 프로필 API 처럼 no_direct
-        # 가 함께 와도(merge! 가 컬럼 조건을 지우는 함정) 결과가 같아야 한다.
         [{ exclude_direct: true }, { exclude_direct: true, no_direct: true }].each do |options|
           context "with #{options.keys.join(' and ')}" do
             let(:params) { options }
@@ -362,7 +348,6 @@ RSpec.describe AccountStatusesFilter do
       subject.pluck(:visibility).uniq
     end
 
-    # compact 한다 — nil 이 섞이면 `to_not be_empty` 가 답글·부스트가 하나도 없어도 통과한다.
     def results_in_reply_to_ids
       subject.pluck(:in_reply_to_id).compact
     end

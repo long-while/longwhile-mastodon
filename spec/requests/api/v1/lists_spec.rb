@@ -134,7 +134,7 @@ RSpec.describe 'Lists' do
         expect(response.content_type)
           .to start_with('application/json')
         expect(response.parsed_body)
-          .to include(error: /#{Regexp.escape(I18n.t('errors.messages.inclusion', attribute: List.human_attribute_name(:replies_policy, locale: :ko), locale: :ko))}/) # 응답 언어는 한국어 고정
+          .to include(error: /#{Regexp.escape(I18n.t('errors.messages.inclusion', attribute: List.human_attribute_name(:replies_policy, locale: :ko), locale: :ko))}/)
       end
     end
   end

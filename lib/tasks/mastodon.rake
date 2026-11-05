@@ -3,14 +3,6 @@
 require 'tty-prompt'
 
 namespace :mastodon do
-  # 이 인스턴스용으로 만든 기능 중, 코드 기본값으로 대신할 수 없는 설정.
-  # DM 채팅이 그렇다 — lib/mastodon/dm_chat.rb 가 물을 때마다 ENV 를 읽고
-  # 'true' 가 아니면 전부 꺼짐으로 보므로, 값을 안 넣은 것과 꺼 둔 것이
-  # 구분되지 않는다.
-  #
-  # 나머지(DM_RATE_LIMIT, STATUS_IDS_LIMIT, SCHEDULED_STATUS_* , COUNT_DIRECT_STATUSES)
-  # 는 이미 .env.production.sample 에 적힌 값이 코드 기본값이라, 다르게 쓰고
-  # 싶을 때만 적으면 된다.
   LONGWHILE_DEFAULTS = {
     'DM_CHAT_ENABLED' => 'true',
   }.freeze
@@ -53,7 +45,6 @@ namespace :mastodon do
 
       prompt.say "\n"
 
-      # Single user mode 안내만 출력하고, 기본값으로 비활성화
       prompt.say('Single user mode disables registrations and redirects the landing page to your public profile.')
       env['SINGLE_USER_MODE'] = false
 
@@ -77,19 +68,16 @@ namespace :mastodon do
 
       prompt.say "\n"
 
-      # Docker는 사용하지 않는 고정값
       using_docker        = false
       db_connection_works = false
 
       prompt.say "\n"
 
-      # PostgreSQL 설정: 호스트/포트/DB/유저는 고정, 비밀번호만 입력
       env['DB_HOST'] = '/var/run/postgresql'
       env['DB_PORT'] = 5432
       env['DB_NAME'] = 'mastodon_production'
       env['DB_USER'] = 'mastodon'
 
-      # 비밀번호는 설정하지 않음 (peer 인증 사용)
       env['DB_PASS'] = ''
 
       # The chosen database may not exist yet. Connect to default database
@@ -116,7 +104,6 @@ namespace :mastodon do
 
       prompt.say "\n"
 
-      # Redis 설정: 호스트/포트는 고정, 비밀번호 없음
       env['REDIS_HOST'] = 'localhost'
       env['REDIS_PORT'] = 6379
 
@@ -138,7 +125,6 @@ namespace :mastodon do
 
       prompt.say "\n"
 
-      # 업로드 파일은 로컬 저장소 사용 (클라우드 설정 스킵)
       if false
         case prompt.select('Provider', ['DigitalOcean Spaces', 'Amazon S3', 'Wasabi', 'Minio', 'Google Cloud Storage', 'Storj DCS'])
         when 'DigitalOcean Spaces'
@@ -332,7 +318,6 @@ namespace :mastodon do
 
       prompt.say "\n"
 
-      # SMTP는 항상 외부 서버 사용, 서버/포트/인증방식 등은 고정
       env['SMTP_SERVER'] = 'smtp-relay.brevo.com'
       env['SMTP_PORT'] = 587
       env['SMTP_AUTH_METHOD'] = 'plain'
@@ -351,22 +336,16 @@ namespace :mastodon do
 
       env['SMTP_FROM_ADDRESS'] = "마스토돈 <mastodon@longwhile.xyz>"
 
-      # 테스트 메일은 발송하지 않음
-
       prompt.say "\n"
 
-      # 업데이트 체크는 항상 비활성화
       env['UPDATE_CHECK_URL'] = ''
 
-      # 4.6 이메일 구독(비로그인 구독자에게 글을 메일로 보냄)은 항상 비활성화
       env['DISABLE_EMAIL_SUBSCRIPTIONS'] = 'true'
 
-      # Multi-account 기본값
       env['MA_MULTI_ACCOUNT_REFRESH_FLOW'] ||= 'true'
       env['MA_MULTI_ACCOUNT_RETAIN_TOKENS'] ||= 'true'
       env['MA_ROLLOUT_PERCENTAGE'] ||= '100'
 
-      # 도메인 기반 multi-account redirect URI 자동 설정
       env['MA_MULTI_ACCOUNT_REDIRECT_URI'] ||= "https://#{env['LOCAL_DOMAIN']}/multi_accounts/callback"
 
       env['AUTHORIZED_FETCH'] ||= 'true'
@@ -378,7 +357,6 @@ namespace :mastodon do
       prompt.say "\n"
       prompt.say 'This configuration will be written to .env.production'
 
-      # 항상 저장
       begin
         incompatible_syntax = false
 
@@ -405,7 +383,6 @@ namespace :mastodon do
         prompt.say "\n"
         prompt.say 'Now that configuration is saved, the database will be prepared (create if missing, then migrate).'
 
-        # 데이터베이스 준비는 항상 실행
         prompt.say 'Running `RAILS_ENV=production rails db:prepare` ...'
         prompt.say "\n\n"
 
@@ -416,7 +393,6 @@ namespace :mastodon do
           errors << 'Preparing the database failed'
         end
 
-        # Asset compile은 캐시 정리 등을 위해 항상 수동으로 수행
         unless using_docker
           prompt.say "\n"
           prompt.say 'Skipping asset compilation. Run `RAILS_ENV=production rails assets:precompile` manually.'
@@ -424,7 +400,6 @@ namespace :mastodon do
 
         prompt.say "\n"
 
-        # Multi-account OAuth client 자동 설정 (항상 실행)
         if db_connection_works
           begin
             ensure_multi_account_client!(env, prompt)
@@ -509,10 +484,6 @@ namespace :mastodon do
   namespace :longwhile do
     desc 'Add any missing longwhile settings to .env.production'
     task :env do
-      # mastodon:setup 도 이 값을 쓰지만 그것은 새로 설치할 때만 돌릴 수 있다 —
-      # .env.production 을 통째로 다시 쓰기 때문에, 돌아가는 서버에서 돌리면
-      # SECRET_KEY_BASE 와 VAPID 키가 갈려 전원이 로그아웃된다. 이 태스크는
-      # 업그레이드용이다. 없는 것만 덧붙이고 이미 있는 줄은 건드리지 않는다.
       env_path = Rails.root.join('.env.production')
 
       unless env_path.exist?
@@ -564,20 +535,16 @@ namespace :mastodon do
     end
   end
 
-  # Multi-account OAuth 클라이언트를 생성하고 .env.production에 ID/SECRET을 추가
   def ensure_multi_account_client!(env, prompt)
-    # ENV에 현재 설정을 반영
     env.each_pair do |key, value|
       ENV[key] = value.to_s
     end
 
-    # Rails 환경 로드 (initialized? 체크로 Zeitwerk 에러 방지)
     unless defined?(Rails) && Rails.application&.initialized?
       require_relative '../../config/environment'
     end
     disable_log_stdout!
 
-    # env 해시에서 직접 config 업데이트 (이미 Rails가 로드된 경우 ENV 변경이 반영되지 않으므로)
     Rails.configuration.x.multi_account[:redirect_uri] = env['MA_MULTI_ACCOUNT_REDIRECT_URI'] if env['MA_MULTI_ACCOUNT_REDIRECT_URI'].present?
     Rails.configuration.x.multi_account[:client_id] = env['MA_MULTI_ACCOUNT_CLIENT_ID'] if env['MA_MULTI_ACCOUNT_CLIENT_ID'].present?
     Rails.configuration.x.multi_account[:client_secret] = env['MA_MULTI_ACCOUNT_CLIENT_SECRET'] if env['MA_MULTI_ACCOUNT_CLIENT_SECRET'].present?
@@ -617,13 +584,11 @@ namespace :mastodon do
       end
     end
 
-    # env 해시 및 Rails 설정 갱신
     env['MA_MULTI_ACCOUNT_CLIENT_ID'] = client_id
     env['MA_MULTI_ACCOUNT_CLIENT_SECRET'] = client_secret
     Rails.configuration.x.multi_account[:client_id] = client_id
     Rails.configuration.x.multi_account[:client_secret] = client_secret
 
-    # .env.production에 없는 경우에만 추가
     env_path = Rails.root.join('.env.production')
     contents = env_path.read
 

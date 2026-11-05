@@ -42,7 +42,7 @@ RSpec.describe 'Status embed' do
         expect(response.parsed_body.at('body.embed'))
           .to be_present
         expect(response.parsed_body.at('#mastodon-status')['data-props'])
-          .to eq({ locale: 'ko', id: status.id.to_s }.to_json) # 화면 언어는 한국어 고정
+          .to eq({ locale: 'ko', id: status.id.to_s }.to_json)
         expect(response.headers).to include(
           'Vary' => 'Accept, Accept-Language, Cookie',
           'Cache-Control' => include('public'),

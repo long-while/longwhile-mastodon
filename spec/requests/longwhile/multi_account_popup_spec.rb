@@ -2,13 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile — 다중 계정의 "계정 추가" 팝업이 거치는 세 웹 경로.
-#   API 쪽(consume · session/refresh · refresh_token)은
-#   spec/requests/api/v1/multi_accounts_spec.rb 가 본다.
-#
-#     GET  /multi_accounts/entry            인가 주소와 state·nonce (account_switcher.tsx)
-#     GET  /multi_accounts/callback         팝업이 opener 에 code 를 넘기는 화면
-#     POST /multi_accounts/session/restore  팝업의 prompt=login 이 로그아웃시킨 세션 되살리기
 RSpec.describe 'Multi-account popup' do
   let(:user) { Fabricate(:user) }
 
@@ -65,7 +58,6 @@ RSpec.describe 'Multi-account popup' do
 
     before { sign_in user }
 
-    # 앱 레이아웃을 쓰면 <html> 이 중첩되고, 바로 닫힐 팝업이 앱 번들을 통째로 받는다.
     it 'renders a bare page that hands the code to the opener only' do
       store_state
 

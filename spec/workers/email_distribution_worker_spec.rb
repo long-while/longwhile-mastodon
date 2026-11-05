@@ -92,9 +92,6 @@ RSpec.describe EmailDistributionWorker do
             end
           end
 
-          # 포크는 Status.public_visibility 스코프를 [:public, :unlisted] 로 넓혀 두었다
-          # (status/visibility.rb). 메일은 공개 글만 보낸다 — 미등재는 이 인스턴스에서
-          # 팔로워 전용과 같이 다루고, 공지 계정의 미등재는 로그인한 사람에게만 보인다(StatusPolicy#show?).
           %i(unlisted private direct).each do |visibility|
             context "when the batch only holds a #{visibility} status", :inline_jobs do
               let(:status) { Fabricate :status, account:, visibility: }

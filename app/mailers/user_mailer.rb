@@ -14,7 +14,6 @@ class UserMailer < Devise::Mailer
 
   helper_method :welcome_guide_url
 
-  # @_longwhile — 가입 확인·환영 메일의 '마스토돈 가이드' 단추. LONGWHILE_GUIDE_URL 로 덮을 수 있다.
   DEFAULT_GUIDE_URL = 'https://stellar-ground-601.notion.site/303d06ebad998013bebbd2946804a568?pvs=73'
 
   before_action :set_instance
@@ -265,7 +264,6 @@ class UserMailer < Devise::Mailer
     @instance = Rails.configuration.x.local_domain
   end
 
-  # ApplicationMailer::MAIL_LOCALE 참고. 호출부(use_current_locale:)는 상류 그대로 둔다.
   def locale(**)
     ApplicationMailer::MAIL_LOCALE
   end

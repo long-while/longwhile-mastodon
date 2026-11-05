@@ -28,9 +28,6 @@ RSpec.describe RemoveStatusService, :inline_jobs do
       Fabricate(:status, account: bill, reblog: status, uri: 'hoge')
     end
 
-    # PostStatusService 가 만드는 글은 이 포크에서 언제나 private 라(943745d134) 공개 스트림
-    # (public:media)에 나간 적이 없다. 그래서 거기로 삭제를 보내는 대신, 그 글을 받은
-    # 팔로워의 스트림으로 삭제가 가는지와 공개 스트림에는 아무것도 안 나가는지를 본다.
     it 'removes status from notifications and from author and local follower home feeds, notifies follower streams but not public ones, sends delete activities' do
       allow(redis).to receive(:publish).with(any_args)
 

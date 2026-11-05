@@ -41,7 +41,6 @@ RSpec.describe Admin::StatusesController do
       end
     end
 
-    # DM 본문은 admin/owner 만 본다(Admin::DirectMessagePolicy, 3b11809336). 목록도 같아야 한다.
     context 'with direct messages on the account' do
       let!(:direct_status) { Fabricate(:status, account: account, visibility: :direct, text: 'secret direct message') }
 

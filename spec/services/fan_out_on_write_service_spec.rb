@@ -111,8 +111,6 @@ RSpec.describe FanOutOnWriteService do
   context 'when status is direct' do
     let(:visibility) { 'direct' }
 
-    # 이 포크에서 DM 은 어느 홈 피드에도 들어가지 않는다 — 보낸 사람·받은 사람 모두
-    # /messages 에서만 본다(fabef61d23 "DM 을 타임라인에서 완전히 뺀다").
     it 'is not added to any home feed and does not broadcast', :inline_jobs do
       subject.call(status)
 

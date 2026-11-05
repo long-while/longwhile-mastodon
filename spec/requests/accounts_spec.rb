@@ -268,7 +268,6 @@ RSpec.describe 'Accounts show response' do
             expect(response.body).to include(status_tag_for(status))
             expect(response.body).to_not include(status_tag_for(status_direct))
             expect(response.body).to_not include(status_tag_for(status_private))
-            # 이 포크에서 미등재는 팔로워 전용이다(c510d868bd). 익명 RSS 에 나오면 안 된다.
             expect(response.body).to_not include(status_tag_for(status_unlisted))
             expect(response.body).to_not include(status_tag_for(status_reblog.reblog))
             expect(response.body).to_not include(status_tag_for(status_reply))

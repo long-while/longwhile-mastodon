@@ -24,7 +24,6 @@ class ActivityPub::TagManager
 
     case target.object_type
     when :person
-      # @_longwhile — 익명화(탈퇴) 계정의 주소에 옛 사용자명을 싣지 않는다. 아이디 주소도 웹 화면이 연다.
       return web_account_url(target.id) if target.anonymized?
 
       target.instance_actor? ? about_more_url(instance_actor: true) : short_account_url(target)

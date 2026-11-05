@@ -87,7 +87,6 @@ RSpec.describe Status::Visibility do
         end
       end
 
-      # 잠금은 이제 팔로우 승인 여부만 정한다. 공개 범위는 잠금과 무관하게 팔로워 전용이다.
       context 'when account is locked' do
         before { subject.account = Fabricate.build(:account, locked: true) }
 

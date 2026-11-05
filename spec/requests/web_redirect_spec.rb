@@ -8,7 +8,6 @@ RSpec.describe 'Legacy /web redirect' do
       get '/web/getting-started'
 
       expect(response).to have_http_status(302)
-      # 요청 스펙은 rails_helper 가 host! 를 LOCAL_DOMAIN 으로 맞춘다. 같은 호스트에 머무는지를 본다.
       expect(URI.parse(response.location).host).to eq(Rails.configuration.x.local_domain)
       expect(response.location).to end_with('/getting-started')
     end

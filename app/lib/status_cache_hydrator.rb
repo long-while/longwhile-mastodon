@@ -59,9 +59,6 @@ class StatusCacheHydrator
       Status.where(account_id: account.id, reblog_of_id: status.id).arel.exists.as('reblogged'),
       ConversationMute.where(account_id: account.id, conversation_id: status.conversation_id).arel.exists.as('muted'),
       Bookmark.where(account_id: account.id, status_id: status.id).arel.exists.as('bookmarked'),
-      # 캐시는 비로그인 렌더라 `replied`(포크가 더한 필드)가 없다. 시리얼라이저의
-      # `object.proper.replies.exists?(account:)` 와 같은 기준(삭제된 답글 제외 — Status 의
-      # 기본 스코프가 arel 에도 실린다)으로 채운다.
       Status.where(in_reply_to_id: status.id, account_id: account.id).arel.exists.as('replied'),
     ]
 

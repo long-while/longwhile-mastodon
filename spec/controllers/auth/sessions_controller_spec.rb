@@ -153,7 +153,6 @@ RSpec.describe Auth::SessionsController do
           expect(emails.first)
             .to have_attributes(
               to: contain_exactly(user.email),
-              # 메일은 화면과 달리 받는 사람의 로캘(없으면 기본 로캘)로 나간다.
               subject: eq(I18n.t('user_mailer.suspicious_sign_in.subject', locale: ApplicationMailer::MAIL_LOCALE))
             )
         end
@@ -299,7 +298,6 @@ RSpec.describe Auth::SessionsController do
             expect(emails.first)
               .to have_attributes(
                 to: contain_exactly(user.email),
-                # 메일은 화면과 달리 받는 사람의 로캘(없으면 기본 로캘)로 나간다.
                 subject: eq(I18n.t('user_mailer.failed_2fa.subject', locale: ApplicationMailer::MAIL_LOCALE))
               )
           end
@@ -538,14 +536,6 @@ RSpec.describe Auth::SessionsController do
     end
   end
 
-  # ═══════════════════════════════════════════════════════════════════════════
-  # @_longwhile — **로그인 뒤 어디로 가는가.**
-  #
-  #   계정 추가 팝업은 `/oauth/authorize?...&prompt=login` 에서 공유 세션을
-  #   일부러 로그아웃시키고(`OAuth::AuthorizationsController`) 그 URL 을 돌아갈
-  #   곳으로 남긴다. 사용자가 거기서 팝업을 닫으면 그 잔해만 세션에 남아,
-  #   **다음 로그인이 메인이 아니라 OAuth 화면으로 끌려갔다.**
-  # ═══════════════════════════════════════════════════════════════════════════
   describe 'POST #create and the stored return location' do
     subject { post :create, params: { user: { email: user.email, password: user.password } } }
 
@@ -573,9 +563,6 @@ RSpec.describe Auth::SessionsController do
       expect(response).to redirect_to(root_path)
     end
 
-    # 핵심 회귀: 팝업이 `prompt=login` 으로 들어오면 `store_current_location` 이
-    # **같은 URL 을 `user_return_to` 에도** 적는다. 표식만 만료시키면
-    # 그쪽으로 그대로 우회해 같은 증상이 다시 난다.
     it 'ignores a stale multi-account authorize URL left in user_return_to' do
       Rails.configuration.x.multi_account[:client_id] = 'ma-client'
       controller.store_location_for(:user, '/oauth/authorize?client_id=ma-client&prompt=login')
@@ -603,7 +590,6 @@ RSpec.describe Auth::SessionsController do
       expect(response).to redirect_to('/oauth/authorize?client_id=abc&prompt=login')
     end
 
-    # 이메일 보안 코드를 기다리느라 10분을 넘겨도, 팝업 state 가 살아 있는 동안은 돌아간다.
     it 'honours a marker as long as the popup state lives' do
       session[:multi_account_return_to] = '/oauth/authorize?client_id=abc&prompt=login'
       session[:multi_account_return_to_at] = 12.minutes.ago.to_i
@@ -630,9 +616,6 @@ RSpec.describe Auth::SessionsController do
       expect(response).to redirect_to(root_path)
     end
 
-    # `multi_account_return_to` 가 있으면 `stored_location_for` 를 읽지도
-    # 않던 시절에는, 쓰이지 않은 `user_return_to` 가 세션에 남아 **그다음**
-    # 로그인을 엉뚱한 곳으로 끌고 갔다.
     it 'consumes user_return_to even when the multi-account marker wins' do
       controller.store_location_for(:user, '/@someone')
       session[:multi_account_return_to] = '/oauth/authorize?client_id=abc'
@@ -643,9 +626,6 @@ RSpec.describe Auth::SessionsController do
       expect(controller.stored_location_for(:user)).to be_nil
     end
 
-    # 4.7.4(#40745): 오래 안 쓴 계정은 암호 다음에 메일로 받은 보안 코드를 한 번 더 넣는다.
-    # 계정 추가 팝업에서 그 계정을 추가할 때도 그 화면을 거치는데, 그 사이 팝업의 돌아갈
-    # 곳 표식이 지워지면 팝업이 인가 화면 대신 홈에 떨어진다.
     context 'when a long-inactive account signs in from the add-account popup' do
       let(:user) { Fabricate(:user, email: 'return-to@example.com', password: 'abcdefgh', current_sign_in_at: 7.months.ago) }
 

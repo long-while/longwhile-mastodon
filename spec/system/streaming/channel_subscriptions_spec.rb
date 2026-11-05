@@ -42,10 +42,6 @@ RSpec.describe 'Channel Subscriptions', :inline_jobs, :streaming do
       streaming_client.connect
       streaming_client.subscribe('public:local')
 
-      # We need to publish a status as there is no positive acknowledgement of
-      # subscriptions.
-      # 이 포크의 PostStatusService 는 모든 글을 private 으로 바꿔 public:local 로는 아무것도
-      # 나가지 않는다(943745d134). 구독 자체를 보려고 공개 글을 직접 팬아웃한다.
       status = Fabricate(:status, account: bob_account, text: 'Hello @alice', visibility: :public)
       FanOutOnWriteService.new.call(status)
 
@@ -70,7 +66,6 @@ RSpec.describe 'Channel Subscriptions', :inline_jobs, :streaming do
       # We need to perform an action that triggers a notification as there is
       # no positive acknowledgement of subscriptions:
       first_status = PostStatusService.new.call(user_account, text: 'Test')
-      # 이 포크의 글은 팔로워 전용이라 팔로워만 부스트할 수 있다(StatusPolicy#reblog?).
       bob_account.follow!(user_account)
       ReblogService.new.call(bob_account, first_status)
 
@@ -92,10 +87,6 @@ RSpec.describe 'Channel Subscriptions', :inline_jobs, :streaming do
       streaming_client.connect
       streaming_client.subscribe('public:local')
 
-      # We need to publish a status as there is no positive acknowledgement of
-      # subscriptions:
-      # 이 포크의 PostStatusService 는 모든 글을 private 으로 바꿔 public:local 로는 아무것도
-      # 나가지 않는다(943745d134). 구독 자체를 보려고 공개 글을 직접 팬아웃한다.
       status = Fabricate(:status, account: bob_account, text: 'Hello @alice', visibility: :public)
       FanOutOnWriteService.new.call(status)
 
@@ -139,7 +130,6 @@ RSpec.describe 'Channel Subscriptions', :inline_jobs, :streaming do
       # We need to perform an action that triggers a notification as there is
       # no positive acknowledgement of subscriptions:
       first_status = PostStatusService.new.call(user_account, text: 'Test')
-      # 이 포크의 글은 팔로워 전용이라 팔로워만 부스트할 수 있다(StatusPolicy#reblog?).
       bob_account.follow!(user_account)
       ReblogService.new.call(bob_account, first_status)
 

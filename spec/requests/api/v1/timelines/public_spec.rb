@@ -26,9 +26,6 @@ RSpec.describe 'Public' do
       get '/api/v1/timelines/public', headers: headers, params: params
     end
 
-    # 이 포크의 퍼블릭 타임라인은 팔로우 중인 계정(+ 본인·공지 계정)의 private/unlisted 글만
-    # 보여준다(PublicFeed, 943745d134). 그래서 사용자가 글쓴이들을 팔로우하고, 팔로우하지 않은
-    # 사람의 private 글은 끝까지 빠져 있는지 함께 본다.
     let!(:local_status)   { Fabricate(:status, visibility: :private, account: Fabricate.build(:account, domain: nil)) }
     let!(:remote_status)  { Fabricate(:status, visibility: :private, account: Fabricate.build(:account, domain: 'example.com')) }
     let!(:media_status)   { Fabricate(:status, visibility: :private, media_attachments: [Fabricate.build(:media_attachment)]) }
@@ -49,7 +46,6 @@ RSpec.describe 'Public' do
         it_behaves_like 'a successful request to the public timeline'
       end
 
-      # 보는 사람이 없으면 모집단이 비어 있다. 아무 글도 나가지 않아야 한다.
       context 'with an anonymous user' do
         let(:headers) { {} }
         let(:expected_statuses) { [] }

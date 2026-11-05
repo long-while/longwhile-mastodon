@@ -18,7 +18,6 @@ class Conversation < ApplicationRecord
 
   has_many :statuses, dependent: nil
 
-  # @_longwhile — DM 채팅. 방 하나가 conversation 여럿을 묶는다. (dm-chat-phase-1.md)
   belongs_to :dm_room, optional: true, inverse_of: :conversations
 
   belongs_to :parent_status, class_name: 'Status', optional: true, inverse_of: :owned_conversation

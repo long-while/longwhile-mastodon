@@ -36,7 +36,7 @@ RSpec.describe 'Admin Webhooks' do
         expect { submit_form }
           .to_not change(Webhook, :count)
         expect(page)
-          .to have_text(/아래 \d+개 오류/) # 화면은 한국어 고정(Localized#requested_locale)
+          .to have_text(/아래 \d+개 오류/)
 
         # Valid submission
         fill_in 'webhook_url', with: 'https://host.example/hooks/123'
@@ -54,7 +54,7 @@ RSpec.describe 'Admin Webhooks' do
         expect { submit_form }
           .to_not change(Webhook, :count)
         expect(page)
-          .to have_text(/아래 \d+개 오류/) # 화면은 한국어 고정(Localized#requested_locale)
+          .to have_text(/아래 \d+개 오류/)
       end
 
       def submit_form

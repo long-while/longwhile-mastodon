@@ -5,7 +5,6 @@ require 'rails_helper'
 RSpec.describe 'Invites' do
   include ActionView::RecordIdentifier
 
-  # 이 포크는 초대를 운영진 전용으로 돌렸다(UserRole::Flags::DEFAULT = NONE). 운영진으로 본다.
   let(:user) { Fabricate :moderator_user }
 
   before { sign_in user }

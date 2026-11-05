@@ -18,7 +18,7 @@ RSpec.describe 'NewStatuses', :inline_jobs, :js, :streaming do
 
     within('.compose-form') do
       fill_in frontend_translations('compose_form.placeholder'), with: status_text
-      click_on frontend_translations('compose_form.publish') # 화면은 한국어 고정
+      click_on frontend_translations('compose_form.publish')
     end
 
     expect(page)

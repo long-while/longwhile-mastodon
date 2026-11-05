@@ -41,9 +41,6 @@ class TagFeed < PublicFeed
 
   private
 
-  # 퍼블릭 툿의 산개 멘션 차단은 여기에 물려받지 않는다. 태그를 눌러 찾아온
-  # 화면에서 "멘션이 달렸다"는 이유로 툿이 사라지면 태그 기능 자체가 반쪽이 된다.
-  # 팔로우 범위·재게시 겹팔로워 규칙은 public_scope 에서 그대로 상속받는다.
   def exclude_mentioning_statuses?
     false
   end

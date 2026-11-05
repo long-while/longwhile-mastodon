@@ -2,10 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile — 본문 서식. TextFormatter#apply_simple_markdown 이 로컬 글의 HTML 을
-#   만들고, 그 HTML 이 그대로 API 의 content 로 나간다. 세부 규칙은
-#   spec/lib/text_formatter_spec.rb 가 본다. 여기서는 **API 응답에 서식이 살아서
-#   나오는지**와, 서식 문법이 마크업 주입 통로가 되지 않는지를 본다.
 RSpec.describe 'Markdown in status content' do
   let(:user)    { Fabricate(:user) }
   let(:token)   { Fabricate(:accessible_access_token, resource_owner_id: user.id, scopes: 'write:statuses read:statuses') }

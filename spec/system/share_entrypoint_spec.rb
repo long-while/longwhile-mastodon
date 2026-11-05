@@ -20,12 +20,10 @@ RSpec.describe 'Share page', :js, :streaming do
       .and have_css('div#mastodon-compose')
       .and have_css('.compose-form__submit')
     expect(find_by_id('mastodon-compose')['data-props'])
-      .to eq('{"locale":"ko"}') # 화면은 한국어 고정
+      .to eq('{"locale":"ko"}')
 
     fill_in_form
 
-    # 업스트림은 게시 뒤 그 글로 이동한다(#35763, 프론트 변경). 이 포크의 프론트는 그 전
-    # 것으로 고정이라 알림 막대만 띄운다.
     expect(page)
       .to have_css('.notification-bar-message', text: frontend_translations('compose.published.body'))
   end

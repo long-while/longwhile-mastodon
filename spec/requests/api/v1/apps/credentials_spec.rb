@@ -132,7 +132,7 @@ RSpec.describe 'Credentials' do
 
         expect(response.parsed_body).to match(
           a_hash_including(
-            error: I18n.t('doorkeeper.errors.messages.invalid_token.revoked', locale: :ko) # 응답 언어는 한국어 고정
+            error: I18n.t('doorkeeper.errors.messages.invalid_token.revoked', locale: :ko)
           )
         )
       end
@@ -152,7 +152,7 @@ RSpec.describe 'Credentials' do
 
         expect(response.parsed_body).to match(
           a_hash_including(
-            error: I18n.t('doorkeeper.errors.messages.invalid_token.unknown', locale: :ko) # 응답 언어는 한국어 고정
+            error: I18n.t('doorkeeper.errors.messages.invalid_token.unknown', locale: :ko)
           )
         )
       end

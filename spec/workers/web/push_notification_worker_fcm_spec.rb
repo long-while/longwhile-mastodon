@@ -2,9 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile — 앱(FCM 네이티브) 푸시는 종단 암호화가 없어 Google 이 평문으로 본다.
-#   DM·팔로워 전용 글의 본문은 자리표시 문구로 바꿔 보낸다. 표준 웹푸시는 암호화되므로
-#   그대로다(맨 끝 예제).
 RSpec.describe Web::PushNotificationWorker do
   subject { described_class.new }
 

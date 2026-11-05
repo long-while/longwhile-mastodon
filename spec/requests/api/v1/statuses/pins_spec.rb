@@ -70,7 +70,7 @@ RSpec.describe 'Pins' do
         expect(response.media_type)
           .to eq('application/json')
         expect(response.parsed_body)
-          .to include(error: /#{Regexp.escape(I18n.t('statuses.pin_errors.limit', locale: :ko))}/) # 응답 언어는 한국어 고정
+          .to include(error: /#{Regexp.escape(I18n.t('statuses.pin_errors.limit', locale: :ko))}/)
       end
     end
 

@@ -12,11 +12,6 @@
 #  dm_room_id :bigint(8)        not null
 #
 
-# @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 채팅
-#   방의 참여자. 이 행의 존재가 방 조회 권한의 근거다.
-#
-#   hidden_at 은 "대화 나가기"(FR-27). 목록에서만 사라지고 방·메시지는 그대로다.
-#   새 메시지가 방에 붙으면 DmRoom#unhide_for_everyone! 이 되돌린다.
 class DmRoomMember < ApplicationRecord
   belongs_to :dm_room
   belongs_to :account

@@ -2,8 +2,6 @@
 
 require 'rails_helper'
 
-# 이 포크는 브라우저 언어나 사용자 설정과 무관하게 언제나 한국어다
-# (`Localized#requested_locale`). 업스트림의 경우마다 같은 입력을 주고 `ko` 를 기대한다.
 RSpec.describe Localized do
   controller(ApplicationController) do
     include Localized # rubocop:disable RSpec/DescribedClass
@@ -13,8 +11,6 @@ RSpec.describe Localized do
     end
   end
 
-  # spec/support/korean_ui_locale.rb 가 깔아 둔 :ko 를 걷는다. 그대로 두면 이
-  # 컨선이 로캘을 정하지 않아도 `ko` 가 나와 통과해 버린다.
   around do |example|
     I18n.with_locale(:en) { example.run }
   end

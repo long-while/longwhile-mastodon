@@ -105,7 +105,6 @@ RSpec.describe 'ActivityPub Outboxes' do
           expect(response.headers['Vary'])
             .to include 'Signature'
 
-          # 미등재는 팔로워 전용이다(c510d868bd). 팔로우하지 않은 쪽에는 공개 글 하나만 나간다.
           expect(response.parsed_body)
             .to include(
               orderedItems: be_an(Array)
@@ -185,7 +184,6 @@ RSpec.describe 'ActivityPub Outboxes' do
           expect(response.headers['Cache-Control'])
             .to eq 'private, no-store'
 
-          # 미등재는 팔로워 전용이다(c510d868bd). 팔로우하지 않은 쪽에는 공개 글 하나만 나간다.
           expect(response.parsed_body)
             .to include(
               orderedItems: be_an(Array)

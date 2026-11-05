@@ -89,7 +89,7 @@ RSpec.describe 'credentials API' do
         expect(response.content_type)
           .to start_with('application/json')
         expect(response.parsed_body)
-          .to include( # 응답 문구는 한국어 고정(Localized)
+          .to include(
             error: /\A#{Regexp.escape(I18n.t('activerecord.errors.messages.record_invalid', errors: '', locale: :ko).strip)}/,
             details: include(note: contain_exactly(include(error: 'ERR_TOO_LONG', description: I18n.t('errors.messages.too_long', attribute: Account.human_attribute_name(:note, locale: :ko), count: Account::NOTE_LENGTH_LIMIT, locale: :ko))))
           )
@@ -119,7 +119,6 @@ RSpec.describe 'credentials API' do
           header: exist,
           attribution_domains: ['example.com']
         )
-      # 값은 저장되지만, 이 포크는 기본 공개 범위를 언제나 private 로 돌려준다(User::HasSettings#setting_default_privacy).
       expect(user.reload)
         .to have_attributes(
           settings: have_attributes(default_privacy: 'unlisted'),

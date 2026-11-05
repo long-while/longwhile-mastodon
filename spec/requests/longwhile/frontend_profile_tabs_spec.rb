@@ -2,12 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile — 프로필 탭이 보내는 파라미터 그대로의 계정 글 목록.
-#
-#   actions/timelines.js 의 expandAccountTimeline / expandAccountFeaturedTimeline /
-#   expandAccountMediaTimeline 이 보내는 조합이다. AccountStatusesFilter 는 포크가
-#   원시 SQL 로 다시 쓴 파일이라(CLAUDE.md "피드의 보안 조건") 상류 스펙은 이 조합을
-#   보지 않는다. 고정된 탭(고정 글)은 merge! 로 group 을 붙이는 갈래라 따로 본다.
 RSpec.describe 'Profile tabs as the frozen web frontend requests them' do
   let(:author)   { Fabricate(:user).account }
   let(:follower) { Fabricate(:user).account }
@@ -15,7 +9,6 @@ RSpec.describe 'Profile tabs as the frozen web frontend requests them' do
   let(:headers)  { { 'Authorization' => "Bearer #{token.token}" } }
 
   let!(:post_status)  { PostStatusService.new.call(author, text: '그냥 글 #태그') }
-  # 자기 글에 단 답글(스레드 잇기)은 상류도 "글" 탭에 남긴다. 남에게 단 답글로 본다.
   let!(:reply_status) do
     friend = Fabricate(:account)
     author.follow!(friend)

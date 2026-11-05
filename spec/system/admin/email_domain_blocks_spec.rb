@@ -110,7 +110,7 @@ RSpec.describe 'Admin::EmailDomainBlocks' do
       click_on I18n.t('admin.email_domain_blocks.search')
 
       expect(page).to have_no_text('mydomain.com')
-      expect(page).to have_text(I18n.t('accounts.nothing_here')) # 화면은 한국어 고정
+      expect(page).to have_text(I18n.t('accounts.nothing_here'))
     end
 
     it 'returns to the list when resetting the search' do

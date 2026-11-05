@@ -2,13 +2,6 @@
 
 require 'rails_helper'
 
-# @_longwhile — 환경설정 수정 화면. "환경설정 → 모양새/알림" 을 상위 두 화면으로
-#   올렸다(docs/settings/phases/settings-phase-5.md, -6.md).
-#
-#     /settings/display        테마·시간대·웹 화면 설정
-#     /settings/notifications  알림 정책(위)과 운영 메일(아래)을 한 폼으로
-#
-#   옛 주소는 북마크와 메일 본문 링크 때문에 남겨 둔 리다이렉트다.
 RSpec.describe 'Preferences' do
   let(:user) { Fabricate(:user) }
 
