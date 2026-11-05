@@ -10,8 +10,6 @@
   }
 }
 
-// @_longwhile — 4.6 상류가 이 안의 <h1> 을 걷어내 로고가 원본 크기로 왼쪽에 붙었다.
-// 이제 header.logo-container 바로 아래에 <a>(또는 OAuth 흐름에서는 <img>)가 온다.
 .logo-container {
   display: flex;
   justify-content: center;

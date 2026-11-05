@@ -13,8 +13,6 @@ $content-width: 840px;
   width: 100%;
   min-height: 100vh;
 
-  // @_longwhile — 4.7 운영 화면(사용자명 차단 목록)이 쓰는 상류 규칙. 상류는 전역
-  //   `.sr-only` 지만, 고정 웹 앱 화면(featured_carousel)도 같은 클래스를 쓰므로 운영 화면에만 건다.
   .sr-only {
     border: 0;
     clip-path: inset(50%);
@@ -99,16 +97,16 @@ $content-width: 840px;
 
     .logo {
       display: block;
-      margin-left: 20px; // 왼쪽 정렬
-      margin-right: auto; // 오른쪽 여백 자동
+      margin-left: 20px;
+      margin-right: auto;
       margin-top: 20px;
       height: 180px;
     }
 
     .logo--wordmark {
       display: block;
-      margin: 0; // 상하좌우 마진 제거
-      width: auto; // 너비는 원본 이미지 비율 유지
+      margin: 0;
+      width: auto;
       height: 100px;
     }
 
@@ -291,9 +289,6 @@ $content-width: 840px;
       }
     }
 
-    // 상류 4.6 이 관리 화면 제목 단계를 바꿨다(S3-a): 쪽 제목 h2 → h1, 구획 제목 h4 → h2,
-    // 중간 제목 h3 → .heading-medium. 레이아웃과 상류 화면은 새 단계를 쓰고, 포크가 고친
-    // 화면에는 옛 h3·h4 가 남아 있어 아래 h3·h4 규칙도 그대로 둔다.
     :where(h1),
     .heading-large {
       color: $secondary-text-color;
@@ -1987,8 +1982,6 @@ a.sparkline {
   }
 }
 
-// v4.5.19 에서 옮겨 왔다 — 관리자 화면의 인용·링크 미리보기·CW(details) 표시.
-// 변수는 이 블록 안에서만 쓰도록 여기 둔다(웹 앱 스타일은 4.4 그대로다).
 $backdrop-blur-filter: blur(10px) saturate(180%) contrast(75%) brightness(70%);
 
 .status__card {
@@ -2223,14 +2216,6 @@ $backdrop-blur-filter: blur(10px) saturate(180%) contrast(75%) brightness(70%);
   }
 }
 
-// ─── @_longwhile — 사진 고르기 (프로필 · 서버 설정의 업로드) ────────────────
-// 사진 자체가 단추다. "파일 선택" 단추와 따로 놓인 미리보기·삭제 링크를 늘어놓지
-// 않는다.
-// 작게, 나란히 둔다. 설정 화면에서 볼 것은 "무엇이 들어 있는가" 뿐이다.
-// --avatar / --header 두 크기를 두었다. 관리자 업로드(썸네일 · 파비콘 ·
-// 앱 아이콘 · 마스코트)는 --avatar 를 쓴다.
-// 파일 입력은 %label 안에 들어 있다 — 사진 어디를 눌러도 파일 고르기가 열린다.
-// 삭제는 label 밖의 링크여야 한다(안에 넣으면 누를 때 파일 고르기도 함께 열린다).
 .image-picker {
   display: flex;
   flex-wrap: wrap;
@@ -2241,8 +2226,6 @@ $backdrop-blur-filter: blur(10px) saturate(180%) contrast(75%) brightness(70%);
   &__item {
     display: flex;
     flex-direction: column;
-
-    // stretch 로 두면 칸이 항목 폭까지 늘어나 헤더의 aspect-ratio 가 무시된다.
     align-items: flex-start;
     gap: 6px;
   }
@@ -2254,7 +2237,6 @@ $backdrop-blur-filter: blur(10px) saturate(180%) contrast(75%) brightness(70%);
     color: $primary-text-color;
   }
 
-  // 올릴 그림의 크기. 캡션 바로 밑에 둔다 — 고르기 전에 봐야 한다.
   &__size {
     margin-top: -6px;
     font-size: 12px;
@@ -2276,8 +2258,6 @@ $backdrop-blur-filter: blur(10px) saturate(180%) contrast(75%) brightness(70%);
     text-decoration: underline;
   }
 
-  // 워드마크를 한쪽만 올렸을 때. 다른 테마의 로고가 옛것이라는 것을 관리자는
-  // 자기 화면에서 볼 수 없다.
   &__notice {
     display: flex;
     gap: 8px;
@@ -2298,7 +2278,6 @@ $backdrop-blur-filter: blur(10px) saturate(180%) contrast(75%) brightness(70%);
     }
   }
 
-  // 아직 아무것도 올리지 않아 기본 그림을 보여 주는 칸. 삭제 단추 자리에 둔다.
   &__badge {
     position: absolute;
     inset-inline-start: 4px;
@@ -2313,7 +2292,6 @@ $backdrop-blur-filter: blur(10px) saturate(180%) contrast(75%) brightness(70%);
     pointer-events: none;
   }
 
-  // 프레임과 삭제 단추를 함께 담는다. 삭제는 여기 기준으로 얹힌다.
   &__slot {
     position: relative;
     display: inline-block;
@@ -2322,35 +2300,29 @@ $backdrop-blur-filter: blur(10px) saturate(180%) contrast(75%) brightness(70%);
   &__frame {
     display: block;
     position: relative;
-    box-sizing: border-box; // 테두리를 폭 안에 넣는다 (docs/README.md 함정 5)
+    box-sizing: border-box;
     cursor: pointer;
     overflow: hidden;
     background: darken($ui-base-color, 4%);
 
-    // 이 인스턴스가 아바타를 어떻게 깎는지 따라간다. 설정 화면의 미리보기가
-    // 실제와 다른 모양이면 "이게 내 프로필 사진 맞나" 가 된다.
     &--avatar {
       width: 80px;
       height: 80px;
       border-radius: var(--avatar-border-radius, 8px);
     }
 
-    // 높이를 아바타에 맞추고 폭은 비율이 정한다. 헤더는 3:1(1500×500)이다.
     &--header {
       height: 80px;
       aspect-ratio: 3 / 1;
       border-radius: 8px;
     }
 
-    // 서버 썸네일은 1200×630 으로 잘린다. 미리보기도 같은 비율로 자른다.
     &--thumbnail {
       height: 80px;
       aspect-ratio: 1200 / 630;
       border-radius: 8px;
     }
 
-    // 워드마크는 340×160 그대로 쓰인다. 자르지 않고, 실제로 놓일 배경 위에
-    // 보여 준다 — 다크용 흰 글자를 흰 칸에 두면 빈 칸처럼 보인다.
     &--wordmark-dark,
     &--wordmark-light {
       height: 80px;
@@ -2362,8 +2334,6 @@ $backdrop-blur-filter: blur(10px) saturate(180%) contrast(75%) brightness(70%);
       }
     }
 
-    // 점선 = 지금 로고의 내용이 차지하는 자리(339×158 중 (7,34)–(334,109)).
-    // 그림이 통째로 줄어 들어가므로 여기 맞추면 같은 크기로 보인다.
     &--wordmark-dark::after,
     &--wordmark-light::after {
       content: '';
@@ -2392,8 +2362,6 @@ $backdrop-blur-filter: blur(10px) saturate(180%) contrast(75%) brightness(70%);
     }
   }
 
-  // 프레임 전체를 덮는 투명한 판. 사진 어디를 눌러도 파일 고르기가 열리고,
-  // 1px 로 잘라 숨겼을 때와 달리 테스트 드라이버가 "안 보인다" 며 거르지 않는다.
   &__input {
     position: absolute;
     inset: 0;
@@ -2401,7 +2369,7 @@ $backdrop-blur-filter: blur(10px) saturate(180%) contrast(75%) brightness(70%);
     height: 100%;
     padding: 0;
     border: 0;
-    font-size: 0; // 파일 입력의 기본 크기가 프레임을 넘지 않게
+    font-size: 0;
     opacity: 0;
     cursor: pointer;
   }
@@ -2430,13 +2398,11 @@ $backdrop-blur-filter: blur(10px) saturate(180%) contrast(75%) brightness(70%);
     }
   }
 
-  // 초점은 마우스가 없는 사람에게 유일한 신호다 — 호버와 같이 취급한다.
   &__frame:hover &__overlay,
   &__frame:focus-within &__overlay {
     opacity: 1;
   }
 
-  // 아직 아무것도 안 올린 자리. 회색 네모만 있으면 눌러도 되는지 모른다.
   &__frame--empty &__overlay {
     opacity: 1;
     background: transparent;
@@ -2486,7 +2452,6 @@ $backdrop-blur-filter: blur(10px) saturate(180%) contrast(75%) brightness(70%);
     opacity: 1;
   }
 
-  // 손가락에는 호버가 없다. 항상 보인다.
   @media (hover: none) {
     &__remove {
       opacity: 1;
@@ -2500,8 +2465,6 @@ $backdrop-blur-filter: blur(10px) saturate(180%) contrast(75%) brightness(70%);
   margin-bottom: 30px;
 }
 
-// 워드마크 묶음. 위의 썸네일·파비콘·앱 아이콘과 선으로 갈라 둔다 — 붙어 있으면
-// 크기·설명이 어느 칸 것인지 헷갈린다.
 .branding-wordmark {
   margin-top: 32px;
   margin-bottom: 30px;
@@ -2527,7 +2490,6 @@ $backdrop-blur-filter: blur(10px) saturate(180%) contrast(75%) brightness(70%);
     color: $primary-text-color;
   }
 
-  // 업로드 칸 둘과 모바일 미리보기 둘을 같은 열에 맞춘다(다크 왼쪽, 라이트 오른쪽).
   &__pair {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 240px));
@@ -2540,8 +2502,6 @@ $backdrop-blur-filter: blur(10px) saturate(180%) contrast(75%) brightness(70%);
   }
 }
 
-// 워드마크가 실제로 가장 작게 쓰이는 자리 — 모바일 헤더(높이 48px, 로고 44px,
-// 왼쪽에 32px 프로필 사진). components.scss 의 .column-header__logo 와 맞춘다.
 .wordmark-preview {
   display: flex;
   align-items: center;
@@ -2574,13 +2534,10 @@ $backdrop-blur-filter: blur(10px) saturate(180%) contrast(75%) brightness(70%);
     width: auto;
     height: 44px;
     margin: 0 auto;
-
-    // 사진 칸만큼 오른쪽을 비워 가운데에 둔다(실제 헤더와 같다).
     transform: translateX(-16px);
   }
 }
 
-// 브랜딩 화면의 "이미지가 쓰이는 곳". 처음 오는 운영자만 펼친다.
 .branding-guide {
   margin-bottom: 20px;
   padding: 12px 14px;
@@ -2609,7 +2566,6 @@ $backdrop-blur-filter: blur(10px) saturate(180%) contrast(75%) brightness(70%);
     }
   }
 
-  // 펼 수 있다는 표시. 기본 삼각형은 테마에 따라 안 보여서 직접 단다.
   & &__chevron {
     margin-inline-start: auto;
     color: $darker-text-color;
@@ -2646,7 +2602,6 @@ $backdrop-blur-filter: blur(10px) saturate(180%) contrast(75%) brightness(70%);
     }
   }
 
-  // 테마가 아이콘 path 를 지우는 것은 .image-picker 와 같다(아래 규칙 참고).
   .icon {
     background-image: none !important;
     mask-image: none !important;
@@ -2658,9 +2613,6 @@ $backdrop-blur-filter: blur(10px) saturate(180%) contrast(75%) brightness(70%);
   }
 }
 
-// docs/README.md 함정 1 — 커스텀 테마(bird-ui / theme-ui)는 아이콘의 원본 path 를
-// 지우고 그 자리에 background-image / mask-image 를 깐다. 새로 만든 영역에는 그
-// 2단계 규칙이 없어 **빈 칸**이 남는다. 이 영역에서는 테마 쪽을 끄고 원본을 살린다.
 body .image-picker {
   .icon {
     background-image: none !important;
@@ -2673,8 +2625,6 @@ body .image-picker {
   }
 }
 
-// 상류 4.6 의 관리 레이아웃이 맨 앞에 두는 "본문으로 건너뛰기" 링크(S3-a).
-// 초점을 받을 때만 보인다.
 .navigation-skip-link {
   position: fixed;
   z-index: 100;

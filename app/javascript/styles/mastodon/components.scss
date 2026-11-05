@@ -92,10 +92,6 @@
   border: 10px none;
   border-radius: 4px;
   box-sizing: border-box;
-
-  // @_longwhile — 채워진 단추 위 글자. 배경(`$ui-button-background-color`)은
-  // 테마가 브랜드색으로 덮는데 글자만 상류 값에 남아, 주황 단추 위 흰 글자가
-  // 2.51:1 이 됐다. 팔레트 토큰을 읽어 배경과 짝이 맞게 한다.
   color: var(--color-on-brand, #{$ui-button-color});
   cursor: pointer;
   display: inline-flex;
@@ -147,7 +143,6 @@
   }
 
   &--destructive {
-
     &:active,
     &:focus,
     &:hover {
@@ -187,7 +182,6 @@
     }
 
     &.button--destructive {
-
       &:active,
       &:focus,
       &:hover {
@@ -306,11 +300,6 @@
   &:active,
   &:focus {
     color: lighten($action-button-color, 7%);
-
-    // @_longwhile — 상류는 여기서 아이콘 색을 그대로 15% 로 깔았다. 아래
-    // `&.inverted` 와 `.active`(이 파일 아래) 가 저마다 다른 색을 깔아,
-    // 같은 줄에 놓인 단추들이 커서를 옮길 때마다 다른 농도로 떴다.
-    // 판은 한 곳(css_variables.scss)에서 --color-light-shade 를 따른다.
     background-color: var(--color-icon-button-hover);
   }
 
@@ -345,9 +334,6 @@
   }
 
   &.active {
-    // @_longwhile — 켜진 아이콘 단추(열람 주의·설문 …)의 색. 별·하트처럼 제 색이
-    // 있는 것은 테마가 따로 덮으므로, 여기 값은 **그 밖의 전부**를 정한다.
-    // 상류의 $highlight-text-color 는 파랑이라 팔레트를 바꾸면 이 칸만 남는다.
     color: var(--color-brand-longwhile, #{$highlight-text-color});
 
     &:hover,
@@ -398,20 +384,6 @@
   }
 }
 
-// @_longwhile — **켜진 상태에도 호버 배경을 준다.**
-//
-// 상류는 `.icon-button.active` 의 호버 배경을 `transparent` 로 지운다(위쪽
-// `&.active` 블록). 켜져 있다는 것을 이미 색으로 알리고 있으니 호버까지 칠하면
-// 과하다는 판단인데, 실제로는 **눌러서 끌 수 있는 버튼인지 알 수 없다.**
-// 알림 켜기/끄기(종 모양)처럼 켜진 상태에서 다시 누르는 것이 주 동작인 버튼이
-// 특히 그렇다 — 켜 놓으면 아예 반응이 없는 장식처럼 보인다.
-//
-// 색은 아이콘 단추 전용 변수를 쓴다. 이 값은 `css_variables.scss` 에서
-// `$primary-text-color` 로부터 뽑으므로 라이트/다크가 저절로 갈린다.
-//
-// `body` 를 붙여 (0,3,1)로 올린다. 상류 규칙과 특이성이 같으면(0,3,0) 순서로
-// 이기지만, 테마 SCSS 가 이 파일보다 **뒤에** 로드되므로 테마가 같은 자리를
-// 건드리기 시작하면 조용히 진다.
 body .icon-button.active {
   &:hover,
   &:focus-visible {
@@ -642,9 +614,6 @@ body>[data-popper-placement] {
     }
   }
 
-  /* @_longwhile — 누르면 수신자 모달이 열린다. 줄처럼 보이되 버튼이다.
-     안쪽 여백을 좌우로 빼서 글자 시작 위치가 예전과 같게 둔다 — 이 줄은
-     작성창 위에 걸린 라벨이라 왼쪽이 어긋나면 눈에 띈다. */
   &__button {
     display: inline;
     margin: 0 -6px;
@@ -893,8 +862,6 @@ body>[data-popper-placement] {
       padding: 8px;
 
       .icon-button.active {
-        // @_longwhile — 하드코딩된 노랑이었다. 테마에 같은 뜻의 토큰이 이미
-        // 있는데 아무도 읽지 않고 있었다(`--color-brand-longwhile-favourite`).
         color: var(--color-brand-longwhile-favourite, #ffbe2e);
         background: rgba(0, 0, 0, 75%);
       }
@@ -954,8 +921,6 @@ body>[data-popper-placement] {
     gap: 12px;
     flex-wrap: wrap;
 
-    // @_longwhile — 작성창 아래 줄의 아이콘 단추. 네 상태가 전부 파랑
-    // 고정이었다. 평상시·호버·꺼짐은 같은 값이라 한 토큰으로 묶는다.
     .icon-button {
       box-sizing: content-box;
       color: var(--color-brand-longwhile, #{$highlight-text-color});
@@ -1315,7 +1280,6 @@ body>[data-popper-placement] {
     letter-spacing: 0.25px;
     display: block;
     padding: 0;
-    // 원본 글 전체를 보여주되, 긴 글은 작성창을 밀어내지 않도록 내부에서만 스크롤
     max-height: 20em;
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -1577,7 +1541,6 @@ body>[data-popper-placement] {
   }
 
   &.light {
-
     .status__relative-time,
     .status__visibility-icon {
       color: $light-text-color;
@@ -1840,7 +1803,6 @@ body>[data-popper-placement] {
 
 .status__wrapper-direct,
 .notification-ungrouped--direct {
-
   .status__prepend,
   .notification-ungrouped__header {
     color: $highlight-text-color;
@@ -1855,15 +1817,6 @@ body>[data-popper-placement] {
   margin-top: 16px;
 }
 
-// @_longwhile — 답글·재게시·마음에 들어요·북마크가 위로 붙어 보이던 것.
-//   바깥 `.status__action-bar` 에는 `align-items: center` 가 있지만, 그 안의
-//   래퍼는 스타일이 하나도 없는 **블록** div 다. 그 안에서 버튼은
-//   `display: inline-flex` 라 텍스트 baseline 위에 앉고, 아래로 글꼴의 descender
-//   만큼(실측 1.5px) 빈 줄 공간이 생긴다. 래퍼가 버튼보다 그만큼 커지고 버튼은
-//   위쪽에 붙는다 — 실제로 `.detailed-status__button` 이 25.5px, 안의 버튼이 24px
-//   이었다.
-//   "더보기"만 멀쩡했던 이유는 그쪽 래퍼(`.detailed-status__action-bar-dropdown`)
-//   에는 `align-items: center` 가 이미 있어서다. 같은 것을 나머지에도 준다.
 .status__action-bar__button-wrapper
 {
   display: flex;
@@ -1871,22 +1824,6 @@ body>[data-popper-placement] {
   justify-content: left;
 }
 
-// @_longwhile — 숫자가 붙은 버튼 **하나만** 아이콘이 왼쪽으로 밀려 다섯 개의
-// 간격이 어긋나 보이던 것.
-
-// `.icon-button` 은 `justify-content: center` 라 [아이콘 + 간격 + 숫자] 를 한
-// 덩어리로 놓고 가운데를 맞춘다. 그런데 버튼 폭은 테마가 고정해 둔다
-// (`.layout-single-column .status__action-bar .icon-button`). 그래서 숫자가
-// 생기면 덩어리가 넓어진 만큼 **아이콘이 왼쪽으로 밀린다.** 실측으로 버튼
-// 좌측에서 12.11px → 10.11px 였고, 여기에 상류의
-// `.icon-button--with-counter { padding-inline-end: 4px }` 가 2px 을 더 보태
-// 최종 3px 까지 밀렸다. 답장에만 숫자가 붙는 경우가 많아 첫 아이콘 하나만
-// 어긋나 보인다.
-
-// 숫자를 흐름에서 빼면 남는 항목이 아이콘 하나뿐이라 폭 한가운데에 그대로
-// 선다. 버튼 상자는 건드리지 않으므로 테마가 정한 폭도 hover 배경도 그대로다.
-//   `padding-inline-end` 도 되돌린다. 그 여백은 숫자와 오른쪽 끝을 띄우려던
-//   것인데, 숫자가 상자 밖으로 나갔으니 가운데만 2px 틀어 놓는 값이 된다.
 .status__action-bar__button.icon-button--with-counter {
   position: relative;
   padding-inline-end: 0;
@@ -1896,8 +1833,6 @@ body>[data-popper-placement] {
     inset-inline-start: 100%;
     top: 50%;
     transform: translateY(-50%);
-
-    // 원래 flex `gap` 이 만들던 간격과 같다.
     margin-inline-start: 4px;
   }
 }
@@ -2020,14 +1955,12 @@ body>[data-popper-placement] {
 }
 
 .detailed-status__wrapper-direct {
-
   .detailed-status,
   .detailed-status__action-bar {
     background: color.mix($ui-base-color, $ui-highlight-color, 95%);
   }
 
   &:focus {
-
     .detailed-status,
     .detailed-status__action-bar {
       background: color.mix(lighten($ui-base-color, 4%),
@@ -2440,18 +2373,6 @@ a.account__display-name {
   text-overflow: ellipsis;
 }
 
-// @_longwhile — 계정 목록의 **이름은 본문 글자색으로 고정한다.**
-//
-// 테마가 이 줄 전체를 가라앉은 색으로 칠한다.
-//
-//   .layout-single-column .account .account__display-name  (0,3,0)
-//     { color: var(--color-light-purple) }
-//
-// 핸들(@id)은 그래도 되지만 이름까지 흐려지면 목록에서 누가 누구인지 읽는 데
-// 시간이 걸린다. 핸들은 그대로 두고 이름만 되돌린다.
-//
-// `body` 를 붙여 (0,4,1)로 올린다 — 테마가 이 파일보다 뒤에 로드되므로
-// 특정도가 같으면 순서로 진다.
 body .account__display-name .display-name strong {
   color: var(--color-fg, #{$primary-text-color});
 }
@@ -2490,7 +2411,6 @@ body .account__display-name .display-name strong {
 }
 
 .muted {
-
   .status__content,
   .status__content p,
   .status__content a {
@@ -3023,7 +2943,6 @@ body .account__display-name .display-name strong {
 }
 
 .react-swipeable-view-container {
-
   &,
   .columns-area,
   .drawer,
@@ -3194,7 +3113,6 @@ body .account__display-name .display-name strong {
   }
 
   .columns-area>div {
-
     .column,
     .drawer {
       padding-inline-start: 5px;
@@ -3232,8 +3150,6 @@ body .account__display-name .display-name strong {
   .search__input {
     line-height: 18px;
     font-size: 16px;
-
-    // 좌우 여백은 `.search` 의 padding-inline 이 갖는다.
     padding: 15px 0;
   }
 
@@ -3245,31 +3161,11 @@ body .account__display-name .display-name strong {
     }
   }
 
-  // @_longwhile — 아래쪽 10px 을 0 으로 내렸다. 상류는 칼럼 아래에 여백을 두어
-  // 배경이 조금 비치게 했는데, 우리 화면들은 칼럼이 화면 끝까지 닿는 편이 낫다.
   @media screen and (min-width: $no-gap-breakpoint) {
     padding: 0;
   }
 }
 
-// @_longwhile — 하단 바 아이콘을 20px 로. 햄버거만 24px 그대로 둔다.
-//
-// 새로 넣은 `bird-theme-svg` 아이콘들은 그림이 viewBox 를 꽉 채운다. 반면
-// 마스토돈 기본 아이콘(햄버거)은 안쪽에 여백을 두고 그려져 있어, **같은
-// 24px 이라도 우리 것이 눈에 띄게 크다.** 실제 그림 크기를 맞추려고 우리
-// 쪽만 줄인다.
-//
-// 특이성을 두 번 맞춰야 한다. 테마가 배지 있는 것과 없는 것을 따로 잡는다.
-//
-//     .layout-single-column .ui__navigation-bar__item svg                    (0,2,1)
-//     .layout-single-column .ui__navigation-bar__item .icon-with-badge svg   (0,3,1)
-//
-// 바깥 `__items` 가 클래스 칸을 하나 더해 주므로, `body` 와 함께 각각
-// (0,2,2)·(0,3,2)가 되어 둘 다 이긴다. (☰ 칸이 있던 때는 `:not(--menu)` 로
-// 같은 특이성을 냈다. 그 칸을 없애면서 선택자만 바꿨다.)
-//
-// 미디어 쿼리를 두지 않는다. 이 바 자체가 `min-width: $mobile-breakpoint + 1px`
-// 에서 `display: none` 이라 넓은 화면에는 존재하지 않는다.
 body .ui__navigation-bar__items .ui__navigation-bar__item {
   svg,
   .icon-with-badge svg {
@@ -3278,32 +3174,20 @@ body .ui__navigation-bar__items .ui__navigation-bar__item {
   }
 }
 
-// @_longwhile — 모바일 전용 글쓰기 단추 (navigation_bar.tsx 의 ComposeFab).
-//
-// 하단 바에 있던 "새 게시물" 을 여기로 옮겼다. 다섯 칸 중 하나를 글쓰기가
-// 차지하고 있었는데 그 자리에 채팅이 들어가야 했다.
-//
-// **하단 바 위에 얹힌다.** `bottom` 은 바의 높이(54px)에 여백을 더한 값이다 —
-// 그 숫자가 바뀌면 여기도 같이 바꿔야 한다. `z-index` 는 바(40)보다 하나 낮게
-// 두어, 겹칠 일이 생기면 바가 이긴다. 바는 화면 이동 수단이라 가려지면 안 된다.
 .ui__compose-fab {
   position: fixed;
   inset-inline-end: 16px;
   inset-block-end: 70px;
   z-index: 39;
-
   display: flex;
   align-items: center;
   justify-content: center;
   width: 56px;
   height: 56px;
   border-radius: 50%;
-
   background: var(--color-brand-longwhile, $ui-highlight-color);
   color: $white;
   text-decoration: none;
-
-  // 타임라인 위에 떠 있으므로 그림자로 층을 나눈다. 없으면 글에 파묻힌다.
   box-shadow: 0 2px 8px rgba($base-shadow-color, 0.3);
 
   .icon {
@@ -3316,15 +3200,11 @@ body .ui__navigation-bar__items .ui__navigation-bar__item {
     background: var(--color-brand-longwhile-hover, $ui-highlight-color);
   }
 
-  // 넓은 화면에는 작성창 패널이 따로 있다. 하단 바가 사라지는 지점과 같은
-  // 곳에서 함께 사라져야 한다.
   @media screen and (min-width: $mobile-breakpoint + 1px) {
     display: none;
   }
 }
 
-// 움직임 줄이기를 켠 사용자에게는 헤더·하단 막대를 미끄러뜨리거나 서서히
-// 흐리지 않는다. 숨고 흐려지는 것 자체는 그대로다.
 .reduce-motion {
   .tabs-bar__wrapper,
   .ui__navigation-bar {
@@ -3332,7 +3212,6 @@ body .ui__navigation-bar__items .ui__navigation-bar__item {
   }
 }
 
-// 모바일 하단 막대의 높이.
 $ui-navigation-bar-height: 54px;
 
 .ui__navigation-bar {
@@ -3352,8 +3231,6 @@ $ui-navigation-bar-height: 54px;
     display: none;
   }
 
-  // 아래로 스크롤하는 동안 흐리게(hooks/useHideOnScroll 의 useDimOnScroll).
-  // 배경과 아이콘을 함께 흐리므로 막대 전체의 opacity 로 한다.
   transition: opacity 170ms cubic-bezier(0, 0, 1, 1);
 
   &--dimmed {
@@ -3476,7 +3353,6 @@ $ui-navigation-bar-height: 54px;
   }
 
   .layout-single-column {
-
     .column>.scrollable,
     .tabs-bar__wrapper .column-header,
     .tabs-bar__wrapper .column-back-button,
@@ -3787,7 +3663,6 @@ $ui-navigation-bar-height: 54px;
 
 .navigation-panel {
   &--full {
-
     .navigation-panel__profile,
     .navigation-panel__compose-button {
       display: none;
@@ -3962,7 +3837,6 @@ $ui-navigation-bar-height: 54px;
   color: $dark-text-color;
 }
 
-// 모바일 서랍의 "팔로잉 N명 · 팔로워 N명". 숫자만 진하게 둔다(X 와 같다).
 .navigation-panel__profile-counts {
   display: flex;
   flex-wrap: wrap;
@@ -4061,9 +3935,6 @@ $ui-navigation-bar-height: 54px;
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.45);
-
-    // 하단 막대(40)와 글쓰기 단추(39)까지 덮는다. 서랍은 `body` 로 포털돼
-    // 있으므로(navigation_panel.jsx) 이 값이 그 둘과 같은 맥락에서 비교된다.
     z-index: 50;
 
     @media screen and (min-width: $mobile-breakpoint + 1px) {
@@ -4093,7 +3964,6 @@ $ui-navigation-bar-height: 54px;
 }
 
 .navigation-panel--mobile {
-
   .column-link,
   .column-link:hover,
   .column-link:focus,
@@ -4110,22 +3980,9 @@ $ui-navigation-bar-height: 54px;
 }
 
 @media screen and (max-width: $mobile-breakpoint) {
-  // @_longwhile — **모바일 오른쪽 메뉴는 서랍(wrapper)이 통째로 스크롤한다.**
-  //   예전에는 스크롤을 받을 자리가 아무 데도 없었다. 서랍에는 세로 overflow
-  //   지정이 없고, 안쪽 `.navigation-panel` 은 `height: calc(100% - 20px)` 로
-  //   화면 높이에 묶여 있으며, 그 안의 `.navigation-panel__menu` 는
-  //   `flex: 1 1 auto; min-height: 0` 으로 줄어든 뒤(아래 `overflow: visible`
-  //   블록이 위쪽의 `overflow-y: auto` 를 덮는다) 내용을 그냥 흘려보냈다.
-  //   그래서 항목이 화면보다 많아지면 아래쪽(설정·계정 전환·로그아웃)에
-  //   손이 닿지 않았다.
-  //   스크롤 컨테이너를 **서랍 하나로** 정하고, 안쪽 패널은 내용만큼 늘어나게
-  //   둔다. 패널을 flex 아이템으로 두면 `align-items: stretch` 가 높이를 다시
-  //   화면 높이로 묶으므로 서랍은 `display: block` 이어야 한다.
   .navigation-panel__wrapper {
     position: fixed;
     inset-block: 0;
-
-    // 헤더 왼쪽 위의 아바타 단추가 여는 서랍이라 그 쪽에서 나온다(X 와 같다).
     inset-inline-start: 0;
     inset-inline-end: auto;
     max-width: 100vw;
@@ -4134,23 +3991,15 @@ $ui-navigation-bar-height: 54px;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
     transform: translateX(-100%);
-
-    // 닫혀 있으면 화면 밖에 있어도 키보드·스크린 리더가 안의 링크 수십 개로
-    // 들어간다(서랍은 body 의 마지막 자식이다). 숨기되, 미끄러져 나가는
-    // 0.3초가 끝난 뒤에 숨긴다. 열 때는 바로 보인다(`--open` 쪽).
     visibility: hidden;
     transition:
       transform 0.3s ease,
       visibility 0s linear 0.3s;
 
-    // 프로그램이 서랍에 포커스를 옮길 때(navigation_panel.jsx) 테두리를 그리지
-    // 않는다. 안의 링크는 각자 포커스 표시를 그대로 갖는다.
     &:focus {
       outline: none;
     }
 
-    // 오버레이(50)보다 위. 닫히는 동안에는 오버레이 클래스가 먼저 빠지므로,
-    // 이 값이 낮으면 미끄러져 나가는 서랍이 하단 막대 밑으로 들어간다.
     z-index: 51;
     display: block;
   }
@@ -4163,17 +4012,6 @@ $ui-navigation-bar-height: 54px;
     transform: translateX(0);
   }
 
-  // @_longwhile — 서랍은 이제 하단 막대 **위에** 뜬다(위의 z-index 와 포털).
-  //   예전에는 막대가 서랍의 아래 54px 을 덮어서 그만큼 아랫여백을 두었다.
-  //   지금은 홈바(iOS)만 피하면 된다.
-  //   **선택자에 `__container` 를 하나 더 붙이는 것이 핵심이다(클래스 3개).**
-  //   네 테마 파일이 모두 `.layout-* .navigation-panel { padding: 10px }` 을
-  //   **클래스 2개**로 걸어 두고 이 파일보다 **뒤에 로드된다.** 그래서
-  //   `.navigation-panel__wrapper > .navigation-panel`(역시 2개)로 적으면 동점으로
-  //   져서 아랫여백이 단축 `padding` 에 통째로 10px 로 덮였다.
-  //   아래 `.search` · `__menu` 규칙은 이미 클래스 3개라 그대로 이긴다.
-  //   가로 여백은 일부러 건드리지 않는다 — `padding-bottom` 만 적어
-  //   테마가 정한 좌우 값은 그대로 두고 아랫면만 바꿈다.
   .navigation-panel__container .navigation-panel__wrapper > .navigation-panel {
     height: auto;
     min-height: 100%;
@@ -4184,36 +4022,16 @@ $ui-navigation-bar-height: 54px;
     padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   }
 
-  // @_longwhile — 검색창 아래 24px 은 테마(bird-ui · theme-ui)의
-  //   `.layout-single-column .search` 가 준다. 서랍에서만 지우면 되므로
-  //   테마 네 벌을 손대는 대신 여기서 더 좋은 선택자(클래스 3개)로 덮는다.
-  //   그래야 어느 테마를 써도 같게 동작한다.
   .navigation-panel__wrapper > .navigation-panel .search {
     margin-bottom: 0;
-
-    // @_longwhile — **폭은 margin 이 아니라 `width` 로 줄인다.**
-    //   `.search` 는 `search-input` mixin 때문에 `width: 100%` 다. 그래서
-    //   좌우 margin 을 아무리 줄도 상자가 줄지 않고 **오른쪽으로 그만큼
-    //   샐져나가**, 서랍의 `overflow-x: hidden` 에 잘렸다. 검색칸이 항상
-    //   오른쪽 끝까지 닿아 보이던 이유다 — margin 만 주면 화면에는 아무
-    //   변화가 없다. `width: auto` 로 돌려놓아야 margin 이 폭을 줄인다.
     width: auto;
-
-    // 왼쪽은 위의 `margin: 16px 8px 12px` 이 준 8px 그대로, 오른쪽만 10px.
-    // 논리 속성으로 적는다 — 그 단축은 좌우를 물리적으로 같이 넣으므로
-    // RTL 에서는 이쪽이 왼쪽이 돼야 맞다.
     margin-inline-end: 10px;
-
-    // 모바일 검색칸 색은 테마 파일에도 있지만, 그건 bird-ui · theme-ui
-    // 번들에만 들어간다. 기본/라이트 테마에서도 같게 보이도록 여기서도
-    // 한 번 더 적는다. 토큰이 없는 테마는 지금까지 쓰던 값으로 돌아간다.
     background-color: var(
       --color-mobile-search-bg,
       var(--input-background-color)
     );
   }
 
-  // 내용만큼 늘어나야 서랍이 스크롤할 것이 생긴다. 줄어들면 다시 잘린다.
   .navigation-panel__wrapper > .navigation-panel > .navigation-panel__menu {
     flex: 0 0 auto;
     min-height: 0;
@@ -4225,12 +4043,6 @@ $ui-navigation-bar-height: 54px;
     transition: transform 0.3s ease;
   }
 
-  // @_longwhile — 서랍 뒤의 어두운 막(스크림)을 서랍과 **같은 0.3초로** 서서히
-  //   깔고 걷는다. 예전에는 열리는 순간 `--overlay` 가 붙으며 위치·배경이 한
-  //   번에 바뀌어 막이 "확" 덮였다. 모바일에서는 컨테이너를 늘 화면 전체에
-  //   깔아 두고(닫혀 있으면 투명하고 클릭이 통과한다) 배경색만 바꾼다.
-  //   서랍은 body 로 포털돼 있고 모바일 레이아웃에서만 그려지므로, 화면을
-  //   덮는 이 막이 다른 화면에 끼어들 일은 없다.
   .navigation-panel__container {
     position: fixed;
     inset: 0;
@@ -4244,30 +4056,21 @@ $ui-navigation-bar-height: 54px;
     }
   }
 
-  // 위 규칙과 특정도가 같아 **뒤에 있어야 이긴다.**
   .navigation-panel__container--overlay {
     background-color: rgba(0, 0, 0, 45%);
     pointer-events: auto;
   }
 
-  // 서랍이 열려 있는 동안 뒤의 타임라인이 스크롤되지 않게 한다. 어두운 바깥을
-  // 끌면 iOS 에서 페이지가 움직였다. 클래스는 navigation_panel.jsx 가 붙인다.
   html.navigation-panel-open,
   html.navigation-panel-open body {
     overflow: hidden;
   }
 
-  // @_longwhile — 서랍 맨 위의 프로필 블록. X 처럼 사진을 한 줄 차지하게
-  //   두고, 그 아래로 이름·핸들·팔로잉/팔로워 수를 쌓는다.
-  //   `.navigation-panel--mobile …` 규칙(위쪽, 미디어 쿼리 밖)과 특정도가 같아
-  //   **뒤에 있는 이쪽이 이긴다.** 위로 옮기지 말 것.
   .navigation-panel--mobile .navigation-panel__profile {
     margin: 12px 16px 0;
     gap: 10px;
   }
 
-  // 서랍의 메뉴는 모두 굵게(X 와 같다). 테마는 선택된 항목만 굵게 하므로
-  // 서랍 안에서만 덮는다 — PC 사이드바는 그대로다.
   .navigation-panel__container .navigation-panel__wrapper .column-link {
     font-weight: 700;
   }
@@ -4452,9 +4255,6 @@ $ui-navigation-bar-height: 54px;
   display: flex;
   align-items: center;
   gap: 5px;
-
-  // 칼럼 색은 헤더가 칠한다(이 파일 맨 아래). 버튼이 판을 들고 있으면
-  // `flex: 1` 때문에 헤더 폭만큼 늘어나, 원형이어야 할 호버가 긴 알약이 된다.
   background: transparent;
   border: 0;
   font-family: inherit;
@@ -4510,8 +4310,6 @@ $ui-navigation-bar-height: 54px;
   height: 20px;
   padding: 0;
   border-radius: 10px;
-
-  // @_longwhile — 꺼진 상태의 트랙. 테마의 흐린 글자 토큰을 따른다.
   background-color: var(--color-dim, #{$ui-primary-color});
 }
 
@@ -4778,7 +4576,6 @@ a.status-card {
   &:hover,
   &:focus,
   &:active {
-
     .status-card__title,
     .status-card__host,
     .status-card__author,
@@ -4795,7 +4592,6 @@ a.status-card {
   &:hover,
   &:focus,
   &:active {
-
     .status-card__title,
     .status-card__host,
     .status-card__author,
@@ -5200,9 +4996,6 @@ a.status-card {
   display: flex;
 }
 
-// @_longwhile — 모바일 홈 헤더의 제목 자리에 들어가는 내 프로필 사진.
-//   누르면 서랍이 열린다(mobile_menu_avatar_button.tsx). 세로 여백은 제목
-//   단추(`padding: 13px`)와 헤더 높이가 같아지도록 맞췄다.
 .column-header__avatar-menu {
   display: flex;
   flex: 0 0 auto;
@@ -5223,23 +5016,14 @@ a.status-card {
   }
 }
 
-// 사진 옆에 제목이 남는 화면(알림 등). 사진 단추의 오른쪽 여백이 이미 있으므로
-// 제목의 왼쪽 여백을 겹쳐 두지 않는다.
 .column-header__avatar-menu + .column-header__title {
   padding-inline-start: 0;
 }
 
-// 메시지 목록 헤더는 자기 여백(`padding: 12px 16px`)과 `gap` 이 있다.
 .dm-room-list__header .column-header__avatar-menu {
   padding: 0;
 }
 
-// @_longwhile — 홈·퍼블릭 위의 탭 줄(timeline_tabs.tsx). 제목 자리를 차지한다.
-//   넓은 화면: [홈 | 퍼블릭][버튼] 한 줄. 버튼은 위쪽 규칙대로 떠 있으므로
-//   그만큼 탭의 오른쪽을 비운다(제목과 같은 방식, 개수를 세서).
-//   모바일:    [사진][로고][버튼] 아래에 [홈 | 퍼블릭] 한 줄(X 와 같다).
-//   높이는 기존 헤더(제목 단추)와 같은 48px 로 맞춘다. bird-ui 가 헤더 뒤에 까는
-//   배경(`.tabs-bar__wrapper::after`)이 49px 이라, 그보다 높으면 틈이 비친다.
 .column-header__tabs {
   display: flex;
   flex: 1 1 auto;
@@ -5278,7 +5062,6 @@ a.status-card {
     color: $primary-text-color;
     font-weight: 700;
 
-    // 글자 폭을 따르되 너무 짧은 이름("홈")에서도 56px 은 되게 한다.
     span::after {
       content: '';
       position: absolute;
@@ -5293,9 +5076,6 @@ a.status-card {
   }
 }
 
-// @_longwhile — 관리자가 올린 워드마크(ThemeHelper#custom_wordmark_tag). 변수가
-// 없으면 이 선언이 무효가 되어 <img> 의 번들 그림이 그대로 보인다. 라이트 번들은
-// mastodon-light/diff.scss 가 --lw-wordmark-light 로 다시 덮는다.
 img.logo--wordmark {
   content: var(--lw-wordmark-dark);
 }
@@ -5320,8 +5100,6 @@ img.logo--wordmark {
   .column-header--tabbed {
     flex-wrap: wrap;
 
-    // 버튼은 첫 줄(사진·로고 줄)에만 걸친다. 기본값(`inset-block: 0`)이면
-    // 두 줄 전체의 가운데, 즉 탭 위에 겹친다.
     .column-header__buttons {
       inset-block-end: auto;
       height: 48px;
@@ -5332,19 +5110,11 @@ img.logo--wordmark {
     }
   }
 
-  // 탭 줄은 따로 배경을 깔지 않는다. 테마가 헤더 뒤에 까는 반투명 판
-  // (`.tabs-bar__wrapper::after`, 높이 49px = 한 줄)을 헤더 전체로 늘려 두
-  // 줄이 한 장처럼 이어지게 한다. 따로 깔면 겹친 부분만 더 하얗게 보였다.
-  // 테마의 규칙(클래스 4개)이 이 파일보다 뒤에 오므로 `body` 를 붙여 이긴다.
   body.app-body:not(.layout-multiple-columns):has(.column-header--tabbed)
     .tabs-bar__wrapper::after {
     height: 100%;
   }
 
-  // @_longwhile — 아래로 스크롤하면 헤더가 위로 숨는다(hooks/useHideOnScroll).
-  //   `transform` 은 숨길 때만 건다. 평소에도 걸어 두면 이 상자가 안쪽
-  //   `position: fixed` 요소(드롭다운 등)의 기준이 돼 버린다. 전환은 양쪽
-  //   다 동작한다(none ↔ translate).
   .tabs-bar__wrapper {
     transition: transform 350ms cubic-bezier(0, 0, 0, 1);
   }
@@ -5353,7 +5123,6 @@ img.logo--wordmark {
     transform: translate3d(0, -100%, 0);
   }
 
-  // 사진이 없을 때(로그아웃)도 줄 높이가 남도록 로고가 48px 을 차지한다.
   .column-header__logo {
     display: flex;
     flex: 1 1 auto;
@@ -5362,22 +5131,17 @@ img.logo--wordmark {
     height: 48px;
     pointer-events: none;
 
-    // 그림 안에 위아래 여백이 커서(글자는 높이의 40% 남짓) 줄 높이에
-    // 가깝게 키워야 글자가 읽힌다.
     .logo {
       width: auto;
       height: 44px;
     }
   }
 
-  // 사진 단추 폭(32 + 13 × 2)만큼 오른쪽을 비워 로고를 화면 가운데에 둔다.
   .column-header__avatar-menu ~ .column-header__logo {
     margin-inline-end: 58px;
   }
 }
 
-// 아바타가 제목을 대신할 때 남겨 두는 제목 글자. 화면에는 안 보이고
-// 스크린 리더에는 h1 의 이름으로 읽힌다.
 .column-header__hidden-title {
   position: absolute;
   width: 1px;
@@ -5390,18 +5154,6 @@ img.logo--wordmark {
   border: 0;
 }
 
-// @_longwhile — 헤더 버튼을 제목 **위 레이어로** 올린다.
-
-//   기본 구조에서 `.column-header` 는 flex 행이고 제목과 버튼 묶음이 나란히
-//   자리를 나눠 갖는다. 버튼이 늘어날수록 제목 칸이 줄어들어, 같은 화면인데
-//   버튼 개수에 따라 제목이 다른 길이에서 잘린다.
-
-//   버튼 묶음만 흐름에서 빼면 제목 단추가 헤더 폭을 전부 쓰고, 버튼은 그 위에
-//   뜸다. `.column-header` 에는 이미 `position: relative` 가 있어 기준점을 새로
-//   만들 필요가 없다.
-
-//   **단일 칼럼에서만 한다.** 고급 UI(다중 칼럼)는 칼럼이 좁아서 버튼이 제목을
-//   덮는 편이 오히려 나쁘다.
 body.layout-single-column {
   .column-header__buttons {
     position: absolute;
@@ -5410,15 +5162,6 @@ body.layout-single-column {
     align-items: center;
   }
 
-  // 제목 끝이 버튼 밑으로 파고들지 않게 그만큼 비운다.
-
-  //   **개수를 세서 정한다.** `column_header.tsx` 는 이 칸에 `extraButton` 과
-  //   `collapseButton` 을 넣는데, 홈·알림·리스트·즐겨찾기·재게시한 사람은
-  //   둘 다 넣는다 — **두 개가 오히려 흔한 쪽이다.** 한 개 기준으로 고정값을
-  //   박아 두면 그 화면들에서 제목이 버튼 아래로 들어간다.
-
-  //   버튼 하나는 아이콘 24 + 좌우 padding 15 × 2 = 54px 이다.
-  //   버튼이 아예 없는 헤더는 여백도 없다 — 전체에 깔면 빈 칸만 생긴다.
   .column-header:has(.column-header__buttons > *) .column-header__title {
     padding-inline-end: 56px;
   }
@@ -5445,17 +5188,13 @@ body.layout-single-column {
   cursor: pointer;
   font-size: 16px;
   padding: 0 15px;
-  background: transparent; // 이 줄 추가
-  background-color: transparent; // 이 줄도 추가
+  background: transparent;
+  background-color: transparent;
 
   &:last-child {
     border-start-end-radius: 4px;
   }
 
-  // @_longwhile — 호버에 판을 깔지 않는다. 아이콘 하나만 놓인 자리라 판이
-  //   생기면 헤더가 들썩인다.
-  //   **!important 였다.** 테마가 같은 자리를 transparent 로 덮어도 이기지
-  //   못해, 고친 줄 알고 지나쳤다. 여기서 없앤다.
   &:hover {
     color: lighten($darker-text-color, 4%);
     background: transparent;
@@ -5532,7 +5271,6 @@ body.layout-single-column {
 }
 
 .column-header__setting-btn {
-
   &:hover,
   &:focus {
     color: $darker-text-color;
@@ -5808,6 +5546,7 @@ body.layout-single-column {
     padding: 16px;
     border-bottom: 1px solid var(--background-border-color);
     background-color: var(--color-column);
+
     &:last-child {
       border-bottom: 0;
     }
@@ -6336,8 +6075,6 @@ body.layout-single-column {
 
   &:hover,
   &:active {
-    // @_longwhile — 전용 토큰(--color-privacy-hover)을 두지 않는다. 목록에서
-    // 커서를 올린 줄에 까는 판은 화면 어디서나 같아야 한다.
     background: var(--color-icon-button-hover);
   }
 
@@ -6471,22 +6208,8 @@ body.layout-single-column {
 }
 
 .search {
-  // **`@include search-input` 보다 먼저 적으면 안 된다.** 그 mixin 끝에
-  // `margin: 0` 이 있어서 여기 적은 margin-bottom 을 통째로 지운다 — 검색창
-  // 아래 여백이 소리 없이 사라졌던 원인이다.
   position: relative;
 
-  // @_longwhile — 돋보기 · 입력칸 · 지우기(✕)를 **한 줄에 세운다.**
-  //
-  // 예전에는 셋이 서로 겹치는 절대 배치였다. 아이콘 둘이 20px 짜리
-  // `.search__icon` 버튼 **하나**를 나눠 쓰는 구조라, 그 버튼을 왼쪽으로
-  // 옮기면 ✕ 도 같이 끌려가 돋보기 위에 그대로 포개졌다(실측: 셋 다 pill
-  // 왼쪽에서 28px). 버튼 안에서 `right: 0` 을 줘 봐야 기준 상자가 20px 라
-  // `left: 0` 과 같은 자리다 — 좌표로는 풀리지 않는 문제였다.
-  //
-  // 채팅 목록의 검색칸(`.dm-room-list__search`)과 같은 구조로 맞춘다.
-  // **판을 그리는 것은 이제 `.search` 다.** 입력칸은 그 안에서 남는 폭을
-  // 채우는 껍데기라, 테두리도 배경도 갖지 않는다.
   @include search-input;
 
   margin-bottom: 32px;
@@ -6504,10 +6227,6 @@ body.layout-single-column {
     display: none;
     position: absolute;
     inset-inline-start: 0;
-
-    // `.search` 가 flex 컨테이너가 되면서 정적 위치가 더는 입력칸 바로 아래가
-    // 아니다(flex 컨테이너 안 절대 배치 자식의 정적 위치는 정렬을 따라간다).
-    // 판 아래에 붙는 자리를 명시한다.
     top: 100%;
     margin-top: -2px;
     width: 100%;
@@ -6601,7 +6320,6 @@ body.layout-single-column {
   }
 
   &.active {
-    // 판이 `.search` 로 옮겨 왔으므로 아래 모서리도 여기서 편다.
     border-radius: 4px 4px 0 0;
 
     .search__popout {
@@ -6610,8 +6328,6 @@ body.layout-single-column {
   }
 }
 
-// 판(테두리 · 배경 · 모서리)은 `.search` 가 그린다. 여기는 남는 폭을 채우는
-// 껍데기다 — 자기 배경이나 테두리를 가지면 판 안에 판이 하나 더 생긴다.
 .search__input {
   flex: 1 1 auto;
   min-width: 0;
@@ -6636,7 +6352,6 @@ body.layout-single-column {
   }
 }
 
-// 장식이다. 위를 눌러도 입력칸이 잡히게 `pointer-events` 를 끈다.
 .search__icon {
   flex: 0 0 auto;
   display: flex;
@@ -6651,8 +6366,6 @@ body.layout-single-column {
   }
 }
 
-// 글자가 있을 때만 그려진다(JSX 쪽 `hasValue`). 자리를 늘 비워 두지 않으므로
-// 빈 칸일 때 입력 폭이 그만큼 넓다.
 .search__clear {
   flex: 0 0 auto;
   display: flex;
@@ -8143,7 +7856,6 @@ body.layout-single-column {
 
 .detailed,
 .fullscreen {
-
   .video-player__volume__current,
   .video-player__volume::before {
     bottom: 27px;
@@ -8219,7 +7931,6 @@ body.layout-single-column {
   }
 
   &.inactive {
-
     .video-player__seek,
     .audio-player__controls,
     .video-player__controls {
@@ -8265,7 +7976,6 @@ body.layout-single-column {
   }
 
   @container audio-player (max-width: 400px) {
-
     .video-player__time,
     .player-button.video-player__download__icon {
       display: none;
@@ -8356,7 +8066,6 @@ body.layout-single-column {
   }
 
   &.inactive {
-
     video,
     .video-player__controls {
       visibility: hidden;
@@ -9278,11 +8987,6 @@ noscript {
   }
 
   &__account-note {
-    // @_longwhile — 저장 알림("저장됨")만 남기고 라벨을 없앴다. 화면에서는
-    //   자리를 차지하지 않고 스크린 리더에만 읽힌다(account_note.jsx).
-    //
-    //   `display: none` 이면 안 된다 — 그러면 낭독도 함께 사라져 남긴 뜻이
-    //   없어진다. 우리 `.dm-message__sr-label` 과 같은 방식이다.
     &__status {
       position: absolute;
       width: 1px;
@@ -12177,15 +11881,11 @@ noscript {
   }
 }
 
-// 팔로우/팔로워 목록에서 팔로워 수 대신 바이오 표시
 .scrollable .account {
-
-  // 팔로워 수 영역 숨기기
   .account__details {
     display: none;
   }
 
-  // 바이오를 같은 자리에 같은 스타일로 표시
   .account__bio {
     display: flex !important;
     flex-wrap: wrap;
@@ -12284,11 +11984,6 @@ div.compose-panel .account__bio {
     width: min(290px, calc(100vw - 32px));
     margin: 0;
     padding: 8px 0;
-    // @_longwhile — 판 색은 테마 토큰을 읽는다. --dropdown-background-color 는
-    // 라이트에서 순백이라, 크림 팔레트에서 이 모달만 하얗게 떴다.
-    //
-    // **--color-modal-overlay 를 쓰면 안 된다.** 그것은 화면 전체를 덮는
-    // 스크림용이라 반투명이고, 그대로 쓰면 이 판 뒤의 글자가 비쳤다.
     background: var(--color-modal-panel, var(--dropdown-background-color, #{$ui-base-color}));
     border: 1px solid var(--color-border, var(--dropdown-border-color));
     border-radius: 16px;
@@ -12469,8 +12164,6 @@ div.compose-panel .account__bio {
       background: color-mix(in srgb,
           color-mix(in srgb,
             var(--account-switcher-accent-color, var(--color-brand-longwhile, #{$ui-highlight-color})) 40%,
-            // 뒤판을 어둡게 까는 기법값이다. 팔레트 색이 아니라 "거의 검정"
-            // 이라는 뜻이라, 테마가 만질 토큰으로 빼지 않는다.
             #1a1a1a 60%),
           transparent 80%);
       pointer-events: none;
@@ -12480,11 +12173,10 @@ div.compose-panel .account__bio {
   &__manage-modal {
     --account-switcher-manage-horizontal-padding: 28px;
     --account-switcher-manage-vertical-padding: 28px;
+
     width: min(460px, calc(100vw - 32px));
     max-height: min(82vh, 680px);
     background: var(--background-color);
-
-    // 글자색도 테마를 따른다. 두지 않으면 상속으로 순검정이 내려온다.
     color: var(--color-light-text, #{$primary-text-color});
     border-radius: 28px;
     border: 1px solid var(--color-border, var(--dropdown-border-color, rgba($ui-highlight-color, 0.12)));
@@ -12562,6 +12254,7 @@ div.compose-panel .account__bio {
 
   &__manage-item {
     --account-switcher-manage-item-height: 64px;
+
     display: flex;
     align-items: center;
     gap: 12px;
@@ -12645,8 +12338,6 @@ div.compose-panel .account__bio {
       }
     }
 
-    // @_longwhile — "기존 계정 추가" 는 링크색으로(대비 4.5:1 보장). 상류의
-    // $account-switcher-add-text-color 는 SCSS 팔레트라 테마가 못 건드린다.
     &--link {
       color: var(--color-brand-longwhile-links, #{$account-switcher-add-text-color});
       background: rgba($darker-text-color, 0.05);
@@ -12811,8 +12502,6 @@ div.compose-panel .account__bio {
   &__manage-check {
     width: 18px;
     height: 18px;
-
-    // @_longwhile — 하드코딩된 초록이었다. 테마의 성공/확인 색을 읽는다.
     color: var(--color-green, #{$valid-value-color});
     stroke-width: 2.5px;
   }
@@ -12925,9 +12614,6 @@ div.compose-panel .account__bio {
 /* Backdrop mirrors the account switcher's manage dialog: the accent colour muted
    into near-black, then made mostly transparent. Reached through :has() because
    ModalRoot renders the overlay as a sibling of the modal, not a parent. */
-// @_longwhile — 이 대화상자 뒤에 까는 판. 상류 강조색(파랑) 40% 를 섞고 있어
-// 크림 팔레트에서는 화면 전체가 **푸르스름하게** 죽었다. 브랜드색을 섞으면
-// 팔레트를 바꿔도 뒤판의 기운이 화면과 같은 쪽으로 간다.
 .modal-root:has(.schedule-modal) .modal-root__overlay {
   opacity: 1;
   background: color-mix(in srgb,
@@ -13131,10 +12817,6 @@ div.compose-panel .account__bio {
       &--selected:focus-visible:not(:disabled) {
         background: var(--color-brand-longwhile, #{$ui-highlight-color});
         border-color: var(--color-brand-longwhile, #{$ui-highlight-color});
-
-        // 흰색으로 굳히지 않는다. 브랜드색은 라이트에서 밝고(#ff7f40) 다크에서
-        // 어둡다 — 이 파일이 두 팔레트로 각각 컴파일되므로 $primary-text-color
-        // 가 알아서 갈린다. 근거는 css_variables.scss 의 말풍선 자리에 있다.
         color: var(--color-on-brand, #{$primary-text-color});
         font-weight: 600;
       }
@@ -13172,12 +12854,6 @@ div.compose-panel .account__bio {
       border-color: var(--color-brand-longwhile, #{$ui-highlight-color});
     }
 
-    // 아웃라인은 특정도를 올려야 꺼진다. 근거는 바로 아래 `&__field` 의 같은
-    // 자리에 적어 두었다 — 여기 `&:focus-visible`(0,2,0)은 테마의
-    // `.layout-single-column input:focus-visible`(0,2,1)에 진다.
-    //
-    // 시각(`&__field__input`)만 고치고 날짜를 두면 같은 대화상자 안에서 한 칸만
-    // 파란 테가 두 겹이 된다.
     .schedule-modal &:focus-visible {
       outline: none;
     }
@@ -13221,28 +12897,6 @@ div.compose-panel .account__bio {
       text-align: center;
     }
 
-    // 포커스 아웃라인을 끈다.
-    //
-    // **`&__input` 안에 `&:focus-visible { outline: none }` 을 두면 안 걸린다.**
-    // 특정도가 한 끗 모자란다.
-    //
-    //   .schedule-modal__field__input:focus-visible        (0,2,0)  여기
-    //   .layout-single-column input:focus-visible          (0,2,1)  테마
-    //     { outline-color: var(--color-accent); outline-style: solid }
-    //
-    // `:focus-visible` 은 **의사 클래스**라 클래스 칸에 센다. 그래서 둘 다 클래스
-    // 둘인데 테마에는 `input` 요소 선택자가 하나 더 있어 이긴다. 실측으로 클릭
-    // 시 `outline: solid 3px rgb(29,155,240)` 이 나왔다.
-    //
-    // 부모 클래스를 앞에 붙여 (0,3,0) 으로 올린다.
-    //
-    // **포커스 표시가 사라지지 않는다.** 상자(`&__field`)가 `:focus-within` 에서
-    // 테두리를 강조색으로 바꾸고 있어, 아웃라인을 빼도 어디에 커서가 있는지
-    // 그대로 보인다. 키보드 사용자도 잃는 것이 없다 — 그것이 없었다면 빼지
-    // 않았을 것이다.
-    //
-    // 텍스트 입력칸은 마우스로 눌러도 `:focus-visible` 이 참이라(명세대로)
-    // 클릭과 Tab 을 나눌 수 없다. 그래서 표시를 상자 쪽에 맡긴다.
     #{&} &__input:focus-visible {
       outline: none;
     }
@@ -13376,10 +13030,6 @@ div.compose-panel .account__bio {
     border-radius: 999px;
     padding: 9px 14px;
     background: transparent;
-
-    // @_longwhile — "취소" 다. 강조색을 주지 않는다 — 바로 옆 "전송 예약" 이
-    // 이미 브랜드색으로 채워진 알약이라, 둘 다 강조색이면 어느 쪽이 주 동작인지
-    // 사라진다. 아래 `&--clear` 가 이미 쓰는 가라앉은 글자색으로 맞춘다.
     color: var(--color-dim, #{$darker-text-color});
     font-family: inherit;
     font-size: var(--schedule-font);
@@ -13398,20 +13048,11 @@ div.compose-panel .account__bio {
     }
   }
 
-  // @_longwhile — 이 대화상자의 강조색은 **브랜드색을 따른다.** 상류의
-  // `$ui-highlight-color`(파랑)를 그대로 두면, 팔레트를 갈아엎어도 예약 창만
-  // 옛 파랑으로 남는다 — 오늘 표시·선택한 날·오전/오후 토글·입력 칸 포커스 테가
-  // 모두 같은 자리라 한 곳만 고치면 대화상자 안에서 두 색이 섞인다.
-  //
-  // `var()` 기본값은 남긴다. --color-brand-longwhile 은 bird-ui / theme-ui 에만
-  // 있어서, 기본 테마에서는 var() 가 무효가 되어 단추 배경이 통째로 사라진다.
   &__confirm {
     border: 0;
     border-radius: 999px;
     padding: 9px 20px;
     background: var(--color-brand-longwhile, #{$ui-highlight-color});
-
-    // 글자색은 위 `&__calendar__day--selected` 와 같은 사정이다.
     color: var(--color-on-brand, #{$primary-text-color});
     font-family: inherit;
     font-size: var(--schedule-font);
@@ -13421,8 +13062,6 @@ div.compose-panel .account__bio {
 
     &:hover:not(:disabled),
     &:focus-visible:not(:disabled) {
-      // `darken()` 은 CSS 변수를 못 받는다. 테마가 이미 들고 있는 눌림/호버
-      // 토큰을 쓰고, 그 토큰이 없는 테마에서만 예전 계산값으로 떨어진다.
       background: var(
         --color-brand-longwhile-hover,
         #{darken($ui-highlight-color, 5%)}
@@ -13444,11 +13083,6 @@ div.compose-panel .account__bio {
   flex-wrap: wrap;
   gap: 12px;
   padding: 10px 16px;
-
-  // @_longwhile — 칼럼 색을 직접 칠한다. 이 줄은 칼럼 헤더 아래
-  // (`.column-header__wrapper`) 에 얹혀 있는데 그 위아래가 전부 투명이라,
-  // 배경 그림이 이 띠에서만 그대로 비쳤다. 헤더와 목록 사이에 다른 색 띠가
-  // 하나 끼어 보인다.
   background: var(--color-column, var(--background-color));
   border-bottom: 1px solid var(--background-border-color);
   color: $darker-text-color;
@@ -13475,17 +13109,12 @@ div.compose-panel .account__bio {
   align-items: baseline;
   gap: 4px;
   padding: 8px 16px;
-
-  // @_longwhile — 목록의 날짜 머리. 타임라인 줄에 커서를 올렸을 때와 같은 판을
-  // 쓴다 — --surface-variant-active-background-color 는 테마가 안 덮는 값이라
-  // 팔레트를 바꿔도 여기만 옛 회색으로 남았다.
   background: var(--color-noti-hover, var(--surface-variant-active-background-color));
   border-bottom: 1px solid var(--background-border-color);
   font-size: 13px;
   font-weight: 600;
 
   &__date {
-    // 상류의 파랑 대신 브랜드색. SCSS 팔레트라 테마가 못 건드리는 값이었다.
     color: var(--color-brand-longwhile, #{$highlight-text-color});
   }
 
@@ -13649,11 +13278,6 @@ div.compose-panel .account__bio {
   }
 }
 
-// @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 채팅
-//   근거: dm-chat-phase-2.md §10
-//   참조 구현의 SCSS 는 커스텀 테마 전제에 !important 가 광범위해 참조만 하고
-//   기본 테마 기준으로 새로 썼다.
-
 .dm-room-item {
   display: flex;
   align-items: center;
@@ -13664,15 +13288,11 @@ div.compose-panel .account__bio {
   text-decoration: none;
   border-bottom: 1px solid var(--color-border, var(--background-border-color));
 
-  // 두 상태 모두 **테마 변수로만** 정한다. 여기에 색을 직접 적으면 테마에서
-  // 바꿀 수 없다 — 말풍선 색을 다루는 규칙과 같은 방침이다.
   &:hover,
   &:focus-visible {
     background: var(--color-noti-hover);
   }
 
-  // 지금 열려 있는 방. hover 보다 뒤에 와야 **열린 방에 마우스를 올렸을 때**
-  // 색이 흔들리지 않는다 — 그래서 --active:hover 도 같은 값이다.
   &--active,
   &--active:hover,
   &--active:focus-visible {
@@ -13683,21 +13303,8 @@ div.compose-panel .account__bio {
     position: relative;
     flex: 0 0 auto;
 
-    // 아바타 둘레의 실선. 배경이 밝은 그림이면 목록 배경과 경계가 사라져
-    // 프로필이 떠 보이지 않는다.
-
   }
 
-  // 아바타 둘레의 실선. 배경이 밝은 그림이면 목록 배경과 경계가 사라져 프로필이
-  // 떠 보이지 않는다.
-
-  // **셀렉터가 클래스 셋이어야 한다.** 테마(bird-ui / theme-ui)가 `/* Avatars */`
-  // 묶음에서 `.layout-single-column .account__avatar { border: 0 }` 를 클래스
-  // 둘로 걸고 뒤에 로드되므로, 둘로 적으면 소스 순서에서 져 테두리가 사라진다.
-
-  // `border-radius` 도 함께 적는다. 컨테이너는 `--avatar-border-radius`(8px,
-  // 둥근 사각형)를 쓰는데 테마는 그 **안쪽 `img` 만** 50% 로 깎아, 테두리만
-  // 주면 동그란 그림 뒤에 둥근 사각형 테가 남는다.
   & &__avatar .account__avatar {
     box-sizing: border-box;
     border: 1px solid var(--color-border);
@@ -13728,11 +13335,6 @@ div.compose-panel .account__bio {
     font-weight: 700;
   }
 
-  // 시각은 **언제나 한 줄**이다. 폭을 72px 로 고정했더니 일주일이 지난 방의
-  // "2020년 1월 6일" 이 칸보다 넓어 "6" / "일" 로 접혔다. 폭은 내용에 맡기고
-  // (`flex: 0 0 auto` + `nowrap`), 줄어드는 것은 이름 쪽(`__title` 의 말줄임)이다.
-  // 오른쪽 끝은 줄의 끝이라 폭과 무관하게 맞는다. `min-width` 는 "3분 전" 처럼
-  // 짧은 값에서도 이름이 잘리는 자리가 방마다 들쭉날쭉하지 않게 남겨 둔다.
   &__time {
     flex: 0 0 auto;
     min-width: 72px;
@@ -13752,14 +13354,10 @@ div.compose-panel .account__bio {
     color: $darker-text-color;
   }
 
-  // 이름은 기본이 이미 700 이라 읽지 않음을 굵기로 더 구분할 수 없다. 미리보기
-  // 글자색과 개수 배지가 그 몫을 한다 — 색 하나에만 기대지 않는다(§4.7).
   &--unread &__preview {
     color: $primary-text-color;
   }
 
-  // 쓰다 만 글이 남아 있는 방. 읽지 않음 규칙보다 **뒤에** 와야 둘 다 해당할 때
-  // 초안 쪽이 이긴다 — 그 방에서 지금 눈에 띄어야 하는 것은 내가 쓰다 만 글이다.
   &--draft &__preview {
     color: var(--color-brand-longwhile, #{$highlight-text-color});
   }
@@ -13769,13 +13367,7 @@ div.compose-panel .account__bio {
     min-width: 20px;
     padding: 0;
     border-radius: 10px;
-
-    // @_longwhile — 바로 위 `&--draft &__preview` 와 같은 토큰이다. 둘 다
-    //   "이 방에 볼 것이 있다" 를 브랜드색으로 알리는 자리다.
     background: var(--color-brand-longwhile, #{$highlight-text-color});
-
-    // 채워진 배경 위의 글자. 흰색으로 굳히지 않는다 — 브랜드색이 밝으면
-    // 검정이어야 하므로 방향이 뒤집힌다.
     color: var(--color-on-brand, #{$white});
     font-size: 12px;
     line-height: 20px;
@@ -13811,19 +13403,8 @@ div.compose-panel .account__bio {
 .dm-date-divider {
   display: flex;
   justify-content: center;
-
-  // 날짜는 **아래 내용의 머리말**이다. 위쪽을 넓게, 아래쪽을 좁게 둔다.
-  //   반대로 두었던 때가 있었는데(`16px 0 8px`) 구분선이 위쪽 날짜에 붙어
-  //   보였다. `.dm-room__scroll` 은 블록이지만 바로 다음의 `.dm-room__group` 이
-  //   flex 라, 그 안의 `--first` 여백(32px)이 **붕괴하지 않고 더해진다.**
-  //   그래서 실제로는 위 16px : 아래 40px 이었다.
   margin: 32px 0 16px;
 
-  // 글자 좌우로 뻗는 실선. 여백만으로는 "여기부터 다른 날" 이 약하게 읽혀서,
-  // 가로선으로 흐름을 한 번 끊는다.
-  //   `.dm-unread-divider` 와 같은 수법이되 색이 다르다. 저쪽은 강조색으로
-  //   "여기까지 읽었다" 를 **알리는** 선이고, 이쪽은 배경에 가까운 연한 선으로
-  //   날짜를 **가르기만** 한다. 둘이 같은 세기면 무엇이 중요한지 흐려진다.
   &::before,
   &::after {
     content: '';
@@ -13833,24 +13414,14 @@ div.compose-panel .account__bio {
     background: var(--color-border);
   }
 
-  // 참조 디자인은 알약 배경 없이 글자만이다. 배경을 걷으면 아래의 sticky 도
-  // 함께 풀어야 한다 — 배경이 없는 채로 위에 붙어 있으면 지나가는 메시지와
-  // 글자가 겹쳐 둘 다 못 읽는다.
   &__label {
     flex: 0 0 auto;
-
-    // 선이 글자에 닿지 않게 띄운다.
     padding: 0 12px;
-
-    // 대화 소개 문구(.dm-room-intro__notice)와 **같은 토큰**이다. 둘 다
-    // 화면이 하는 말이라 톤이 갈리면 안 된다.
     color: var(--color-dim, #{$darker-text-color});
     font-size: 12px;
   }
 }
 
-// 위에서 아래쪽 여백을 16px 로 정했으므로, 바로 뒤따르는 덩어리의 여백은 걷는다.
-// 그러지 않으면 16 + 20~32 가 그대로 더해져 구분선이 다시 떠 보인다.
 .dm-date-divider + .dm-room__group .dm-message--first {
   margin-top: 0;
 }
@@ -13859,21 +13430,6 @@ div.compose-panel .account__bio {
   display: flex;
   align-items: flex-end;
   gap: 8px;
-
-  // 묶음의 경계를 **여백 혼자** 짊어진다. 아래에서 꼬리를 없앴고(모든 말풍선이
-  // 같은 16px 모서리), 시각은 말풍선 옆에 세로로 서서 세로 높이를 만들지 않는다.
-  // 그래서 덩어리가 끝났다는 신호가 여백의 차이밖에 없다.
-
-  // 값이 셋인 이유는 덩어리가 나뉘는 사유가 둘이기 때문이다.
-
-  //   묶음 안        8px  모서리가 16px 이라 4px 로는 둥근 모서리끼리 붙어 보인다.
-  //   발신자 전환   20px  **짧게 주고받는 대화에서는 거의 모든 메시지가 여기다.**
-  //                       32px 를 주면 20왕복 대화에서만 여백이 600px 넘게 쌓여
-  //                       화면 하나가 통째로 더 생긴다.
-  //   같은 사람 시간차 32px 드물게 일어나고, 대화가 끊겼다 이어진 지점이라 크게
-  //                       벌리는 편이 읽힌다.
-
-  // 어느 쪽인지는 `group_messages.ts` 가 판단해 `--sender-changed` 로 알려준다.
   margin-top: 8px;
 
   &--first {
@@ -13888,33 +13444,19 @@ div.compose-panel .account__bio {
     flex-direction: row-reverse;
   }
 
-  // 아바타 자리. **그룹에서만** 생긴다(message_bubble.tsx 의 showSenderName).
-  // 1대1 에서는 이 요소 자체를 그리지 않으므로 말풍선이 그만큼 넓다.
-  //
-  // 덩어리의 첫 줄에만 그림이 들어가고 나머지 줄에는 **빈 상자**가 남는다.
-  // 자리를 안 비우면 같은 사람의 두 번째 줄부터 말풍선이 왼쪽으로 튀어나간다.
   &__avatar {
     flex: 0 0 auto;
     width: 28px;
     height: 28px;
-
-    // 말풍선의 아래쪽에 붙인다. 위에 붙이면 이름표(`__sender`) 옆에 서게 되어
-    // 이름이 두 번 있는 것처럼 보인다.
     align-self: flex-start;
   }
 
 
-  // 폭 상한이 둘인 이유: 384px 는 참조 디자인의 값(24rem)이고, 75% 는 좁은
-  // 화면을 위한 것이다. 384px 만 두면 폭이 512px 아래로 내려가는 순간 말풍선이
-  // 칼럼을 꽉 채워, 누가 보낸 것인지 정렬로 구분되지 않는다.
   &__body {
     display: flex;
     flex-direction: column;
     max-width: min(75%, 384px);
     min-width: 0;
-
-    // 말풍선은 자기 글자만큼만 넓다. 사진·링크 카드가 이 칸을 360px 로 벌려도
-    // 그 아래 말풍선까지 따라 늘어나지 않게 한다(기본값 stretch).
     align-items: flex-start;
   }
 
@@ -13928,49 +13470,17 @@ div.compose-panel .account__bio {
     margin-bottom: 2px;
   }
 
-  // 말풍선 색은 네 개의 CSS 변수로만 정한다. 커스텀 테마(bird-ui / theme-ui)가
-  // 밝음·어두움별로 그 변수를 덮어쓰고, 기본값은 css_variables.scss 에 있다.
-  // 여기에 색을 직접 적으면 테마에서 바꿀 수 없다.
   &__bubble {
     background: var(--color-recieve-message-background);
     color: var(--color-recieve-message-text);
-
-    // **네 모서리가 전부 같다. 꼬리를 두지 않는다.**
-
-    // 꼬리(한쪽 아래 모서리만 0)를 달면 묶음 안에서 몇 번을 그릴지 정해야 하는데,
-    // 마지막에만 달면 앞의 것들과 모양이 어긋나고 전부 달면 꼬리가 연달아 나온다.
-    // 참조로 삼은 화면 중 꼬리를 쓰는 쪽도 이걸 풀지 못하고 모든 말풍선에 반복해서
-    // 단다. 꼬리를 버리면 이 결정 자체가 사라진다 — `--first` / `--last` 는 여백만
-    // 맡는다.
-
-    // 방향은 정렬과 색이 가리킨다. 색만으로 구분하지 않기 위한 장치는 따로 있다
-    // (`__sr-label`, 기획서 §4.7).
-
-    // 안쪽 여백 `8px 16px` 는 참조 두 곳이 똑같이 쓰던 값이다. **아래만 1px 더
-    // 준다.** 본문 글꼴(kopubworld-dotum)의 한글 잉크는 20px 줄 상자 안에서
-    // 위 4px · 아래 3px 에 놓여, 위아래를 같게 주면 글자가 1px 아래로 처진다.
-    // 브라우저에서 말풍선을 찍어 잉크를 재 맞춘 값이다 — 한 줄·여러 줄 모두
-    // 위아래 12px 로 같다. (descender 가 있는 로마자 g·j·p·q 만 아래가 짧다)
     border-radius: 16px;
     padding: 8px 16px 9px;
-
-    // 본문 하나만 들어간다. 시각과 읽음은 말풍선 **바깥**이다(`&__meta`).
     display: grid;
-
-    // 본문과 첨부처럼 블록이 둘 이상 쌓일 때의 간격. 참조의 `gap-4`.
     gap: 16px;
-
-    // 보내는 중 말풍선(pending_bubble.tsx)은 본문 래퍼 없이 글자만 넣는다.
-    // 그쪽에도 걸리도록 여기에 한 번 더 둔다.
     overflow-wrap: anywhere;
 
     &__text {
-      // 없으면 그리드 항목의 기본 최소 폭(min-content) 때문에 긴 단어에서
-      // 말풍선이 가로로 터진다.
       min-width: 0;
-
-      // 아주 긴 한 단어가 말풍선을 가로로 터뜨리지 않게 한다. 가로 스크롤이
-      // 생기면 안 된다. (기획서 §10.2 경계 조건)
       overflow-wrap: anywhere;
     }
 
@@ -13980,30 +13490,10 @@ div.compose-panel .account__bio {
     }
   }
 
-  // 본문 글꼴. **셀렉터가 클래스 3개여야 한다** — bird-ui 가
-  // `.layout-single-column .status__content { line-height: var(--line-height) }`
-  // 를 클래스 2개로 걸어 두고 뒤에 로드되므로, 2개로는 소스 순서에서 진다.
-  // (같은 이유로 바로 아래 색 규칙도 3개다)
-  //
-  // **굵기를 500 으로 두면 안 된다.** 한글로만 보면 아무 차이가 없어서 그렇게
-  // 두었었다 — kopubworld-dotum 은 `normal` 과 `500` 이 **같은 medium.ttf** 를
-  // 가리키기 때문이다. 그런데 로마자는 Roboto 로 떨어지고 그쪽은 400(Regular)과
-  // 500(Medium)이 다른 파일이라, **영어만 혼자 굵게** 나왔다.
-  //
-  // 400 은 앱의 다른 본문(`.reply-indicator__content` 등)과 같은 값이다. 한글은
-  // 보이는 것이 그대로고 로마자만 제자리로 돌아온다.
-  //
-  // 글꼴 굵기를 이 저장소에서 고칠 때는 늘 이것을 본다 — 한글 웹폰트가 여러
-  // 굵기를 같은 파일에 묶어 두어서 **한글 화면만 보고는 차이를 알 수 없다.**
   & &__bubble .status__content {
     font-size: 14px;
     line-height: 20px;
     font-weight: 400;
-
-    // 상류 `.status__content` 의 `padding-top: 2px` 를 걷는다. 타임라인에서
-    // 이름 줄과 본문 사이를 띄우려고 둔 값인데, 말풍선 안에서는 위 여백만
-    // 2px 늘려 글자가 아래로 처졌다(실측: 잉크 위 14px · 아래 11px). 걷으면
-    // 줄 상자가 말풍선 한가운데 오고, 한글 잉크도 위아래 1px 안으로 맞는다.
     padding-top: 0;
   }
 
@@ -14012,100 +13502,40 @@ div.compose-panel .account__bio {
     color: var(--color-sent-message-text);
   }
 
-  // 보낸 말풍선 안의 링크는 말풍선 글자색 + 밑줄이다. **클래스 4개**로 적는다 —
-  // 테마가 `.layout-single-column .status__content a.unhandled-link` (클래스 3개 +
-  // 요소)로 `--color-accent` 를 걸고 뒤에 로드되므로, 그보다 낮거나 같으면 진다. 그때
-  // 링크가 브랜드 파랑 말풍선 위에 같은 파랑으로 칠해져 **통째로 안 보였다.**
   &#{&}--mine &__bubble .status__content a {
     color: inherit;
     text-decoration: underline;
   }
 
-  // StatusContent 안쪽은 자기 색을 갖고 있어 말풍선 색을 덮는다. 되돌린다 —
-  // 그러지 않으면 보낸 말풍선의 본문만 기본 글자색으로 남는다.
-
-  // **셀렉터를 클래스 3개로 맞춘 것이 요점이다.** bird-ui 가
-  // `.layout-single-column .status__content { color: var(--color-fg) }` 를
-  // 들고 있는데(layout-single-column.scss 552행) 특정도가 클래스 2개로 **같고**,
-  // 테마가 뒤에 로드되므로 소스 순서에서 이긴다. 클래스 2개짜리
-  // (`&__bubble .status__content`)로 두면 라이트 테마에서 `--color-fg` 가
-  // `#000000` 이라 파란 말풍선에 검은 글자가 남는다 — 실제로 그랬다.
   & &__bubble .status__content,
   & &__bubble .status__content__text {
     color: inherit;
   }
 
-  // 멘션과 해시태그도 말풍선의 글자색을 따른다. **DM 화면에서만** — 다른
-  // 화면의 멘션·해시태그는 그대로 강조색이다.
-  //
-  // 위의 `&--mine &__bubble a { color: inherit }` 만으로는 안 된다. 그쪽은
-  // 클래스 2개(+요소)인데 bird-ui / theme-ui 가 같은 자리에 두 규칙을
-  // 걸어 두고 **뒤에 로드되므로**, 특정도가 같기만 해도 소스 순서에서
-  // 진다. 그래서 링크만 혼자 `--color-mention` / `--color-hashtag` 로 남는다.
-  //
-  // **멘션 쪽 특정도를 세는 법을 틀리기 쉽다.**
-  // `.layout-single-column .status-link.mention:not(.hashtag)` 는 클래스 3개가
-  // 아니라 **4개**다 — `:not()` 는 괄호 안의 `.hashtag` 를 그대로 세어
-  // 넘긴다. 예전에 `& &__bubble .status-link.mention` (역시 4개)로 적었다가
-  // 동점으로 져서 멘션만 계속 강조색으로 남았다. 해시태그는 테마 규칙이
-  // (`.status-link.hashtag`) 진짜로 3개라 먼저 잘 들어서, **둘 중 하나만
-  // 먹는** 모양이었다. 멘션은 테마와 같은 `:not(.hashtag)` 를 붙여 5개로
-  // 올려 되받는다. (마스토돈은 해시태그 링크에 `mention` 과 `hashtag` 를
-  // 함께 붙이므로, 이 `:not()` 가 빠뜨리는 것은 아래 해시태그 줄이 받는다.)
-  //
-  // 값을 `--color-sent-message-text` 로 **박으면 안 된다.** 받은 말풍선의
-  // 글자색은 `--color-recieve-message-text` 라 서로 다르고, 라이트 테마에서
-  // 보낸 쪽 글자색은 흰색이다 — 받은 말풍선(연회색)에 흰 글자가 남는다.
-  // `inherit` 은 말풍선마다 알아서 제 색을 집는다.
   & &__bubble .status-link.mention:not(.hashtag),
   & &__bubble .status-link.hashtag {
     color: inherit;
   }
 
-  // 시각·읽음. 말풍선 옆, 아래에 맞춰 세로로 쌓는다.
-  //   `.dm-message` 가 flex 행이고 보낸 쪽은 `row-reverse` 라, 이 블록은
-  //   가만히 둬도 늘 화면 안쪽을 향한다. 방향별 규칙이 따로 필요 없다.
   &__meta {
     flex: 0 0 auto;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
     gap: 2px;
-
-    // 말풍선이 여러 줄이어도 시각은 아래에 붙는다.
     align-self: flex-end;
     white-space: nowrap;
   }
 
-  // **받은 메시지에서는 말풍선 쪽으로 붙인다.**
-  //
-  // 이 칸의 폭은 넓은 쪽(시각 "01:01")이 정한다. 그 안에서 오른쪽 정렬이면
-  // 안 읽은 수("1")가 칸의 바깥쪽 끝으로 밀려, 말풍선에서 한참 떨어져 뜬다.
-  // 받은 메시지는 칸이 말풍선의 **오른쪽**에 있으므로 시작 정렬이 곧 말풍선
-  // 쪽이다.
-  //
-  // 보낸 메시지는 `row-reverse` 라 칸이 말풍선 왼쪽에 서고, 그때는 위의
-  // `flex-end` 가 이미 말풍선 쪽이다. 그래서 여기만 뒤집는다.
   &--theirs &__meta {
     align-items: flex-start;
   }
 
-  // 시각과 읽음은 본문을 읽는 데 방해가 되면 안 된다. 말풍선 옆에 붙어 있어
-  // 눈에 먼저 들어오기 쉬우므로 작게, 흐리게 둔다.
-  //   `--color-dim` 은 커스텀 테마가 "가라앉은 글자" 용으로 쓰던 변수다. 두
-  //   테마에만 있던 것을 기본 테마에도 정의해 두었다(css_variables.scss).
   &__time {
     font-size: 11px;
     color: var(--color-dim);
   }
 
-  // 아직 안 읽은 사람 수. 시각 바로 위에 세로로 붙으므로 크기를 맞춘다.
-  //
-  // **숫자 하나뿐이라 색만으로 뜻을 전하지 않는다** — 값 자체가 정보이고,
-  // 스크린 리더에는 aria-label 로 문장이 따로 나간다(§4.7).
-  //
-  // 시각보다 한 단계 진하게 둔다. 시각은 훑고 지나가는 값이지만 이 숫자는
-  // "아직 안 갔다" 를 말하므로 눈에 걸려야 한다. 그래도 본문보다는 약하다.
   &__unread {
     font-size: 11px;
     font-weight: 600;
@@ -14113,7 +13543,6 @@ div.compose-panel .account__bio {
     color: var(--color-brand-longwhile, $highlight-text-color);
   }
 
-  // 발신자를 색상과 정렬로만 구분하지 않는다. (기획서 §4.7)
   &__sr-label {
     position: absolute;
     width: 1px;
@@ -14123,23 +13552,10 @@ div.compose-panel .account__bio {
     white-space: nowrap;
   }
 
-  // 아직 서버에 없는 내 메시지 (dm-chat-phase-3.md §3.2). 보내는 중에는 살짝
-  // 흐리게 두는 것으로 충분하다 — 이 상태는 보통 몇백 밀리초라, 강한 표시를
-  // 넣으면 정상 전송마다 화면이 깜빡인다.
-
-  // **시계 아이콘을 없애고 색으로만 구분한다** (2026-08-12). 몇백 밀리초짜리
-  // 상태에 아이콘까지 띄우면 정상 전송마다 화면이 깜빡인다.
-  //
-  // 그래서 0.85 에서 0.6 으로 더 내렸다. `opacity` 는 배경과 **글자에 함께**
-  // 걸리므로 낮출수록 흰 글자가 배경 쪽으로 섞여 대비가 떨어진다 — 배경색을
-  // AA(4.51:1)에 맞춰 골라 놓고 여기서 도로 깎는 셈이다. 그 대가를 알고
-  // 고른 값이다. 지금은 이것이 유일한 표시라 눈에 띄어야 하고, 실패하면
-  // 아래 `__state` 가 아이콘과 문구로 따로 알린다.
   &--pending &__bubble {
     opacity: 0.6;
   }
 
-  // 실패는 색만으로 구분하지 않는다. 아이콘과 문구를 함께 낸다. (§4.7)
   &--failed &__bubble {
     border: 1px solid $error-red;
   }
@@ -14189,10 +13605,6 @@ div.compose-panel .account__bio {
 .dm-composer {
   flex: 0 0 auto;
   border-top: 1px solid var(--color-border, var(--background-border-color));
-
-  // 세로 여백이 12px 인 것은 **입력 상자의 테두리와 겹쳐 보이지 않게** 하기
-  // 위해서다. 이 바의 위쪽 구분선과 상자 테두리가 같은 토큰·같은 굵기라, 8px
-  // 이었을 때는 1px 선 두 개가 나란히 붙어 이중 괘선처럼 읽혔다.
   padding-top: 16px;
   padding-right: 12px;
   padding-bottom: 16px;
@@ -14210,21 +13622,10 @@ div.compose-panel .account__bio {
     gap: 11px;
   }
 
-  // 입력 상자. 모서리·테두리·포커스 표시를 **여기 하나가** 맡는다.
-  // (features/messages/components/composer.tsx 의 같은 이름 주석)
-
-  // 알약(22px)이 아니라 거의 각진 상자다. 배경을 깔지 않고 **1px 테두리만으로**
-  // 형태를 잡는다.
-  //   배경을 깔면 안 되는 이유가 있다. 예전에는 `--color-recieve-message-background`
-  //   를 깔았는데, 그것이 곧 **받은 말풍선의 색**이라 입력창이 대화 맨 아래에 놓인
-  //   또 하나의 받은 말풍선처럼 보였다. 실제 화면에서 둘의 계산색이 같았다.
   &__field {
     flex: 1 1 auto;
     min-width: 0;
     display: flex;
-
-    // 여러 줄로 자라면 안에 있는 것들(글자 수 카운터)이 아래에 붙는다. 가운데
-    // 정렬로 두면 글이 길어질수록 허공에 뜬다.
     align-items: flex-end;
     gap: 4px;
     padding: 10px 7px;
@@ -14232,20 +13633,11 @@ div.compose-panel .account__bio {
     background: var(--color-recieve-message-background);
     overflow: hidden;
 
-    // 폼 컨트롤이라는 것을 포커스 전에도 알린다. 이것이 없으면 테두리만 있는
-    // 상자가 눌러도 되는 것인지 알 수 없다.
     &:hover {
       border-color: var(--surface-variant-active-background-color);
     }
 
-    // **마우스로 눌러 들어갈 때는 아무 표시도 하지 않는다.** 파란 테가 들어오면
-    // 글을 쓰는 내내 눈에 걸린다.
-    //   대신 `:has(:focus-visible)` 로 **키보드로 들어왔을 때만** 남긴다.
-    //   `:focus-within` 은 마우스·키보드를 가리지 못해 둘 다 걸린다. 표시를
-    //   통째로 없애면 Tab 으로 옮겨 다니는 사람이 지금 어디에 있는지 알 수 없다
-    //   (WCAG 2.4.7).
     &:has(:focus-visible) {
-      // 테두리 바깥에 선을 하나 더 붙이면 두 겹으로 보인다. 안쪽으로 당겨 덮는다.
       outline: 1px solid var(--color-brand-longwhile, #{$highlight-text-color});
       outline-offset: -1px;
     }
@@ -14257,12 +13649,6 @@ div.compose-panel .account__bio {
     margin: 0;
     resize: none;
     border: 0;
-
-    // 배경은 상자(`__field`)가 맡는다 — 지금은 아무것도 깔지 않는다. 여기에 색을
-    // 주면 상자의 안쪽 여백만큼 색이 안 닿은 테가 생긴다.
-
-    // **상하 padding 이 0 이다.** 한 줄일 때 높이가 줄 높이와 정확히 같아야 상자가
-    // 필요 이상으로 두꺼워지지 않는다. 좌우 여백만 남긴다.
     padding: 0 8px;
     background: transparent;
     color: $primary-text-color;
@@ -14271,15 +13657,10 @@ div.compose-panel .account__bio {
       color: var(--color-dim, #{$darker-text-color});
     }
 
-    // 한 줄 = 22px. 높이를 재는 쪽(composer.tsx 의 자동 늘림)이 이 값과 상하
-    // padding 을 읽어 최대 높이를 정하므로, 바꾸면 최대 줄 수까지 함께 바뀐다.
     font-size: 14px;
     line-height: 22px;
     font-family: inherit;
 
-    // **터치 기기에서는 16px 로 되돌린다.** 그보다 작으면 iOS 사파리가 입력창을
-    // 누르는 순간 화면을 확대하고 되돌아오지 않는다. 마우스가 있는 화면에는 그
-    // 동작이 없어 15px 을 그대로 쓴다.
     @media (pointer: coarse) {
       font-size: 16px;
       line-height: 24px;
@@ -14294,12 +13675,6 @@ div.compose-panel .account__bio {
     flex: 0 0 auto;
     font-size: 12px;
     color: $darker-text-color;
-
-    // textarea 와 **글자 기준선**을 맞춘다. 형제끼리 `align-items: flex-end` 로
-    // 박스 아래가 맞으므로, textarea 의 아래 padding(4px)과 같은 값을 줘야 두
-    // 글자가 같은 줄에 앉는다.
-    //   10px 이던 때가 있었는데 그건 상자 padding 이 6px 이던 알약 시절 값이라,
-    //   지금은 카운터만 6px 떠 보였다.
     padding-bottom: 4px;
 
     &--over {
@@ -14308,13 +13683,8 @@ div.compose-panel .account__bio {
     }
   }
 
-  // 전송. 입력 상자 **바깥** 오른쪽에 선다. 이 줄에서 유일하게 색이 채워진
-  // 요소다 — 첨부는 아이콘만, 상자는 테두리만이라 여기로 눈이 간다.
   &__send {
     flex: 0 0 auto;
-
-    // 첨부와 같은 이유로 가운데에 세운다. 줄이 `align-items: flex-end` 라 두면
-    // 바닥에 붙어, 한 줄일 때 상자보다 아래로 내려앉아 보인다.
     align-self: center;
     display: flex;
     align-items: center;
@@ -14323,23 +13693,11 @@ div.compose-panel .account__bio {
     border-radius: 50%;
     width: 32px;
     height: 32px;
-
-    // 보낸 말풍선과 **같은 짝**을 쓴다. 이 버튼이 만들어 내는 것이 그 말풍선이라
-    // 의미도 맞고, 네 테마 전부가 이 두 변수를 함께 정의해 두어 안전하다.
-    //   `$highlight-text-color` / `$primary-text-color` 를 쓰던 때가 있었는데,
-    //   라이트 테마의 `$primary-text-color` 가 **검정**이라 파란 원에 검은 아이콘이
-    //   됐다. 보낼 것이 있을 때만 잠깐 뜨던 시절에는 눈에 안 띄었지만 이제는 늘
-    //   떠 있다.
     background: var(--color-sent-message-background);
     color: var(--color-sent-message-text);
     cursor: pointer;
-
-    // 같은 파일의 `.dm-message__menu` 와 길이를 맞춘다. 없으면 색이 툭 바뀐다.
     transition: background-color 100ms ease-in;
 
-    // 호버·키보드 포커스에서 파랑이 한 단계 가라앉는다. **배경만** 섞는다 —
-    // `filter: brightness()` 로 어둡게 하면 아이콘의 흰색까지 같이 죽는다.
-    // 눌리지 않는 상태에서는 반응하지 않는다.
     &:hover:not(:disabled),
     &:focus-visible {
       background: color-mix(in srgb,
@@ -14347,27 +13705,18 @@ div.compose-panel .account__bio {
           #000000 12%);
     }
 
-    // 눌린 순간. 호버보다 한 단계 더 내려가야 "눌렸다" 가 읽힌다.
     &:active:not(:disabled) {
       background: color-mix(in srgb,
           var(--color-sent-message-background) 76%,
           #000000 24%);
     }
 
-    // **늘 그려진다.** 보낼 것이 있을 때만 그리던 때가 있었는데, 상자 안에 있을
-    // 때는 그래도 됐다(상자 폭은 그대로고 안쪽 여백만 줄었다). 상자 밖으로 나온
-    // 지금은 버튼이 생길 때마다 줄 전체가 다시 배치되어 **첫 글자를 칠 때 입력창이
-    // 32px 줄어든다.** 커서가 움직인다.
     &:disabled {
       opacity: 0.5;
       cursor: default;
     }
   }
 
-  // 아이콘은 버튼의 절반을 조금 넘는 정도여야 "눌러야 할 것" 으로 보인다.
-  // `.icon` 기본값이 24px 이라(components.scss 의 `.icon`) 32px 버튼 안에서
-  // 여백이 4px 밖에 안 남아 꽉 찬 판처럼 보였다. 참조로 삼은 화면도 32px 버튼에
-  // 12~18px 아이콘을 쓴다.
   &__send .icon,
   &__attach .icon {
     width: 20px;
@@ -14375,8 +13724,6 @@ div.compose-panel .account__bio {
   }
 }
 
-// 목록 헤더의 새 대화 버튼. 34px 버튼 안에서 24px 은 꽉 차 보인다 — 컴포저의
-// 두 버튼과 같은 20px 로 맞춘다.
 .dm-room-list__compose .icon {
   width: 20px;
   height: 20px;
@@ -14438,47 +13785,26 @@ div.compose-panel .account__bio {
 }
 
 .dm-message {
-  // 본문 칸 안에 쌓이는 블록(첨부·말풍선·링크 카드) 사이 간격. 이름표 바로 뒤는
-  // 빼고 — 이름표는 자기 아래 여백(2px)으로 말풍선에 붙어 있어야 한다.
   &__body > :not(.dm-message__sender) + * {
     margin-top: 4px;
   }
 
-  // 사진과 링크 카드가 쓰는 칸. 데스크톱에서 360px, 좁은 화면에서는 본문 칸
-  // (`__body` 의 max-width, 모바일 85%)을 꽉 채운다.
-
-  // 폭을 **정해 줘야 한다.** `__body` 는 내용 폭에 맞춰 줄어드는 flex 열이라,
-  // 폭이 없는 MediaGallery 는 최소 크기로 쪼그라들어 사진이 우표만 하게 나왔다.
   &__media,
   &__card {
     width: 360px;
     max-width: 100%;
   }
 
-  // 아래 규칙들은 **클래스 3개 이상**이다. 테마(bird-ui·theme-ui)가
-  // `.layout-single-column .media-gallery` 에 타임라인용 왼쪽 여백(아바타 폭)을,
-  // `.layout-single-column .media-gallery__item.standalone img` 에
-  // `object-fit: contain` 을 걸고 뒤에 로드된다.
-
-  // 바로 아래 규칙만 클래스가 4개다. 테마가 `.layout-single-column
-  // .media-gallery.media-gallery--layout-1` (클래스 3개)에 `max-height: 430px` 를
-  // 걸어, 세로 사진이 360px 칸보다 좁게 줄어들었다. 높이 상한은 위의 비율 범위
-  // (3:4 → 360px 폭에서 480px)가 맡는다.
   & &__body &__media .media-gallery {
     margin: 0;
     max-height: none;
     border-radius: 16px;
   }
 
-  // 여러 장일 때 칸끼리 맞닿는 모서리는 작게, 바깥 모서리는 위의 16px 로
-  // 깎인다(`overflow: hidden`).
   & &__media .media-gallery__item {
     border-radius: 4px;
   }
 
-  // 한 장: 사진의 비율(message_bubble.tsx 가 3:4 ~ 2:1 로 묶어 넘긴다).
-  // MediaGallery 가 인라인 style 로 원래 비율(묶기 전)을 넣으므로, 그것을
-  // 이기려면 !important 가 필요하다.
   & &__media--single .media-gallery {
     aspect-ratio: var(--dm-media-aspect) !important;
   }
@@ -14487,16 +13813,10 @@ div.compose-panel .account__bio {
     border-radius: 16px;
   }
 
-  // 묶은 비율을 넘치는 부분은 잘라 낸다(초점 기준). contain 이면 세로로 긴
-  // 사진 양옆에 빈 띠가 생긴다. 전체는 눌러서 여는 미디어 창에서 본다.
-  // 테마의 `.layout-single-column .media-gallery__item.standalone img`(클래스 3개 +
-  // 요소)를 이겨야 해서 클래스가 4개다.
   & &__media .media-gallery__item .media-gallery__item-thumbnail img {
     object-fit: cover;
   }
 
-  // "숨기기" 단추는 가릴 이유가 있는 사진에만 남긴다(`--hideable`, 조건은
-  // message_bubble.tsx). ALT 배지는 사진 안쪽 배지 묶음이라 영향이 없다.
   & &__media:not(.dm-message__media--hideable) .media-gallery__actions {
     display: none;
   }
@@ -14507,25 +13827,8 @@ div.compose-panel .account__bio {
   }
 }
 
-// @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 채팅 (2차 추가분)
-//   새 대화 모달 · 필터 탭 · 답장 인용 · 읽음 구분선 · 메시지 메뉴 · 반응형
-//   근거: dm-chat-phase-2.md §9·§11, FR-17, FR-24, FR-25
-
 .dm-recipient {
-  // 참조 구현(인스타그램 DM)을 실측해 다시 그렸다. 예전 모양은 회색 사각 입력칸
-  // 하나에 4열 아바타 그리드였는데, 이 서버는 표시 이름이 길고 이모지가 섞여
-  // 있어 그리드 칸에서 이름이 거의 다 잘렸다. 얼굴만으로 골라야 하는 화면이
-  // 되어 있었다.
-  //
-  // **이 클래스를 쓰는 모달이 둘이다.** 새 쪽지/초대(messages/recipient_modal)와
-  // 답글 수신자 고르기(compose/components/reply_recipients_modal). 뒤엣것은
-  // 루트에 `dm-recipient` 를 함께 걸고 다른 것만 `.compose-recipients` 로 덮는다.
-  // 여기 값을 고치면 **두 화면이 같이 움직인다** — 그것이 목적이지만, 한쪽만
-  // 보고 고치면 다른 쪽이 틀어진다.
-
   &__header__back {
-    // 제목 **왼쪽에 나란히** 선다. 절대 배치였다가 바꿨다 — 그때는 제목이
-    // 가운데였는데, 제목이 왼쪽으로 오면서 둘이 겹쳤다.
     margin-inline-end: 4px;
   }
 
@@ -14535,8 +13838,6 @@ div.compose-panel .account__bio {
     min-height: 0;
   }
 
-  // 검색칸. 테두리 있는 알약이다. 배경만 회색으로 칠한 사각 칸보다 "여기에
-  // 입력한다" 가 분명하고, 포커스 링을 테두리 색으로 바꿀 수 있다.
   &__search {
     position: relative;
     display: flex;
@@ -14548,13 +13849,7 @@ div.compose-panel .account__bio {
       box-sizing: border-box;
       border: 1px solid var(--color-button-border, var(--color-border));
       border-radius: 999px;
-
-      // 참조 구현처럼 옅게 채운다. 테두리만 있는 것보다 "여기에 입력한다" 가
-      // 분명하다. 줄 호버와 **같은 색**이다 — 둘 다 "누를 수 있는 옅은 면" 이라
-      // 값을 나눌 이유가 없다.
       background: transparent;
-
-      // 왼쪽은 돋보기 자리를 비운다(아이콘 20 + 좌우 여백).
       padding: 10px 16px 10px 42px;
       color: $primary-text-color;
       font-size: 14px;
@@ -14564,8 +13859,6 @@ div.compose-panel .account__bio {
         color: $darker-text-color;
       }
 
-      // `outline` 이 아니라 테두리 색을 바꾼다. 알약 바깥에 링이 하나 더 생기면
-      // 모서리가 두 겹으로 보인다.
       &:focus-visible {
         outline: 0;
         border-color: var(--color-sent-message-background);
@@ -14579,13 +13872,9 @@ div.compose-panel .account__bio {
     width: 20px;
     height: 20px;
     color: $darker-text-color;
-
-    // 아이콘 위를 눌러도 입력칸이 잡히게 한다.
     pointer-events: none;
   }
 
-  // 그룹 만들기로 넘어가는 줄. 목록의 첫 줄처럼 생겼다 — 사람을 고르러
-  // 내려가다 자연스럽게 눈에 걸려야 한다.
   &__group-entry {
     display: flex;
     align-items: center;
@@ -14618,8 +13907,6 @@ div.compose-panel .account__bio {
     display: flex;
     align-items: center;
     justify-content: center;
-
-    // 아바타(44)와 같은 폭을 차지해야 아래 목록의 이름들과 왼쪽이 맞는다.
     width: 44px;
     height: 44px;
 
@@ -14629,7 +13916,6 @@ div.compose-panel .account__bio {
     }
   }
 
-  // 그룹 화면의 "다음". 헤더 바로 아래에 선다.
   &__picked {
     padding: 4px 16px 12px;
   }
@@ -14637,9 +13923,6 @@ div.compose-panel .account__bio {
   &__next {
     width: 100%;
 
-    // 고를 사람이 없을 때 **꺼진 것처럼 보여야 한다.** 상류
-    // `.button:disabled` 가 배경을 바꾸지만, 테마가 `.layout-single-column
-    // .button` 로 그 배경을 다시 덮어 파란 채로 남는다. 여기서 되돌린다.
     &:disabled {
       background: $ui-button-disabled-color;
       cursor: default;
@@ -14665,7 +13948,6 @@ div.compose-panel .account__bio {
     flex-direction: column;
   }
 
-  // 사람 한 줄. 아바타 · (이름 / 핸들) · 체크.
   &__row {
     display: flex;
     align-items: center;
@@ -14728,8 +14010,6 @@ div.compose-panel .account__bio {
     color: $darker-text-color;
   }
 
-  // 선택 표시. **색만으로 구분하지 않는다**(기획서 §4.7) — 빈 동그라미와 체크로
-  // 모양 자체가 갈리므로 고대비 모드나 색각 이상에서도 읽힌다.
   &__row__check {
     display: flex;
     align-items: center;
@@ -14754,19 +14034,7 @@ div.compose-panel .account__bio {
 }
 
 
-// @_longwhile custom feature / 한참(longwhile) 제작 기능 — 답글 수신자 고르기
-//
-//   **`.dm-recipient` 를 함께 걸고 여기서는 다른 것만 적는다.** 두 모달이 같아야
-//   하는 것(줄 높이·호버·핸들 색·목록 스크롤)을 다시 적으면 반드시 한쪽만
-//   고쳐지는 날이 온다. 실제로 다른 것은 헤더 배치와 체크 모양뿐이다.
 .compose-recipients {
-  // 헤더가 셋으로 나뉜다 — X · 제목 · 완료. 제목이 남는 자리를 다 먹어야
-  // "완료" 가 오른쪽 끝에 붙는다.
-  //
-  // `flex-direction` 은 위의 `.dm-recipient .dialog-modal__header` 가 이미
-  // `row` 로 되돌려 두었다(상류는 `row-reverse` 다). 그래도 여기에 다시 적는다 —
-  // 뒤집히면 **닫으려고 누른 것이 저장이 되는** 종류의 고장이라, 저쪽 규칙이
-  // 바뀌었을 때 조용히 따라가면 안 된다.
   &__header {
     display: flex;
     flex-direction: row;
@@ -14779,37 +14047,20 @@ div.compose-panel .account__bio {
     }
   }
 
-  // **`.dm-recipient` 가 닫기를 오른쪽 끝으로 밀어 둔다**(`margin-inline-start:
-  // auto`). 그쪽은 제목 · X 두 칸이라 그게 맞지만, 여기서는 X 가 **왼쪽 첫
-  // 칸**이라 되돌려야 한다. 그대로 두면 X 가 "완료" 옆으로 붙어 나란히 선다.
-  //
-  // 클래스를 하나 더 겹쳐 이긴다. 그 규칙이 (0,2,0) 이고 이 파일에서 **더 뒤에**
-  // 있어서, 같은 특정도로는 순서에 져서 안 먹는다.
   &.dm-recipient .dialog-modal__header__close {
     margin-inline-start: 0;
   }
 
-  // "완료". 채워진 알약이다 — 이 모달에서 유일하게 상태를 바꾸는 단추라
-  // 눈에 먼저 걸려야 한다.
-  //
-  // **글자 크기는 적지 않는다.** 테마의 `.layout-single-column .button` 이
-  // (0,2,0) 으로 더 뒤에서 `font-size` 를 정하므로 여기 적어도 안 먹는다.
-  // 안 먹는 선언을 남겨두면 다음 사람이 그 값이 쓰인다고 읽는다. 새 쪽지 모달의
-  // `__next` 도 같은 이유로 크기를 안 적는다.
   &__done {
     flex: 0 0 auto;
     width: auto;
     padding: 6px 16px;
   }
 
-  // 줄 전체가 <label> 이다. 체크박스가 그 안에 있으므로 어디를 눌러도 토글된다.
   &__row {
-    // 버튼이 아니라 라벨이라 커서를 직접 지정한다.
     cursor: pointer;
   }
 
-  // 계정 본체가 아직 없을 때 아바타 자리를 비워 둔다. 없으면 이름이 왼쪽으로
-  // 당겨져 다른 줄과 어긋난다.
   &__row__avatar-placeholder {
     flex: 0 0 auto;
     width: 44px;
@@ -14818,8 +14069,6 @@ div.compose-panel .account__bio {
     background: var(--color-noti-hover);
   }
 
-  // 진짜 <input type=checkbox>. 보이지 않게 두되 **display:none 은 아니다** —
-  // 그러면 포커스를 받을 수 없어 키보드로 못 고른다.
   &__row__input {
     position: absolute;
     width: 1px;
@@ -14828,9 +14077,6 @@ div.compose-panel .account__bio {
     pointer-events: none;
   }
 
-  // 우리가 그리는 체크박스. 새 쪽지 모달은 동그라미인데 여기는 네모다 —
-  // 그쪽은 "이 사람을 고른다"(택일에 가깝다), 여기는 "이 사람을 포함한다"
-  // (각각 독립적으로 켜고 끈다). 모양이 다르면 하는 일이 다르다는 뜻이 된다.
   &__check {
     display: flex;
     align-items: center;
@@ -14853,8 +14099,6 @@ div.compose-panel .account__bio {
     }
   }
 
-  // 키보드 포커스는 숨긴 input 이 받는다. 그 표시를 줄에 옮겨 그린다 — 없으면
-  // Tab 으로 내려갈 때 어디에 있는지 알 수 없다.
   &__row__input:focus-visible ~ &__check {
     outline: 2px solid var(--color-sent-message-background);
     outline-offset: 2px;
@@ -14862,7 +14106,6 @@ div.compose-panel .account__bio {
 }
 
 
-// 안 읽은 곳의 경계. 날짜 구분선과 헷갈리지 않도록 선을 긋고 색을 준다.
 .dm-unread-divider {
   display: flex;
   align-items: center;
@@ -14887,11 +14130,6 @@ div.compose-panel .account__bio {
 }
 
 .dm-message {
-  // 시각과 ⋯ 버튼이 **같은 자리를 나눠 쓴다.** 평소에는 시각이 보이고, 줄에
-  // 마우스가 올라오면 그 자리에서 ⋯ 로 바뀐다.
-  //   둘을 나란히 두면 ⋯ 가 나타날 때마다 줄이 넓어져 말풍선이 밀린다. 겹쳐
-  //   두면 폭이 변하지 않는다. 카카오톡이 시각 자리에 답장·이모지를 띄우는 것과
-  //   같은 방식이다.
   &__aside {
     position: relative;
     flex: 0 0 auto;
@@ -14899,16 +14137,10 @@ div.compose-panel .account__bio {
     display: flex;
     align-items: flex-end;
     justify-content: flex-end;
-
-    // 시각("23:13")과 ⋯ 버튼 중 큰 쪽에 맞춰 자리를 미리 잡아 둔다. 시각이 없는
-    // 메시지(덩어리 중간)에서도 ⋯ 가 같은 자리에 서야 한다.
     min-width: 34px;
     min-height: 24px;
   }
 
-  // 메뉴는 평소에 감춰 두고 말풍선에 닿거나 포커스가 들어올 때만 보인다. 늘
-  // 띄우면 말풍선마다 점 세 개가 붙어 대화가 안 읽힌다. 터치 기기에는 hover 가
-  // 없으므로 아래 coarse 포인터 규칙에서 항상 보이게 한다.
   &__menu {
     position: absolute;
     inset: 0;
@@ -14916,14 +14148,6 @@ div.compose-panel .account__bio {
     align-items: center;
     justify-content: center;
     opacity: 0;
-
-    // **페이드를 걸지 않는다.** 시각과 자리를 바꾸는 동작이라 둘이 반투명하게
-    // 겹치는 순간이 생기고, 그 100ms 동안 글자와 점 세 개가 서로 비쳐 지저분하다.
-    // 바로 갈아 끼우는 편이 낫다.
-
-    // 말풍선 쪽으로 2px 당긴다. 방향은 좌우가 반대다 — 받은 메시지는 ⋯ 가
-    // 말풍선 오른쪽에 서므로 왼쪽으로, 보낸 메시지는 왼쪽에 서므로 오른쪽으로
-    // 가야 가까워진다. 절대 배치라 자리는 밀리지 않는다.
     transform: translateX(-2px);
 
     .icon-button {
@@ -14935,19 +14159,6 @@ div.compose-panel .account__bio {
     transform: translateX(2px);
   }
 
-  // 시각은 그 반대로 물러난다. `visibility` 까지 끄지 않는 이유는, 여기서 폭이
-  // 0 이 되면 자리를 잡아 두는 뜻이 없어지기 때문이다.
-  //
-  // **⋯ 가 실제로 있는 말풍선에서만 바꾼다** (`:has()`). 없는데도 시각을 지우면
-  // 그 자리는 그냥 비고, 마우스가 지나갈 때마다 글자가 깜빡인다. 지울 것을
-  // 지우고 대신 채우는 것이 없으니 손해만 남는다.
-  //
-  // 그런 말풍선이 둘 있다. 운영진 열람 화면(/messages/all)은 메뉴를 통째로
-  // 감추고(readOnly), 본문 없이 첨부만 있는 남의 메시지는 넣을 항목이 없어
-  // 메뉴가 스스로 그리기를 포기한다(message_menu.tsx).
-  //
-  // 이 저장소는 이미 `:has()` 를 쓴다(`.modal-root:has(.schedule-modal)`,
-  // `.account--panel__button .icon-button:has(.icon-times)`).
   &:hover:has(.dm-message__menu) &__meta,
   &:focus-within:has(.dm-message__menu) &__meta {
     opacity: 0;
@@ -14959,32 +14170,11 @@ div.compose-panel .account__bio {
   }
 }
 
-// @_longwhile — 모바일에서 대화방을 열면 화면 아래 내비게이션 바를 감춘다.
-//
-// 그 바는 `position: fixed; bottom: 0; z-index: 40` 이라 입력창 위에 그대로
-// 얹힌다. 실제로 입력창이 통째로 가려져 있었다.
-//
-// **자리를 비워주는(padding-bottom: 54px) 대신 감춘다.** 채팅은 입력창이 화면
-// 맨 아래에 붙어 있는 것이 기본이고, 방에서 나가는 길은 헤더의 뒤로 가기가
-// 이미 맡고 있다.
-//
-// **목록 화면에서는 감추지 않는다.** 거기서는 나갈 방법이 그 바뿐이다. 그래서
-// 셸이 아니라 방을 기준으로 켜지는 클래스를 쓴다(shell.tsx).
-//
-// 이 미디어 쿼리는 그 바가 나타나는 구간과 같아야 한다 — 상류가
-// `min-width: $mobile-breakpoint + 1px` 에서 그것을 감춘다.
 @media screen and (max-width: $mobile-breakpoint) {
   body.layout-messages-room .ui__navigation-bar {
     display: none;
   }
 }
-
-// 반응형 3구간. (기획서 §11)
-//   좁음   ~759px    한 화면에 방 하나. 말풍선을 넓게 쓰고 여백을 줄인다.
-//   보통   760~1174  기본값.
-//   넓음   1175px~   여백만 넓힌다. 말풍선 폭은 따로 줄이지 않는다 — 이 구간에서
-//                    .columns-area__panels__main 이 이미 600px 로 묶이므로,
-//                    비율을 더 낮추면 넓은 화면에서 오히려 더 좁아진다.
 
 @media screen and (max-width: $mobile-breakpoint) {
   .dm-room__scroll {
@@ -15008,9 +14198,6 @@ div.compose-panel .account__bio {
     padding: 10px 8px;
   }
 
-  // 터치에서는 32px 이 너무 작다. WCAG 2.5.8 의 최소치(24×24)는 넘지만 iOS 44 /
-  // Material 48 권장에는 한참 못 미친다. 보내기·첨부는 이 화면의 주요 동작이라
-  // 손가락으로 정확히 눌려야 한다. 아이콘은 20px 그대로 두어 여백만 늘린다.
   .dm-composer__send,
   .dm-composer__attach {
     width: 40px;
@@ -15024,70 +14211,40 @@ div.compose-panel .account__bio {
   }
 }
 
-// 터치 기기에는 hover 가 없다. 메뉴를 hover 로만 띄우면 모바일에서 신고·삭제에
-// 닿을 방법이 아예 없어진다. (FR-24)
-
-// **늘 보이는 ⋯ 는 시각과 겹치면 안 된다.** 위의 `__aside` 는 hover 로 둘을
-// 갈아 끼우려고 ⋯ 를 시각 위에 절대 배치로 겹쳐 둔다. 터치에서는 갈아 끼울
-// hover 가 없어 둘이 늘 같이 그려졌고, 시각("09:30")이 점 세 개에 덮여 깨져
-// 보였다. 여기서는 겹치지 않고 **시각 바깥쪽 옆**에 나란히 선다 — 받은 메시지는
-// 시각의 오른쪽, 보낸 메시지는 시각의 왼쪽(말풍선에서 먼 쪽). 마우스 환경의
-// hover 동작은 그대로다.
 @media (hover: none), (pointer: coarse) {
   .dm-message__aside {
     gap: 2px;
   }
 
-  // DOM 순서는 시각 → ⋯ 다. 보낸 메시지는 칸이 말풍선 왼쪽에 서므로 뒤집어야
-  // ⋯ 가 바깥(왼쪽)으로 간다.
   .dm-message--mine .dm-message__aside {
     flex-direction: row-reverse;
   }
 
-  // 클래스 2개. 위의 `.dm-message--mine .dm-message__menu`(translateX)를 이긴다.
-
-  // 아래로 2px 내린다. 둘 다 바닥을 말풍선 아래 끝에 맞추면(`align-items:
-  // flex-end`) 24px 단추 한가운데 있는 점이 18px 줄의 숫자보다 2px 높다
-  // (375px 화면을 찍어 잉크로 잰 값: 숫자 228–235, 점 228–231). transform 이라
-  // 자리는 그대로다.
   .dm-message .dm-message__menu {
     position: static;
     opacity: 1;
     transform: translateY(2px);
   }
 
-  // 나란히 서므로 시각을 지울 이유가 없다. 탭하면 포커스가 남아(`:focus-within`)
-  // 위의 hover 규칙이 시각을 지우는데, 그 규칙과 같은 특정도로 뒤에 둬 되살린다.
   .dm-message:hover:has(.dm-message__menu) .dm-message__meta,
   .dm-message:focus-within:has(.dm-message__menu) .dm-message__meta {
     opacity: 1;
   }
 }
 
-// 움직임 최소화를 켠 사용자에게는 페이드를 걸지 않는다.
 @media (prefers-reduced-motion: reduce) {
-  // `.dm-message__menu` 는 이제 전환이 없어 여기 적을 것이 없다.
   .dm-composer__send {
     transition: none;
   }
 }
 
-// @_longwhile — DM 채팅 첨부 업로드
 .dm-composer {
   &__file-input {
     display: none;
   }
 
-  // 입력 상자 **바깥** 왼쪽. 상자가 각졌으므로(radius 4px) 이쪽도 원이 아니라
-  // 같은 4px 로 맞춘다. 원으로 두면 각진 상자 옆에 동그라미 하나만 떠 보인다.
   &__attach {
     flex: 0 0 auto;
-
-    // 줄(`__row`)이 `align-items: flex-end` 라 가만히 두면 바닥에 붙는다. 한 줄일
-    // 때 상자는 40px, 이 버튼은 32px 이라 8px 만큼 내려앉아 보였다. 가운데로 올린다.
-    //   **여러 줄로 자라면 이 버튼도 상자 한가운데로 따라 올라간다.** 상자가
-    //   6줄까지 자라므로 그때는 꽤 위에 뜬다. 그쪽을 우선하려면 이 줄을 지우고
-    //   버튼 높이를 상자의 한 줄 높이(40px)에 맞추면 된다.
     align-self: center;
     border: 0;
     border-radius: 4px;
@@ -15097,9 +14254,6 @@ div.compose-panel .account__bio {
     color: $darker-text-color;
     cursor: pointer;
 
-    // 이 아이콘은 면이 아니라 **선**으로 그린다(Tabler 계열). 전역 규칙
-    // `.icon path { fill: currentColor }` 가 그대로 걸리면 선이 덩어리로 메워져
-    // 무슨 그림인지 알 수 없게 된다. 여기서 되돌린다.
     .icon path {
       fill: none;
       stroke: currentColor;
@@ -15110,8 +14264,6 @@ div.compose-panel .account__bio {
       color: $highlight-text-color;
     }
 
-    // 전송 버튼과 같은 값. 같은 줄에 나란히 선 두 버튼이 서로 다른 농도로
-    // 흐려지면 하나가 더 눌릴 것처럼 보인다.
     &:disabled {
       opacity: 0.5;
       cursor: default;
@@ -15145,7 +14297,6 @@ div.compose-panel .account__bio {
       outline: 2px solid $error-red;
     }
 
-    // 이미지가 아닌 파일. 이름을 그대로 보여준다.
     &__name {
       display: block;
       padding: 6px;
@@ -15183,10 +14334,8 @@ div.compose-panel .account__bio {
   }
 }
 
-// @_longwhile — DM 채팅 (리뷰 반영분)
 .dm-composer {
   &__upload {
-    // 시각적으로만 감춘다. 이미지 첨부의 파일 이름은 스크린 리더에는 있어야 한다.
     &__name--sr {
       position: absolute;
       width: 1px;
@@ -15196,8 +14345,6 @@ div.compose-panel .account__bio {
       white-space: nowrap;
     }
 
-    // WCAG 2.5.8 의 최소 크기(24×24). 72px 썸네일 모서리에 붙는 버튼이라
-    // 20px 로는 터치로 정확히 누르기 어렵다.
     &__remove {
       width: 24px;
       height: 24px;
@@ -15218,38 +14365,15 @@ div.compose-panel .account__bio {
   color: $darker-text-color;
 }
 
-// 수신자 다중 선택 (Phase 5).
-// @_longwhile — 채팅 모달 둘의 공통 손질. 상류 `.dialog-modal` 을 덮는다.
-//
-// **`.dialog-modal` 전체를 고치지 않는다.** 신고·필터·예약 등 다른 모달이 같은
-// 클래스를 쓰고, 그쪽은 지금 모양 그대로 두어야 한다.
 .dm-recipient,
 .dm-members {
-  // 반투명 + 블러(`--modal-background-color` 는 rgba(255,255,255,.8))를 끄고
-  // 불투명한 면으로 둔다. 뒤에 목록 글자가 비쳐 이름이 겹쳐 읽혔다.
-  //
-  // 색은 칼럼과 같은 판을 쓴다. `--background-color` 는 라이트에서 순백이라
-  // 채팅 화면만 하얗게 떠 보였다.
   background: var(--background-color);
   backdrop-filter: none;
 
   .dialog-modal__header {
-    // 상류는 `row-reverse` 라 닫기가 **왼쪽**에 선다. 제목을 왼쪽, 닫기를
-    // 오른쪽으로 되돌린다 — 이 저장소의 다른 화면(방 헤더)과 방향이 같아야 한다.
     flex-direction: row;
-
-    // 상류 값은 `12px 24px` 다. 그런데 본문의 줄들(검색칸·사람 목록·멤버
-    // 목록)은 전부 16px 이라, 제목만 8px 더 들어가 **세로선이 어긋난다.**
-    // 좌우만 16px 로 맞춘다.
     padding-inline: 16px;
-
-    // `space-between` 을 쓰지 않는다. 그룹 화면에는 항목이 셋이라
-    // (돌아가기 · 제목 · 닫기) 제목이 가운데로 밀려난다. 왼쪽부터 채우고
-    // 닫기만 오른쪽 끝으로 보낸다.
     justify-content: flex-start;
-
-    // 아래 선을 지운다. 검색칸이 바로 붙어 있어 선이 하나 더 있으면 머리가
-    // 무거워 보인다.
     border-bottom: 0;
   }
 
@@ -15258,8 +14382,6 @@ div.compose-panel .account__bio {
   }
 }
 
-// 멤버 관리 모달 (member_modal.tsx). 새 쪽지 모달과 같은 리듬으로 둔다 —
-// 같은 화면에서 잇달아 열리는 둘이라 줄 높이와 여백이 다르면 눈에 띈다.
 .dm-members {
   &__content {
     display: flex;
@@ -15273,7 +14395,6 @@ div.compose-panel .account__bio {
     color: $darker-text-color;
   }
 
-  // "멤버 추가하기". 새 쪽지 모달의 "그룹 만들기" 줄과 같은 모양이다.
   &__add {
     display: flex;
     align-items: center;
@@ -15301,10 +14422,6 @@ div.compose-panel .account__bio {
     }
   }
 
-  // **아바타와 같은 크기의 동그란 자리**로 둔다. 그림만 놓으면 24px 짜리가
-  // 40px 칸 안에서 가운데 정렬되어, 왼쪽 끝이 아래 아바타들보다 8px 안으로
-  // 들어간다 — 실측으로 아바타 17, 그림 25 였다. 면을 깔면 **상자의 왼쪽 끝이
-  // 곧 보이는 왼쪽 끝**이 되어 한 줄로 선다.
   &__add__icon {
     display: flex;
     align-items: center;
@@ -15335,19 +14452,6 @@ div.compose-panel .account__bio {
     padding: 8px 16px;
   }
 
-  // 줄마다 붙는 "더 보기" 메뉴가 펼쳐지는 칸. **모달 안이 아니라 `body` 바로
-  // 아래에 있다** — `Dropdown` 이 메뉴를 그리로 포탈한다.
-  //
-  // 그래서 `.modal-root`(z-index: 9998)와 형제로 나란히 서는데, popper 가 이 칸에
-  // `transform` 을 걸어 스스로 쌓임 맥락이 되므로 안쪽 `.dropdown-menu` 의
-  // `z-index: 9999` 가 밖으로 나오지 못한다. **메뉴가 모달 뒤로 깔리고, 눌러도
-  // 모달이 클릭을 가로챈다.**
-  //
-  // **`body >` 를 반드시 붙인다.** 이 파일 463행의 `body > [data-popper-placement]`
-  // 가 같은 칸에 `z-index: 3` 을 건다. 그쪽은 (0,1,1)이라 클래스 하나(0,1,0)로는
-  // 지고, 규칙은 있는데 값이 3 으로 계산되어 **고친 티가 안 나는** 모양이 된다.
-  // 같은 (0,1,1) 로 맞추면 뒤에 오는 이 규칙이 이긴다. 상류가 같은 문제를
-  // `.dialog-modal__popout` 에서 `!important` 로 넘긴 것도 그 규칙 때문이다.
   body > &__row__menu {
     z-index: 9999;
   }
@@ -15369,8 +14473,6 @@ div.compose-panel .account__bio {
     line-height: 20px;
   }
 
-  // 별명을 붙였을 때 본래 이름이 여기 남는다. 지우면 별명만 보고 누구인지
-  // 알 수 없게 된다.
   &__row__handle {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -15381,14 +14483,11 @@ div.compose-panel .account__bio {
   }
 }
 
-// 그룹 만들기에서 고른 사람. 눌러서 뺀다.
 .dm-recipient {
   &__chips {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-
-    // 검색칸 **아래**로 옮기면서 `__picked` 밖으로 나왔다. 여백을 스스로 든다.
     padding: 0 16px 10px;
   }
 
@@ -15399,15 +14498,10 @@ div.compose-panel .account__bio {
     padding: 3px 8px 3px 3px;
     border: 0;
     border-radius: 999px;
-
-    // 검색칸·줄 호버와 같은 값이다. 이 모달에서 "옅게 채운 면" 은 하나의 색으로
-    // 통일한다 — 알약만 다른 회색이면 같은 화면에 회색이 둘이 된다.
     background: var(--color-recieve-message-background);
     color: $primary-text-color;
     font-size: 13px;
     cursor: pointer;
-
-    // 이름이 길어도 칩이 줄을 통째로 먹지 않게 한다.
     max-width: 180px;
 
     &__name {
@@ -15429,8 +14523,6 @@ div.compose-panel .account__bio {
   }
 }
 
-// 제목 편집 입력칸 (Phase 5). 제목 자리를 그대로 이어받는다 — 크기가 달라지면
-// 편집으로 들어갈 때 헤더가 흔들린다.
 .dm-room-header__title-input {
   width: 100%;
   box-sizing: border-box;
@@ -15439,8 +14531,6 @@ div.compose-panel .account__bio {
   border-radius: 4px;
   background: transparent;
   color: $primary-text-color;
-
-  // 제목과 같은 크기·굵기. 다르면 저장하는 순간 글자가 튄다.
   font-size: 14px;
   font-weight: 600;
   font-family: inherit;
@@ -15451,33 +14541,17 @@ div.compose-panel .account__bio {
   }
 }
 
-// 방에 일어난 일을 알리는 줄 (Phase 5). 지금은 제목 변경 하나뿐이다.
-//
-// **말풍선이 아니다.** 누가 보낸 말이 아니라 방에 일어난 일이라, 좌우로 치우치면
-// 그것을 누군가의 발언으로 읽게 된다. 가운데에 두고 색을 가라앉힌다.
 .dm-system-notice {
-  // 덩어리 사이 여백(20/32px)과 어긋나지 않게 자체 여백은 작게 준다. 이 줄은
-  // 앞뒤 덩어리를 이미 끊고 있어(group_messages 의 standalone) 위아래로 덩어리
-  // 여백이 함께 붙는다.
   margin: 4px auto;
   padding: 4px 12px;
   max-width: 80%;
   text-align: center;
   font-size: 12px;
   line-height: 1.5;
-
-  // `--color-dim` 은 네 테마 전부에 정의돼 있다(css_variables.scss). 하드코딩한
-  // 색은 라이트/다크 중 한쪽에서 반드시 어긋난다.
   color: var(--color-dim);
-
-  // 긴 제목이 한 줄로 삐져나가지 않게 한다. 제목은 100자까지 들어올 수 있다.
   overflow-wrap: anywhere;
 }
 
-// 시각·읽음 규칙은 위쪽 `.dm-message` 블록 하나로 합쳤다. 여기에 또 두면
-// 나중에 오는 쪽이 이겨, 위를 고쳐도 아무 일이 없다.
-
-// 대화 시작 지점의 상대 프로필.
 .dm-room-intro {
   display: flex;
   flex-direction: column;
@@ -15485,10 +14559,6 @@ div.compose-panel .account__bio {
   gap: 6px;
   text-align: center;
 
-  // 날짜 구분선과 **같은 색**으로 둔다. 대화 내용이 아니라 화면이 하는 말이라는
-  // 점에서 성격이 같다 — 같은 톤이어야 말풍선 사이에서 읽히고도 튀지 않는다.
-  // @_longwhile — 글자색은 테마의 흐린 글자 토큰을 따른다. SCSS 팔레트만
-  //   읽으면 라이트/다크는 맞아도 커스텀 테마의 톤과는 어긋난다.
   &__notice {
     max-width: 320px;
     margin: 0;
@@ -15498,15 +14568,10 @@ div.compose-panel .account__bio {
   }
 }
 
-// 날짜 구분선은 스크롤해도 위에 붙어 있는다. 긴 대화를 되짚을 때 지금 보고 있는
-// 곳이 언제인지가 계속 보여야 한다.
-// 위에 붙여두지 않는다. 알약 배경을 걷어낸 뒤로는 지나가는 메시지와 글자가
-// 겹쳐서, 붙어 있는 이득보다 못 읽는 손해가 크다.
 .dm-date-divider {
   pointer-events: none;
 }
 
-// 맨 아래로 이동.
 .dm-room__to-bottom {
   position: absolute;
   inset-inline-end: 16px;
@@ -15526,8 +14591,6 @@ div.compose-panel .account__bio {
     background: var(--surface-background-color);
   }
 
-  // 새 메시지가 쌓였을 때는 개수를 말한다. 화살표만으로는 아래에 무엇이
-  // 생겼는지 알 수 없다. (FR-20)
   &--pill {
     display: flex;
     align-items: center;
@@ -15555,7 +14618,6 @@ div.compose-panel .account__bio {
   position: relative;
 }
 
-// 실시간 수신이 끊긴 동안. 색만으로 알리지 않도록 문구를 그대로 낸다. (§7)
 .dm-room__offline {
   flex: 0 0 auto;
   padding: 6px 12px;
@@ -15566,17 +14628,6 @@ div.compose-panel .account__bio {
   text-align: center;
 }
 
-// 그룹 방의 얼굴. **앞의 두 명만** 겹쳐 그린다 (room_avatar.tsx).
-//
-// 인원수만큼 칸을 쪼개던 상류 `AvatarComposite` 를 버렸다. 48px 을 넷으로
-// 쪼개면 한 칸이 24px 도 안 되어 누구인지 알아볼 수 없다. 몇 명인지는 이름
-// 줄이 이미 말하고 있고, 얼굴 자리가 할 일은 "여럿이다" 를 알리는 것과 방을
-// 서로 구별시키는 것뿐이다.
-//
-// 겹치는 자리는 **마스크로 뚫는다.** 앞 아바타 둘레를 배경색으로 칠하는 흔한
-// 방법을 쓰지 않았다 — 목록 항목이 호버·선택에서 배경을 바꾸므로 그때 고리
-// 색만 옛 배경으로 남는다. 원의 좌표는 크기에 따라 달라져 컴포넌트가 인라인
-// 스타일로 준다.
 .dm-room-avatar {
   position: relative;
   flex: 0 0 auto;
@@ -15594,8 +14645,6 @@ div.compose-panel .account__bio {
   inset-inline-end: 0;
 }
 
-// 방이 열려 있는 동안 도착한 메시지만 알린다. 목록 전체에 aria-live 를 걸면
-// 방을 열 때마다 대화 전체가 낭독된다. (dm-chat-phase-3.md §6)
 .dm-room__live-region {
   position: absolute;
   width: 1px;
@@ -15605,10 +14654,6 @@ div.compose-panel .account__bio {
   white-space: nowrap;
 }
 
-// 메시지 편집 중이라는 표시. 입력창 **바로 위**에 붙는다 (room.tsx).
-//
-// 이 줄이 없으면 Enter 를 눌렀을 때 새 메시지가 나갈 줄 알고 있다가 기존 글이
-// 바뀐다. 취소 단추도 여기에만 있다 — 편집을 무르는 다른 경로가 없다.
 .dm-room__editing {
   display: flex;
   align-items: center;
@@ -15621,8 +14666,6 @@ div.compose-panel .account__bio {
   border-top: 1px solid var(--color-border, var(--background-border-color));
 
   button {
-    // 링크처럼 보이게 둔다. 여기서 강조해야 하는 것은 "수정 중" 이라는 사실이지
-    // 취소가 아니다.
     padding: 0;
     border: 0;
     background: transparent;
@@ -15638,19 +14681,13 @@ div.compose-panel .account__bio {
   }
 }
 
-// 목록 헤더의 필터 드롭다운.
 .dm-room-list__filter {
   display: flex;
   align-items: center;
   gap: 2px;
   padding: 4px 8px 4px 14px;
   border-radius: 999px;
-
-  // `border: 0` 을 먼저 적고 그 아래에서 다시 1px 을 적던 때가 있었다. 뒤엣것이
-  // 이겨 동작은 했지만 읽는 사람이 어느 쪽이 사실인지 알 수 없었다.
   border: 1px solid var(--color-button-border, var(--color-border));
-
-  // 버튼이라 배경을 적지 않으면 브라우저 기본값(buttonface)이 깔린다.
   background: transparent;
   color: $primary-text-color;
   font-size: 14px;
@@ -15663,8 +14700,6 @@ div.compose-panel .account__bio {
   }
 }
 
-// 좁은 화면에서는 좌우 여백을 줄인다. 목록이라 열 수를 줄일 것이 없다 —
-// 4열 그리드였을 때 쓰던 미디어 쿼리를 그대로 이 자리에 남겨 둔다.
 @media screen and (max-width: $mobile-breakpoint) {
   .dm-recipient__row,
   .dm-recipient__group-entry,
@@ -15677,79 +14712,17 @@ div.compose-panel .account__bio {
   }
 }
 
-// @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 채팅
-//   메시지 전용 3열 레이아웃.
-//   마스토돈의 columns-area__panels 는 좌우 패널의 __inner 가 position: fixed 이고
-//   가운데만 문서 스크롤을 따라가는 전제로 만들어져 있다. 그 위에 패널별 독립
-//   스크롤을 그냥 얹으면 다른 라우트가 깨지므로, 이 화면에 있는 동안만 켜지는
-//   body.layout-messages 아래에서만 규칙을 덮는다. (features/messages/components/shell.tsx)
-
-// 3열이 성립하는 최소 폭. **눈대중이 아니라 더한 값이다.**
-// (`--gap-default` 는 테마가 12px 로 둔다)
-
-//     1175~1279  테마가 열을 줄이는 띠
-//       main = 500 + 48 + 16 + 265 =  829   행 = 240 +  829 = 1069
-//     1280~      열이 기본 폭으로 돌아온다
-//       main = 600 + 48 + 16 + 350 = 1014   행 = 240 + 1014 = 1254
-
-// **`$no-gap-breakpoint` 와 같은 값으로 둔다.** 좁은 띠에서 이미 1175 기준으로
-// 90px 넘게 남기 때문이다. 작성창 패널이 생기는 폭과 3열이 되는 폭이 같아지면
-// 폭을 줄일 때 레이아웃이 바뀌는 경계가 하나 사라지고, 홈과 채팅이 같은 지점에서
-// 함께 바뀌어 화면을 오갈 때 내비가 뛰지 않는다.
-
-// 예전 값은 1320px 이었다. 내비가 285px 이던 시절 `285 + 1014 = 1299` 에 여유를
-// 붙인 값이라, 내비를 240 으로 줄인 지금은 그만큼 늦게 3열이 된다.
-//
-// **이 값을 바꾸면 `use_send_on_enter.ts` 의 `DESKTOP_QUERY` 도 함께 고친다.**
-// 전송 키가 이 경계로 갈린다(A-17) — PC 뷰는 Enter 가 전송, 그 아래는 줄바꿈.
-// 1320 → 1175 로 내릴 때 그쪽이 1100 에 남아, 1100~1174 에서 **2열인데 Enter 가
-// 전송**이 됐다. 값이 두 곳에 있는 한 같은 일이 또 생긴다.
 $dm-three-column-breakpoint: $no-gap-breakpoint;
 
-// 선택자를 `body.app-body.layout-messages.layout-single-column` 으로 잡는 이유가
-// 둘 있다.
-//   1. basics.scss 의 `body.app-body.layout-single-column` 이 height/overflow 를
-//      이미 지정한다. 특정도가 (0,2,1) 이라 `body.layout-messages`(0,1,1) 로는
-//      진다 — 소스 순서와 무관하다. 같은 특정도로 올려야 덮인다.
-//   2. 고급 UI(deck) 에서는 여기 규칙이 가리키는 패널이 아예 없다. 그때 규칙이
-//      새면 드로어와 칼럼에 엉뚱하게 걸린다.
 body.app-body.layout-messages.layout-single-column {
-  // 문서 스크롤을 끈다. 스크롤은 패널이 각자 한다.
-
-  // **`overflow: hidden` 이 아니라 `overflow-y: scroll` 이다.** 높이를 화면에
-  // 딱 맞춰 두었으므로 어느 쪽이든 실제로 움직이지는 않는다. 다른 것은 **스크롤바가
-  // 차지하던 자리**다.
-  //   다른 단일 칼럼 화면은 basics.scss 가 `overflow-y: scroll` 로 막대를 늘 띄워
-  //   둔다(내용이 짧아도). 여기서만 `hidden` 으로 덮으면 그 자리가 통째로 사라져,
-  //   채팅에 들어오는 순간 화면 전체가 막대 폭(약 15px)만큼 옆으로 덜컥 밀린다.
-  //   나갈 때 반대로 한 번 더 밀린다.
-  //   `scroll` 로 두면 자리는 그대로 잡혀 있고 막대만 움직이지 않는다.
-
-  //   모달이 열릴 때의 `.with-modals--active { overflow-y: hidden }` 도 같은 점프를
-  //   만드는데, 이 선택자가 클래스 셋(0,3,1)이라 그쪽(0,2,1)을 이겨 이 화면에서는
-  //   모달을 열어도 밀리지 않는다.
   height: 100dvh;
   overflow-y: scroll;
-
-  // 가로는 막는다. `overflow: hidden` 이 하던 몫이다.
   overflow-x: hidden;
 
-  // 탭바로 포털되는 것(뒤로 가기 버튼 등)을 이 화면에서는 쓰지 않는다. 자리만
-  // 차지하고, 3열 셸 위에 전폭 바가 붙어 보인다.
   .tabs-bar__wrapper {
     display: none;
   }
 
-  // 작성창 패널을 감춘다. **언마운트하지 않는 이유**는 전역 작성 상태를 살려두기
-  // 위함이다 — 실제로 지우면 이 화면에 들렀다 나갔을 때 쓰던 툿 초안이 날아간다.
-  // 그 안에 있던 검색은 목록 패널 상단으로 옮겼다.
-
-  // 자리까지 빼도 되는 이유가 있다. 행 전체는 `.app-holder` 가 가운데로 모으므로
-  // (basics.scss) **행 폭이 내비의 x 좌표를 정한다.** 한때 이 화면만 작성창 자리를
-  // 빼는 바람에 행이 366px 짧아져 내비가 홈보다 오른쪽으로 밀렸는데, 그건 3열
-  // 전환 폭(1320)이 작성창이 생기는 폭(1175)보다 높아 **그 사이에 2열 구간이
-  // 있었기** 때문이다. 지금은 둘이 같은 지점이라 그 구간 자체가 없다 — 작성창이
-  // 있는 폭이면 언제나 main 이 그 폭을 흡수한다.
   .columns-area__panels__pane--compositional {
     display: none;
   }
@@ -15760,61 +14733,12 @@ body.app-body.layout-messages.layout-single-column {
     align-items: stretch;
   }
 
-  // **내비게이션 패널은 건드리지 않는다.** 다른 타임라인과 똑같은 폭·여백·라벨을
-  // 유지한다. 아이콘만 남기는 레일로 좁혔던 적이 있는데, 이 화면만 사이드바가
-  // 달라 보여 어디에 있는지 알기 어려웠다.
-
-  // main 이 작성창 패널 자리까지 함께 쓰고, 그 안에서 목록과 대화방으로 다시
-  // 나눈다(.dm-shell).
   .columns-area__panels__main {
     min-height: 0;
     height: 100dvh;
   }
 
-  // **3열일 때만 폭을 넓힌다. 그 폭은 홈의 행 폭을 그대로 재현한 값이다.**
-
-  //     홈       내비 | main(600 + 좌우 24) | 16 | 작성창 350
-  //     메시지   내비 | main 하나가 뒤의 셋을 합친 폭
-
-  // 그래야 행 전체 폭이 홈과 같아지고, `justify-content: center` 가 내비를 홈과
-  // **같은 x 좌표**에 세운다. 실제로 이 값이 어긋나 있던 동안 내비가 홈보다
-  // 12px 오른쪽에 서 있었다.
-
-  // 숫자를 직접 박지 않고 테마 변수로 더하는 이유가 있다. bird-ui 는
-  // 1175~1279px 구간에서 같은 변수를 600/350 대신 500/265 로 줄인다. 값을 적어
-  // 두면 그 구간에서만 어긋난다. 변수가 없는 기본 테마에서는 뒤의 대체값이
-  // 쓰이고(`--gap-default` 는 0), 그쪽은 main 에 padding 이 없어 역시 맞는다.
-
-  // **`fit-content` 를 쓰지 않는다.** 상류가 이 패널에 `contain: inline-size` 를
-  // 걸어 두어(2839행) 내재 크기가 내용과 무관하게 0 으로 계산된다. 그러면
-  // `max-width: fit-content` 가 그대로 0 이 되어 3열이 통째로 사라진다.
-
   @media screen and (width >= $dm-three-column-breakpoint) {
-    // **`flex: 0 1 auto` — 늘어나지는 않고 줄어들기만 한다.**
-    //   grow 가 0 인 이유: 늘어나면 행이 화면 전폭이 되어 좌우 여백이 사라지고
-    //   내비가 화면 왼쪽 끝에 붙는다.
-    //   shrink 를 살려 둔 이유: 열 폭이 기본값으로 돌아오는 지점(테마의 축소 띠가
-    //   끝나는 1280px)에서 행이 1254px 이고, 스크롤바를 빼면 여유가 11px 뿐이다.
-    //   계산이 몇 px 어긋나도 대화방 열(`minmax(0, 1fr)`)이 흡수하게 둔다.
-    // **작성창 패널 자리는 `--width-compose-panel` 이 아니라 350px 이다.**
-    //
-    //   실제 패널(.columns-area__panels__pane--compositional)은 `width: 350px`
-    //   `max-width: 350px` 로 **고정**되어 있다. 테마가 좁은 띠(1175~1279)에서
-    //   `--width-compose-panel` 을 265 로 줄이지만 **그 패널은 줄지 않는다** —
-    //   그 변수는 DM 셸의 목록 열처럼 변수를 읽는 곳에만 걸린다.
-    //
-    //   그래서 여기서 그 변수를 쓰면 행이 **85px(350−265) 짧아진다.** 그만큼
-    //   `justify-content: center` 가 행을 오른쪽으로 밀어, 홈에서는 화면 왼쪽에
-    //   붙어 있던 내비가 채팅에서만 튀어나와 보였다.
-    //
-    //   실측(1176px, bird-ui light)
-    //     홈    내비 0~240 · main 256~804 · 작성창 820~1170   행 1170 (전폭)
-    //     채팅  내비 43~283 · main 299~1128                   행 1085 (85 짧음)
-    //
-    //   숫자를 박는 것이 변수보다 낫다. 이 자리는 "작성창 패널이 차지하는 폭"
-    //   이고 그 값은 고정이다. 변수는 그 값을 말하지 않는다.
-    //   목록 열은 그대로 변수를 쓴다(아래 `.dm-shell`) — 그쪽은 테마가 실제로
-    //   줄이려는 열이 맞다.
     .columns-area__panels__main {
       flex: 0 1 auto;
       width: calc(
@@ -15825,9 +14749,6 @@ body.app-body.layout-messages.layout-single-column {
     }
   }
 
-  // 3열이 아닌 폭에서는 **main 을 아예 건드리지 않는다.** 상류의 max-width 가
-  // 그대로 걸려 홈과 같은 폭·같은 자리에 한 열이 선다.
-
   .columns-area--mobile,
   .columns-area {
     height: 100%;
@@ -15835,66 +14756,22 @@ body.app-body.layout-messages.layout-single-column {
   }
 }
 
-// 열 폭은 **메인 타임라인 레이아웃의 두 폭을 맞바꾼 것**이다.
-//   기본 화면   내비 | 타임라인(넓음) | 작성창(좁음)
-//   메시지      내비 | 목록(좁음)     | 대화방(넓음)
-// 그래서 목록은 작성창 패널 폭을, 대화방은 타임라인 폭을 쓴다. 테마가 정의한
-// 변수를 그대로 읽어 다른 화면과 어긋나지 않게 한다 — bird-ui 는 260/600px 이고,
-// 변수가 없는 기본 테마에서는 뒤의 대체값이 쓰인다.
 .dm-shell {
   display: grid;
-
-  // 목록은 작성창 패널 폭을 그대로 쓰고(위의 main 폭 계산과 **같은 변수**여야
-  // 한다 — 한쪽만 숫자로 박으면 두 값이 어긋난다), 대화방은 **남는 폭을 전부**
-  // 가져간다.
-  //   대화방을 600px 로 못 박지 않는 이유: main 의 직계 자식
-  //   (`.columns-area--mobile`)에 테마가 좌우 1px 테두리를 그려, 셸이 실제로 쓸 수
-  //   있는 폭이 계산값보다 2px 적다. 고정값 두 개를 나란히 두면 그만큼 넘치거나
-  //   오른쪽이 빈다. 1fr 이면 알아서 맞는다 — 결과 폭은 홈 타임라인의 실제 안쪽
-  //   폭과 같아진다.
-  //   minmax(0, …) 이어야 하는 것도 그대로다. auto 면 긴 URL 하나가 그리드 항목을
-  //   넘치게 만들어 가로 스크롤이 생긴다.
-  // **목록은 350px 고정이다. `--width-compose-panel` 을 쓰지 않는다.**
-  //
-  //   그 변수는 좁은 띠(1175~1279)에서 350 → 265 로 줄어드는데, **홈의 작성창
-  //   패널은 그 구간에서도 350 그대로다**(`width`/`max-width` 가 350px 로 박혀
-  //   있다). 즉 그 변수는 "작성창 패널의 폭" 을 말하지 않는다 — 그것을 읽는
-  //   곳에만 걸리는 값이다. main 폭 계산에서 같은 이유로 이미 350 을 쓴다.
-  //
-  //   그 변수를 따라간 동안 목록이 265 로 좁아져 카드의 이름·미리보기가 두 줄로
-  //   접혔다. 350 으로 두면 홈의 오른쪽 패널과 폭이 정확히 같아지고, 화면을
-  //   오갈 때 그 열의 폭이 바뀌지 않는다.
-  //
-  //   대화방은 남는 폭을 전부 가져간다. 1190px 기준으로 516px 이고, 이 구간의
-  //   원래 설계값(500px)보다 넓다 — 목록을 넓혀도 대화방이 손해 보지 않는다.
-  //
-  //   `minmax(0, …)` 이어야 하는 것은 그대로다. `auto` 면 긴 URL 하나가 그리드
-  //   항목을 넘치게 만들어 가로 스크롤이 생긴다.
   grid-template-columns: 350px minmax(0, 1fr);
-
   height: 100%;
   min-height: 0;
   overflow: hidden;
 
   &__list,
   &__thread {
-    // min-height: 0 이 없으면 grid 자식의 기본 min-height 가 auto 라 내용 높이만큼
-    // 늘어나고, overflow-y 가 통째로 무효가 된다. 스크롤이 안 먹는다는 문제의
-    // 대부분이 여기서 나온다.
     min-height: 0;
     display: flex;
     flex-direction: column;
   }
 
-  // 두 열은 **한 판**이다. 바깥 테두리는 main 의 직계 자식에 테마가 그리는
-  // 좌우 선이 맡고, 안쪽은 목록 오른쪽의 선 하나로만 가른다(아래 .dm-room-list).
-  // 열마다 테두리와 둥근 모서리를 주면 판이 두 개로 갈라져 보인다.
   &__list,
   &__thread {
-        // @_longwhile — **칼럼 색을 여기서 또 칠하지 않는다.** 바깥
-    // `.columns-area--mobile` 이 이미 --color-column 을 칠하고 있어서, 여기서
-    // 한 번 더 깔면 반투명 값이 겹쳐 쌓인다. #ffffffce(81%)를 세 겹 쌓으면
-    // 99% 흰색이 되어, 목록은 배경이 비치는데 대화방만 하얗게 뜬다.
     background: transparent;
     overflow: hidden;
   }
@@ -15905,8 +14782,6 @@ body.app-body.layout-messages.layout-single-column {
   flex-direction: column;
   min-height: 0;
   height: 100%;
-
-  // 목록과 대화방을 가르는 **유일한 선.** 한 열로 접히는 폭에서는 뗀다(아래).
   border-inline-end: 1px solid var(--color-border, var(--background-border-color));
 
   &__header {
@@ -15917,9 +14792,6 @@ body.app-body.layout-messages.layout-single-column {
     padding: 12px 16px;
   }
 
-  // 칼럼 헤더 제목(`.column-header__title`, "홈"·"알림")과 **같은 글자**로 둔다.
-  // 화면을 오갈 때 같은 자리의 제목 크기가 달라지면 헤더가 들썩인다.
-  // 실측으로 저쪽이 18px / 700 이었고 여기가 20px / 800 이었다.
   &__title {
     flex: 1 1 auto;
     min-width: 0;
@@ -15929,8 +14801,6 @@ body.app-body.layout-messages.layout-single-column {
     color: $primary-text-color;
   }
 
-  // 필터 알약(.dm-room-list__filter)과 **같은 옷**을 입는다. 헤더에 나란히 선
-  // 두 컨트롤이라, 하나는 채워지고 하나는 테두리만이면 눌리는 무게가 달라 보인다.
   &__compose {
     flex: 0 0 auto;
     width: 34px;
@@ -15955,9 +14825,6 @@ body.app-body.layout-messages.layout-single-column {
     margin: 9px 16px 16px;
     padding: 8px 14px;
     border-radius: 999px;
-
-    // @_longwhile — 면을 깔지 않고 **테두리로만** 입력 칸을 표시한다. 헤더에
-    // 나란히 선 필터 알약·새 쪽지 단추와 같은 옷이라 셋이 한 벌로 읽힌다.
     border: 1px solid var(--color-button-border, var(--color-border));
     background: transparent;
     color: var(--color-dim, #{$darker-text-color});
@@ -15981,16 +14848,6 @@ body.app-body.layout-messages.layout-single-column {
     }
   }
 
-  // 패널이 자기 스크롤을 갖는다.
-  // **overflow-y 를 반드시 명시한다.** 단일 칼럼에서 라우트 출력은 항상
-  // `.columns-area--mobile` 안에 들어가는데(폭과 무관하다 — 이름과 달리 모바일
-  // 전용이 아니다), 그 안의 `.scrollable` 은 `overflow: visible` 로 덮여 있다.
-  // 문서 스크롤에 붙는(bindToDocument) 기본 동작과 짝이 맞는 규칙이다.
-  // 우리는 bindToDocument={false} 라 이 노드 자체가 스크롤 컨테이너여야 하므로,
-  // 그대로 두면 ScrollableList 의 scrollTop 이 늘 0 이고 scroll 이벤트가 나지
-  // 않는다 — 무한 스크롤이 영영 안 걸리고, 넘치는 목록은 dm-shell 의
-  // overflow: hidden 에 잘려 도달할 수 없다.
-  // overscroll-behavior 가 없으면 목록 끝까지 내렸을 때 뒤 페이지가 따라 스크롤된다.
   .scrollable {
     min-height: 0;
     overflow-y: auto;
@@ -15999,9 +14856,6 @@ body.app-body.layout-messages.layout-single-column {
   }
 }
 
-// 대화방은 헤더 / 스크롤 / 입력창 3단이다. 입력창에 position: fixed 를 쓰지
-// 않는다 — 패널이 화면 전폭이 아니라 좌표가 어긋나고, 모바일 가상 키보드에
-// 가려진다. flex 로 고정하는 것이 맞다.
 .dm-room {
   display: flex;
   flex-direction: column;
@@ -16014,8 +14868,6 @@ body.app-body.layout-messages.layout-single-column {
     min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
-
-        // 바깥 칼럼이 이미 --color-column 을 칠한다. 여기서 또 깔면 겹쳐 쌓인다.
     background: transparent;
   }
 
@@ -16040,15 +14892,11 @@ body.app-body.layout-messages.layout-single-column {
       color: $primary-text-color;
     }
 
-    // 운영 화면의 안내문이 길어지면서 넣었다. 가운데 정렬이라 줄이 길면
-    // 줄바꿈마다 눈이 시작점을 다시 찾아야 한다. 읽기 좋은 길이에서 접는다.
     p {
       max-width: 46ch;
       line-height: 1.5;
     }
 
-    // 아이콘을 받치는 원. 빈 화면에서 눈이 처음 닿는 자리라 아이콘 하나만
-    // 덩그러니 두는 것보다 면을 깔아 무게를 준다.
     &__icon {
       display: flex;
       align-items: center;
@@ -16057,40 +14905,25 @@ body.app-body.layout-messages.layout-single-column {
       height: 70px;
       margin-bottom: 12px;
       border-radius: 50%;
-
       background: var(--color-noti-hover);
       color: var(--color-dim);
 
-      // `.icon` 기본값이 24px 이라 88px 원 안에서 점처럼 보인다. 원의 40% 쯤이
-      // 아이콘일 때 균형이 맞는다.
       .icon {
         width: 36px;
         height: 36px;
       }
 
-      // 선으로 그리는 아이콘이다. 전역 `.icon path { fill: currentColor }` 가
-      // 걸리면 말풍선 모양이 통째로 메워진다.
       .icon path {
         fill: none;
         stroke: currentColor;
       }
 
-      // **편지 아이콘만 예외다.** 운영진 화면(/messages/all)의 빈 상태가 쓰는
-      // `bird-theme-svg/envelope.svg` 는 선이 아니라 면으로 그린 그림이라, 위
-      // 규칙이 걸리면 획이 없어 **통째로 안 보인다.** 실제로 그랬다.
-      //
-      // 특이성이 위와 같으므로(0,2,1) 순서로 이긴다. 위 블록보다 뒤에 있어야
-      // 한다는 뜻이다.
       .icon-messages path {
         fill: currentColor;
         stroke: none;
       }
     }
 
-    // 다음에 할 일. 빈 화면에서 갈 곳이 하나뿐인데 그 길이 좌측 헤더의 작은
-    // 버튼밖에 없으면 찾기 어렵다.
-    //   색은 보낸 말풍선과 같은 짝을 쓴다. 이 화면에서 유일하게 채워진 요소이고,
-    //   그 짝은 네 테마 전부가 정의하며 대비도 맞춰 두었다(4.51:1).
     &__action {
       margin-top: 8px;
       padding: 10px 20px;
@@ -16120,17 +14953,12 @@ body.app-body.layout-messages.layout-single-column {
   }
 }
 
-// 반응형. 임계값은 위에서 더해 둔 $dm-three-column-breakpoint 다.
-//   1175px~   내비 + 목록 + 대화방
-//   ~1174px   한 번에 하나. 방을 열면 목록을 접고, /messages 면 목록만 보인다.
 @media screen and (width < $dm-three-column-breakpoint) {
   .dm-shell {
     grid-template-columns: minmax(0, 1fr);
     gap: 0;
   }
 
-  // 한 열만 남으면 가를 것이 없다. 선을 남기면 칼럼 오른쪽 끝에 뜬금없는
-  // 세로줄 하나가 그어진다.
   .dm-room-list {
     border-inline-end: 0;
   }
@@ -16144,11 +14972,9 @@ body.app-body.layout-messages.layout-single-column {
   }
 }
 
-// @_longwhile — DM 채팅 헤더/말풍선 조정 (3열 개편 후속)
 .dm-room-header {
   flex: 0 0 auto;
 
-  // 3열에서는 목록이 늘 옆에 있어 돌아갈 곳이 없다.
   &__back {
     display: none;
   }
@@ -16160,10 +14986,6 @@ body.app-body.layout-messages.layout-single-column {
   }
 }
 
-// 열려 있는 방 표시는 위의 `.dm-room-item` 블록 안에서 한다. 여기에 또 두면
-// 나중에 오는 이 규칙이 이겨, 위쪽을 고쳐도 아무 일이 없다.
-
-// @_longwhile — DM 채팅 방 헤더의 뒤로 가기 (상류 ColumnBackButton 대체)
 .dm-room-header__back {
   display: none;
   align-items: center;
@@ -16190,17 +15012,6 @@ body.app-body.layout-messages.layout-single-column {
   }
 }
 
-// @_longwhile — DM 화면의 아이콘이 두 겹으로 그려지던 것.
-//   bird-ui / theme-ui 는 마스토돈 아이콘을 **원본 `path` 를 숨기고 그 자리에
-//   background-image 를 까는** 방식으로 갈아 끼운다. 그런데 `path` 를 숨기는
-//   목록은 선택자별로 열거되어 있고(`.status__action-bar path`,
-//   `.column-link .icon path` …), 우리가 새로 만든 화면은 그 목록에 없다.
-//   그림을 까는 규칙(`.icon-ellipsis-h` 등)은 선택자가 넓어 우리 화면에도 걸린다.
-//   결과가 **원본 + 테마 그림 두 겹**이다. 실제로 "더보기" 점 세 개가 어긋나게
-//   두 번 그려졌다. 예약 게시물에서도 같은 것을 밟았다.
-//   그래서 우리 화면에서는 테마 쪽을 끈다. `.load-more` 처럼 **원본이 숨겨져 있어
-//   테마 그림이 유일한 그림인** 요소는 건드리면 안 되므로, 우리가 만든 요소만
-//   하나씩 짚는다.
 .dm-message__menu .icon,
 .dm-room-header .icon,
 .dm-room-list__header .icon,
@@ -16219,14 +15030,6 @@ body.app-body.layout-messages.layout-single-column {
   }
 }
 
-// @_longwhile — DM 안의 두 스크롤 영역(대화·목록) 막대.
-//   기본값은 reset.scss 의 `scrollbar-color: $action-button-color
-//   var(--background-border-color)` 인데, 그 트랙 색이 대화 배경과 달라 세로로
-//   띠가 하나 그어진 것처럼 보인다. 트랙을 지우고 막대만 남긴다.
-
-//   `scrollbar-color` 는 파이어폭스와 최근 크로미움이 읽고, 그보다 오래된
-//   크로미움·사파리는 아래 `::-webkit-scrollbar` 쪽을 읽는다. 둘 다 적어야
-//   브라우저에 따라 트랙이 남는 일이 없다.
 .dm-room__scroll,
 .dm-room-list .scrollable {
   scrollbar-color: var(--color-recieve-message-background) transparent;
@@ -16248,27 +15051,13 @@ body.app-body.layout-messages.layout-single-column {
   }
 }
 
-// 검색창 돋보기. 목록 헤더·컴포저의 아이콘과 같은 20px 로 맞춘다.
 .dm-room-list__search .icon {
   width: 20px;
   height: 20px;
 }
 
-// @_longwhile — 선(stroke)으로 그리는 아이콘들. 전역 `.icon path { fill: currentColor }`
-// 가 그대로 걸리면 선이 덩어리로 메워져 무슨 그림인지 알 수 없다.
-
-// **클래스 두 개 이상으로 적는다.** 클래스 하나짜리(`.icon-search path`)는 전역
-// 규칙과 특정도가 같아 소스 순서로만 이기는데, 테마가 뒤에 로드되므로 위태롭다.
-
-// `message-plus` / `message-circle` 은 우리가 붙인 이름이라 이 화면에만 있다.
-// **`search` 는 다르다** — 내비의 검색 링크, 검색 칼럼 머리말, 언어 선택기가
-// 아직 상류의 **채워진** 돋보기를 같은 `icon-search` 이름으로 쓴다. 전역으로
-// 걸면 그것들이 윤곽선만 남은 이상한 모양이 된다. 그래서 우리가 실제로 바꾼
-// 두 자리(DM 검색창, 타임라인 검색창)만 짚는다.
 .icon.icon-message-plus,
 .icon.icon-message-circle,
-// 작성창의 이모지. `compose-form-smile.svg` 도 선으로 그린 그림이라, 두지 않으면
-// 얼굴이 통째로 메워져 검은 원이 된다.
 .icon.icon-smile-o,
 .dm-room-list__search .icon-search,
 .search .search__icon .icon-search {
@@ -16279,43 +15068,11 @@ body.app-body.layout-messages.layout-single-column {
   }
 }
 
-// @_longwhile — 프로필 헤더 버튼 줄(더보기 · 채팅 · 알림 · 팔로우).
-
-// **테마의 아이콘 교체를 이 줄에서만 끈다.** 커스텀 테마는 여기 아이콘들의 원본
-// `path` 를 `display: none` 으로 지우고 그 자리에 그림을 다시 깐다. 그런데 실제로
-// 재보면 한 요소에 `background-image` 와 `mask-image` 가 **함께** 걸려 있어,
-// 배경 그림이 마스크에 다시 잘린다. 알림 종을 켰을 때 아이콘이 투명해지던 것이
-// 그 결과다.
-//   그림을 다시 까는 규칙은 종에만 있다. 그래서 우리가 새로 넣은 봉투(채팅)는
-//   원본이 지워진 채 **아무것도 깔리지 않아 빈 칸**이 된다 — CLAUDE.md 가 적어 둔
-//   그 증상이다. 이 줄 전체에서 테마 쪽을 끄고 마스토돈 원본을 그대로 쓴다.
-
-// **셀렉터가 `body` 로 시작해야 한다.** 테마 규칙이 클래스 셋(0,3,1)이고 이 파일
-// 보다 뒤에 로드되므로, 같은 특정도로는 소스 순서에서 진다.
 body.layout-single-column .account__header__tabs__buttons {
   .icon {
     background-image: none !important;
     mask-image: none !important;
     -webkit-mask-image: none !important;
-
-    // **배경색도 끈다.** 여기가 빠져 있어 알림 종에 호버하면 아이콘 뒤에 회색
-    // **네모**가 그려졌다. 아이콘은 inline SVG 라 배경을 칠하면 SVG 상자
-    // (18×18)가 통째로 색칠되고, 종 모양이 아니라 사각형이 나온다.
-    //
-    //   .layout-single-column .icon.icon-bell-o:hover      (0,4,0)  테마
-    //     { background-color: var(--color-column-link-hover) }
-    //
-    // 이 블록의 셀렉터는 (0,3,1) 이라 그 규칙에 진다. 위 두 줄이 이미
-    // `!important` 를 쓰는 것과 같은 이유이고, 같은 자리에 함께 둔다.
-    //
-    // **호버는 단추가 맡는다.** 아이콘 뒤가 아니라 단추(36px 원형)에 연회색
-    // 반투명이 얹히는 것이 맞다 — 같은 줄의 봉투·더보기가 이미 그렇게 동작한다
-    // (실측: 호버 시 단추 배경 rgba(96,96,133,0.15), 아이콘 색은 그대로).
-    //
-    // **아이콘 자체는 호버에서 바뀌지 않는다.** 켜짐/꺼짐은 모양이 말한다 —
-    // 끄면 `bell.svg`(윤곽선), 켜면 `bell-fill.svg`(채움)로 컴포넌트가 갈린다
-    // (account_header.tsx). 호버에서 그림이나 색까지 바뀌면 "눌러서 켜진 것"
-    // 과 "마우스만 올린 것" 이 구분되지 않는다.
     background-color: transparent !important;
   }
 
@@ -16323,54 +15080,17 @@ body.layout-single-column .account__header__tabs__buttons {
     display: block;
   }
 
-  // 더보기(⋯)만 선으로 그린다. 위의 `path { display: block }` 은 되살리기만 할 뿐
-  // 칠하는 방식까지 정하지 못하므로, 전역 `.icon path { fill: currentColor }` 를
-  // 여기서 되돌린다. 그러지 않으면 점 세 개가 반지름 1px 로 쪼그라든다.
   .icon-ellipsis-v path {
     fill: none;
     stroke: currentColor;
   }
 
-  // 테두리는 다른 경계선과 같은 토큰을 쓴다. 테마는 여기만 `--color-outer-space`
-  // (#42485a)를 써서, 라이트 테마에서 이 버튼들만 남색 테를 둘렀다.
   .button,
   .icon-button {
     border-color: var(--color-border);
   }
 }
 
-// @_longwhile — 팔로우/팔로잉 알약의 테두리를 다른 경계선과 같은 토큰으로.
-//
-// 테마가 이 버튼들에만 `--color-outer-space` 를 쓴다.
-//
-//   .layout-single-column .column-inline-form button,
-//   .layout-single-column .explore__suggestions .account-card__actions__button button,
-//   .layout-single-column .account__header__tabs__buttons .button,
-//   .layout-single-column .account__header__tabs__buttons .icon-button,
-//   .layout-single-column .notification .account__relationship > .button,
-//   .layout-single-column .account .account__relationship > .button
-//     { border: 1px solid var(--color-outer-space) }
-//
-// **그 변수는 라이트 테마에서 재정의되지 않는다.** 네 테마 파일 모두 `:root` 에
-// `#42485a`(짙은 남색) 하나만 두고 끝이라, 흰 배경 위에서는 검은 테로 읽힌다.
-// 같은 화면의 다른 경계선은 `--color-border`(라이트에서 `#eeeeee`)를 쓰므로
-// 이 버튼들만 유독 진하다.
-//
-// 팔로잉 상태 알약도 여기 걸린다. 그 규칙(`.button.follow-button--following`,
-// 0,3,1)은 목록 안에서 테마의 (0,4,0)에 지므로, 여기서 함께 덮지 않으면
-// 프로필 헤더에서만 옅고 목록에서는 검게 나온다.
-//
-// **전용 변수 `--color-button-border` 를 쓴다.** 타임라인 경계선
-// (`--color-border`)을 그대로 쓰지 않는 이유는 역할이 다르기 때문이다 — 하나는
-// 칼럼을 가르는 선이고 하나는 누를 수 있는 것의 윤곽이라, 값이 같아야 할 이유가
-// 없다. 값은 테마 파일 두 곳(`bird-ui` / `theme-ui` 의 `layout-single-column`)에
-// 라이트·다크로 나눠 두었다.
-//
-// 각 셀렉터를 그대로 받아 `body` 만 앞에 붙인다 — 테마와 같은 자리를 짚어야
-// 나중에 테마가 바뀌었을 때 무엇을 덮고 있었는지 보인다.
-//
-// 프로필 헤더 두 셀렉터도 같은 변수로 맞춘다. 같은 단추가 화면에 따라 다른 테를
-// 두르면 안 된다.
 body.layout-single-column .column-inline-form button,
 body.layout-single-column
   .explore__suggestions
@@ -16384,41 +15104,22 @@ body.layout-single-column .button.follow-button--following {
   border-color: var(--color-button-border, var(--color-border));
 }
 
-// @_longwhile — 팔로우 요청의 "거부" 를 빨강 계열로.
-//
-// 두 곳에 나온다. 배너(승인/거부 글자 단추)와 목록 카드(체크/엑스 아이콘 단추)다.
-// 둘 다 되돌릴 수 있는 동작이지만, 승인 옆에 나란히 서 있어 **색으로 갈리지
-// 않으면 잘못 누른다.** 승인은 그대로 두고 거부만 붉힌다.
-//
-// 값은 위험 단추가 쓰는 변수를 그대로 가져온다. 새 색을 만들지 않는다.
-// 커스텀 테마에만 있는 변수라 대체값을 함께 적는다.
 $dm-danger: var(--color-brand-longwhile-danger, #{$error-value-color});
 $dm-danger-hover: var(--color-brand-longwhile-danger-hover, #{$error-value-color});
 
-// 배너의 "거부". 이미 `button--destructive` 가 붙어 있지만 테마의
-// `.layout-single-column .button`(0,2,0)이 색을 덮어 승인과 같아 보였다.
 body.layout-single-column .follow-request-banner__action .button--destructive {
   border-color: $dm-danger;
   color: $dm-danger;
-
-  // 아이콘은 글자색을 물려받게 둔다. 전역 `.icon path { fill: currentColor }` 가
-  // 이미 그렇게 칠하므로 따로 지정할 것이 없다.
   background-color: transparent;
 
   &:hover,
   &:focus-visible {
-    // 배경만 옅게 깐다. 글자와 테를 더 진하게 만들면 눌린 것처럼 보인다.
     background-color: color-mix(in srgb, #{$dm-danger} 12%, transparent);
     border-color: $dm-danger-hover;
     color: $dm-danger-hover;
   }
 }
 
-// 목록 카드의 엑스(거부) 아이콘 단추.
-//
-// **`:has()` 로 고른다.** 승인과 거부가 같은 클래스(`.icon-button`)를 쓰고 구분은
-// 안쪽 아이콘 이름뿐이라, 부모를 아이콘으로 짚는 수밖에 없다. 이 저장소는 이미
-// `:has()` 를 쓴다(`.modal-root:has(.schedule-modal)`).
 body.layout-single-column .account--panel__button .icon-button:has(.icon-times) {
   &:hover,
   &:focus-visible {
@@ -16427,78 +15128,20 @@ body.layout-single-column .account--panel__button .icon-button:has(.icon-times) 
   }
 }
 
-// @_longwhile — 중간 폭에서 칼럼의 **오른쪽** 테두리가 사라지던 것.
-//
-// 테마가 그 구간에서만 일부러 지운다.
-//
-//   @media (min-width: 760px) and (max-width: 1174px) {
-//     .layout-single-column .columns-area__panels__main > div { border-right: 0 }
-//   }
-//
-// 상류 레이아웃에서는 그 폭에서 칼럼이 화면 오른쪽 끝까지 닿아, 테두리를 그리면
-// 화면 가장자리에 선이 하나 붙는 꼴이 되기 때문이었을 것이다.
-//
-// **우리 레이아웃에서는 닿지 않는다.** 실측(1123px): main 이 240~1116 인데 칼럼은
-// 256~1101 이라 오른쪽에 15px 이 남는다. 그 상태에서 테두리가 없으니 칼럼이
-// 끝나는 자리가 아무 표시 없이 끊긴다 — 왼쪽에는 선이 있어 더 어긋나 보인다.
-//
-// **채팅 화면도 같은 규칙 하나로 고쳐진다.** DM 셸은 폭과 무관하게 늘
-// `.columns-area--mobile` 안에 들어가므로(이름과 달리 모바일 전용이 아니다)
-// 목록의 오른쪽 경계도 이 테두리가 그린다.
-//
-// 그 구간 안에서만 되돌린다. 밖에서는 이미 테두리가 있고, 759px 이하에서는 테마가
-// `border: 0` 으로 통째로 지우는 것이 맞다(그때는 칼럼이 화면 전폭이다).
-// `body` 를 붙여 (0,2,2)로 올린다 — 테마 규칙이 (0,2,1)이다.
 @media screen and (min-width: 760px) and (max-width: 1174px) {
   body.layout-single-column .columns-area__panels__main > div {
     border-right: 1px solid var(--color-border);
   }
 }
 
-// @_longwhile — 팔로우 단추의 상태 넷.
-//
-//   서로 안 팔로우      팔로우    하이라이트 알약 · 흰 글씨
-//     호버                        하이라이트 호버 알약 · 흰 글씨
-//   상대만 나를 팔로우   맞팔로우   〃
-//     호버                        〃
-//   내가 팔로우 중       팔로잉    투명 알약 · 토파즈 글씨
-//     호버              언팔로우   반투명 빨강 알약 · 빨강 글씨 · 빨강 테두리
-//   맞팔로우            팔로잉    〃 (내가 팔로우 중과 같다)
-//     호버              언팔로우   〃
-//
-// **앞의 둘은 손대지 않는다.** 상류 `.button` 이 이미 하이라이트 알약이고 테마가
-// 호버를 `--color-brand-longwhile-hover` 로 바꾼다. 우리가 다시 적으면 브랜드 색을
-// 두 곳에서 관리하게 된다.
-//
-// **뒤의 둘만 새로 그린다.** `.button--destructive` 를 쓰지 않는 이유가 여기 있다 —
-// 그것은 늘 붉은 단추인데, 우리는 평소에 투명이었다가 호버에서만 붉어져야 한다.
-//
-// 셀렉터가 `body` 로 시작해야 한다. 테마가
-// `.layout-single-column .account__header__tabs__buttons .button:hover` 로
-// (0,3,0)을 잡고 이 파일보다 뒤에 로드된다. `body` 를 붙여 (0,3,1)로 올린다.
-//
-// 프로필 헤더로 좁히지 않는다. 같은 단추가 계정 카드·추천 목록에도 나오는데,
-// 거기만 옛 모양이면 같은 관계가 화면마다 다르게 보인다.
 body.layout-single-column .button.follow-button--following {
-  // 평소 — 투명 알약.
-  //
-  // 테두리는 **단추 전용 토큰**을 쓴다(`--color-button-border`). 타임라인을
-  // 가르는 `--color-border` 와 역할이 달라서다 — 하나는 칸을 나누는 선이고
-  // 하나는 누를 수 있는 것의 윤곽이다. 위쪽 목록(0,3,1)에도 같은 셀렉터가
-  // 있지만 이 블록이 뒤에 오므로 `border` 단축 속성이 그것을 통째로 덮는다.
-  // 그래서 여기서도 같은 변수를 적어야 한다.
   background-color: transparent;
   border: 1px solid
     var(--color-button-border, var(--color-border, $ui-base-lighter-color));
-
-  // `--color-topaz` 는 커스텀 테마에만 있다(bird-ui 는 :root 다크 / 라이트 테마
-  // 블록에서 각각 정의한다). 기본 테마에서 `var()` 가 통째로 무효가 되지 않게
-  // 대체값을 함께 적는다 — 없으면 글자색이 상속값으로 남는다.
   color: var(--color-topaz, #{$primary-text-color});
 
   &:hover,
   &:focus-visible {
-    // 반투명 빨강. 값을 새로 만들지 않고 위험 단추가 쓰는 색에서 뽑는다.
     background-color: color-mix(
       in srgb,
       var(--color-brand-longwhile-danger, #{$error-value-color}) 12%,
@@ -16508,9 +15151,6 @@ body.layout-single-column .button.follow-button--following {
     color: var(--color-brand-longwhile-danger, #{$error-value-color});
   }
 
-  // 라벨 둘을 격자 한 칸에 겹쳐 둔다. **버튼 폭이 둘 중 넓은 쪽으로 고정되어**
-  // 갈아 끼울 때 늘었다 줄지 않는다. "팔로잉"(3자)과 "언팔로우"(4자)라 그냥
-  // 바꾸면 폭이 눈에 띄게 변한다.
   .follow-button__labels {
     display: grid;
     place-items: center;
@@ -16536,21 +15176,6 @@ body.layout-single-column .button.follow-button--following {
   }
 }
 
-// @_longwhile — 목록 안의 "언팔로우" 호버 배경이 회색으로 나오던 것을 고친다.
-//
-// **테두리와 글자는 붉은데 배경만 회색**이라는 어중간한 모양이었다. 원인은
-// 배경 하나만 다른 규칙에 지고 있었기 때문이다.
-//
-//   테마   .layout-single-column .account .account__relationship > .button:hover
-//          { background-color: var(--color-profile-button-hover) }        (0,5,0)
-//   위     body.layout-single-column .button.follow-button--following:hover  (0,4,1)
-//
-// `:hover` 는 클래스 칸에 들어가므로 테마 쪽이 (0,5,0)으로 더 세다. 요소 하나를
-// 앞에 붙여봐야 (0,4,1)이라 뒤집히지 않는다.
-//
-// **테마가 짚은 셀렉터를 그대로 받아** `body` 를 붙이고 알약 클래스를 더한다.
-// 그래야 어느 규칙을 덮고 있는지가 코드에서 보인다. 프로필 헤더도 같은 문제를
-// 겪을 수 있어 함께 적는다 — 같은 관계가 화면마다 다른 색으로 호버되면 안 된다.
 body.layout-single-column
   .account
   .account__relationship
@@ -16574,108 +15199,28 @@ body.layout-single-column
   }
 }
 
-// 팔로우 단추의 글자 굵기. 상태와 무관하게 600 이다.
-//
-// **`.button` 전체가 아니라 이 단추만** 짚는다. 그 클래스는 게시·전송 예약 같은
-// 곳에도 쓰여서, 전역으로 올리면 이 요청과 무관한 화면의 무게가 함께 바뀐다.
 body.layout-single-column .account__header__tabs__buttons .button,
 body.layout-single-column .button.follow-button--following {
   font-weight: 600;
-
-  // 글자색은 **주변에서 물려받는다.** 테마가 이 단추들만 따로
-  // `var(--color-light-purple)` / `var(--color-dim)` 같은 "가라앉은 보조 글자"
-  // 색으로 칠하고 있었는데, 그 변수는 핸들·타임스탬프처럼 **읽히지 않아도 되는**
-  // 글자를 위한 것이다. 누를 수 있는 것에 쓰면 팔레트를 바꿀 때마다 단추만
-  // 따로 흐려진다.
-  //
-  //   테마   .layout-single-column .account__header__tabs__buttons .button  (0,3,0)
-  //   테마   .layout-single-column .button.button-secondary                 (0,3,0)
-  //   여기   body.layout-single-column ...                                  (0,3,1)
-  //
-  // `body` 하나로 (0,3,1)이 되어 이긴다. 테마가 이 파일보다 뒤에 로드되므로
-  // `body` 를 빼면 순서로 진다.
   color: inherit;
 }
 
-// 관계 태그("맞팔로우 중입니다")를 핸들 옆에 둔다. 배너 위에서 옮겨 왔다
-// (account_header.tsx). 핸들과 붙어 보이지 않게 한 칸 띄운다.
-// 핸들 줄의 항목 간격. 테마가 4px 인 것을 10px 로 넓힌다.
-//   `body` 를 붙여 (0,3,2)로 올린다 — 테마가 (0,3,1)이고 뒤에 로드된다.
 body.layout-single-column .account__header__tabs__name h1 small {
   gap: 10px;
 }
 
 body.layout-single-column .account__header__tabs__name .relationship-tag {
-  // 앞 요소와 **5px** 띄운다 (2026-08-12 조정).
-  //
-  // 감싸는 `small` 이 flex 라 마진을 0 으로 두어도 위의 `gap`(10px)이 그대로
-  // 남는다. 그래서 음수 마진으로 그만큼 되돌려 원하는 값을 만든다.
-  //
-  //     실제 간격 = gap(10px) + margin-inline-start
-  //     5px 를 원하면 -5px
-  //
-  // `gap` 자체를 5px 로 낮추지 않는 이유는, 그것이 핸들과 도메인 알약 사이에도
-  // 걸려 있어 그쪽까지 좁아지기 때문이다.
-  //
-  // **위 `gap` 을 바꾸면 이 값도 같이 바꿔야 한다.** 두 숫자가 짝이다.
-  //
-  // 이 화면에서 앞 요소는 대개 **핸들**이다 — 도메인 알약은 테마가
-  // `display: none` 으로 감춰 두어 flex 계산에 아예 들어가지 않는다.
   margin-inline-start: -5px;
-
-  // `small` 안에 들어가 있어 글자가 이미 작다. 크기를 다시 정하지 않고 색만
-  // 가라앉혀 핸들보다 뒤로 물러나게 한다.
   color: var(--color-dim);
-
-  // 줄이 좁아지면 핸들과 함께 접히게 둔다. 태그가 길어 한 줄을 넘길 수 있다.
   white-space: nowrap;
 }
 
-// @_longwhile — `bird-theme-svg` 아이콘의 **보호 경로**를 지운다.
-//
-// 그 파일들(`lock-fill.svg`, `pencil-fill.svg` 등)은 24×24 전체를 덮는 빈
-// `path` 를 먼저 두고 — `<g fill="none">` 안이라 원래는 안 보인다 — 그 뒤에
-// `fill="currentColor"` 인 진짜 그림을 둔다.
-//
-// 그런데 전역 `.icon path { fill: currentColor }` 는 **속성보다 세다**(CSS 가
-// presentation attribute 를 이긴다). 그래서 그 보호 경로까지 칠해져 아이콘
-// 자리가 통째로 검은 네모가 된다.
-//
-// `fill` 속성이 **없는** path 만 되돌린다. `:not([fill])` 이 클래스 칸을 하나
-// 더하므로 (0,2,1) 이 되어 전역 규칙(0,1,1)을 이긴다.
-//
-// **`.icon` 전체에 걸면 안 된다.** 마스토돈 기본 아이콘은 path 에 `fill` 속성이
-// 없고 저 전역 규칙에 색을 기대므로, 전부 투명해진다. 우리가 갈아 끼운 자리만
-// 하나씩 짚는다.
 .account__locked-icon path:not([fill]),
 .dm-recipient__row__lock path:not([fill]),
 .dm-composer__send .icon-pencil path:not([fill]) {
   fill: none;
 }
 
-// @_longwhile — 잠금 자물쇠를 **닉네임 옆**에 세운다.
-//
-// 잠금은 그 사람의 성질이지 핸들의 성질이 아니다. 핸들 줄에는 이미 도메인
-// 알약과 관계 태그가 있어서, 거기 자물쇠까지 붙으면 무엇에 걸린 표시인지
-// 읽히지 않는다.
-//
-// ── 1. 계정 줄 (components/account.tsx, display_name.tsx) ────────────────
-//
-// `.display-name` 은 닉네임(`bdi > strong`)과 핸들을 함께 감싼다. 그래서 밖에서
-// 형제로 붙이면 자물쇠가 반드시 **핸들 뒤**로 간다 — flex `order` 는 같은
-// 부모의 자식끼리만 자리를 바꾸므로 CSS 로도 끼워 넣을 수 없다. 그것이
-// `afterName` 감싸개를 둔 이유다.
-//
-// **감싸개의 display 는 안쪽 strong 을 따라간다.** 상류가 문맥마다 그것을
-// 갈아 끼우기 때문이다.
-//
-//   .account__display-name .display-name strong          { display: block }
-//   .account .account__display-name .display-name strong { display: inline }
-//   .account--minimal …                         strong   { display: block }
-//
-// block 인 곳(작성창 위 계정 줄)은 닉네임과 핸들이 두 줄이다. 감싸개를 그냥
-// `inline-flex` 로 두면 그 줄바꿈이 사라져 핸들이 닉네임 옆으로 올라온다.
-// 그래서 **상류가 짚은 세 셀렉터를 그대로 받아** 같은 순서로 되풀이한다.
 .display-name__with-badge {
   display: inline-flex;
   align-items: center;
@@ -16702,82 +15247,26 @@ body.layout-single-column .account__header__tabs__name .relationship-tag {
   display: flex;
 }
 
-// ── 2. 프로필 헤더 (account_timeline/components/account_header.tsx) ───────
-//
-// 여기서는 자물쇠가 `h1` 의 직계 자식이라 감싸개가 필요 없다. 대신 크기를
-// 맞춘다 — `.icon` 은 문맥과 무관하게 24×24 고정인데 닉네임 줄의 글자 높이는
-// 20px 라, 그대로 두면 그 한 줄만 높아지고 SVG 가 기준선에 앉아 아래로 처진다.
-// 18px + `vertical-align: -0.2em` 이 닉네임의 세로 중심과 맞는다(실측 0.4px 차).
 body.layout-single-column .account__header__tabs__name h1 > .account__locked-icon {
   width: 16px;
   height: 16px;
   margin-inline-start: 4px;
-
-  // 16px 짜리를 20px 줄 안에서 세로 중앙에 맞추는 값이다(실측 오차 0.03px).
-  // **크기를 바꾸면 이 값도 같이 바꿔야 한다.** 상자 아래쪽을 기준선에서
-  // 얼마나 내릴지라, 높이가 2px 줄면 중심이 1px 올라간다.
   vertical-align: -0.12em;
-
-  // 이름보다 뒤로 물러나야 한다. 이름과 같은 무게로 칠하면 자물쇠가 먼저 읽힌다.
   color: var(--color-dim, #{$dark-text-color});
 }
 
-// @_longwhile — 답장 작성 중에 뜨는 "취소" 단추.
-//   36×36 이었다(안쪽 여백 8px + 아이콘 20px). 옆에 선 계정 줄에 비해 크다.
-//   여백을 걷어 아이콘 크기에 맞춘다 — 24×24 안에 20px 아이콘이 그대로 들어간다.
-
-//   `body` 로 시작해 특정도를 올린다. 테마가 `.layout-single-column .compose-form
-//   .icon-button` 로 클래스 셋(0,3,0)을 잡고 이 파일보다 뒤에 로드된다.
 body.layout-single-column .compose-form .navigation-bar > .icon-button {
   width: 24px;
   height: 24px;
   padding: 0;
 }
 
-// @_longwhile — 게시물의 세로 축. 닉네임 · 본문 · 액션 아이콘이 한 줄에 서야 한다.
-
-// 테마는 본문과 액션바에 같은 `padding-left: calc(아바타 + 간격)` 을 준다. 그래서
-// **상자 기준으로는** 셋이 맞는데, 액션바의 첫 칸은 버튼(42px)이고 그 안에서
-// 아이콘(18px)이 가운데 정렬이라 **아이콘만 12px 더 오른쪽**에 선다. 실측으로
-// 닉네임 689 · 아이콘 701 이었다.
-
-// 눈에 보이는 것은 상자가 아니라 아이콘이므로, 그 12px 만큼 당겨 광학적으로
-// 맞춘다. 아이콘 다섯 개가 함께 왼쪽으로 가지만 서로의 간격과 오른쪽 끝은
-// 그대로다(실측 확인).
-
-// **셀렉터가 `body` 로 시작해야 한다.** 테마 규칙이 `:not()` 을 포함해 (0,4,0)
-// 이고 이 파일보다 뒤에 로드된다.
 body.layout-single-column
   .status:not(.status--in-thread)
   .status__action-bar {
   padding-left: calc(var(--size-avatar) + var(--gap-default) - 12px);
 }
 
-// @_longwhile — 알림 탭에서는 그 들여쓰기를 **빼야** 축이 맞는다.
-//
-// 두 화면의 상자 구조가 다르다. 실측(1369px, bird-ui light)이다.
-//
-//   홈      .status 에 padding 16px, 아바타가 본문과 **같은 열** 안에 있다.
-//           .status__content  padding-left 60px  → 본문 404
-//           .status__action-bar padding-left 48px → 버튼 392 + 아이콘 보정 12
-//                                                 → 아이콘 404   ✔ 일치
-//
-//   알림    .status 에 padding 0, 아바타가 **별도 열**이라 본문 열이 이미 밀려
-//           시작한다(.notification-ungrouped 의 격자).
-//           .status__content  padding-left 12px  → 본문 408
-//           .status__action-bar padding-left 48px → 버튼 444 + 12
-//                                                 → 아이콘 456  ✘ 48px 밀림
-//
-// 즉 홈 기준의 48px 이 알림에서는 이미 격자가 준 자리 위에 한 번 더 얹힌다.
-// 아이콘이 408 에 서려면 `396 + padding + 12 = 408`, 곧 padding 은 0 이다.
-// 아이콘 보정 12px 은 버튼(42) 안에서 아이콘(18)이 가운데 정렬이라 생긴다.
-//
-// **`.status` 의 padding 으로 갈릴 수 없어 조상 클래스로 가른다.** 그룹 알림
-// (`.notification-group`)에는 액션 바가 아예 없어(실측 0개) 이 규칙에 걸리지
-// 않는다.
-//
-// `body.app-body` 로 (0,5,1) 을 만든다. 바로 위 규칙이 (0,4,1) 이고 테마가
-// (0,4,0) 이라, 소스 순서에 기대지 않고 확실히 이긴다.
 body.app-body
   .notification-ungrouped
   .status:not(.status--in-thread)
@@ -16785,13 +15274,6 @@ body.app-body
   padding-left: 0;
 }
 
-// @_longwhile — 되돌릴 수 없는 항목은 빨간 글씨로. 삭제 · 대화 나가기가 그것이다.
-//   상류가 `.dropdown-menu__item--dangerous` 에 색을 주지만, 그 색은 안쪽
-//   `<a>` / `<button>` 이 상속해야 보인다. 테마가
-//   `.layout-single-column .dropdown-menu__item a` 로 (0,2,1) 을 잡아 그 상속을
-//   덮어버려서, 위험 항목이 보통 글자색으로 나왔다.
-//   `dangerous: true` 는 이미 붙어 있다(message_menu.tsx · room_header.tsx).
-//   빠진 것은 색이 실제로 칠해지는 것뿐이다.
 body.layout-single-column .dropdown-menu__item--dangerous {
   a,
   button {
@@ -16799,63 +15281,21 @@ body.layout-single-column .dropdown-menu__item--dangerous {
   }
 }
 
-// @_longwhile — 헤더의 유리 효과. 저장소가 이미 쓰는 두 토큰을 그대로 쓴다
-//   (`--background-color-tint` 는 라이트에서 80%, `--background-filter` 는 blur).
-
-//   **칼럼 헤더는 효과가 보이고, 대화방 헤더는 보이지 않는다.** 칼럼 헤더는
-//   `.tabs-bar__wrapper` 가 sticky 라 글이 그 밑을 지나가지만, 대화방은
-//   `.dm-room` 이 헤더 / 스크롤 / 입력창 3단 flex 라 **헤더 밑으로 지나가는 것이
-//   없다.** 그래서 저쪽은 반투명한 배경색만 남는다. 흐릴 대상을 만들려면 헤더를
-//   스크롤 영역 위로 띄워야 하는데, 그 화면의 스크롤 복원·읽음 위치 계산이
-//   민감해 여기서는 건드리지 않았다.
 .column-header,
 .dm-room-header {
   background: var(--color-column);
   backdrop-filter: var(--background-filter);
 }
 
-// @_longwhile — 액션 바가 알림 탭에서 칼럼 밖으로 넘쳐 ⋯ 아이콘이 잘리던 것.
-//
-// 상자가 `content-box` 라 `padding-left` 가 **안쪽이 아니라 바깥으로** 붙는다.
-// 폭은 이미 부모와 같은 554px 인데 거기에 48px 이 더해져 오른쪽으로 그만큼
-// 밀려났다(실측 671 → 1225, 칼럼 오른쪽 1203).
-//   홈 타임라인에서 안 보이던 이유는 그쪽 `.status` 에 `padding: 16px` 이 있어
-//   여유가 있었기 때문이다. 알림의 `.status` 는 `padding: 0` 이라 그대로 드러났다.
-//   **두 화면은 같은 컴포넌트를 쓴다. 갈라놓을 문제가 아니라 상자 계산 문제다.**
 .status__action-bar {
   box-sizing: border-box;
 }
 
-// 숫자를 아이콘 바로 옆에 붙인다.
-//   숫자는 흐름에서 빠져 있고(위쪽 `--with-counter` 규칙) 버튼 오른쪽 끝을
-//   기준으로 놓여 있었다. 아이콘은 버튼 한가운데 있으므로 그 사이가 12 + 4 =
-//   16px 이나 됐다. 기준을 **버튼 가운데**로 옮겨 아이콘 반폭(9px)에 3px 만
-//   더한다.
 .status__action-bar__button.icon-button--with-counter .icon-button__counter {
   inset-inline-start: calc(50% + 12px);
   margin-inline-start: 0;
 }
 
-// 하트만 숫자가 20px 더 멀리 있던 것.
-//
-// 테마가 하트 버튼에만 붙는 `.star-icon` 을 잡아 마진을 준다. 원래는 좋아요
-// 애니메이션(별이 커지고 ::before/::after 로 원이 퍼진다)이 숫자를 밀어내지
-// 않게 하려던 여백인데, 우리는 숫자를 버튼 가운데 기준 절대 배치로 바꿨으므로
-// (위 규칙) 그만큼 그냥 멀어지기만 한다.
-//
-//   .layout-single-column.no-reduce-motion .star-icon.icon-button--with-counter
-//     .icon-button__counter                              (0,5,0)  bird·theme 단일
-//   .layout-multiple-columns.no-reduce-motion .star-icon.icon-button--with-counter
-//     .activate .icon-button__counter                    (0,6,0)  bird·theme 다중
-//
-// **위 규칙은 (0,3,0) 이라 진다.** `margin-inline-start: 0` 을 이미 적어 두었는데
-// 아무 일도 없던 이유가 그것이다. `body` 를 붙여 (0,6,1) 로 올린다.
-//
-// 물리 속성(`margin-left`)도 함께 0 으로 둔다. 테마가 논리 속성이 아니라
-// 물리 속성을 쓰므로, RTL 에서는 `margin-inline-start` 만으로는 안 지워진다.
-//
-// 실측(bird-ui light): 답글·재게시·북마크 숫자가 아이콘에서 3px, 하트만 23px.
-// 이 규칙을 넣으면 하트도 3px 이 된다.
 body.app-body
   .status__action-bar__button.icon-button.icon-button--with-counter.star-icon
   .icon-button__counter {
@@ -16863,16 +15303,6 @@ body.app-body
   margin-left: 0;
 }
 
-// 칼럼 헤더의 뒤로 가기. 글자를 뺐으므로(column_header.tsx) 아이콘 하나만 남는다.
-// 작성창 버튼과 같은 원형 반투명 호버를 준다 — 같은 `.icon-button` 계열이라
-// 손에 익은 반응이 같아야 한다.
-//
-// **`.column-header` 를 앞에 붙여야 `width: 32px` 가 산다.** 이 파일 위쪽의
-// `.column-header .column-header__back-button { flex: 1 }` 이 (0,2,0) 이라,
-// 맨 클래스 하나(0,1,0)로는 진다. `flex-basis: 0%` + `flex-grow: 1` 이 폭을
-// 헤더 전체로 늘려 버려서, 버튼 배경이 투명해지기 전에는 판이 헤더와 같은
-// 색이라 안 보였고 호버에서만 긴 알약으로 드러났다. 특정도를 맞추면 뒤에
-// 오는 이 규칙이 이긴다.
 .column-header .column-header__back-button {
   display: inline-flex;
   align-items: center;
@@ -16888,33 +15318,11 @@ body.app-body
   margin-left: 11px;
 }
 
-// `body` 는 요소라 클래스 하나를 못 당한다. `body.layout-*` 로 붙여 (0,2,1) 을
-// 만든다. 테마가 두 레이아웃 × 두 테마(bird-ui·theme-ui) 네 벌에 같은
-// transparent 를 두고 있는데 선택자가 넷 다 똑같아서, 이 두 줄로 함께 이긴다.
-// (테마 쪽 좁은 화면 미디어 쿼리는 이미 --color-column 을 칠하고 있다.)
 body.layout-single-column .column-header,
 body.layout-multiple-columns .column-header {
   background-color: var(--color-column);
 }
 
-// 채워진 단추(게시·전송·팔로우 …)의 눌림/호버 색을 **브랜드색에서 뽑는다.**
-//
-// 테마가 `.layout-single-column .button:hover { background-color:
-// var(--color-brand-longwhile-hover) }` 로 이 변수를 읽는데, 그 변수는 테마의
-// `:root`(다크 값 #1a8cd8)에만 있고 **라이트 블록에서 덮이지 않는다** —
-// theme-ui 파일 위쪽 "여기서 덮지 않는 20개" 목록에 이름이 적혀 있다.
-// 그래서 바탕은 주황(#ff7f40)인데 커서를 대면 파랑으로 바뀌었다.
-//
-// 값을 손으로 하나 더 적어 두면 브랜드색을 바꿀 때마다 둘이 어긋난다 —
-// 지금 어긋나 있는 것이 그 증거다. 브랜드색에서 계산해 **항상 따라오게** 한다.
-//
-//   :root                          (0,1,0)  테마 — 진다
-//   body.layout-*                  (0,1,1)  여기 — 이긴다
-//   body.theme-theme-ui-light      (0,1,1)  테마가 나중에 로드되므로, 라이트
-//                                           블록에 값을 적으면 그쪽이 이긴다.
-//
-// 즉 이 규칙은 **기본값**이다. 특정 색을 쓰고 싶으면 테마 라이트 블록에 적으면
-// 그대로 이긴다.
 body.layout-single-column,
 body.layout-multiple-columns {
   --color-brand-longwhile-hover: color-mix(
@@ -16924,24 +15332,6 @@ body.layout-multiple-columns {
   );
 }
 
-// 게시 단추만 **따로 색을 줄 수 있게** 한다.
-//
-// 테마는 `.layout-single-column .button { background-color:
-// var(--color-accent-dark) }` 로 채워진 단추를 전부 한 색으로 칠한다. 그래서
-// 게시 단추만 다르게 하려면 브랜드색을 건드릴 수밖에 없었고, 그러면 팔로우
-// 단추·링크·아이콘까지 같이 움직였다.
-//
-// `--color-post-button` 이 없으면 지금까지와 똑같이 브랜드색을 쓴다. 테마
-// 파일(layout-single-column.scss)의 라이트/다크 블록에서 그 토큰을 정의하는
-// 순간부터 게시 단추만 갈린다.
-//
-//   테마   .layout-single-column .button          (0,2,0)
-//   여기   body.layout-* .compose-form__submit .button  (0,3,1)  ← 이긴다
-//   테마   .layout-single-column .button:hover     (0,3,0)
-//   여기   … .button:hover                         (0,4,1)  ← 이긴다
-//
-// **글자색도 짝으로 둔다.** 배경만 바꾸고 글자를 두면 밝은 색을 골랐을 때
-// 그 위 글자가 안 읽힌다 — 흰 글자는 밝은 배경에서 2.5:1 까지 떨어진다.
 body.layout-single-column .compose-form__submit .button,
 body.layout-multiple-columns .compose-form__submit .button {
   background-color: var(
@@ -16956,8 +15346,6 @@ body.layout-multiple-columns .compose-form__submit .button {
   &:hover,
   &:focus,
   &:active {
-    // 호버색은 따로 적지 않는다. 게시 단추 색에서 뽑으므로 무엇을 고르든
-    // 따라온다 — 손으로 적어 둔 짝은 반드시 어긋난다.
     background-color: color-mix(
       in srgb,
       var(--color-post-button, var(--color-brand-longwhile)) 88%,
@@ -16966,17 +15354,6 @@ body.layout-multiple-columns .compose-form__submit .button {
   }
 }
 
-// @_longwhile — 작성창 아래 줄의 아이콘 단추(사진·설문·열람주의·에모지·예약)
-// 호버 판만 **알림 줄과 같은 값**을 쓴다.
-//
-// 나머지 아이콘 단추는 --color-icon-button-hover 를 쓰는데, 그 값은 팔레트에서
-// 진한 색으로 잡혀 있어(예: #e75e1a) 작성창처럼 단추가 다닥다닥 붙은 줄에서는
-// 커서를 옮길 때마다 진한 원이 튄다. 여기는 옅은 판이 맞다.
-//
-//   .icon-button.inverted:hover        (0,3,0)  위쪽
-//   body .compose-form__buttons …      (0,4,1)  여기 — 이긴다
-//
-// `body` 를 붙이는 이유는 테마 SCSS 가 이 파일보다 뒤에 로드되기 때문이다.
 body .compose-form__buttons .icon-button {
   &:hover,
   &:focus,
@@ -16985,15 +15362,6 @@ body .compose-form__buttons .icon-button {
   }
 }
 
-// @_longwhile — 보조 단추(프로필 편집 등)의 호버는 **브랜드색으로 채운다.**
-//
-// 상류가 `.button.button-secondary:hover { background-color: transparent }`
-// (0,3,0)로 배경을 지운다. 테마가 (0,4,0)으로 덮고 있지만, 테마를 쓰지 않는
-// 화면에서는 그대로 투명이라 호버가 테두리 색만 바뀌는 것으로 끝난다.
-//
-// 여기서 (0,4,1)로 못 박아 어느 테마에서든 같게 만든다. 글자는 브랜드색 위에
-// 얹히므로 그 짝인 --color-on-brand 를 쓴다 — 배경만 바꾸면 밝은 브랜드색에서
-// 글자가 안 읽힌다.
 body .button.button-secondary {
   &:hover,
   &:focus,
@@ -17004,16 +15372,6 @@ body .button.button-secondary {
   }
 }
 
-// @_longwhile — 검색창을 누르면 뜨는 드롭다운.
-//
-// 판은 `@mixin search-popout` 이 `$simple-background-color`(SCSS 팔레트)로
-// 칠한다. 테마가 손댈 수 없는 값이라 팔레트를 바꿔도 이 판만 옛 색으로 남았다.
-//
-// 고른 항목의 판은 상류가 강조색(파랑)으로 칠하고 글자를 흰색으로 뒤집는다.
-// 강조색은 테마의 브랜드색을 따라야 하고, 그 위 글자는 짝인 --color-on-brand
-// 여야 한다 — 흰색으로 굳히면 밝은 브랜드색에서 안 읽힌다.
-//
-// `body` 를 붙여 특정도를 올린다. 테마 SCSS 가 이 파일보다 뒤에 로드된다.
 body .search__popout {
   background: var(--color-bg, #{$simple-background-color});
 }
@@ -17034,10 +15392,6 @@ body .search__popout__menu__item {
   }
 }
 
-// @_longwhile — 홈·퍼블릭 답글 위의 타래 시작 글(`components/thread_preview_item.tsx`).
-//   시작 글과 답글은 한 항목이라 사이의 구분선을 지운다. 선 자체는 상세 화면과 같은
-//   `.status__line` 이 그린다(시작 글은 `--full`, 답글은 위쪽 짧은 선).
-//   "더 많은 답글 보기" 줄에는 따로 선을 그리지 않는다 — 위 실선이 그대로 지나간다.
 .thread-preview--with-head {
   .thread-preview__head .status {
     border-bottom: 0;
@@ -17060,8 +15414,6 @@ body .search__popout__menu__item {
     text-decoration: underline;
   }
 
-  // 아바타 칸만큼 비워 글자를 본문 줄에 맞춘다. 선은 시작 글의 `.status__line--full` 이
-  // 이 줄을 지나 답글까지 이어 그리므로 여기서는 아무것도 그리지 않는다(점을 겹치면 어긋나 보인다).
   &__line {
     flex: 0 0 var(--size-avatar, 46px);
   }

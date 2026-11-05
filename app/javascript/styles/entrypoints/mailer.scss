@@ -1,19 +1,11 @@
 @use '../fonts/inter';
 
-// @_longwhile — 메일 색은 여기서만 바꾼다. 메일 클라이언트는 CSS 변수를 못 읽어
-// premailer 가 값을 태그마다 박아 넣으므로, 바꾼 뒤에는 자산을 다시 빌드해야 한다.
-// 호버색은 layouts/mailer.html.haml 의 <style> 에도 한 번 적혀 있다(인라인이 안 되는
-// :hover 라 premailer 를 거치지 않는다). $email-brand 를 바꾸면 거기도 맞춘다.
 $email-brand: #3376e7;
 
-// 브랜드색을 검정과 70:30 으로 섞은 값. color.mix() 는 rgb(35.7, …) 처럼 소수를
-// 내놓는데 옛 메일 클라이언트(Outlook 등)가 그걸 못 읽어 hex 로 적는다.
 $email-brand-hover: #2453a2;
 $email-on-brand: #fff;
 $email-link: $email-brand;
 
-// @_longwhile — 한국어는 어절 단위로 넘긴다(keep-all). break-word 는 글자마다 끊어
-// '활성화됩니 / 다.' 가 된다. 긴 주소처럼 한 줄에 안 들어가는 것은 overflow-wrap 이 끊는다.
 body {
   accent-color: $email-brand;
   word-break: keep-all;
@@ -282,7 +274,7 @@ table + p {
 // Header
 .email-header-td {
   padding: 16px 32px;
-  background-color: #0a124d; // 헤더 배경 그림(header-bg-*.png)의 바탕색. 그림이 안 뜰 때 보인다
+  background-color: #0a124d;
   background-image: url('../../images/mailer-new/common/header-bg-start.png');
   background-position: left top;
   background-repeat: repeat;
@@ -445,7 +437,7 @@ table + p {
 
 .email-header-after-inside-div {
   height: 30px;
-  background-color: #0a124d; // 헤더 배경 그림(header-bg-*.png)의 바탕색. 그림이 안 뜰 때 보인다
+  background-color: #0a124d;
 }
 
 // Body content
@@ -537,9 +529,6 @@ table + p {
   }
 }
 
-// Button
-// @_longwhile — 단추 여럿을 한 줄에. 표 칸으로 묶으면 좁은 화면에서 넘치므로
-// inline-block 으로 둔다. 이를 모르는 Outlook 데스크톱에서는 위아래로 쌓인다.
 .email-btn-row {
   font-size: 0;
 

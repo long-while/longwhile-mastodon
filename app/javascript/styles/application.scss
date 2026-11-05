@@ -2,9 +2,9 @@
 @use 'mastodon/mixins';
 @use 'mastodon/variables';
 @use 'mastodon/css_variables';
-@use 'fonts/roboto-mono';     // fallback 폰트를 먼저
-@use 'fonts/roboto';         // 로보토 폰트
-@use 'fonts/kopubworld-dotum'; // 코펍월드 도툼 폰트
+@use 'fonts/roboto-mono';
+@use 'fonts/roboto';
+@use 'fonts/kopubworld-dotum';
 
 @use 'mastodon/reset';
 @use 'mastodon/basics';
