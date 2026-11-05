@@ -38,7 +38,7 @@ RSpec.describe ApproveAppealService do
         expect(emails.first)
           .to have_attributes(
             to: contain_exactly(target_account.user.email),
-            subject: eq(I18n.t('user_mailer.appeal_approved.subject', date: I18n.l(appeal.created_at)))
+            subject: eq(I18n.t('user_mailer.appeal_approved.subject', date: I18n.l(appeal.created_at, locale: ApplicationMailer::MAIL_LOCALE), locale: ApplicationMailer::MAIL_LOCALE))
           )
       end
     end

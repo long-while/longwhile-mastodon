@@ -7,7 +7,7 @@ RSpec.describe 'Terms of Service page' do
     visit terms_of_service_path
 
     expect(page)
-      .to have_css('noscript', text: /Mastodon/)
+      .to have_css('noscript', text: /마스토돈/) # 화면은 한국어 고정(Localized#requested_locale)
       .and have_css('body', class: 'app-body')
   end
 end

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# @_longwhile — 환경설정 하위 네임스페이스를 걷어내고 상위 화면 둘(화면·알림)이
+# 공유하는 밑바탕으로 남겼다 (settings-phase-5.md §1.1).
 class Settings::PreferencesBaseController < Settings::BaseController
   def show; end
 

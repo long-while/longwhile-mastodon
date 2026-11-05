@@ -15,7 +15,9 @@ RSpec.describe 'Link' do
       expect(response).to have_http_status(200)
       expect(response.content_type)
         .to start_with('application/json')
-      expect(response.parsed_body.pluck(:id)).to match_array(expected_statuses.map { |status| status.id.to_s })
+      expect(response.parsed_body.pluck(:id))
+        .to match_array(expected_statuses.map { |status| status.id.to_s })
+        .and not_include(private_status.id.to_s, undiscoverable_status.id.to_s)
     end
   end
 
@@ -24,16 +26,23 @@ RSpec.describe 'Link' do
       get '/api/v1/timelines/link', headers: headers, params: params
     end
 
+    # LinkFeed 도 PublicFeed 의 모집단을 물려받는다 — 팔로우 중인 계정(+ 본인·공지 계정)의
+    # private/unlisted 글만 나온다(943745d134). 그래서 사용자가 글쓴이들을 팔로우한 상태에서
+    # 검사하고, private_status 는 "팔로우하지 않은 사람의 글" 로 빠지는지 본다.
+    # undiscoverable_status 의 글쓴이도 팔로우해서, 팔로우 필터가 아니라 discoverable 필터로
+    # 빠지는지 확인한다.
     let(:url) { 'https://example.com/' }
     let(:private_status) { Fabricate(:status, visibility: :private) }
-    let(:undiscoverable_status) { Fabricate(:status, account: Fabricate.build(:account, domain: nil, discoverable: false)) }
-    let(:local_status) { Fabricate(:status, account: Fabricate.build(:account, domain: nil, discoverable: true)) }
-    let(:remote_status) { Fabricate(:status, account: Fabricate.build(:account, domain: 'example.com', discoverable: true)) }
+    let(:undiscoverable_status) { Fabricate(:status, visibility: :private, account: Fabricate.build(:account, domain: nil, discoverable: false)) }
+    let(:local_status) { Fabricate(:status, visibility: :private, account: Fabricate.build(:account, domain: nil, discoverable: true)) }
+    let(:remote_status) { Fabricate(:status, visibility: :private, account: Fabricate.build(:account, domain: 'example.com', discoverable: true)) }
     let(:params) { { url: url } }
     let(:expected_statuses) { [local_status, remote_status] }
     let(:preview_card) { Fabricate(:preview_card, url: url) }
 
     before do
+      [undiscoverable_status, remote_status, local_status].each { |status| user.account.follow!(status.account) }
+
       if preview_card.present?
         preview_card.create_trend!(allowed: true)
 
@@ -87,7 +96,7 @@ RSpec.describe 'Link' do
 
     context 'when the instance does not allow public preview' do
       before do
-        Form::AdminSettings.new(timeline_preview: false).save
+        Form::AdminSettings.new(local_topic_feed_access: 'authenticated', remote_topic_feed_access: 'authenticated').save
       end
 
       it_behaves_like 'forbidden for wrong scope', 'profile'
@@ -126,8 +135,10 @@ RSpec.describe 'Link' do
         it_behaves_like 'a successful request to the link timeline'
       end
 
+      # 보는 사람이 없으면 모집단이 비어 있다. 아무 글도 나가지 않아야 한다.
       context 'with an anonymous user' do
         let(:headers) { {} }
+        let(:expected_statuses) { [] }
 
         it_behaves_like 'a successful request to the link timeline'
       end

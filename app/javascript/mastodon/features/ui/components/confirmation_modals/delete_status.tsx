@@ -62,6 +62,11 @@ export const ConfirmDeleteStatusModal: React.FC<
       )}
       onConfirm={onConfirm}
       onClose={onClose}
+      // @_longwhile — 삭제는 되돌릴 수 없다. 확인 단추를 빨강으로 둔다.
+      //   테마가 `.button` 의 배경을 덮으면서 상류의 위험 단추까지 파랗게
+      //   만들었던 것은 35ab8c1035 에서 되돌려 두었으므로, 여기서는 플래그만
+      //   넘기면 된다.
+      //   "지우고 다시 쓰기" 도 원본을 지우므로 같이 붙는다.
       dangerous
     />
   );

@@ -7,6 +7,9 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 
 import { AccountSwitcher } from '../account_switcher';
 
+// 흐름이 부르는 다중 계정 API·팝업 모듈은 컴포넌트가 `import()` 로 늦게
+// 불러서 모듈 단위로는 가짜를 끼우기 어렵다. 그 아래의 HTTP(`mastodon/api`)를
+// 가짜로 두고, 실제 모듈을 그대로 거치게 한다.
 const http = vi.hoisted(() => ({
   get: vi.fn(),
   post: vi.fn(),
@@ -38,6 +41,7 @@ const deferred = <T,>() => {
   return { promise, resolve };
 };
 
+// 실제 앱의 계정은 레코드라 `.id` 로 읽힌다. 맵이 아니라 객체로 둔다.
 const state = fromJS({
   meta: { me: '1' },
   accounts: {},
@@ -94,6 +98,7 @@ const clickAdd = () => {
   fireEvent.click(screen.getByText('Add an existing account'));
 };
 
+// 흐름이 준비 단계(토큰 발급·인가 주소 받기를 함께 기다리는 곳)에 들어갔다.
 const waitUntilPreparing = () =>
   vi.waitFor(() => {
     expect(
@@ -110,6 +115,7 @@ const settle = (fn: () => void) =>
 const restoreCalls = () =>
   http.post.mock.calls.filter(([url]) => url === RESTORE_URL);
 
+// 엄격 모드에서 배열 칸은 `undefined` 일 수 있으므로 꺼낼 때 확인한다.
 const nth = <T,>(items: T[], index: number): T => {
   const item = items[index];
   if (item === undefined) throw new Error(`no item at ${index}`);
@@ -151,9 +157,12 @@ describe('<AccountSwitcher /> adding an account', () => {
     renderSwitcher();
     clickAdd();
 
+    // 아무 Promise 도 풀기 전에 이미 열려 있어야 한다.
     expect(open).toHaveBeenCalledTimes(1);
     expect(open.mock.calls[0]?.[0]).toBe('about:blank');
 
+    // 흐름을 끝내 둔다. 안 그러면 늦게 나가는 토큰 요청이 다음 테스트의
+    // 응답 목록에 섞인다.
     await waitUntilPreparing();
     fireEvent.click(screen.getByText('Cancel'));
   });
@@ -180,8 +189,10 @@ describe('<AccountSwitcher /> adding an account', () => {
     fireEvent.click(screen.getByText('Cancel'));
     expect(firstPopup.close).toHaveBeenCalled();
 
+    // 다시 시작했다. 아직 준비 중이라 "취소" 단추가 보여야 한다.
     await settle(clickAdd);
 
+    // 앞의 흐름의 토큰 발급이 이제야 끝난다.
     await settle(() => {
       nth(mintResponses, 0).resolve({ data: {} });
     });
@@ -205,6 +216,8 @@ describe('<AccountSwitcher /> adding an account', () => {
       nth(mintResponses, 0).resolve({ data: {} });
     });
 
+    // 로그인 화면으로 넘기지 않았고(공유 세션의 로그아웃이 없었다), 그러니
+    // 되살릴 세션도 없다.
     expect(popup.location.href).toBe('about:blank');
     expect(http.suspendSessionRecovery).not.toHaveBeenCalled();
     expect(restoreCalls()).toHaveLength(0);

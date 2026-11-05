@@ -5,12 +5,15 @@ module Status::ThreadingConcern
 
   class_methods do
     def permitted_statuses_from_ids(ids, account, stable: false)
-      statuses    = Status.with_accounts(ids).to_a
+      # @_longwhile — mentions 를 미리 읽는다. 아래 StatusFilter 의 StatusPolicy#mention_exists? 가
+      #   direct 글(과 팔로우하지 않은 사람의 비공개 글)마다 exists? 를 부른다 — DM 방 한 페이지면 메시지 수만큼이다.
+      statuses    = Status.with_accounts(ids).preload(:mentions).to_a
       account_ids = statuses.map(&:account_id).uniq
       domains     = statuses.filter_map(&:account_domain).uniq
-      relations   = account&.relations_map(account_ids, domains) || {}
 
-      statuses.reject! { |status| StatusFilter.new(status, account, relations).filtered? }
+      account&.preload_relations!(account_ids, domains)
+
+      statuses.reject! { |status| StatusFilter.new(status, account).filtered? }
 
       if stable
         statuses.sort_by! { |status| ids.index(status.id) }
@@ -48,7 +51,7 @@ module Status::ThreadingConcern
   end
 
   def ancestor_statuses(limit)
-    Status.find_by_sql([<<-SQL.squish, id: in_reply_to_id, limit: limit])
+    Status.find_by_sql([<<~SQL.squish, id: in_reply_to_id, limit: limit])
       WITH RECURSIVE search_tree(id, in_reply_to_id, path)
       AS (
         SELECT id, in_reply_to_id, ARRAY[id]
@@ -72,7 +75,7 @@ module Status::ThreadingConcern
     depth += 1 if depth.present?
     limit += 1 if limit.present?
 
-    descendants_with_self = Status.find_by_sql([<<-SQL.squish, id: id, limit: limit, depth: depth])
+    descendants_with_self = Status.find_by_sql([<<~SQL.squish, id: id, limit: limit, depth: depth])
       WITH RECURSIVE search_tree(id, path) AS (
         SELECT id, ARRAY[id]
         FROM statuses

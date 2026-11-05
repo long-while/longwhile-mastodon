@@ -55,6 +55,9 @@ const BackButton: React.FC<{
       })}
       aria-label={intl.formatMessage(messages.back)}
     >
+      {/* @_longwhile — "돌아가기" 글자를 빼고 화살표만 남긴다. 화살표가 이미
+          말하는 것을 한 번 더 말할 뿐이고, 그만큼 헤더의 가로를 먹는다.
+          이름은 위의 `aria-label` 이 들고 있으므로 스크린 리더에는 그대로다. */}
       <Icon
         id='chevron-left'
         icon={ArrowBackIcon}
@@ -73,6 +76,8 @@ export interface Props {
   pinned?: boolean;
   multiColumn?: boolean;
   extraButton?: React.ReactNode;
+  // 제목 대신 그릴 탭 줄(홈·퍼블릭의 `TimelineTabs`). 주면 제목 글자는 h1
+  // 안에 화면에서만 감춰 두고, 모바일에서는 사진·로고 줄 아래로 내려간다.
   tabs?: React.ReactNode;
   showBackButton?: boolean;
   placeholder?: boolean;
@@ -270,10 +275,13 @@ export const ColumnHeader: React.FC<Props> = ({
     )
   );
 
+  // 돌아가기 단추가 있는 화면은 그 자리를 단추가 쓴다. 다중 칼럼에는 서랍이 없다.
   const showMenuAvatar = !backButton && !multiColumn;
 
   const component = (
     <div className={wrapperClassName}>
+      {/* 탭이 있으면 h1 안에 탭·버튼까지 들어 있어, 내용으로 이름을 지으면
+          "홈 타임라인 홈 퍼블릭 툿 …" 이 된다. 감춘 제목 하나로 이름을 정한다. */}
       <h1
         className={buttonClassName}
         aria-labelledby={tabs && hasTitle ? hiddenTitleId : undefined}
@@ -293,6 +301,8 @@ export const ColumnHeader: React.FC<Props> = ({
         {!hasTitle &&
           (backButton ?? (showMenuAvatar && <MobileMenuAvatarButton />))}
 
+        {/* 모바일에서만 보인다(가운데 로고, X 와 같다). 테마에 맞는 그림은
+            `WordmarkLogo` 가 고른다 — 라이트 번들의 diff.scss 가 바꿔 끼운다. */}
         {tabs && (
           <span className='column-header__logo' aria-hidden='true'>
             <WordmarkLogo />

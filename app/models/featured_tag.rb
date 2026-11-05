@@ -5,13 +5,13 @@
 # Table name: featured_tags
 #
 #  id             :bigint(8)        not null, primary key
-#  account_id     :bigint(8)        not null
-#  tag_id         :bigint(8)        not null
-#  statuses_count :bigint(8)        default(0), not null
 #  last_status_at :datetime
+#  name           :string
+#  statuses_count :bigint(8)        default(0), not null
 #  created_at     :datetime         not null
 #  updated_at     :datetime         not null
-#  name           :string
+#  account_id     :bigint(8)        not null
+#  tag_id         :bigint(8)        not null
 #
 
 class FeaturedTag < ApplicationRecord
@@ -25,6 +25,8 @@ class FeaturedTag < ApplicationRecord
   validate :validate_featured_tags_limit, on: :create
 
   normalizes :name, with: ->(name) { name.strip.delete_prefix('#') }
+
+  scope :by_name, ->(name) { joins(:tag).where(tag: { name: }) }
 
   before_validation :set_tag
 
@@ -77,6 +79,8 @@ class FeaturedTag < ApplicationRecord
     errors.add(:base, I18n.t('featured_tags.errors.limit')) if account.featured_tags.count >= LIMIT
   end
 
+  # 위와 같은 이유로 distributable_visibility 를 쓰지 않는다. 이 값으로 추천 태그의
+  # 개수와 마지막 게시 시각을 다시 계산하는데, 그대로 두면 언제나 0 이 된다.
   def visible_tagged_account_statuses
     account.statuses.not_direct_visibility.tagged_with(tag)
   end

@@ -9,6 +9,7 @@ import { fireEvent, render, screen } from 'mastodon/test_helpers';
 
 import { MobileMenuAvatarButton } from '../mobile_menu_avatar_button';
 
+// test_helpers 의 identity 가 쓰는 계정 id 와 같아야 한다.
 const ACCOUNT_ID = '123';
 
 const importMe = () =>

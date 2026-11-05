@@ -54,6 +54,7 @@ RSpec.describe DeleteAccountService do
       expect { poll.reload }.to raise_error(ActiveRecord::RecordNotFound)
       expect { poll_vote.reload }.to raise_error(ActiveRecord::RecordNotFound)
       expect { account_note.reload }.to raise_error(ActiveRecord::RecordNotFound)
+      expect { collection.reload }.to raise_error(ActiveRecord::RecordNotFound)
       expect { generated_annual_report.reload }.to raise_error(ActiveRecord::RecordNotFound)
     end
 
@@ -88,6 +89,7 @@ RSpec.describe DeleteAccountService do
     it_behaves_like 'common behavior' do
       let(:account) { Fabricate(:account) }
       let(:local_follower) { Fabricate(:account) }
+      let!(:collection) { Fabricate(:collection, account:) } # rubocop:disable RSpec/LetSetup
 
       it 'sends a delete actor activity to all known inboxes' do
         subject
@@ -105,6 +107,8 @@ RSpec.describe DeleteAccountService do
     it_behaves_like 'common behavior' do
       let(:account) { Fabricate(:account, inbox_url: 'https://bob.com/inbox', protocol: :activitypub, domain: 'bob.com') }
       let(:local_follower) { Fabricate(:account) }
+
+      let!(:collection) { Fabricate(:remote_collection, account:) } # rubocop:disable RSpec/LetSetup
 
       it 'sends expected activities to followed and follower inboxes' do
         subject
@@ -174,6 +178,24 @@ RSpec.describe DeleteAccountService do
 
       expect(policy.favourite?).to be false
       expect(policy.reblog?).to be false
+    end
+  end
+
+  # 4.7 의 자기 삭제 표시(requested_deletion_at)는 피드·계정 API 에서 그 계정을 숨긴다.
+  # 표시가 남은 채 익명화하면 남기기로 한 글이 다시 숨는다.
+  describe 'anonymising an account that had requested deletion' do
+    subject { described_class.new }
+
+    let!(:account) { Fabricate(:account, requested_deletion_at: 1.day.ago) }
+
+    before { subject.call(account, reserve_username: true, reserve_email: false, preserve_content: true) }
+
+    it 'clears the deletion mark so the kept posts stay visible', :aggregate_failures do
+      account.reload
+
+      expect(account.anonymized?).to be true
+      expect(account.deleted?).to be false
+      expect(Account.without_requested_deletion).to include(account)
     end
   end
 end

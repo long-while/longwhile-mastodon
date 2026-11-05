@@ -4,6 +4,8 @@
 - content_for :heading_actions do
   = button_tag t('generic.save_changes'), class: 'button', form: 'edit_notification'
 
+-# @_longwhile — 정책이 위, 메일이 아래다. "알림이 시끄럽다" 로 오는 사람이
+-# 가장 먼저 찾는 것은 메일이 아니라 앱 알림이다 (settings-phase-6.md §3.1).
 = simple_form_for current_user, url: settings_notifications_path, html: { id: :edit_notification } do |f|
   = render 'shared/error_messages', object: current_user
 
@@ -20,6 +22,11 @@
                    label_method: ->(policy) { t("simple_form.labels.notification_policy.policies.#{policy}") },
                    wrapper: :with_label
 
+  -# @_longwhile — 개인 메일 알림 다섯(팔로우 · 팔로우 요청 · 재게시 ·
+  -# 마음에 들어요 · 멘션)을 걷어냈다. 이 서버는 SMTP 가 없어 메일이 나가지
+  -# 않는다 — 켜도 아무 일이 일어나지 않는 설정이었다. 값은 전부 꺼짐이
+  -# 기본이라 그대로 비어 있다.
+  -# 유행 검토 알림도 함께 걷어냈다. 추천과 유행 화면 자체가 사라졌다.
   = f.simple_fields_for :settings, current_user.settings do |ff|
     - if current_user.can?(:manage_reports, :manage_appeals, :manage_users) || (SoftwareUpdate.check_enabled? && current_user.can?(:view_devops))
       %h4= t 'notifications.administration_emails'
@@ -39,4 +46,6 @@
                      label: I18n.t('simple_form.labels.notification_emails.software_updates.label'),
                      wrapper: :with_label
 
+-# @_longwhile — 컬럼 톱니바퀴 설정은 브라우저에 저장돼 여기서 못 읽는다.
+-# 웹앱으로 잇는 안내 한 줄만 단다 (settings-phase-6.md §2).
 %p.muted-hint= t('notifications.web_column_hint')

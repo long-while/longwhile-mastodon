@@ -4,10 +4,12 @@ import { clearDrafts } from 'mastodon/features/messages/util/drafts';
 import { clearActiveAccountIdInStorage } from 'mastodon/utils/multi_account_storage';
 
 export async function logOut() {
+  // DM 초안은 로컬 저장소에 남는다. 공용 기기에서 다음 사람이 읽을 수 있으므로
+  // 로그아웃과 함께 지운다. (dm-chat-phase-3.md §4, 기획서 §11.5)
   clearDrafts();
 
-  // Clear the "last switched account" pointer too. Left behind, it comes back
-  // out of step with the session the next time a different account signs in.
+  // @_longwhile — "마지막으로 전환한 계정" 포인터도 같이 지운다. 남겨 두면
+  // 다음에 **다른 계정으로** 로그인했을 때 세션과 어긋난 채로 되살아난다.
   clearActiveAccountIdInStorage();
 
   try {

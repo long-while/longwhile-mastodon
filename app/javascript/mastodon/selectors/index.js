@@ -24,6 +24,9 @@ export const makeGetStatus = () => {
         return null;
       }
 
+      // @_longwhile — 작성자 계정이 스토어에 없는 글(어딘가에서 id 만으로 값을 써서
+      //   생긴 껍데기)은 그리지 않는다. 아래 `.get('id')` 에서 터지면 화면 전체가
+      //   오류 화면으로 바뀐다 — DM 이 엉뚱한 방에 들어가던 사고 때 실제로 그랬다.
       if (!accountBase) {
         return null;
       }

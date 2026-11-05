@@ -12,6 +12,7 @@
     %style{ 'data-premailer': 'ignore' }
       \.email a { color: inherit; text-decoration: none; }
       \.email-btn-hover:hover { background-color: #2453a2 !important; }
+      \.email-banner-text-td .email-btn-hover:hover { background-color: #fff !important; }
     /[if mso]
       <xml>
       <o:OfficeDocumentSettings xmlns:o="urn:schemas-microsoft-com:office:office">
@@ -73,13 +74,19 @@
               %table.email-w-full{ cellspacing: 0, cellpadding: 0, border: 0, role: 'presentation' }
                 %tr
                   %td.email-footer-td
-                    %p.email-footer-p
-                      = link_to root_url, class: 'email-footer-logo-a' do
-                        = image_tag frontend_asset_url('images/mailer-new/common/logo-footer.png'), alt: 'Mastodon', width: 44, height: 44
-                    %p.email-footer-p
-                      = t 'application_mailer.footer_html'
-                    - if defined?(@unsubscribe_url)
+                    -# 상류 4.6 은 메일마다 푸터를 갈아 끼울 수 있게 했다(content_for :footer).
+                    - if content_for?(:footer)
+                      = yield :footer
+                    - else
                       %p.email-footer-p
-                        = link_to t('application_mailer.unsubscribe'), @unsubscribe_url
+                        = link_to root_url, class: 'email-footer-logo-a' do
+                          = image_tag frontend_asset_url('images/mailer-new/common/logo-footer.png'), alt: 'Mastodon', width: 44, height: 44
+                      %p.email-footer-p
+                        -# @_longwhile — about.hosted_on 은 og:site_name 에도 쓰여 메일 푸터만 따로 둔다.
+                        = t 'application_mailer.footer_html'
+                      -# @_longwhile — '이메일 설정 변경' 링크는 뺐다. 알림 메일의 구독 해제만 남긴다.
+                      - if defined?(@unsubscribe_url)
+                        %p.email-footer-p
+                          = link_to t('application_mailer.unsubscribe'), @unsubscribe_url
               /[if mso]
                 </td></tr></table>

@@ -13,6 +13,7 @@ import StatusContainer from '../containers/status_container';
 
 import { LoadGap } from './load_gap';
 import ScrollableList from './scrollable_list';
+import { ThreadPreviewItem } from './thread_preview_item';
 
 export default class StatusList extends ImmutablePureComponent {
 
@@ -34,6 +35,8 @@ export default class StatusList extends ImmutablePureComponent {
     timelineId: PropTypes.string,
     lastId: PropTypes.string,
     bindToDocument: PropTypes.bool,
+    // @_longwhile — 답글 위에 타래 시작 글을 붙인다(홈·퍼블릭만). `components/thread_preview_item.tsx`
+    threadPreview: PropTypes.bool,
   };
 
   static defaultProps = {
@@ -86,7 +89,8 @@ export default class StatusList extends ImmutablePureComponent {
   };
 
   render () {
-    const { statusIds, featuredStatusIds, onLoadMore, timelineId, ...other }  = this.props;
+    const { statusIds, featuredStatusIds, onLoadMore, timelineId, threadPreview, ...other }  = this.props;
+    const Item = threadPreview ? ThreadPreviewItem : StatusContainer;
     const { isLoading, isPartial } = other;
 
     if (isPartial) {
@@ -113,7 +117,7 @@ export default class StatusList extends ImmutablePureComponent {
           );
         default:
           return (
-            <StatusContainer
+            <Item
               key={statusId}
               id={statusId}
               onMoveUp={this.handleMoveUp}

@@ -10,7 +10,7 @@ RSpec.describe 'Admin Export Domain Blocks' do
       post import_admin_export_domain_blocks_path(admin_import: 'invalid')
 
       expect(response.body)
-        .to include(I18n.t('admin.export_domain_blocks.no_file'))
+        .to include(I18n.t('admin.export_domain_blocks.no_file', locale: :ko)) # 화면 언어는 한국어 고정
     end
   end
 end

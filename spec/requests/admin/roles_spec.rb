@@ -109,8 +109,9 @@ RSpec.describe 'Admin Roles' do
         expect { subject }
           .to_not change(UserRole, :count)
 
+        # 화면 언어는 한국어로 고정돼 있다(Localized#requested_locale).
         expect(response.body)
-          .to include(I18n.t('admin.roles.add_new'))
+          .to include(I18n.t('admin.roles.add_new', locale: :ko))
       end
     end
 
@@ -123,8 +124,9 @@ RSpec.describe 'Admin Roles' do
         expect { subject }
           .to_not(change { role.reload.permissions })
 
+        # 화면 언어는 한국어로 고정돼 있다(Localized#requested_locale).
         expect(response.parsed_body.title)
-          .to match(I18n.t('admin.roles.edit', name: 'Bar'))
+          .to match(I18n.t('admin.roles.edit', name: 'Bar', locale: :ko))
       end
     end
   end

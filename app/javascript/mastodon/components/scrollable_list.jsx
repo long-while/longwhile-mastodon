@@ -23,8 +23,11 @@ import { LoadingIndicator } from './loading_indicator';
 
 const MOUSE_IDLE_DELAY = 300;
 
+// 이보다 위에 있으면 "맨 위에서 보고 있었다" 고 본다. `onScrollToTop` 과 같은 값.
 const TOP_THRESHOLD = 100;
 
+// 위치를 되돌린 뒤 이미지 등이 자리를 잡으면서 높이가 바뀌므로, 사용자가 손대지
+// 않았으면 이 시점들에 한 번 더 맞춘다.
 const ANCHOR_SETTLE_DELAYS = [0, 150, 500];
 
 const listenerOptions = supportsPassiveEvents ? { passive: true } : false;
@@ -87,6 +90,8 @@ class ScrollableList extends PureComponent {
     preventScroll: PropTypes.bool,
     footer: PropTypes.node,
     className: PropTypes.string,
+    // 떠났다 돌아왔을 때 읽던 글부터 보이게 한다(utils/scroll_anchor.ts).
+    // 켜는 화면은 utils/scroll_anchor.ts 의 `REMEMBERED_SCROLL_PATHS` 에도 있어야 한다.
     rememberPosition: PropTypes.bool,
   };
 
@@ -206,15 +211,43 @@ class ScrollableList extends PureComponent {
     return this.props.bindToDocument ? 0 : this.node.getBoundingClientRect().top;
   };
 
+  // 마지막으로 멈춰 있던 화면에서 목록이 놓였던 자리. 스크롤할 때마다 적는다.
+  //
+  // 떠나는 순간(componentWillUnmount)에는 화면이 이미 허물어지는 중이다. 목록 위의
+  // 칼럼 헤더가 먼저 빠지거나 문서가 짧아지면 목록 전체가 사용자가 보던 자리에서
+  // 위로 밀린다. 크롬은 스크롤 앵커링(overflow-anchor)으로 스크롤 값을 같이 줄여
+  // 화면상 위치를 지켜 주지만, **사파리(WebKit)에는 그 기능이 없어** 글들이 헤더
+  // 높이(모바일 97px)만큼 올라간 채로 재진다. 그 값을 그대로 기억하면 돌아올 때마다
+  // 헤더 높이만큼 아래로 밀리고, 탭을 오갈수록 쌓인다.
+  rememberRestingPosition = () => {
+    if (!this.node) return;
+
+    this.restingListTop = this.node.getBoundingClientRect().top;
+    this.restingScrollTop = this.getScrollTop();
+  };
+
+  // 맨 위에서 보고 있었으면 기억하지 않는다. 돌아왔을 때 그사이 올라온 새 글이
+  // 위에 숨지 않고 그대로 보여야 한다.
   rememberCurrentPosition () {
     if (!this.node) return;
 
-    const atTop = this.getScrollTop() < TOP_THRESHOLD;
-    const anchor = atTop ? null : findScrollAnchor(this.node, this._getViewportTop());
+    const scrollTop = this.restingScrollTop ?? this.getScrollTop();
+    const atTop = scrollTop < TOP_THRESHOLD;
+
+    // 목록 안의 배치는 허물어지는 동안에도 그대로이므로, 목록이 마지막으로 놓였던
+    // 자리만큼 되돌려서 잰다. 칼럼 안에서 스크롤하는 경우(다중 칼럼)는 기준이
+    // 목록 자신이라 밀림이 생기지 않는다.
+    const shift = this.props.bindToDocument && this.restingListTop !== undefined
+      ? this.restingListTop - this.node.getBoundingClientRect().top
+      : 0;
+    const anchor = atTop ? null : findScrollAnchor(this.node, this._getViewportTop() - shift);
 
     saveScrollAnchor(this.props.scrollKey, anchor);
   }
 
+  // 화면 이동 때의 "맨 위로" 는 `mastodon.jsx` 가 이 화면에 한해 꺼 두므로,
+  // 기억한 것이 없을 때도 여기서 직접 맨 위로 보낸다. 안 그러면 직전 화면의
+  // 스크롤 값이 그대로 남는다.
   restoreRememberedPosition () {
     const anchor = getScrollAnchor(this.props.scrollKey);
 
@@ -223,6 +256,10 @@ class ScrollableList extends PureComponent {
       return;
     }
 
+    // 첫 시도는 반드시 어딘가로 정한다. 기준 글이 없으면(지워졌거나, 목록이
+    // 새로 받아지는 중이면) 맨 위로 — 라우터의 "맨 위로" 를 꺼 두었으므로 안
+    // 그러면 직전 화면의 스크롤 값이 남는다. 이후 시도는 사용자가 그사이
+    // 스크롤했으면(값이 우리가 둔 것과 다르면) 손대지 않는다.
     let expectedTop = null;
 
     const apply = () => {
@@ -238,6 +275,8 @@ class ScrollableList extends PureComponent {
       }
 
       expectedTop = this.getScrollTop();
+      // 되돌린 자리가 곧 "멈춰 있던 자리" 다. 값이 같으면 스크롤 이벤트가 안 나므로 직접 적는다.
+      this.rememberRestingPosition();
     };
 
     apply();
@@ -329,23 +368,23 @@ class ScrollableList extends PureComponent {
   }
 
   attachScrollListener () {
-    if (this.props.bindToDocument) {
-      document.addEventListener('scroll', this.handleScroll);
-      document.addEventListener('wheel', this.handleWheel,  listenerOptions);
-    } else {
-      this.node.addEventListener('scroll', this.handleScroll);
-      this.node.addEventListener('wheel', this.handleWheel, listenerOptions);
+    const target = this.props.bindToDocument ? document : this.node;
+
+    target.addEventListener('scroll', this.handleScroll);
+    target.addEventListener('wheel', this.handleWheel, listenerOptions);
+
+    // 쓰로틀하지 않는다. 마지막 스크롤 직후에 바로 떠나도 그 자리를 적어 두어야 한다.
+    if (this.props.rememberPosition) {
+      target.addEventListener('scroll', this.rememberRestingPosition, listenerOptions);
     }
   }
 
   detachScrollListener () {
-    if (this.props.bindToDocument) {
-      document.removeEventListener('scroll', this.handleScroll);
-      document.removeEventListener('wheel', this.handleWheel, listenerOptions);
-    } else {
-      this.node.removeEventListener('scroll', this.handleScroll);
-      this.node.removeEventListener('wheel', this.handleWheel, listenerOptions);
-    }
+    const target = this.props.bindToDocument ? document : this.node;
+
+    target.removeEventListener('scroll', this.handleScroll);
+    target.removeEventListener('wheel', this.handleWheel, listenerOptions);
+    target.removeEventListener('scroll', this.rememberRestingPosition, listenerOptions);
   }
 
   getFirstChildKey (props) {

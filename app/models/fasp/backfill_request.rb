@@ -57,7 +57,10 @@ class Fasp::BackfillRequest < ApplicationRecord
     when 'account'
       Account.discoverable.without_instance_actor
     when 'content'
-      Status.indexable
+      # Status.indexable 은 이 포크에서 글쓴이의 indexable 을 보지 않는다(검색 범위를 팔로잉으로
+      # 따로 좁히기 때문). 외부 FASP 로 나가는 이 경로는 업스트림·FaspConcern 처럼 opt-in 한
+      # 계정의 글만 내보낸다.
+      Status.indexable.joins(:account).where(accounts: { indexable: true })
     end
   end
 

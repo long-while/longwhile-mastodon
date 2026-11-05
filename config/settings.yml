@@ -12,37 +12,17 @@ defaults: &defaults
   registrations_mode: 'none'
   profile_directory: true
   closed_registrations_message: ''
-  timeline_preview: true
+  local_live_feed_access: 'public'
+  remote_live_feed_access: 'public'
+  local_topic_feed_access: 'public'
+  remote_topic_feed_access: 'public'
   show_staff_badge: true
   preview_sensitive_media: false
   noindex: true
   theme: 'mastodon-bird-ui-light'
+  thumbnail_description: ''
   trends: true
-  trends_as_landing_page: true
   trendable_by_default: false
-  reserved_usernames:
-    - abuse
-    - account
-    - accounts
-    - admin
-    - administration
-    - administrator
-    - admins
-    - help
-    - helpdesk
-    - instance
-    - longwhile
-    - mod
-    - moderator
-    - moderators
-    - mods
-    - owner
-    - root
-    - security
-    - server
-    - staff
-    - support
-    - webmaster
   disallowed_hashtags: # space separated string or list of hashtags without the hash
   bootstrap_timeline_accounts: ''
   activity_api_enabled: true
@@ -52,7 +32,8 @@ defaults: &defaults
   require_invite_text: false
   backups_retention_period: 7
   captcha_enabled: false
-  allow_referer_origin: false
+  allow_referrer_origin: false
+  landing_page: 'trends'
   multi_account:
     client_id: <%= ENV.fetch('MA_MULTI_ACCOUNT_CLIENT_ID', '') %>
     client_secret: <%= ENV.fetch('MA_MULTI_ACCOUNT_CLIENT_SECRET', '') %>
@@ -60,6 +41,9 @@ defaults: &defaults
     retain_tokens: <%= ENV.fetch('MA_MULTI_ACCOUNT_RETAIN_TOKENS', 'true') %>
     refresh_flow: <%= ENV.fetch('MA_MULTI_ACCOUNT_REFRESH_FLOW', 'true') %>
     scopes: <%= ENV.fetch('MA_MULTI_ACCOUNT_SCOPES', 'read write follow push') %>
+  # @_longwhile — 연말 보고서(wrapstodon)는 끈다. 4.6 이 보고서 스키마를 새로 썼고, 고정
+  # 프런트(features/annual_report)는 옛 스키마를 기대한다.
+  wrapstodon: false
 
 development:
   <<: *defaults

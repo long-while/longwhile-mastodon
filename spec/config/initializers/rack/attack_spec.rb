@@ -177,6 +177,38 @@ RSpec.describe Rack::Attack, type: :request do
     it_behaves_like 'throttled endpoint'
   end
 
+  describe 'throttle excessive unauthenticated API requests by IP address' do
+    let(:throttle) { 'throttle_unauthenticated_api' }
+    let(:limit) { 300 }
+    let(:period) { 5.minutes }
+    let(:path) { '/api/v1/instance' }
+    let(:request) { -> { get path, headers: { 'REMOTE_ADDR' => remote_ip } } }
+
+    it_behaves_like 'throttled endpoint'
+
+    context 'when the limit has just been reached' do
+      before do
+        travel_to Time.zone.at((Time.now.to_i / period.seconds).to_i * period.seconds)
+        limit.times { described_class.cache.count("#{throttle}:#{discriminator}", period) }
+      end
+
+      it 'rejects the next unauthenticated request' do
+        request.call
+
+        expect(response).to have_http_status(429)
+        expect(response.headers['X-RateLimit-Limit']).to eq '300'
+      end
+
+      it 'does not throttle authenticated requests from the same address' do
+        token = Fabricate(:accessible_access_token, resource_owner_id: Fabricate(:user).id, scopes: 'read')
+
+        get path, headers: { 'REMOTE_ADDR' => remote_ip, 'Authorization' => "Bearer #{token.token}" }
+
+        expect(response).to have_http_status(200)
+      end
+    end
+  end
+
   describe 'throttle excessive password change requests by account' do
     let(:user) { Fabricate(:user, email: 'user@host.example') }
     let(:throttle) { 'throttle_password_change/account' }

@@ -1,0 +1,39 @@
+# Main configuration for Vite integration inside Rails
+# see lib/vite/config.rb for more info
+#
+# All values need to match Vite's configuration in vite.config.mts
+shared:
+  cache_dir: 'node_modules/.vite'
+
+development:
+  host: 'localhost'
+  port: 3036
+  https: false
+  base_path: '/packs-dev/'
+  manifest_path: 'public/packs-dev/.vite/manifest.json'
+  manifest_assets_path: 'public/packs-dev/.vite/manifest-assets.json'
+  auto_build: true
+  build_command: 'yarn build:development'
+  tag_strategies: ['dev_server', 'manifest']
+  out_dir: 'public/packs-dev'
+
+# @_longwhile — 이 포크의 JS 쪽(vite-plugin-ruby, config/vite.json)은 테스트 산출물을
+#   packs-test 에 둔다. vite_ruby 의 `bin/vite build --mode test` 와 같은 결과를 내는
+#   명령이 `yarn build:test` 다.
+test:
+  base_path: '/packs-test/'
+  manifest_path: 'public/packs-test/.vite/manifest.json'
+  manifest_assets_path: 'public/packs-test/.vite/manifest-assets.json'
+  auto_build: true
+  build_command: 'yarn build:test'
+  tag_strategies: ['manifest']
+  out_dir: 'public/packs-test'
+
+production:
+  base_path: '/packs/'
+  manifest_path: 'public/packs/.vite/manifest.json'
+  manifest_assets_path: 'public/packs/.vite/manifest-assets.json'
+  auto_build: false
+  build_command: 'yarn build:production'
+  tag_strategies: ['manifest']
+  out_dir: 'public/packs'

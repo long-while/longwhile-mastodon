@@ -44,6 +44,7 @@ module Status::SearchConcern
       properties << 'quote' if with_quote?
       properties << 'sensitive' if sensitive?
       properties << 'reply' if reply?
+      properties << 'quote' if with_quote?
     end
   end
 end

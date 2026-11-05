@@ -265,11 +265,26 @@ class ComposeForm extends ImmutablePureComponent {
         {!withoutNavigation && <NavigationBar />}
         <Warning />
 
+        {/* Sits above the box rather than inside it: this names who the reply
+            goes to, it is not part of what is being written. Keeping it out
+            also leaves the box its own background and rounded top corners.
+
+            @_longwhile — **누르면 수신자를 고른다.**
+
+              조건이 `replyMentions` 가 아니라 `replyCandidates` 다. 체크를 전부
+              끄면 멘션은 비지만 후보는 남는데, 멘션으로 걸면 그 순간 줄이
+              사라져 **다시 켤 방법이 없어진다.**
+
+              핸들이 `<Link>` 가 아니라 버튼 안의 글자가 됐다. 버튼 안에 링크를
+              넣을 수는 없고, 줄 전체가 눌리는 편이 좁은 화면에서 맞는다.
+              프로필로 가는 길은 위의 ReplyIndicator 에 남아 있다. */}
         {this.props.replyCandidates && !this.props.replyCandidates.isEmpty() && (
           <div className='compose-form__reply-mentions'>
             <button
               type='button'
               className='compose-form__reply-mentions__button'
+              // 이 줄이 대화 상자를 연다는 것을 낭독에도 알린다. 글자만으로는
+              // "누르면 무엇이 되는가" 를 알 수 없다.
               aria-haspopup='dialog'
               onClick={this.props.onOpenReplyRecipients}
             >
@@ -354,9 +369,15 @@ class ComposeForm extends ImmutablePureComponent {
                 <UploadButtonContainer />
                 <PollButtonContainer />
                 <SpoilerButtonContainer />
+                {/* @_longwhile — 이모지 선택기. import 는 되어 있었는데 그리지
+                    않고 있었다. 자리는 이미지·투표·경고 **다음**, 예약 **앞**이다.
+                    앞의 셋은 글에 무언가를 "붙이는" 것이고 예약은 보내는 방식을
+                    정하는 것이라, 이모지는 앞쪽 묶음의 끝에 선다. */}
                 <EmojiPickerDropdown onPickEmoji={this.handleEmojiPick} />
                 {/* Already-published posts cannot be scheduled. */}
                 <ScheduleButton disabled={this.props.isEditing} />
+                {/* 공개 범위 드롭다운은 없다. 일반 툿은 언제나 팔로워 전용이고
+                    DM 은 /messages 가 따로 담당한다. */}
                 <CharacterCounter max={maxChars} text={this.getFulltextForCharacterCounting()} />
               </div>
 

@@ -24,6 +24,7 @@
 /public/packs
 /public/packs-dev
 /public/packs-test
+stats.html
 .env
 .env.production
 /config/fcm_service_account.json
@@ -80,3 +81,8 @@ docker-compose.override.yml
 
 # Ignore local-only rspec configuration
 .rspec-local
+
+# Claude Code 셸이 만드는 임시 파일
+tmpclaude-*
+*storybook.log
+storybook-static

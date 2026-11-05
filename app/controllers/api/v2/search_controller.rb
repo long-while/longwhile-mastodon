@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class Api::V2::SearchController < Api::BaseController
+  include AsyncRefreshesConcern
   include Authorization
 
   RESULTS_LIMIT = 20
@@ -16,18 +17,20 @@ class Api::V2::SearchController < Api::BaseController
     before_action :remote_resolve_error, if: :remote_resolve_requested?
   end
   before_action :require_valid_pagination_options!
+  before_action :handle_fasp_requests
 
   def index
     @search = Search.new(search_results)
     render json: @search, serializer: REST::SearchSerializer
   rescue Mastodon::SyntaxError => e
-    Rails.logger.warn "Search syntax error: #{e.message} for query: '#{params[:q]}'"
+    Rails.logger.warn "Search syntax error: #{e.message} (query length: #{params[:q].to_s.length})"
     render json: { error: 'Invalid search syntax. Please check your query.' }, status: 422
   rescue ActiveRecord::RecordNotFound => e
     Rails.logger.warn "Search record not found: #{e.message}"
     not_found
   rescue StandardError => e
-    Rails.logger.error "Search error: #{e.message} for query: '#{params[:q]}'"
+    # 검색어 원문은 남기지 않는다 — 남의 이름·메일·비밀 문구일 수 있다.
+    Rails.logger.error "Search error: #{e.message} (query length: #{params[:q].to_s.length})"
     render json: { error: 'Search temporarily unavailable. Please try again.' }, status: 503
   end
 
@@ -35,6 +38,9 @@ class Api::V2::SearchController < Api::BaseController
 
   def validate_search_params!
     params.require(:q)
+
+    # q[]=… 나 q[k]=… 로 오면 아래 String 메서드에서 터져 500 이 된다.
+    raise Mastodon::InvalidParameterError, 'Search query must be a single string' unless params[:q].is_a?(String)
     
     # 검색어 길이 체크
     if params[:q].length > 500
@@ -87,6 +93,21 @@ class Api::V2::SearchController < Api::BaseController
     }, status: 401
   end
 
+  def handle_fasp_requests
+    return unless Mastodon::Feature.fasp_enabled?
+    return if params[:q].blank?
+
+    # Do not schedule a new retrieval if the request is a follow-up
+    # to an earlier retrieval
+    return if request.headers['Mastodon-Async-Refresh-Id'].present?
+
+    refresh_key = "fasp:account_search:#{Digest::MD5.base64digest(params[:q])}"
+    return if AsyncRefresh.new(refresh_key).running?
+
+    add_async_refresh_header(AsyncRefresh.create(refresh_key))
+    @query_fasp = true
+  end
+
   def remote_resolve_requested?
     truthy_param?(:resolve)
   end
@@ -111,7 +132,8 @@ class Api::V2::SearchController < Api::BaseController
     base_params = search_params.merge(
       resolve: truthy_param?(:resolve),
       exclude_unreviewed: truthy_param?(:exclude_unreviewed),
-      following: truthy_param?(:following)
+      following: truthy_param?(:following),
+      query_fasp: @query_fasp
     )
 
     # 한국어 검색 최적화 파라미터 추가

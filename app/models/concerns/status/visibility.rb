@@ -20,6 +20,8 @@ module Status::Visibility
   end
 
   class_methods do
+    # 일반 툿은 private 하나뿐. public/unlisted 는 공지 계정 전용이라 고를 수 없고,
+    # direct 는 작성란이 아니라 DM 화면이 담당한다.
     def selectable_visibilities
       %w(private)
     end
@@ -42,6 +44,8 @@ module Status::Visibility
     self.visibility ||= visibility_from_account
   end
 
+  # locked? 로 갈리지 않는다. 잠금은 이제 팔로우 승인 여부만 결정하고,
+  # 공개 범위는 잠금과 무관하게 항상 팔로워 전용이다.
   def visibility_from_account
     :private
   end

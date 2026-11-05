@@ -51,7 +51,7 @@ class Api::Web::PushSubscriptionsController < Api::Web::BaseController
     {
       policy: 'all',
       alerts: Notification::TYPES.index_with { alerts_enabled },
-    }
+    }.deep_stringify_keys
   end
 
   def alerts_enabled

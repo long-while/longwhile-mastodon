@@ -298,6 +298,10 @@ interface DropdownProps<Item = MenuItem> {
   scrollKey?: string;
   status?: ImmutableMap<string, unknown>;
   forceDropdown?: boolean;
+  // @_longwhile — 펼쳐진 메뉴를 감싸는 **바깥 칸**에 붙는 클래스.
+  //   메뉴는 `document.body` 로 포탈되고 그 칸은 popper 가 `transform` 을 걸어
+  //   스스로 쌓임 맥락(stacking context)이 된다. 그래서 안쪽 `.dropdown-menu` 의
+  //   `z-index` 는 밖에서 통하지 않는다 — 모달 위로 띄우려면 이 칸에 걸어야 한다.
   overlayClassName?: string;
   renderItem?: RenderItemFn<Item>;
   renderHeader?: RenderHeaderFn<Item>;

@@ -7,6 +7,7 @@
 %w(
   /blocks
   /bookmarks
+  /collections/(*any)
   /conversations
   /deck/(*any)
   /directory
@@ -27,6 +28,7 @@
   /notifications/(*any)
   /pending-mentions
   /pinned
+  /profile/(*any)
   /public
   /local
   /public/remote
@@ -35,4 +37,6 @@
   /search
   /start/(*any)
   /statuses/(*any)
+  /overview
+  /overview/about
 ).each { |path| get path, to: 'home#index' }

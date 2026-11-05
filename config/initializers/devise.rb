@@ -98,18 +98,14 @@ Devise.setup do |config|
     manager.default_strategies(scope: :user).unshift :two_factor_ldap_authenticatable if Devise.ldap_authentication
     manager.default_strategies(scope: :user).unshift :two_factor_pam_authenticatable  if Devise.pam_authentication
     manager.default_strategies(scope: :user).unshift :session_activation_rememberable
-    manager.default_strategies(scope: :user).unshift :two_factor_authenticatable
-    manager.default_strategies(scope: :user).unshift :two_factor_backupable
   end
 
   # The secret key used by Devise. Devise uses this key to generate
   # random tokens. Changing this key will render invalid all existing
   # confirmation, reset password and unlock tokens in the database.
-  #
-  # Set explicitly to Rails default to avoid deprecation warnings.
-  # https://github.com/heartcombo/devise/pull/5645#issuecomment-1871849856
-  # Remove when Devise changes `SecretKeyFinder` to not emit deprecations.
-  config.secret_key = Rails.application.secret_key_base
+  # Devise will use the `secret_key_base` as its `secret_key`
+  # by default. You can change it below and use your own secret key.
+  # config.secret_key = '<%= SecureRandom.hex(64) %>'
 
   # ==> Mailer Configuration
   # Configure the e-mail address which will be shown in Devise::Mailer,
@@ -377,7 +373,7 @@ Devise.setup do |config|
     config.usernamefield          = nil
     config.emailfield             = 'email'
     config.check_at_sign          = true
-    config.pam_default_suffix     = ENV.fetch('PAM_EMAIL_DOMAIN') { ENV['LOCAL_DOMAIN'] }
+    config.pam_default_suffix     = ENV.fetch('PAM_EMAIL_DOMAIN') { ENV.fetch('LOCAL_DOMAIN', nil) }
     config.pam_default_service    = ENV.fetch('PAM_DEFAULT_SERVICE') { 'rpam' }
     config.pam_controlled_service = ENV.fetch('PAM_CONTROLLED_SERVICE', nil).presence
   end
@@ -394,7 +390,7 @@ Devise.setup do |config|
     config.ldap_uid            = ENV.fetch('LDAP_UID', 'cn')
     config.ldap_mail           = ENV.fetch('LDAP_MAIL', 'mail')
     config.ldap_tls_no_verify  = ENV['LDAP_TLS_NO_VERIFY'] == 'true'
-    config.ldap_search_filter  = ENV.fetch('LDAP_SEARCH_FILTER', '(|(%{uid}=%{email})(%{mail}=%{email}))')
+    config.ldap_search_filter  = ENV.fetch('LDAP_SEARCH_FILTER', '(|(%<uid>s=%<email>s)(%<mail>s=%<email>s))')
     config.ldap_uid_conversion_enabled  = ENV['LDAP_UID_CONVERSION_ENABLED'] == 'true'
     config.ldap_uid_conversion_search   = ENV.fetch('LDAP_UID_CONVERSION_SEARCH', '.,- ')
     config.ldap_uid_conversion_replace  = ENV.fetch('LDAP_UID_CONVERSION_REPLACE', '_')

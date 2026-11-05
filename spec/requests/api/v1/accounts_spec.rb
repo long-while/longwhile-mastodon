@@ -3,10 +3,7 @@
 require 'rails_helper'
 
 RSpec.describe '/api/v1/accounts' do
-  let(:user)    { Fabricate(:user) }
-  let(:scopes)  { '' }
-  let(:token)   { Fabricate(:accessible_access_token, resource_owner_id: user.id, scopes: scopes) }
-  let(:headers) { { 'Authorization' => "Bearer #{token.token}" } }
+  include_context 'with API authentication'
 
   describe 'GET /api/v1/accounts?id[]=:id' do
     let(:account) { Fabricate(:account) }
@@ -51,6 +48,31 @@ RSpec.describe '/api/v1/accounts' do
       end
     end
 
+    context 'when requesting a permanently deleted account' do
+      let(:other_account) { Fabricate(:account, requested_deletion: true) }
+
+      before do
+        get "/api/v1/accounts/#{other_account.id}"
+      end
+
+      it 'returns http not found' do
+        expect(response).to have_http_status(404)
+      end
+    end
+
+    context 'when requesting an account pending deletion' do
+      let(:other_account) { Fabricate(:account) }
+
+      before do
+        other_account.mark_deleted!
+        get "/api/v1/accounts/#{other_account.id}"
+      end
+
+      it 'returns http not found' do
+        expect(response).to have_http_status(404)
+      end
+    end
+
     context 'when logged in' do
       subject do
         get "/api/v1/accounts/#{account.id}", headers: headers
@@ -78,9 +100,48 @@ RSpec.describe '/api/v1/accounts' do
     end
 
     let(:client_app) { Fabricate(:application) }
-    let(:token) { Doorkeeper::AccessToken.find_or_create_for(application: client_app, resource_owner: nil, scopes: 'read write', use_refresh_token: false) }
+    let(:token) { Fabricate(:client_credentials_token, application: client_app, scopes: 'read write') }
     let(:agreement) { nil }
     let(:date_of_birth) { nil }
+
+    context 'when not using client credentials token' do
+      let(:token) { Fabricate(:accessible_access_token, application: client_app, scopes: 'read write', resource_owner_id: user.id) }
+
+      it 'returns http forbidden error' do
+        subject
+
+        expect(response).to have_http_status(403)
+        expect(response.content_type)
+          .to start_with('application/json')
+
+        expect(response.parsed_body)
+          .to include(
+            error: 'This method requires an client credentials authentication'
+          )
+      end
+    end
+
+    context 'when missing username value' do
+      subject do
+        post '/api/v1/accounts', headers: headers, params: { password: '12345678', email: 'hello@world.tld', agreement: 'true' }
+      end
+
+      it 'returns http unprocessable entity with username error message' do
+        expect { subject }
+          .to not_change(User, :count)
+          .and not_change(Account, :count)
+
+        expect(response)
+          .to have_http_status(422)
+        expect(response.media_type)
+          .to eq('application/json')
+        expect(response.parsed_body)
+          .to include( # 응답 문구는 한국어 고정(Localized)
+            error: /\A#{Regexp.escape(I18n.t('activerecord.errors.messages.record_invalid', errors: '', locale: :ko).strip)}/,
+            details: include(username: contain_exactly(include(error: 'ERR_BLANK', description: I18n.t('errors.messages.blank', attribute: Account.human_attribute_name(:username, locale: :ko), locale: :ko))))
+          )
+      end
+    end
 
     context 'when age verification is enabled' do
       before do
@@ -93,11 +154,19 @@ RSpec.describe '/api/v1/accounts' do
         let(:date_of_birth) { 13.years.ago.strftime('%d.%m.%Y') }
 
         it 'returns http unprocessable entity' do
-          subject
+          expect { subject }
+            .to not_change(User, :count)
+            .and not_change(Account, :count)
 
-          expect(response).to have_http_status(422)
+          expect(response)
+            .to have_http_status(422)
           expect(response.content_type)
             .to start_with('application/json')
+          expect(response.parsed_body)
+            .to include( # 응답 문구는 한국어 고정(Localized)
+              error: /\A#{Regexp.escape(I18n.t('activerecord.errors.messages.record_invalid', errors: '', locale: :ko).strip)}/,
+              details: include(date_of_birth: contain_exactly(include(error: 'ERR_BELOW_LIMIT', description: I18n.t('activerecord.errors.models.user.attributes.date_of_birth.below_limit', locale: :ko))))
+            )
         end
       end
 
@@ -105,9 +174,27 @@ RSpec.describe '/api/v1/accounts' do
         let(:date_of_birth) { 17.years.ago.strftime('%d.%m.%Y') }
 
         it 'creates a user', :aggregate_failures do
-          subject
+          expect { subject }
+            .to change(User, :count).by(1)
+            .and change(Account, :count).by(1)
 
-          expect(response).to have_http_status(200)
+          expect(response)
+            .to have_http_status(200)
+          expect(response.content_type)
+            .to start_with('application/json')
+        end
+      end
+
+      context 'when date of birth is over age limit in ISO-8601 format' do
+        let(:date_of_birth) { 17.years.ago.to_date.iso8601 }
+
+        it 'creates a user', :aggregate_failures do
+          expect { subject }
+            .to change(User, :count).by(1)
+            .and change(Account, :count).by(1)
+
+          expect(response)
+            .to have_http_status(200)
           expect(response.content_type)
             .to start_with('application/json')
         end
@@ -123,7 +210,12 @@ RSpec.describe '/api/v1/accounts' do
         expect(response).to have_http_status(200)
         expect(response.content_type)
           .to start_with('application/json')
-        expect(response.parsed_body[:access_token]).to_not be_blank
+        expect(response.parsed_body)
+          .to include(
+            access_token: be_present,
+            created_at: be_a(Integer),
+            token_type: 'Bearer'
+          )
 
         user = User.find_by(email: 'hello@world.tld')
         expect(user).to_not be_nil
@@ -207,7 +299,7 @@ RSpec.describe '/api/v1/accounts' do
       it 'returns http forbidden and error message' do
         subject
 
-        error_msg = I18n.t('accounts.self_follow_error')
+        error_msg = I18n.t('accounts.self_follow_error', locale: :ko) # 응답 언어는 한국어 고정
 
         expect(response).to have_http_status(403)
         expect(response.parsed_body[:error]).to eq(error_msg)

@@ -6,8 +6,11 @@ class UnreservedUsernameValidator < ActiveModel::Validator
   #   Twitter/X @_longwhile · Crepe https://kre.pe/QTRx
   # Setting.reserved_usernames 의 운영자 변경 여부와 무관하게 항상 예약되어야 하는 아이디.
   # 공지용 계정(@longwhile) 등 시스템 단위로 보호되어야 하는 아이디만 등록한다.
+  # `deleted` 는 익명화(탈퇴) 계정 모두가 쓰는 핸들(Account::ANONYMIZED_USERNAME)이다. 누가 가져가면
+  # 웹 화면에서 탈퇴한 사용자의 이름을 누를 때 그 사람의 프로필이 열린다.
   ALWAYS_RESERVED_USERNAMES = %w(
     longwhile
+    deleted
   ).freeze
 
   def validate(account)
@@ -41,14 +44,6 @@ class UnreservedUsernameValidator < ActiveModel::Validator
   end
 
   def settings_username_reserved?
-    settings_has_reserved_usernames? && settings_reserves_username?
-  end
-
-  def settings_has_reserved_usernames?
-    Setting.reserved_usernames.present?
-  end
-
-  def settings_reserves_username?
-    Setting.reserved_usernames.include?(@username.downcase)
+    UsernameBlock.matches?(@username, allow_with_approval: false)
   end
 end

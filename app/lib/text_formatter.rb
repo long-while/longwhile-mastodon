@@ -45,18 +45,15 @@ class TextFormatter
   end
 
   def to_s
-    return ''.html_safe if text.blank?
+    return add_quote_fallback('').html_safe if text.blank? # rubocop:disable Rails/OutputSafety
 
-    html = nil
-    MastodonOTELTracer.in_span('TextFormatter#to_s extract_and_rewrite') do
-      html = rewrite do |entity|
-        if entity[:url]
-          link_to_url(entity)
-        elsif entity[:hashtag]
-          link_to_hashtag(entity)
-        elsif entity[:screen_name]
-          link_to_mention(entity)
-        end
+    html = rewrite do |entity|
+      if entity[:url]
+        link_to_url(entity)
+      elsif entity[:hashtag]
+        link_to_hashtag(entity)
+      elsif entity[:screen_name]
+        link_to_mention(entity)
       end
     end
 
@@ -66,11 +63,8 @@ class TextFormatter
     # 키워드 자동 링크는 마크다운 적용 후 (기존 <a> 태그 내부는 건너뜀)
     html = apply_auto_link_keywords(html)
 
-    if multiline?
-      MastodonOTELTracer.in_span('TextFormatter#to_s simple_format') do
-        html = simple_format(html, {}, { sanitize: false }).delete("\n")
-      end
-    end
+    html = simple_format(html, {}, sanitize: false).delete("\n") if multiline?
+    html = add_quote_fallback(html) if options[:quoted_status].present?
 
     html.html_safe # rubocop:disable Rails/OutputSafety
   end
@@ -85,7 +79,7 @@ class TextFormatter
 
       prefix      = url.match(URL_PREFIX_REGEX).to_s
       display_url = url[prefix.length, 30]
-      suffix      = url[prefix.length + 30..]
+      suffix      = url[(prefix.length + 30)..]
       cutoff      = url[prefix.length..].length > 30
 
       if suffix && suffix.length == 1 # revert truncation to account for ellipsis
@@ -101,6 +95,21 @@ class TextFormatter
       end
     rescue Addressable::URI::InvalidURIError, IDN::Idna::IdnaError
       h(url)
+    end
+
+    def link_to_mention(account, with_domain: false)
+      url = ActivityPub::TagManager.instance.url_for(account)
+      # @_longwhile — 익명화(탈퇴) 계정은 본문에 적힌 옛 이름 대신 "탈퇴한 사용자" 로 그린다.
+      #   href 는 익명 주소(/@deleted)라 화면의 멘션 처리(status_content.jsx)는 그대로 붙는다.
+      display_username = if account.anonymized?
+                           Account::ANONYMIZED_DISPLAY_NAME
+                         else
+                           with_domain ? account.pretty_acct : account.username
+                         end
+
+      <<~HTML.squish
+        <span class="h-card" translate="no"><a href="#{h(url)}" class="u-url mention">@<span>#{h(display_username)}</span></a></span>
+      HTML
     end
   end
 
@@ -186,54 +195,51 @@ class TextFormatter
   end
 
   def link_to_url(entity)
-    MastodonOTELTracer.in_span('TextFormatter#link_to_url') do
-      TextFormatter.shortened_link(entity[:url], rel_me: with_rel_me?)
-    end
+    TextFormatter.shortened_link(entity[:url], rel_me: with_rel_me?)
   end
 
   def link_to_hashtag(entity)
-    MastodonOTELTracer.in_span('TextFormatter#link_to_hashtag') do
-      hashtag = entity[:hashtag]
-      url     = tag_url(hashtag)
+    hashtag = entity[:hashtag]
+    url     = tag_url(hashtag)
 
-      <<~HTML.squish
-        <a href="#{h(url)}" class="mention hashtag" rel="tag">#<span>#{h(hashtag)}</span></a>
-      HTML
-    end
+    <<~HTML.squish
+      <a href="#{h(url)}" class="mention hashtag" rel="tag">#<span>#{h(hashtag)}</span></a>
+    HTML
   end
 
   def link_to_mention(entity)
-    MastodonOTELTracer.in_span('TextFormatter#link_to_mention') do
-      username, domain = entity[:screen_name].split('@')
-      domain           = nil if local_domain?(domain)
-      account          = nil
+    username, domain = entity[:screen_name].split('@')
+    domain           = nil if local_domain?(domain)
+    account          = nil
 
-      if preloaded_accounts?
-        same_username_hits = 0
+    if preloaded_accounts?
+      same_username_hits = 0
 
-        preloaded_accounts.each do |other_account|
-          same_username = other_account.username.casecmp(username).zero?
-          same_domain   = other_account.domain.nil? ? domain.nil? : other_account.domain.casecmp(domain)&.zero?
+      preloaded_accounts.each do |other_account|
+        same_username = other_account.username.casecmp(username).zero?
+        same_domain   = other_account.domain.nil? ? domain.nil? : other_account.domain.casecmp(domain)&.zero?
 
-          if same_username && !same_domain
-            same_username_hits += 1
-          elsif same_username && same_domain
-            account = other_account
-          end
+        if same_username && !same_domain
+          same_username_hits += 1
+        elsif same_username && same_domain
+          account = other_account
         end
-      else
-        account = entity_cache.mention(username, domain)
       end
-
-      return "@#{h(entity[:screen_name])}" if account.nil?
-
-      url = ActivityPub::TagManager.instance.url_for(account)
-      display_username = same_username_hits&.positive? || with_domains? ? account.pretty_acct : account.username
-
-      <<~HTML.squish
-        <span class="h-card" translate="no"><a href="#{h(url)}" class="u-url mention">@<span>#{h(display_username)}</span></a></span>
-      HTML
+    else
+      account = entity_cache.mention(username, domain)
     end
+
+    return "@#{h(Account::ANONYMIZED_DISPLAY_NAME)}" if account.nil? && anonymized_handle?(username, domain)
+    return "@#{h(entity[:screen_name])}" if account.nil?
+
+    TextFormatter.link_to_mention(account, with_domain: same_username_hits&.positive? || with_domains?)
+  end
+
+  # @_longwhile — 화면이 DM 수신자 핸들로 탈퇴(익명화) 멤버의 `@deleted` 를 붙여 보낸다
+  #   (api/dm_rooms.ts). 그 이름은 예약돼 있어 계정으로 풀리지 않으므로 글자 그대로 남던 것을
+  #   다른 곳과 같은 "탈퇴한 사용자" 로 보인다. 원문(status.text)은 바꾸지 않는다.
+  def anonymized_handle?(username, domain)
+    domain.nil? && username.casecmp?(Account::ANONYMIZED_USERNAME)
   end
 
   def entity_cache
@@ -264,5 +270,16 @@ class TextFormatter
 
   def preloaded_accounts?
     preloaded_accounts.present?
+  end
+
+  def add_quote_fallback(html)
+    return html if options[:quoted_status].nil?
+
+    url = ActivityPub::TagManager.instance.url_for(options[:quoted_status]) || ActivityPub::TagManager.instance.uri_for(options[:quoted_status])
+    return html if url.blank? || html.include?(url)
+
+    <<~HTML.squish
+      <p class="quote-inline">RE: #{TextFormatter.shortened_link(url)}</p>#{html}
+    HTML
   end
 end

@@ -11,15 +11,13 @@
       var messageSent = false;
       var targetOrigin = '<%= @redirect_origin.present? ? j(@redirect_origin) : '' %>';
 
-      // This screen may not be a popup at all.
-      //
-      // When the add-account flow is abandoned, /oauth/authorize is left in
-      // the session as Devise's post-sign-in destination, and the next
-      // sign-in rides that authorize URL all the way here in an ordinary tab.
-      // There is no opener for postMessage to reach, and window.close() only
-      // works on script-opened windows, so nothing happens. That is how a
-      // blank window reading "this window will close automatically" used to
-      // sit there forever. Send those home instead.
+      // @_longwhile — **이 화면이 팝업이 아닐 수 있다.**
+      //   계정 추가 흐름이 중단되면 `/oauth/authorize` 가 Devise 의 "로그인 뒤
+      //   돌아갈 곳" 으로 세션에 남고, 다음 로그인이 그 authorize 를 타고
+      //   **일반 탭에서** 여기까지 온다. 그때는 opener 가 없어 postMessage 가
+      //   갈 곳이 없고, `window.close()` 는 스크립트가 연 창에서만 동작하므로
+      //   아무 일도 일어나지 않는다. 예전에는 그래서 "이 창은 자동으로
+      //   닫힙니다" 만 띄운 하얀 창이 영영 남았다. 그런 창은 홈으로 보낸다.
       var hasOpener = false;
 
       try {
@@ -32,7 +30,7 @@
         window.location.replace('/');
       }
 
-      // Try to close; if it does not close (not a popup), go home.
+      // 닫아 보고, 닫히지 않으면(= 팝업이 아니다) 홈으로 보낸다.
       function closeOrGoHome() {
         if (closeInitiated) {
           return;
@@ -63,7 +61,7 @@
       }
 
       // Listen for close confirmation from parent window.
-      // Only a same-origin opener may tell this window to close.
+      // 이 창을 닫으라고 말할 수 있는 것은 **같은 오리진의 opener** 뿐이다.
       window.addEventListener('message', function(event) {
         if (event.origin !== window.location.origin) {
           return;
@@ -129,8 +127,8 @@
           // Close window after waiting for parent response or timeout
           closeTimeout = setTimeout(closeOrGoHome, 5000);
         } else {
-          // Nobody to notify. The error text is for a person to read, so do
-          // not clear it away; just offer a link back.
+          // 알릴 상대가 없다. 오류 내용은 사람이 읽어야 하므로 자동으로
+          // 보내지 않고, 돌아갈 링크만 띄운다.
           document.addEventListener('DOMContentLoaded', showStranded);
         }
       <% else %>
@@ -140,14 +138,12 @@
           // Wait for parent window to confirm before closing (with 10s timeout)
           closeTimeout = setTimeout(closeOrGoHome, 10000);
         } else {
-          // Authorization is done and the session already belongs to that
-          // account. There is nothing to read, so clear the authorization
-          // code out of the address bar right away.
+          // 인가는 끝났고 세션도 이미 그 계정으로 붙어 있다. 읽을 것이 없으니
+          // 주소창의 authorization code 를 남기지 말고 바로 치운다.
           //
-          // Try closing first: the opener may be missing because this is not
-          // a popup, or because it is a popup whose opener the user closed.
-          // In the latter case closing beats turning a small popup into a
-          // timeline.
+          // 먼저 닫아 본다 — opener 가 없는 이유가 "이건 팝업이 아니다" 일 수도
+          // 있고, "팝업은 맞는데 여는 창을 사용자가 먼저 닫았다" 일 수도 있다.
+          // 뒤의 경우엔 작은 팝업을 엉뚱하게 타임라인으로 바꾸는 대신 닫는 게 맞다.
           closeOrGoHome();
         }
       <% end %>

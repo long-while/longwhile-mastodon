@@ -2,7 +2,11 @@
 
 require 'rails_helper'
 
-# @_longwhile custom feature
+# @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 채팅
+#   DM 만 별도 속도 제한 family 로 분리한다. 이 스펙이 지키는 것은 두 가지다.
+#     1. direct 글이 :direct_statuses 로 기록되는가
+#     2. **공개 글이 여전히 :statuses 로 기록되는가** (회귀 방지가 본체다)
+#   근거: dm-chat-phase-0.md P0-3, dm-chat-decisions.md D-09
 RSpec.describe Status do
   let(:account) { Fabricate(:account) }
 

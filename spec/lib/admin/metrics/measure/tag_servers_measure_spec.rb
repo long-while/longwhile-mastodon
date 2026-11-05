@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe Admin::Metrics::Measure::TagServersMeasure do
+RSpec.describe Admin::Metrics::Measure::TagServersMeasure, :utc_time_zone do
   subject { described_class.new(start_at, end_at, params) }
 
   let!(:tag) { Fabricate(:tag) }

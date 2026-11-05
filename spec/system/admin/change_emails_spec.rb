@@ -16,11 +16,8 @@ RSpec.describe 'Admin Change Emails' do
         .to have_title(I18n.t('admin.accounts.change_email.title', username: user.account.username))
 
       fill_in 'user_unconfirmed_email', with: 'test@host.example'
-      emails = capture_emails { process_change_email }
-      expect(emails.first)
-        .to be_present
-        .and(deliver_to('test@host.example'))
-        .and(have_subject(/Confirm email/))
+      expect { process_change_email }
+        .to send_email(to: 'test@host.example', subject: /이메일 확인/) # 메일은 한국어 고정(ApplicationMailer::MAIL_LOCALE)
       expect(page)
         .to have_title(user.account.pretty_acct)
     end

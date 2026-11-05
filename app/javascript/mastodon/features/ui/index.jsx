@@ -232,6 +232,13 @@ class SwitchingColumnsArea extends PureComponent {
             <WrappedRoute path='/notifications/requests' component={NotificationRequests} content={children} exact />
             <WrappedRoute path='/notifications/requests/:id' component={NotificationRequest} content={children} exact />
             <WrappedRoute path='/pending-mentions' component={PendingMentions} content={children} />
+            {/* @_longwhile — DM 채팅. 목록보다 방을 먼저 두면 /messages 가 방 id 로 잡힌다. */}
+            {/* @_longwhile — DM 채팅. exact 를 걸지 않는다. /messages 가 셸과 목록을
+                들고 있고 /messages/:roomId 는 그 안의 자식 Route 다. 여기서 둘로
+                나누면 방을 옮길 때마다 목록이 언마운트된다. */}
+            {/* /messages/all 이 /messages 보다 **위에** 있어야 한다. Switch 는 첫
+                매치만 쓰는데, /messages 는 exact 가 아니라 /messages/all 도 삼킨다.
+                그러면 운영진 화면이 방 id "all" 로 읽힌다. */}
             <WrappedRoute path='/messages/all' component={AdminMessages} content={children} />
             <WrappedRoute path='/messages' component={Messages} content={children} />
             <WrappedRoute path='/scheduled_statuses' component={ScheduledStatuses} content={children} />

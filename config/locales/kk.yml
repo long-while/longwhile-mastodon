@@ -9,7 +9,6 @@ kk:
     followers:
       one: Оқырман
       other: Оқырман
-    following: Жазылғандары
     last_active: соңғы әрекеті
     link_verified_on: Сілтеме меншігі расталған күн %{date}
     nothing_here: Бұл жерде ештеңе жоқ!
@@ -309,7 +308,6 @@ kk:
     remove: Алиас сілтемесін алып тастау
   appearance:
     animations_and_accessibility: Анимациялар және қолжетімділік
-    confirmation_dialogs: Пікірталас диалогтары
     discovery: Пікірталас
     sensitive_content: Нәзік контент
   application_mailer:
@@ -370,7 +368,6 @@ kk:
   deletes:
     challenge_not_passed: Сіз енгізген ақпарат дұрыс емес
     confirm_password: Қазіргі құпиясөзіңізді жазыңыз
-    confirm_username: Процедураны растау үшін логинді енгізіңіз
     proceed: Аккаунт өшіру
     success_msg: Аккаунтыңыз сәтті өшірілді
     warning:
@@ -413,9 +410,6 @@ kk:
     lists: Тізімдер
     mutes: Үнсіздер
     storage: Медиа жинақ
-  featured_tags:
-    add_new: Жаңасын қосу
-    hint_html: "<strong> Ерекшеліктері бар хэштегтер дегеніміз не? </strong> Олар жалпыға қол жетімді профильде көрсетіледі және адамдарға сіздің жалпы хабарламаларыңызды сол хэштегтердің астына қарауға мүмкіндік береді. Олар шығармашылық жұмыстарды немесе ұзақ мерзімді жобаларды бақылаудың тамаша құралы."
   filters:
     contexts:
       home: Ішкі желі
@@ -616,7 +610,6 @@ kk:
     appearance: Сыртқы түрі
     authorized_apps: Authorizеd apps
     back: Желіге оралу
-    delete: Аккаунт өшіру
     development: Жасаушы топ
     edit_profile: Профиль өңдеу
     featured_tags: Таңдаулы хэштегтер
@@ -647,20 +640,11 @@ kk:
       ownership: Біреудің жазбасы жабыстырылмайды
       reblog: Бөлісілген жазба жабыстырылмайды
     visibilities:
-      private: Тек оқырмандарға
-      private_long: Тек оқырмандарға ғана көрінеді
       public: Ашық
-      public_long: Бәрі көре алады
-      unlisted: Тізімге енбеген
-      unlisted_long: Бәрі көре алады, бірақ ашық тізімдерге ене алмайды
   stream_entries:
     sensitive_content: Нәзік мазмұн
   tags:
     does_not_match_previous_name: алдыңғы атқа сәйкес келмейді
-  themes:
-    contrast: Mastodon (Жоғары контраст)
-    default: Mastodon (Қою)
-    mastodon-light: Mastodon (Ашық)
   two_factor_authentication:
     disable: Ажырату
     enabled: Екі-факторлы авторизация қосылған

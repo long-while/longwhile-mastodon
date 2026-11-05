@@ -3,10 +3,7 @@
 require 'rails_helper'
 
 RSpec.describe 'credentials API' do
-  let(:user)     { Fabricate(:user, account_attributes: { discoverable: false, locked: true, indexable: false }) }
-  let(:token)    { Fabricate(:accessible_access_token, resource_owner_id: user.id, scopes: scopes) }
-  let(:scopes)   { 'read:accounts write:accounts' }
-  let(:headers)  { { 'Authorization' => "Bearer #{token.token}" } }
+  include_context 'with API authentication', user_fabricator: :private_user, oauth_scopes: 'read:accounts write:accounts'
 
   describe 'GET /api/v1/accounts/verify_credentials' do
     subject do
@@ -91,6 +88,11 @@ RSpec.describe 'credentials API' do
         expect(response).to have_http_status(422)
         expect(response.content_type)
           .to start_with('application/json')
+        expect(response.parsed_body)
+          .to include( # 응답 문구는 한국어 고정(Localized)
+            error: /\A#{Regexp.escape(I18n.t('activerecord.errors.messages.record_invalid', errors: '', locale: :ko).strip)}/,
+            details: include(note: contain_exactly(include(error: 'ERR_TOO_LONG', description: I18n.t('errors.messages.too_long', attribute: Account.human_attribute_name(:note, locale: :ko), count: Account::NOTE_LENGTH_LIMIT, locale: :ko))))
+          )
       end
     end
 
@@ -101,20 +103,14 @@ RSpec.describe 'credentials API' do
         .to have_http_status(200)
       expect(response.content_type)
         .to start_with('application/json')
-
-      expect(response.parsed_body).to include({
-        source: hash_including({
-          discoverable: true,
-          indexable: true,
-        }),
-        locked: false,
-      })
-
-      expect(ActivityPub::UpdateDistributionWorker)
-        .to have_enqueued_sidekiq_job(user.account_id)
-    end
-
-    def expect_account_updates
+      expect(response.parsed_body)
+        .to include({
+          source: hash_including({
+            discoverable: true,
+            indexable: true,
+          }),
+          locked: false,
+        })
       expect(user.account.reload)
         .to have_attributes(
           display_name: eq("Alice Isn't Dead"),
@@ -123,14 +119,15 @@ RSpec.describe 'credentials API' do
           header: exist,
           attribution_domains: ['example.com']
         )
-    end
-
-    def expect_user_updates
+      # 값은 저장되지만, 이 포크는 기본 공개 범위를 언제나 private 로 돌려준다(User::HasSettings#setting_default_privacy).
       expect(user.reload)
         .to have_attributes(
-          setting_default_privacy: eq('unlisted'),
+          settings: have_attributes(default_privacy: 'unlisted'),
+          setting_default_privacy: eq('private'),
           setting_default_sensitive: be(true)
         )
+      expect(ActivityPub::UpdateDistributionWorker)
+        .to have_enqueued_sidekiq_job(user.account_id)
     end
   end
 end

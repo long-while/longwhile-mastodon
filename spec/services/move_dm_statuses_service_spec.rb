@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-# @_longwhile custom feature
+# @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 채팅
 RSpec.describe MoveDmStatusesService do
   subject { described_class.new }
 

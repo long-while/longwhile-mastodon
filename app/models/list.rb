@@ -5,12 +5,12 @@
 # Table name: lists
 #
 #  id             :bigint(8)        not null, primary key
-#  account_id     :bigint(8)        not null
+#  exclusive      :boolean          default(FALSE), not null
+#  replies_policy :integer          default("list"), not null
 #  title          :string           default(""), not null
 #  created_at     :datetime         not null
 #  updated_at     :datetime         not null
-#  replies_policy :integer          default("list"), not null
-#  exclusive      :boolean          default(FALSE), not null
+#  account_id     :bigint(8)        not null
 #
 
 class List < ApplicationRecord
@@ -32,6 +32,8 @@ class List < ApplicationRecord
   validate :validate_account_lists_limit, on: :create
 
   before_destroy :clean_feed_manager
+
+  scope :with_list_account, ->(account) { joins(:list_accounts).where(list_accounts: { account: }) }
 
   private
 

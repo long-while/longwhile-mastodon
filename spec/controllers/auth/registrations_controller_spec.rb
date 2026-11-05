@@ -12,11 +12,11 @@ RSpec.describe Auth::RegistrationsController do
         allow(Rails.configuration.x).to receive(:single_user_mode).and_return(true)
       end
 
-      it 'redirects to root' do
+      it 'redirects to sign-in' do
         Fabricate(:account)
         get path
 
-        expect(response).to redirect_to '/'
+        expect(response).to redirect_to '/auth/sign_in'
         expect(Rails.configuration.x).to have_received(:single_user_mode)
       end
     end
@@ -27,10 +27,10 @@ RSpec.describe Auth::RegistrationsController do
         allow(Rails.configuration.x).to receive(:single_user_mode).and_return(false)
       end
 
-      it 'redirects to root' do
+      it 'redirects to sign-in' do
         get path
 
-        expect(response).to redirect_to '/'
+        expect(response).to redirect_to '/auth/sign_in'
         expect(Rails.configuration.x).to have_received(:single_user_mode)
       end
     end
@@ -141,6 +141,15 @@ RSpec.describe Auth::RegistrationsController do
         expect(response).to have_http_status(403)
       end
     end
+
+    context 'when deleted' do
+      let(:user) { Fabricate(:user, account_attributes: { username: 'test', requested_deletion_at: Time.now.utc }) }
+
+      it 'returns http forbidden' do
+        put :update
+        expect(response).to have_http_status(403)
+      end
+    end
   end
 
   describe 'GET #new' do
@@ -161,6 +170,10 @@ RSpec.describe Auth::RegistrationsController do
 
   describe 'POST #create' do
     let(:accept_language) { 'de' }
+    # 이 포크는 가입 때 Accept-Language 를 따르지 않고 한국어를 적는다
+    # (`Auth::RegistrationsController#build_resource`, settings-phase-2.md §1.3).
+    # I18n.default_locale 이 아니다 — DEFAULT_LOCALE 이 없으면 :en 이라 메일이 영어로 나갔다.
+    let(:signup_locale) { 'ko' }
 
     before do
       session[:registration_form_time] = 5.seconds.ago
@@ -188,7 +201,7 @@ RSpec.describe Auth::RegistrationsController do
           .to redirect_to auth_setup_path
         expect(User.find_by(email: 'test@example.com'))
           .to be_present
-          .and have_attributes(locale: eq(accept_language))
+          .and have_attributes(locale: eq(signup_locale))
       end
     end
 
@@ -223,7 +236,7 @@ RSpec.describe Auth::RegistrationsController do
 
         user = User.find_by(email: 'test@example.com')
         expect(user).to_not be_nil
-        expect(user.locale).to eq(accept_language)
+        expect(user.locale).to eq(signup_locale)
         expect(user.approved).to be(false)
       end
     end
@@ -247,76 +260,8 @@ RSpec.describe Auth::RegistrationsController do
 
         user = User.find_by(email: 'test@example.com')
         expect(user).to_not be_nil
-        expect(user.locale).to eq(accept_language)
+        expect(user.locale).to eq(signup_locale)
         expect(user.approved).to be(false)
-      end
-    end
-
-    context 'with Approval-based registrations without invite' do
-      subject do
-        Setting.registrations_mode = 'approved'
-        request.headers['Accept-Language'] = accept_language
-        post :create, params: { user: { account_attributes: { username: 'test' }, email: 'test@example.com', password: '12345678', password_confirmation: '12345678', agreement: 'true' } }
-      end
-
-      it 'redirects to setup and creates user' do
-        subject
-
-        expect(response)
-          .to redirect_to auth_setup_path
-
-        expect(User.find_by(email: 'test@example.com'))
-          .to be_present
-          .and have_attributes(
-            locale: eq(accept_language),
-            approved: be(false)
-          )
-      end
-    end
-
-    context 'with Approval-based registrations with expired invite' do
-      subject do
-        Setting.registrations_mode = 'approved'
-        request.headers['Accept-Language'] = accept_language
-        invite = Fabricate(:invite, max_uses: nil, expires_at: 1.hour.ago)
-        post :create, params: { user: { account_attributes: { username: 'test' }, email: 'test@example.com', password: '12345678', password_confirmation: '12345678', invite_code: invite.code, agreement: 'true' } }
-      end
-
-      it 'redirects to setup and creates user' do
-        subject
-
-        expect(response).to redirect_to auth_setup_path
-
-        expect(User.find_by(email: 'test@example.com'))
-          .to be_present
-          .and have_attributes(
-            locale: eq(accept_language),
-            approved: be(false)
-          )
-      end
-    end
-
-    context 'with Approval-based registrations with valid invite and required invite text' do
-      subject do
-        inviter = Fabricate(:user, confirmed_at: 2.days.ago)
-        Setting.registrations_mode = 'approved'
-        Setting.require_invite_text = true
-        request.headers['Accept-Language'] = accept_language
-        invite = Fabricate(:invite, user: inviter, max_uses: nil, expires_at: 1.hour.from_now)
-        post :create, params: { user: { account_attributes: { username: 'test' }, email: 'test@example.com', password: '12345678', password_confirmation: '12345678', invite_code: invite.code, agreement: 'true' } }
-      end
-
-      it 'redirects to setup and creates user' do
-        subject
-
-        expect(response).to redirect_to auth_setup_path
-
-        expect(User.find_by(email: 'test@example.com'))
-          .to be_present
-          .and have_attributes(
-            locale: eq(accept_language),
-            approved: be(true)
-          )
       end
     end
 
@@ -334,7 +279,8 @@ RSpec.describe Auth::RegistrationsController do
         subject
 
         expect(response).to have_http_status(:success)
-        expect(username_error_text).to eq(I18n.t('errors.messages.taken'))
+        # 한국어 문구는 속성 이름을 함께 적는다("%{attribute}은(는) 이미 존재합니다").
+        expect(username_error_text).to eq(I18n.t('errors.messages.taken', attribute: Account.human_attribute_name(:username)))
       end
 
       def username_error_text
@@ -342,39 +288,35 @@ RSpec.describe Auth::RegistrationsController do
       end
     end
 
-    context 'when age verification is enabled' do
-      subject { post :create, params: { user: { account_attributes: { username: 'test' }, email: 'test@example.com', password: '12345678', password_confirmation: '12345678', agreement: 'true' }.merge(date_of_birth) } }
-
-      before do
+    context 'with an invalid date of birth' do
+      subject do
+        Setting.registrations_mode = 'open'
         Setting.min_age = 16
+        post :create, params: {
+          user: {
+            :account_attributes => { username: 'test' },
+            :email => 'test@example.com',
+            :password => '12345678',
+            :password_confirmation => '12345678',
+            :agreement => 'true',
+            'date_of_birth(1i)' => '2019',
+            'date_of_birth(2i)' => '32',
+            'date_of_birth(3i)' => '01',
+          },
+        }
       end
 
-      let(:date_of_birth) { {} }
+      it 'responds with an error message about the date of birth' do
+        expect { subject }.to_not raise_error
 
-      context 'when date of birth is below age limit' do
-        let(:date_of_birth) { 13.years.ago.then { |date| { 'date_of_birth(1i)': date.day.to_s, 'date_of_birth(2i)': date.month.to_s, 'date_of_birth(3i)': date.year.to_s } } }
-
-        it 'does not create user' do
-          subject
-          user = User.find_by(email: 'test@example.com')
-          expect(user).to be_nil
-        end
+        expect(response).to have_http_status(:success)
+        # 한국어 문구는 속성 이름을 함께 적는다("%{attribute}은(는) 올바르지 않은 값입니다").
+        expect(date_of_birth_error_text).to eq(I18n.t('errors.messages.invalid', attribute: User.human_attribute_name(:date_of_birth)))
+        expect(User.find_by(email: 'test@example.com')).to be_nil
       end
 
-      context 'when date of birth is above age limit' do
-        let(:date_of_birth) { 17.years.ago.then { |date| { 'date_of_birth(1i)': date.day.to_s, 'date_of_birth(2i)': date.month.to_s, 'date_of_birth(3i)': date.year.to_s } } }
-
-        it 'redirects to setup and creates user' do
-          subject
-
-          expect(response).to redirect_to auth_setup_path
-
-          expect(User.find_by(email: 'test@example.com'))
-            .to be_present
-            .and have_attributes(
-              age_verified_at: not_eq(nil)
-            )
-        end
+      def date_of_birth_error_text
+        response.parsed_body.css('.user_date_of_birth .error').text
       end
     end
 

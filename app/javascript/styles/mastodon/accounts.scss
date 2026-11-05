@@ -214,6 +214,10 @@
   padding: 4px;
   padding-inline-end: 8px;
 
+  // @_longwhile — 역할 뱃지(Owner 등)는 **테마 브랜드색을 따른다.**
+  // 상류는 `$highlight-text-color`(파랑)를 쓰는데 그 값은 SCSS 팔레트라
+  // 테마가 손댈 수 없다. 팔레트를 갈아엎어도 이 뱃지만 옛 파랑으로 남았다.
+  // `var()` 기본값을 남겨 두어 커스텀 테마를 쓰지 않을 때는 예전 그대로다.
   border: 1px solid var(--color-brand-longwhile, #{$highlight-text-color});
   color: var(--color-brand-longwhile, #{$highlight-text-color});
   font-weight: 500;

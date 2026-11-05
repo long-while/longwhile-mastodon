@@ -5,15 +5,15 @@
 # Table name: site_uploads
 #
 #  id                :bigint(8)        not null, primary key
-#  var               :string           default(""), not null
-#  file_file_name    :string
+#  blurhash          :string
 #  file_content_type :string
+#  file_file_name    :string
 #  file_file_size    :integer
 #  file_updated_at   :datetime
 #  meta              :json
+#  var               :string           default(""), not null
 #  created_at        :datetime         not null
 #  updated_at        :datetime         not null
-#  blurhash          :string
 #
 
 class SiteUpload < ApplicationRecord
@@ -25,6 +25,8 @@ class SiteUpload < ApplicationRecord
 
   APP_ICON_SIZES = (APPLE_ICON_SIZES + ANDROID_ICON_SIZES).uniq.freeze
 
+  # @_longwhile — 테마의 워드마크(라이트·다크). 손대지 않고 원본을 그대로 쓰므로
+  # 크기와 형식을 올릴 때 막는다. 늘리거나 잘라 맞추면 글자가 뭉개진다.
   WORDMARK_VARS = %w(wordmark_dark wordmark_light).freeze
   WORDMARK_SIZE = [340, 160].freeze
   WORDMARK_TOLERANCE = 3
@@ -104,6 +106,8 @@ class SiteUpload < ApplicationRecord
     errors.add(:file, :wordmark_dimensions, width: WORDMARK_SIZE[0], height: WORDMARK_SIZE[1], tolerance: WORDMARK_TOLERANCE, actual: "#{width || '?'}×#{height || '?'}")
   end
 
+  # 내보내기 도구가 1~2px 씩 어긋나게 뽑는 일이 흔하다(번들 그림도 339×158 이다).
+  # 그 정도는 칸 안에서 contain 으로 맞춰지므로 받아 준다.
   def wordmark_size_acceptable?(width, height)
     return false if width.nil? || height.nil?
 

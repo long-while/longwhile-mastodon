@@ -2,9 +2,17 @@
 
 class PostStatusService < BaseService
   include Redisable
+  include Lockable
   include LanguagesHelper
 
+  # 이 인스턴스에서 사용자가 직접 만들 수 있는 공개 범위. 그 밖의 값은 private 로 내린다.
   PERMITTED_VISIBILITIES = %i(private direct).freeze
+
+  # How much to delay sending an e-mail about a new post, to allow grouping multiple posts
+  EMAIL_DISTRIBUTION_DELAY = 5.minutes.freeze
+
+  # If the job is not executed within this timeframe, it will lose its arguments
+  EMAIL_DISTRIBUTION_TTL = 1.hour.to_i
 
   class UnexpectedMentionsError < StandardError
     attr_reader :accounts
@@ -15,12 +23,22 @@ class PostStatusService < BaseService
     end
   end
 
+  class IdempotencyError < StandardError
+    attr_reader :status
+
+    def initialize(status)
+      super()
+      @status = status
+    end
+  end
+
   # Post a text status update, fetch and notify remote users mentioned
   # @param [Account] account Account from which to post
   # @param [Hash] options
   # @option [String] :text Message
   # @option [Status] :thread Optional status to reply to
   # @option [Status] :quoted_status Optional status to quote
+  # @option [String] :quote_approval_policy Approval policy for quotes, one of `public`, `followers` or `nobody`
   # @option [Boolean] :sensitive
   # @option [String] :visibility
   # @option [String] :spoiler_text
@@ -40,20 +58,17 @@ class PostStatusService < BaseService
     @in_reply_to = @options[:thread]
     @quoted_status = @options[:quoted_status]
 
-    @antispam = Antispam.new
-
-    return idempotency_duplicate if idempotency_given? && idempotency_duplicate?
-
-    validate_media!
     preprocess_attributes!
 
-    if scheduled?
-      schedule_status!
-    else
-      process_status!
-    end
+    with_idempotency do
+      validate_media!
 
-    redis.setex(idempotency_key, 3_600, @status.id) if idempotency_given?
+      if scheduled?
+        schedule_status!
+      else
+        process_status!
+      end
+    end
 
     unless scheduled?
       postprocess_status!
@@ -61,16 +76,22 @@ class PostStatusService < BaseService
     end
 
     @status
-  rescue Antispam::SilentlyDrop => e
+  rescue Antispam::SilentlyDrop, IdempotencyError => e
     e.status
   end
 
   private
 
   def preprocess_attributes!
+    raise Mastodon::ValidationError, I18n.t('dm_rooms.errors.reserved_spoiler_text') if DmRoom.reserved_event_marker?(@options[:spoiler_text]) && !@options[:dm_room_event]
+
     @sensitive    = (@options[:sensitive].nil? ? @account.user&.setting_default_sensitive : @options[:sensitive]) || @options[:spoiler_text].present?
-    @text         = @options.delete(:spoiler_text) if @text.blank? && @options[:spoiler_text].present?
+    @text         = @options.delete(:spoiler_text) if @text.blank? && @options[:spoiler_text].present? && @quoted_status.blank?
     @visibility   = @options[:visibility] || @account.user&.setting_default_privacy
+    @visibility   = :private if @quoted_status&.private_visibility? && %i(public unlisted).include?(@visibility&.to_sym)
+    # 작성란에 공개 범위 선택지가 없으므로 클라이언트가 뭘 보내든 여기서 못 박는다.
+    # API 를 직접 호출해 public/unlisted 로 올리는 경로를 막는 유일한 지점이다.
+    # 포크의 강제가 마지막 결정이어야 하므로 업스트림 줄들보다 뒤에 둔다.
     @visibility   = :private unless permitted_visibility?(@visibility)
     @scheduled_at = @options[:scheduled_at]&.to_datetime
     @scheduled_at = nil if scheduled_in_the_past?
@@ -78,6 +99,10 @@ class PostStatusService < BaseService
     raise ActiveRecord::RecordInvalid
   end
 
+  # unlisted 는 공지 계정(@longwhile) 전용이다. 그 계정의 unlisted 툿만
+  # FanOutOnWriteService#announcement_broadcast? 를 타고 전체 홈 피드로 나가고,
+  # PublicFeed 도 팔로우 여부와 무관하게 노출한다. 다른 계정이 쓰면 팔로워 전용이라는
+  # 전제가 깨지므로 private 로 내린다.
   def permitted_visibility?(visibility)
     symbol = visibility&.to_sym
 
@@ -88,10 +113,14 @@ class PostStatusService < BaseService
 
   def process_status!
     @status = @account.statuses.new(status_attributes)
-    process_mentions_service.call(@status, save_records: false)
+    process_mentions_service.call(@status)
     safeguard_mentions!(@status)
+    safeguard_private_mention_quote!(@status)
+    attach_tagged_objects!(@status)
     attach_quote!(@status)
-    @antispam.local_preflight_check!(@status)
+
+    antispam = Antispam.new(@status)
+    antispam.local_preflight_check!
 
     # The following transaction block is needed to wrap the UPDATEs to
     # the media attachments when the status is created
@@ -101,6 +130,11 @@ class PostStatusService < BaseService
     end
   end
 
+  # @_longwhile — DM 채팅. 답글이 **다른 방의 스레드**로 들어가지 않게, 저장 전에
+  #   새 conversation 을 쥐여 준다. 이유는 DmRoom.thread_accepts? 에 적었다.
+  #
+  #   conversation 을 미리 만들어 둔다. Conversation.new 로 넘기면 아직 id 가 없어
+  #   Status#set_conversation 이 부모의 conversation_id 로 덮어쓴다.
   def start_separate_dm_thread!(status)
     return unless Mastodon::DmChat.enabled? && status.direct_visibility? && @in_reply_to.present?
     return if DmRoom.thread_accepts?(@in_reply_to, dm_participant_ids(status))
@@ -108,25 +142,35 @@ class PostStatusService < BaseService
     status.conversation = Conversation.create!
   end
 
+  # 저장 전이라 active_mentions 를 쓸 수 없다. ProcessMentionsService 가 메모리에
+  # 만들어 둔 멘션에서, 차단으로 떨어진 것과 silent 를 뺀다.
   def dm_participant_ids(status)
     mentioned = status.mentions.reject { |mention| mention.destroyed? || mention.silent? }.map(&:account_id)
 
     DmRoom.normalize_ids(mentioned + [status.account_id])
   end
 
+  def safeguard_private_mention_quote!(status)
+    return if @quoted_status.nil? || @visibility.to_sym != :direct
+
+    # The mentions array test here is awkward because the relationship is not persisted at this time
+    return if @quoted_status.account_id == @account.id || status.mentions.to_a.any? { |mention| mention.account_id == @quoted_status.account_id && !mention.silent }
+
+    status.errors.add(:base, I18n.t('statuses.errors.quoted_user_not_mentioned'))
+    raise ActiveRecord::RecordInvalid, status
+  end
+
   def attach_quote!(status)
     return if @quoted_status.nil?
 
-    # NOTE: for now this is only for convenience in testing, as we don't support the request flow nor serialize quotes in ActivityPub
-    # we only support incoming quotes so far
+    status.quote = Quote.create(quoted_status: @quoted_status, status: status)
+    status.quote.ensure_quoted_access
 
-    status.quote = Quote.new(quoted_status: @quoted_status)
-    status.quote.accept! if @status.account == @quoted_status.account || @quoted_status.active_mentions.exists?(mentions: { account_id: status.account_id })
+    status.quote.accept! if @quoted_status.local? && StatusPolicy.new(@status.account, @quoted_status).quote?
+  end
 
-    # TODO: the following has yet to be implemented:
-    # - handle approval of local users (requires the interactionPolicy PR)
-    # - produce a QuoteAuthorization for quotes of local users
-    # - send a QuoteRequest for quotes of remote users
+  def attach_tagged_objects!(status)
+    ProcessLinksService.new.call(status)
   end
 
   def safeguard_mentions!(status)
@@ -142,7 +186,10 @@ class PostStatusService < BaseService
 
   def schedule_status!
     status_for_validation = @account.statuses.build(status_attributes)
-    @antispam.local_preflight_check!(status_for_validation)
+    safeguard_private_mention_quote!(status_for_validation)
+
+    antispam = Antispam.new(status_for_validation)
+    antispam.local_preflight_check!
 
     if status_for_validation.valid?
       # Marking the status as destroyed is necessary to prevent the status from being
@@ -160,7 +207,7 @@ class PostStatusService < BaseService
       raise ActiveRecord::RecordInvalid
     end
   rescue Antispam::SilentlyDrop
-    @status = @account.scheduled_status.new(scheduled_status_attributes).tap(&:delete)
+    @status = @account.scheduled_statuses.new(scheduled_status_attributes).tap(&:delete)
   end
 
   def postprocess_status!
@@ -168,12 +215,21 @@ class PostStatusService < BaseService
     Trends.tags.register(@status)
     LinkCrawlWorker.perform_async(@status.id)
     DistributionWorker.perform_async(@status.id)
+    process_email_subscriptions!
     ActivityPub::DistributionWorker.perform_async(@status.id)
     PollExpirationNotifyWorker.perform_at(@status.poll.expires_at, @status.poll.id) if @status.poll
+    ActivityPub::QuoteRequestWorker.perform_async(@status.quote.id) if @status.quote&.quoted_status.present? && !@status.quote&.quoted_status&.local?
 
     attach_to_dm_room!
   end
 
+  # @_longwhile — DM 채팅. 동기로 붙인다. 팬아웃(비동기)에만 맡기면 전송 직후 방을
+  #   열었을 때 방금 보낸 메시지가 없는 창이 생긴다. (dm-chat-phase-1.md §3.3)
+  #
+  #   맨 끝에 두고 예외를 삼킨다. 이 시점에는 status 가 이미 커밋되어 있어서, 여기서
+  #   터지면 글은 저장됐는데 배포도 안 되고 응답은 500 인 상태가 된다. 방 귀속은
+  #   FanOutOnWriteService 와 조회 시점 지연 귀속이 다시 시도하므로, 실패해도 화면이
+  #   비는 일은 없다.
   def attach_to_dm_room!
     return unless Mastodon::DmChat.enabled?
 
@@ -182,13 +238,27 @@ class PostStatusService < BaseService
     Rails.logger.error { "DmRoom.attach_status! failed for status #{@status.id}: #{e.class} #{e.message}" }
   end
 
+  def process_email_subscriptions!
+    return unless Rails.application.config.x.email_subscriptions && Setting.email_subscriptions &&
+                  @status.public_visibility? && (!@status.reply? || @status.in_reply_to_account_id == @status.account_id) &&
+                  @status.account.user_can?(:manage_email_subscriptions) &&
+                  @status.account.user_email_subscriptions_enabled?
+
+    # To allow e-mail grouping, pass the arguments via a redis set and schedule
+    # a unique worker a few minutes in the future, in case the user makes subsequent
+    # posts within that time window
+    redis.sadd("email_subscriptions:#{@status.account_id}:next_batch", @status.id)
+    redis.expire("email_subscriptions:#{@status.account_id}:next_batch", EMAIL_DISTRIBUTION_TTL)
+    EmailDistributionWorker.perform_in(EMAIL_DISTRIBUTION_DELAY, @status.account_id)
+  end
+
   def validate_media!
     if @options[:media_ids].blank? || !@options[:media_ids].is_a?(Enumerable)
       @media = []
       return
     end
 
-    raise Mastodon::ValidationError, I18n.t('media_attachments.validations.too_many') if @options[:media_ids].size > Status::MEDIA_ATTACHMENTS_LIMIT || @options[:poll].present?
+    raise Mastodon::ValidationError, I18n.t('media_attachments.validations.too_many') if @options[:media_ids].size > Status::MEDIA_ATTACHMENTS_LIMIT
 
     @media = @account.media_attachments.where(status_id: nil).where(id: @options[:media_ids].take(Status::MEDIA_ATTACHMENTS_LIMIT).map(&:to_i))
 
@@ -231,6 +301,18 @@ class PostStatusService < BaseService
     @idempotency_duplicate = redis.get(idempotency_key)
   end
 
+  def with_idempotency
+    return yield unless idempotency_given?
+
+    with_redis_lock("idempotency:lock:status:#{@account.id}:#{@options[:idempotency]}") do
+      raise IdempotencyError, idempotency_duplicate if idempotency_duplicate?
+
+      yield
+
+      redis.setex(idempotency_key, 3_600, @status.id)
+    end
+  end
+
   def scheduled_in_the_past?
     @scheduled_at.present? && @scheduled_at <= Time.now.utc
   end
@@ -254,6 +336,7 @@ class PostStatusService < BaseService
       language: valid_locale_cascade(@options[:language], @account.user&.preferred_posting_language, I18n.default_locale),
       application: @options[:application],
       rate_limit: @options[:with_rate_limit],
+      quote_approval_policy: @options[:quote_approval_policy],
     }.compact
   end
 

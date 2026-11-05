@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe Admin::Metrics::Measure::TagUsesMeasure do
+RSpec.describe Admin::Metrics::Measure::TagUsesMeasure, :utc_time_zone do
   subject { described_class.new(start_at, end_at, params) }
 
   let!(:tag) { Fabricate(:tag) }
@@ -17,6 +17,10 @@ RSpec.describe Admin::Metrics::Measure::TagUsesMeasure do
       let(:bob) { Fabricate(:account, domain: 'bob.example') }
 
       before do
+        2.times do
+          travel_to(3.days.ago) { add_tag_history(alice) }
+        end
+
         3.times do
           travel_to(2.days.ago) { add_tag_history(alice) }
         end
@@ -40,6 +44,8 @@ RSpec.describe Admin::Metrics::Measure::TagUsesMeasure do
             include(date: 1.day.ago.midnight.to_time, value: '4'),
             include(date: 0.days.ago.midnight.to_time, value: '1')
           )
+        expect(subject.previous_total)
+          .to eq 2
       end
 
       def add_tag_history(account)

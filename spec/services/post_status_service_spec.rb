@@ -57,8 +57,8 @@ RSpec.describe PostStatusService do
 
     it 'returns existing status when used twice with idempotency key' do
       account = Fabricate(:account)
-      status1 = subject.call(account, text: 'test', idempotency: 'meepmeep', scheduled_at: future)
-      status2 = subject.call(account, text: 'test', idempotency: 'meepmeep', scheduled_at: future)
+      status1 = described_class.new.call(account, text: 'test', idempotency: 'meepmeep', scheduled_at: future)
+      status2 = described_class.new.call(account, text: 'test', idempotency: 'meepmeep', scheduled_at: future)
       expect(status2.id).to eq status1.id
     end
 
@@ -126,20 +126,20 @@ RSpec.describe PostStatusService do
     expect(status.visibility).to eq 'private'
   end
 
-  it 'raises on an invalid visibility' do
-    expect do
-      create_status_with_options(visibility: :xxx)
-    end.to raise_error(
-      ActiveRecord::RecordInvalid,
-      'Validation failed: Visibility is not included in the list'
-    )
+  # 이 포크는 클라이언트가 보낸 공개 범위가 private·direct(공지 계정은 unlisted 까지)가
+  # 아니면 오류 대신 private 로 내린다(PostStatusService#permitted_visibility?, 943745d134).
+  it 'coerces an invalid visibility to private' do
+    status = create_status_with_options(visibility: :xxx)
+
+    expect(status).to be_persisted
+    expect(status.visibility).to eq 'private'
   end
 
   it 'creates a status with limited visibility for silenced users' do
     status = subject.call(Fabricate(:account, silenced: true), text: 'test', visibility: :public)
 
     expect(status).to be_persisted
-    expect(status.visibility).to eq 'unlisted'
+    expect(status.visibility).to eq 'private'
   end
 
   it 'creates a status for the given application' do
@@ -160,6 +160,23 @@ RSpec.describe PostStatusService do
     expect(status.language).to eq 'en'
   end
 
+  # 이 포크에서 인용 정책이 살아남는 것은 공지 계정의 unlisted 글뿐이다. 다른 글은 모두 private 로
+  # 올라가고, 업스트림이 private 글의 정책을 nobody 로 내린다(downgrade_quote_policy).
+  it 'creates a status with the quote approval policy set' do
+    # 예약된 아이디라 검증을 건너뛰고 만든다(운영에서는 관리자가 만든 계정이다).
+    announcer = Fabricate.build(:account, username: PublicFeed::ANNOUNCEMENT_USERNAME).tap { |a| a.save!(validate: false) }
+    status = subject.call(announcer, text: 'test', visibility: 'unlisted', quote_approval_policy: InteractionPolicy::POLICY_FLAGS[:followers] << 16)
+
+    expect(status.quote_approval_policy).to eq(InteractionPolicy::POLICY_FLAGS[:followers] << 16)
+  end
+
+  it 'drops the quote approval policy of a private status' do
+    status = create_status_with_options(quote_approval_policy: InteractionPolicy::POLICY_FLAGS[:followers] << 16)
+
+    expect(status).to be_private_visibility
+    expect(status.quote_approval_policy).to eq(0)
+  end
+
   it 'processes mentions' do
     mention_service = instance_double(ProcessMentionsService)
     allow(mention_service).to receive(:call)
@@ -169,7 +186,7 @@ RSpec.describe PostStatusService do
     status = subject.call(account, text: 'test status update')
 
     expect(ProcessMentionsService).to have_received(:new)
-    expect(mention_service).to have_received(:call).with(status, save_records: false)
+    expect(mention_service).to have_received(:call).with(status)
   end
 
   it 'safeguards mentions' do
@@ -201,6 +218,16 @@ RSpec.describe PostStatusService do
 
     expect(ProcessHashtagsService).to have_received(:new)
     expect(hashtags_service).to have_received(:call).with(status)
+  end
+
+  it 'processes tagged objects' do
+    account = Fabricate(:account)
+    collection = Fabricate(:collection)
+
+    status = subject.call(account, text: "test #{ActivityPub::TagManager.instance.uri_for(collection)} #{ActivityPub::TagManager.instance.uri_for(collection)}")
+
+    expect(status.tagged_objects.map(&:object))
+      .to contain_exactly(collection)
   end
 
   it 'gets distributed' do
@@ -291,19 +318,56 @@ RSpec.describe PostStatusService do
     )
   end
 
+  it 'correctly requests a quote for remote posts' do
+    account = Fabricate(:account)
+    quoted_status = Fabricate(:status, account: Fabricate(:account, domain: 'example.com'))
+
+    expect { subject.call(account, text: 'test', quoted_status: quoted_status) }
+      .to enqueue_sidekiq_job(ActivityPub::QuoteRequestWorker)
+  end
+
+  it 'allows quotes with spoilers and no text' do
+    account = Fabricate(:account)
+    quoted_status = Fabricate(:status, account: Fabricate(:account, domain: 'example.com'))
+
+    expect { subject.call(account, spoiler_text: 'test', quoted_status: quoted_status) }
+      .to enqueue_sidekiq_job(ActivityPub::QuoteRequestWorker)
+  end
+
+  it 'correctly downgrades visibility for private self-quotes' do
+    account = Fabricate(:account)
+    quoted_status = Fabricate(:status, account: account, visibility: :private)
+
+    status = subject.call(account, text: 'test', quoted_status: quoted_status)
+    expect(status).to be_private_visibility
+  end
+
+  it 'correctly preserves visibility for private mentions self-quoting private posts' do
+    account = Fabricate(:account)
+    quoted_status = Fabricate(:status, account: account, visibility: :private)
+
+    status = subject.call(account, text: 'test', quoted_status: quoted_status, visibility: 'direct')
+    expect(status).to be_direct_visibility
+  end
+
   it 'returns existing status when used twice with idempotency key' do
     account = Fabricate(:account)
-    status1 = subject.call(account, text: 'test', idempotency: 'meepmeep')
-    status2 = subject.call(account, text: 'test', idempotency: 'meepmeep')
+    status1 = described_class.new.call(account, text: 'test', idempotency: 'meepmeep')
+    status2 = described_class.new.call(account, text: 'test', idempotency: 'meepmeep')
     expect(status2.id).to eq status1.id
   end
 
+  # @_longwhile — DM 채팅. 답글은 부모의 conversation 을 물려받는데, 그것이 다른
+  #   방의 것이면 메시지가 그 방으로 새고 이 방은 비어 버린다. (DmRoom.thread_accepts?)
   context 'when replying with a direct message into another room\'s thread' do
+    # let! — 멘션은 본문의 @이름 으로 찾으므로, 서비스를 부르기 전에 계정이 있어야 한다.
     let!(:alice) { Fabricate(:account, username: 'alice') }
     let!(:bob)   { Fabricate(:account, username: 'bob') }
-    let!(:carol) { Fabricate(:account, username: 'carol') }
 
-    before { allow(Mastodon::DmChat).to receive(:enabled?).and_return(true) }
+    before do
+      Fabricate(:account, username: 'carol')
+      allow(Mastodon::DmChat).to receive(:enabled?).and_return(true)
+    end
 
     it 'starts a separate conversation when the participants differ' do
       group_root = subject.call(alice, text: '@bob @carol hi', visibility: 'direct')
@@ -321,11 +385,51 @@ RSpec.describe PostStatusService do
       expect(reply.conversation_id).to eq root.conversation_id
     end
 
+    # 웹 채팅은 최근 메시지에 답글을 단다(2026-11). 사슬이 길어져도 한 conversation 이다.
+    it 'stays in the thread when each message replies to the latest one' do
+      root   = subject.call(alice, text: '@bob 1', visibility: 'direct')
+      second = subject.call(bob, text: '@alice 2', visibility: 'direct', thread: root)
+      third  = subject.call(alice, text: '@bob 3', visibility: 'direct', thread: second)
+      room   = DmRoom.find_by(participant_key: DmRoom.participant_key_for([alice.id, bob.id]))
+
+      expect([second, third].map(&:conversation_id)).to all(eq root.conversation_id)
+      expect(third.in_reply_to_id).to eq second.id
+      expect(room.reload.root_status_id).to eq root.id
+      expect(room.visible_statuses_for(bob).pluck(:id)).to contain_exactly(root.id, second.id, third.id)
+    end
+
     it 'leaves non-direct replies alone' do
       group_root = subject.call(alice, text: '@bob @carol hi', visibility: 'direct')
       reply      = subject.call(alice, text: 'followers', visibility: 'private', thread: group_root)
 
       expect(reply.conversation_id).to eq group_root.conversation_id
+    end
+
+    # 익명화(글 남기고 탈퇴)된 멤버는 방 JSON 에 acct `deleted` 로 나가고, 화면이 붙여 보내는
+    # `@deleted` 는 해석되지 않는다. 그 멤버를 뺀 명단도 같은 방으로 받아야 방이 안 쪼개진다.
+    context 'when a member of the group room has been anonymised' do
+      let!(:mark) { Fabricate(:account, username: 'mark') }
+      let!(:group_root) { subject.call(alice, text: '@bob @carol hi', visibility: 'direct') }
+      let(:group_room)  { DmRoom.find_by(participant_key: DmRoom.participant_key_for([alice.id, bob.id, Account.find_by(username: 'carol').id])) }
+
+      before { Account.find_by(username: 'carol').update!(anonymized_at: Time.now.utc) }
+
+      it 'keeps what the remaining members send in the same room', :aggregate_failures do
+        reply  = subject.call(bob, text: '@alice @deleted still here', visibility: 'direct', thread: group_root)
+        answer = subject.call(alice, text: '@bob @deleted yes', visibility: 'direct', thread: reply)
+
+        expect([reply, answer].map(&:conversation_id).uniq).to eq [group_root.conversation_id]
+        expect(DmRoom.count).to eq 1
+        expect(group_room.reload.last_status_id).to eq answer.id
+        expect(group_room.visible_statuses_for(bob).pluck(:id)).to include(reply.id, answer.id)
+      end
+
+      it 'still starts a separate room when the participants really differ' do
+        reply = subject.call(alice, text: '@mark elsewhere', visibility: 'direct', thread: group_root)
+
+        expect(reply.conversation_id).to_not eq group_root.conversation_id
+        expect(DmRoom.find_by(participant_key: DmRoom.participant_key_for([alice.id, mark.id])).visible_statuses_for(mark).pluck(:id)).to eq [reply.id]
+      end
     end
   end
 

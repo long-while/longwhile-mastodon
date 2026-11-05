@@ -3,11 +3,7 @@
 require 'rails_helper'
 
 RSpec.describe 'Domain Allows' do
-  let(:role)    { UserRole.find_by(name: 'Admin') }
-  let(:user)    { Fabricate(:user, role: role) }
-  let(:scopes)  { 'admin:read admin:write' }
-  let(:token)   { Fabricate(:accessible_access_token, resource_owner_id: user.id, scopes: scopes) }
-  let(:headers) { { 'Authorization' => "Bearer #{token.token}" } }
+  include_context 'with API authentication', user_fabricator: :admin_user, oauth_scopes: 'admin:read admin:write'
 
   describe 'GET /api/v1/admin/domain_allows' do
     subject do
@@ -40,7 +36,8 @@ RSpec.describe 'Domain Allows' do
           {
             id: domain_allow.id.to_s,
             domain: domain_allow.domain,
-            created_at: domain_allow.created_at.strftime('%Y-%m-%dT%H:%M:%S.%LZ'),
+            # 시간대가 Asia/Seoul 이라(config/application.rb) 'Z' 를 박지 않고 오프셋째 비교한다.
+            created_at: domain_allow.created_at.iso8601(3),
           }
         end
       end

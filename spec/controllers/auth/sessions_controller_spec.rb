@@ -48,6 +48,19 @@ RSpec.describe Auth::SessionsController do
         expect(response).to redirect_to(new_user_session_path)
       end
     end
+
+    context 'with a deleted user' do
+      before do
+        user.account.mark_deleted!
+      end
+
+      it 'redirects to home after sign out' do
+        sign_in(user, scope: :user)
+        delete :destroy
+
+        expect(response).to redirect_to(new_user_session_path)
+      end
+    end
   end
 
   describe 'POST #create' do
@@ -70,7 +83,7 @@ RSpec.describe Auth::SessionsController do
         end
 
         it 'shows a login error and does not log the user in' do
-          expect(flash[:alert]).to match I18n.t('devise.failure.invalid', authentication_keys: I18n.t('activerecord.attributes.user.email'))
+          expect(flash[:alert]).to match(/#{failure_message_invalid_email}/i)
 
           expect(controller.current_user).to be_nil
         end
@@ -100,11 +113,14 @@ RSpec.describe Auth::SessionsController do
       let(:user) { Fabricate(:user, email: 'foo@bar.com', password: 'abcdefgh') }
 
       context 'when using a valid password' do
-        before do
+        subject do
           post :create, params: { user: { email: user.email, password: user.password } }
         end
 
         it 'redirects to home and logs the user in' do
+          expect { subject }
+            .to change(user.login_activities.where(success: true), :count).by(1)
+
           expect(response).to redirect_to(root_path)
 
           expect(controller.current_user).to eq user
@@ -137,7 +153,8 @@ RSpec.describe Auth::SessionsController do
           expect(emails.first)
             .to have_attributes(
               to: contain_exactly(user.email),
-              subject: eq(I18n.t('user_mailer.suspicious_sign_in.subject'))
+              # 메일은 화면과 달리 받는 사람의 로캘(없으면 기본 로캘)로 나간다.
+              subject: eq(I18n.t('user_mailer.suspicious_sign_in.subject', locale: ApplicationMailer::MAIL_LOCALE))
             )
         end
       end
@@ -160,7 +177,7 @@ RSpec.describe Auth::SessionsController do
         end
 
         it 'shows a login error and does not log the user in' do
-          expect(flash[:alert]).to match I18n.t('devise.failure.invalid', authentication_keys: I18n.t('activerecord.attributes.user.email'))
+          expect(flash[:alert]).to match(/#{failure_message_invalid_email}/i)
 
           expect(controller.current_user).to be_nil
         end
@@ -223,8 +240,8 @@ RSpec.describe Auth::SessionsController do
           end
 
           it 'renders two factor authentication page' do
-            expect(response.body)
-              .to include(I18n.t('simple_form.hints.sessions.otp'))
+            expect(response.parsed_body)
+              .to have_css('p.hint.authentication-hint', text: I18n.t('simple_form.hints.sessions.otp'))
           end
         end
 
@@ -239,8 +256,8 @@ RSpec.describe Auth::SessionsController do
           end
 
           it 'renders two factor authentication page' do
-            expect(response.body)
-              .to include(I18n.t('simple_form.hints.sessions.otp'))
+            expect(response.parsed_body)
+              .to have_css('p.hint.authentication-hint', text: I18n.t('simple_form.hints.sessions.otp'))
           end
         end
 
@@ -250,8 +267,8 @@ RSpec.describe Auth::SessionsController do
           end
 
           it 'renders two factor authentication page' do
-            expect(response.body)
-              .to include(I18n.t('simple_form.hints.sessions.otp'))
+            expect(response.parsed_body)
+              .to have_css('p.hint.authentication-hint', text: I18n.t('simple_form.hints.sessions.otp'))
           end
         end
 
@@ -265,10 +282,9 @@ RSpec.describe Auth::SessionsController do
 
           it 'does not log the user in, sets a flash message, and sends a suspicious sign in email', :inline_jobs do
             emails = capture_emails do
-              Auth::SessionsController::MAX_2FA_ATTEMPTS_PER_HOUR.times do
-                post :create, params: { user: { otp_attempt: '1234' } }, session: { attempt_user_id: user.id, attempt_user_updated_at: user.updated_at.to_s }
-                expect(controller.current_user).to be_nil
-              end
+              expect { process_maximum_two_factor_attempts }
+                .to change(user.login_activities.where(success: false), :count).by(1)
+
               post :create, params: { user: { otp_attempt: user.current_otp } }, session: { attempt_user_id: user.id, attempt_user_updated_at: user.updated_at.to_s }
             end
 
@@ -283,8 +299,16 @@ RSpec.describe Auth::SessionsController do
             expect(emails.first)
               .to have_attributes(
                 to: contain_exactly(user.email),
-                subject: eq(I18n.t('user_mailer.failed_2fa.subject'))
+                # 메일은 화면과 달리 받는 사람의 로캘(없으면 기본 로캘)로 나간다.
+                subject: eq(I18n.t('user_mailer.failed_2fa.subject', locale: ApplicationMailer::MAIL_LOCALE))
               )
+          end
+
+          def process_maximum_two_factor_attempts
+            Auth::SessionsController::MAX_2FA_ATTEMPTS_PER_HOUR.times do
+              post :create, params: { user: { otp_attempt: '1234' } }, session: { attempt_user_id: user.id, attempt_user_updated_at: user.updated_at.to_s }
+              expect(controller.current_user).to be_nil
+            end
           end
         end
 
@@ -378,8 +402,8 @@ RSpec.describe Auth::SessionsController do
           end
 
           it 'renders webauthn authentication page' do
-            expect(response.body)
-              .to include(I18n.t('simple_form.title.sessions.webauthn'))
+            expect(response.parsed_body)
+              .to have_css('h3.title', text: I18n.t('simple_form.title.sessions.webauthn'))
           end
         end
 
@@ -389,8 +413,8 @@ RSpec.describe Auth::SessionsController do
           end
 
           it 'renders webauthn authentication page' do
-            expect(response.body)
-              .to include(I18n.t('simple_form.title.sessions.webauthn'))
+            expect(response.parsed_body)
+              .to have_css('h3.title', text: I18n.t('simple_form.title.sessions.webauthn'))
           end
         end
 
@@ -411,16 +435,116 @@ RSpec.describe Auth::SessionsController do
         end
       end
     end
+
+    context 'when 2FA is disabled and inactive for long' do
+      let!(:user) { Fabricate(:user, email: 'x@y.com', password: 'abcdefgh', current_sign_in_at: 7.months.ago) }
+
+      before do
+        allow(UserMailer).to receive(:sign_in_token).and_return(instance_double(ActionMailer::MessageDelivery, deliver_later!: nil))
+      end
+
+      context 'when using email and password' do
+        before do
+          post :create, params: { user: { email: user.email, password: user.password } }
+        end
+
+        it 'renders sign in token authentication page' do
+          expect(response.parsed_body)
+            .to have_css('p.lead', text: I18n.t('users.inactive_sign_in_confirmation'))
+        end
+
+        it 'generates sign in token' do
+          expect(user.reload.sign_in_token).to_not be_nil
+        end
+
+        it 'sends sign in token e-mail' do
+          expect(UserMailer).to have_received(:sign_in_token)
+        end
+      end
+
+      context 'when using an invalid password' do
+        before do
+          post :create, params: { user: { email: user.email, password: 'wrongpw' } }
+        end
+
+        it 'shows a login error and does not log the user in' do
+          expect(flash[:alert]).to match(/#{failure_message_invalid_email}/i)
+
+          expect(controller.current_user).to be_nil
+        end
+      end
+
+      context 'when using a valid sign in token' do
+        before do
+          user.generate_sign_in_token
+          user.save
+          post :create, params: { user: { sign_in_token_attempt: user.sign_in_token } }, session: { attempt_user_id: user.id }
+        end
+
+        it 'redirects to home' do
+          expect(response).to redirect_to(root_path)
+        end
+
+        it 'logs the user in' do
+          expect(controller.current_user).to eq user
+        end
+      end
+
+      context 'when using an invalid sign in token' do
+        before do
+          post :create, params: { user: { sign_in_token_attempt: 'wrongotp' } }, session: { attempt_user_id: user.id }
+        end
+
+        it 'shows a login error' do
+          expect(flash[:alert]).to match I18n.t('users.invalid_sign_in_token')
+        end
+
+        it "doesn't log the user in" do
+          expect(controller.current_user).to be_nil
+        end
+      end
+
+      context 'when requesting a new sign in token' do
+        subject do
+          post :create, params: { sign_in_token_resend: '', user: { sign_in_token_attempt: '' } }, session: { attempt_user_id: user.id }
+        end
+
+        before do
+          user.generate_sign_in_token
+          user.save
+        end
+
+        it 'renders sign in token authentication page' do
+          subject
+
+          expect(response.parsed_body)
+            .to have_css('p.lead', text: I18n.t('users.inactive_sign_in_confirmation'))
+        end
+
+        it 'generates a new sign in token' do
+          expect { subject }.to(change { user.reload.sign_in_token })
+        end
+
+        it 'sends sign in token e-mail' do
+          subject
+
+          expect(UserMailer).to have_received(:sign_in_token)
+        end
+      end
+    end
+
+    def failure_message_invalid_email
+      I18n.t('devise.failure.invalid', authentication_keys: I18n.t('activerecord.attributes.user.email'))
+    end
   end
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # Where a sign-in lands.
+  # @_longwhile — **로그인 뒤 어디로 가는가.**
   #
-  # The add-account popup deliberately signs the shared session out at
-  # `/oauth/authorize?...&prompt=login` (see `Oauth::AuthorizationsController`)
-  # and leaves that URL behind as the place to return to. Closing the popup
-  # there leaves only the debris in the session, and the next sign-in was
-  # dragged to an OAuth screen instead of home.
+  #   계정 추가 팝업은 `/oauth/authorize?...&prompt=login` 에서 공유 세션을
+  #   일부러 로그아웃시키고(`OAuth::AuthorizationsController`) 그 URL 을 돌아갈
+  #   곳으로 남긴다. 사용자가 거기서 팝업을 닫으면 그 잔해만 세션에 남아,
+  #   **다음 로그인이 메인이 아니라 OAuth 화면으로 끌려갔다.**
   # ═══════════════════════════════════════════════════════════════════════════
   describe 'POST #create and the stored return location' do
     subject { post :create, params: { user: { email: user.email, password: user.password } } }
@@ -449,10 +573,9 @@ RSpec.describe Auth::SessionsController do
       expect(response).to redirect_to(root_path)
     end
 
-    # The important regression: when the popup arrives with `prompt=login`,
-    # `store_current_location` writes the same URL into `user_return_to` as
-    # well. Expiring only the marker just routes around it and the symptom
-    # comes back.
+    # 핵심 회귀: 팝업이 `prompt=login` 으로 들어오면 `store_current_location` 이
+    # **같은 URL 을 `user_return_to` 에도** 적는다. 표식만 만료시키면
+    # 그쪽으로 그대로 우회해 같은 증상이 다시 난다.
     it 'ignores a stale multi-account authorize URL left in user_return_to' do
       Rails.configuration.x.multi_account[:client_id] = 'ma-client'
       controller.store_location_for(:user, '/oauth/authorize?client_id=ma-client&prompt=login')
@@ -480,6 +603,16 @@ RSpec.describe Auth::SessionsController do
       expect(response).to redirect_to('/oauth/authorize?client_id=abc&prompt=login')
     end
 
+    # 이메일 보안 코드를 기다리느라 10분을 넘겨도, 팝업 state 가 살아 있는 동안은 돌아간다.
+    it 'honours a marker as long as the popup state lives' do
+      session[:multi_account_return_to] = '/oauth/authorize?client_id=abc&prompt=login'
+      session[:multi_account_return_to_at] = 12.minutes.ago.to_i
+
+      subject
+
+      expect(response).to redirect_to('/oauth/authorize?client_id=abc&prompt=login')
+    end
+
     it 'drops a stale multi-account return marker' do
       session[:multi_account_return_to] = '/oauth/authorize?client_id=abc&prompt=login'
       session[:multi_account_return_to_at] = 20.minutes.ago.to_i
@@ -497,9 +630,9 @@ RSpec.describe Auth::SessionsController do
       expect(response).to redirect_to(root_path)
     end
 
-    # While a present `multi_account_return_to` meant `stored_location_for`
-    # was never read, the unused `user_return_to` stayed in the session and
-    # steered the sign-in after next to the wrong place.
+    # `multi_account_return_to` 가 있으면 `stored_location_for` 를 읽지도
+    # 않던 시절에는, 쓰이지 않은 `user_return_to` 가 세션에 남아 **그다음**
+    # 로그인을 엉뚱한 곳으로 끌고 갔다.
     it 'consumes user_return_to even when the multi-account marker wins' do
       controller.store_location_for(:user, '/@someone')
       session[:multi_account_return_to] = '/oauth/authorize?client_id=abc'
@@ -508,6 +641,43 @@ RSpec.describe Auth::SessionsController do
       subject
 
       expect(controller.stored_location_for(:user)).to be_nil
+    end
+
+    # 4.7.4(#40745): 오래 안 쓴 계정은 암호 다음에 메일로 받은 보안 코드를 한 번 더 넣는다.
+    # 계정 추가 팝업에서 그 계정을 추가할 때도 그 화면을 거치는데, 그 사이 팝업의 돌아갈
+    # 곳 표식이 지워지면 팝업이 인가 화면 대신 홈에 떨어진다.
+    context 'when a long-inactive account signs in from the add-account popup' do
+      let(:user) { Fabricate(:user, email: 'return-to@example.com', password: 'abcdefgh', current_sign_in_at: 7.months.ago) }
+
+      before do
+        allow(UserMailer).to receive(:sign_in_token).and_return(instance_double(ActionMailer::MessageDelivery, deliver_later!: nil))
+        session[:multi_account_return_to] = '/oauth/authorize?client_id=abc&prompt=login'
+        session[:multi_account_return_to_at] = Time.now.utc.to_i
+      end
+
+      it 'asks for the security code first and then returns to the popup authorize URL' do
+        subject
+
+        expect(response.parsed_body).to have_css('p.lead', text: I18n.t('users.inactive_sign_in_confirmation'))
+        expect(controller.current_user).to be_nil
+        expect(UserMailer).to have_received(:sign_in_token)
+
+        post :create, params: { user: { sign_in_token_attempt: user.reload.sign_in_token } }
+
+        expect(response).to redirect_to('/oauth/authorize?client_id=abc&prompt=login')
+        expect(controller.current_user).to eq user
+        expect(session[:multi_account_return_to]).to be_nil
+        expect(user.login_activities.where(success: true)).to exist
+      end
+
+      it 'does not sign in with a wrong code' do
+        subject
+
+        post :create, params: { user: { sign_in_token_attempt: 'wrong' } }
+
+        expect(controller.current_user).to be_nil
+        expect(flash[:alert]).to eq I18n.t('users.invalid_sign_in_token')
+      end
     end
   end
 end

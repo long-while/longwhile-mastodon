@@ -7,6 +7,7 @@ hu:
       send_paranoid_instructions: Ha az e-mail címed már szerepel az adatbázisunkban, néhány percen belül kapsz egy levelet az e-mail cím megerősítésére vonatkozó utasításokkal. Kérjük, ellenőrizd a spam mappád, ha nem látod az e-mailt.
     failure:
       already_authenticated: Már bejelentkeztél.
+      closed_registrations: 'A regisztrációs kísérlet egy hálózati házirend miatt blokkolva volt. Ha úgy gondolod, hogy ez hiba, akkor vedd fel a kapcsolatot ezen a címen: %{email}.'
       inactive: Fiókodat még nem aktiválták.
       invalid: Helytelen %{authentication_keys} vagy jelszó.
       last_attempt: Már csak egy próbálkozásod maradt, mielőtt a fiókodat zároljuk.
@@ -48,19 +49,19 @@ hu:
         subject: 'Mastodon: Jelszóvisszaállítási utasítások'
         title: Jelszó visszaállítása
       two_factor_disabled:
-        explanation: A bejelentkezés most már csupán email címmel és jelszóval lehetséges.
+        explanation: A bejelentkezés most már csupán e-mail-címmel és jelszóval lehetséges.
         subject: 'Mastodon: kétlépcsős hitelesítés letiltva'
         subtitle: A kétlépcsős hitelesítés a fiókodhoz ki lett kapcsolva.
         title: Kétlépcsős hitelesítés kikapcsolva
       two_factor_enabled:
-        explanation: Egy párosított TOTP appal generált tokenre lesz szükség a bejelentkezéshez.
+        explanation: A párosított TOTP-alkalmazással előállított tokenre lesz szükség a bejelentkezéshez.
         subject: 'Mastodon: kétlépcsős hitelesítés engedélyezve'
         subtitle: A kétlépcsős hitelesítés a fiókodhoz aktiválva lett.
         title: Kétlépcsős hitelesítés engedélyezve
       two_factor_recovery_codes_changed:
         explanation: A korábbi helyreállítási kódok letiltásra és újragenerálásra kerültek.
-        subject: 'Mastodon: Kétlépcsős helyreállítási kódok újból előállítva'
-        subtitle: A korábbi helyreállítási kódokat letiltottuk, és újakat generáltunk.
+        subject: 'Mastodon: Kétlépcsős tartalék bejelentkezési kódok újból előállítva'
+        subtitle: A korábbi tartalék bejelentkezési kódokat letiltottuk, és újakat állítottunk elő.
         title: A kétlépcsős kódok megváltoztak
       unlock_instructions:
         subject: 'Mastodon: Feloldási utasítások'

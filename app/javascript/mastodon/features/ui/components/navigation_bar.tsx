@@ -6,6 +6,17 @@ import { matchPath, useLocation } from 'react-router';
 import { Link, NavLink } from 'react-router-dom';
 
 import AddIcon from '@/material-icons/400-24px/add.svg?react';
+// @_longwhile — 하단 바 아이콘을 bird-theme-svg 것으로 바꿨다(2026-08-13).
+//
+//   **`Icon` 의 `id` 를 비워 둔 채로 둔다.** 그것이 `icon-홈` 같은 클래스가 되고,
+//   테마 SCSS 는 그 클래스에 `mask-image`/`background-image` 로 자기 그림을 덧
+//   깐다. 이름을 주는 순간 원본 path 위에 테마 그림이 겹쳐 그려진다 — 예전에
+//   실제로 밟은 함정이다. 알림만 `bell` 을 유지하는데, 테마가 하단 바에 한해
+//   그 마스크를 꺼 두는 규칙을 이미 갖고 있기 때문이다
+//   (`.ui__navigation-bar .icon-bell { mask-image: none !important }`).
+//
+//   여덟 파일 모두 viewBox 가 있고 `fill` 속성이 없어, 테마의
+//   `.ui__navigation-bar__item svg { fill: currentColor }` 를 그대로 받는다.
 import BellActiveIcon from '@/styles/bird-theme-svg/bell-fill.svg?react';
 import BellIcon from '@/styles/bird-theme-svg/bell.svg?react';
 import MessagesActiveIcon from '@/styles/bird-theme-svg/envelope-fill.svg?react';
@@ -50,6 +61,7 @@ const NavItem = ({
   activeIcon?: React.ReactNode;
   label: string;
   exact?: boolean;
+  // `to` 말고도 이 칸을 켜 둘 주소들. 주면 `to` 대신 이것으로 판단한다.
   activePaths?: string[];
 }) => {
   const location = useLocation();
@@ -106,6 +118,16 @@ const NotificationsNavItem = () => {
   );
 };
 
+// @_longwhile — 모바일 전용 글쓰기 단추 (2026-08-13).
+//
+//   하단 바에 있던 "새 게시물" 을 여기로 옮겼다. 다섯 칸 중 하나를 글쓰기가
+//   차지하고 있었는데, 그 자리에 채팅이 들어가야 했다.
+//
+//   **타임라인에서만 띄운다.** 알림·채팅·설정 화면에서 글쓰기 단추가 떠 있으면
+//   그 화면의 내용을 가리기만 한다. 특히 채팅에서는 입력창 바로 위에 겹친다.
+//
+//   `/public` 은 하위 경로(`/public/local` 등)까지 받는다. 하단 바의 퍼블릭
+//   항목이 `exact={false}` 인 것과 같은 이유다.
 const COMPOSE_FAB_PATHS = ['/home', '/public'];
 
 const ComposeFab: React.FC = () => {
@@ -147,6 +169,8 @@ export const NavigationBar: React.FC = () => {
 
       <div className='ui__navigation-bar' ref={barRef}>
         <div className='ui__navigation-bar__items ui__navigation-bar__items--signed-in'>
+          {/* 퍼블릭 칸은 없앴다. 퍼블릭은 홈 위의 탭(TimelineTabs)으로 가므로,
+            그 탭에 있을 때도 홈 칸을 켜 둔다(X 와 같다). */}
           <NavItem
             to='/home'
             exact
@@ -156,6 +180,8 @@ export const NavigationBar: React.FC = () => {
             label={intl.formatMessage(messages.home)}
           />
 
+          {/* 홈 / 답장할 멘션 / 알림 / 채팅. 이 넷은 모바일 서랍에서는 빠진다
+            (navigation_panel.jsx 의 `inBottomBar`). */}
           <NavItem
             to='/pending-mentions'
             icon={<Icon id='' icon={PendingMentionsIcon} />}
@@ -165,6 +191,12 @@ export const NavigationBar: React.FC = () => {
 
           <NotificationsNavItem />
 
+          {/* "새 게시물" 이 있던 자리다. 글쓰기는 오른쪽 아래 떠 있는 단추로
+            옮겼고(아래 ComposeFab), 그 자리에 채팅을 넣었다.
+
+            `exact={false}` 라야 `/messages/3` 에서도 켜져 있다. 운영진 화면
+            (`/messages/all`)까지 같이 켜지는데, 하단 바에는 그 항목이 없으므로
+            여기서는 나눌 이유가 없다. */}
           <NavItem
             to='/messages'
             exact={false}
@@ -173,6 +205,8 @@ export const NavigationBar: React.FC = () => {
             label={intl.formatMessage(messages.messages)}
           />
 
+          {/* ☰ 메뉴 칸은 없앴다. 서랍은 헤더 왼쪽 위의 프로필 사진
+            (MobileMenuAvatarButton)이 연다 — X 와 같은 자리다. */}
         </div>
       </div>
     </>

@@ -9,6 +9,15 @@
   @return '%23' + unquote($color);
 }
 
+// @_longwhile — 스크롤바가 생겼다 사라질 때 화면이 옆으로 덜컹 밀리던 것.
+//   `body.app-body.layout-single-column` 은 `overflow-y: scroll` 로 막대를 늘
+//   띄워 자리를 잡아 두는데, 모달이 열리면 `.with-modals--active` 가 그것을
+//   `hidden` 으로 바꿔 그 자리가 통째로 사라진다. 삭제 확인 모달이 그 경우다.
+
+//   **`html` 에 걸어야 한다.** body 의 overflow 는 뷰포트로 전파되지만
+//   `scrollbar-gutter` 는 전파되지 않는다 — 실제로 body 에 걸어 보면
+//   `body.clientWidth` 가 모달을 열 때 1116 → 1122 로 그대로 변한다. html 에
+//   걸면 두 상태 모두 1116 으로 고정된다.
 html {
   scrollbar-gutter: stable;
 }

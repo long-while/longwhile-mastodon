@@ -28,6 +28,24 @@ RSpec.describe Invite do
     end
   end
 
+  describe '#bypass_approval?' do
+    def invite_from(permissions)
+      Fabricate(:invite, user: Fabricate(:user, role: Fabricate(:user_role, permissions: permissions)))
+    end
+
+    it 'is true for an inviter who can invite users, as in 4.4 (only staff can invite here)' do
+      expect(invite_from(UserRole::FLAGS[:invite_users]).bypass_approval?).to be true
+    end
+
+    it 'is true for an inviter with the bypass permission' do
+      expect(invite_from(UserRole::FLAGS[:invite_bypass_approval]).bypass_approval?).to be true
+    end
+
+    it 'is false for an inviter who can no longer invite' do
+      expect(Fabricate(:invite, user: Fabricate(:user)).bypass_approval?).to be false
+    end
+  end
+
   describe '#valid_for_use?' do
     it 'returns true when there are no limitations' do
       invite = Fabricate(:invite, max_uses: nil, expires_at: nil)

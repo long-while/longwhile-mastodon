@@ -6,6 +6,7 @@ import { usePendingItems as preferPendingItems } from 'mastodon/initial_state';
 
 import { importFetchedStatus, importFetchedStatuses } from './importer';
 import { submitMarkers } from './markers';
+import { fetchThreadHeadsForTimeline } from './thread_heads';
 import {timelineDelete} from './timelines_typed';
 
 export { disconnectTimeline } from './timelines_typed';
@@ -53,6 +54,8 @@ export function updateTimeline(timeline, status, accept) {
       status,
       usePendingItems: preferPendingItems,
     });
+
+    dispatch(fetchThreadHeadsForTimeline(timeline, [status]));
 
     if (timeline === 'home') {
       dispatch(submitMarkers());
@@ -120,6 +123,7 @@ export function expandTimeline(timelineId, path, params = {}) {
 
       dispatch(importFetchedStatuses(response.data));
       dispatch(expandTimelineSuccess(timelineId, response.data, next ? next.uri : null, response.status === 206, isLoadingRecent, isLoadingMore, isLoadingRecent && preferPendingItems));
+      dispatch(fetchThreadHeadsForTimeline(timelineId, response.data));
 
       if (timelineId === 'home' && !isLoadingMore && !isLoadingRecent) {
         const now = new Date();

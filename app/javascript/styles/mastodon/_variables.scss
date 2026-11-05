@@ -7,11 +7,13 @@ $white: #ffffff; // White
 $red-600: #b7253d !default; // Deep Carmine
 $red-500: #d32d49 !default; // Cerise
 
-$long-while-600: #0981d1;
-$long-while-500: #1d9bf0;
+//수정해야 하는 색상 - 수정
+$long-while-600: #0981d1; // 설정창 버튼 눌렸을때
+$long-while-500: #1d9bf0; // 설정창 기본. 좌측 목록 현재선택도 이색깔
 $long-while-400: #1d9bf0; // focus visible
-$long-while-300: #1d9bf0;
+$long-while-300: #1d9bf0; // 밝은 색상?
 
+// 계정 스위처 "기존 계정 추가" 버튼 글자색 (라이트 테마는 $longwhile-500로 오버라이드)
 $account-switcher-add-text-color: $long-while-500 !default;
 
 $grey-600: hsl(215, 10%, 63%); // Trout
@@ -26,11 +28,14 @@ $error-color: $error-red !default;
 
 $red-bookmark: $warning-red;
 
-$classic-base-color: #212126;
-$classic-primary-color: #b4bfd0;
-$classic-secondary-color: #f4f0f0;
+// 여기 수정
+// Values from the classic Mastodon UI
+$classic-base-color: #212126; // 배경 색상
+$classic-primary-color: #b4bfd0; // 설정창 좀 어두운 색상 (좌측 목록 등), 
+$classic-secondary-color: #f4f0f0; // 설정창 밝은색
 $classic-highlight-color: $long-while-500;
 
+// 재게시 아이콘 등 색상
 $ui-base-lighter-color: hsl(213, 12%, 71%) !default;
 
 // Variables for defaults in UI
@@ -50,6 +55,16 @@ $ui-highlight-color: $classic-highlight-color !default;
 $ui-button-color: $white !default;
 $ui-button-background-color: $long-while-500 !default;
 $ui-button-focus-background-color: $long-while-600 !default;
+// @_longwhile — 포커스 링은 **브랜드색을 따른다.** 이 한 줄이 화면 전체의
+// `outline: $ui-button-focus-outline` 12곳(단추·아이콘 단추·링크·칼럼 헤더)과
+// `.column-link:focus-visible` 테두리를 한꺼번에 정한다. 값을 $long-while-400
+// 으로 두면 팔레트를 갈아엎어도 **탭으로 옮겨 다닐 때만** 옛 파랑이 튀어나와,
+// 마우스로만 보면 끝까지 안 보인다.
+//
+// SCSS 변수에 `var()` 를 담아도 된다 — 이 값은 `rgba()`·`darken()` 에 들어가지
+// 않고 `outline`/`border-color` 자리에 그대로 박히기만 한다(쓰는 곳 두 군데를
+// 확인했다). 색 함수에 넘기는 순간 컴파일이 깨지므로, 여기 값을 옮길 때는
+// 그 점을 먼저 본다.
 $ui-button-focus-outline-color: var(
   --color-brand-longwhile,
   #{$long-while-400}
@@ -105,6 +120,18 @@ $media-modal-media-max-width: 100%;
 $media-modal-media-max-height: 80%;
 
 $no-gap-breakpoint: 1175px;
+// @_longwhile — 760 이 아니라 759 다.
+//
+//   자바스크립트가 `is_mobile.ts` 에서 `LAYOUT_BREAKPOINT = 759` 로 잡고
+//   `width <= 759` 를 모바일로 본다. 그런데 이 값이 760 이면 CSS 의 모바일 띠는
+//   `max-width: 760` 이라, **정확히 760px 에서 둘이 어긋난다.**
+//
+//     JS  760 → 데스크톱 트리(.columns-area__panels + 내비 패널)를 그린다
+//     CSS 760 → 모바일 규칙(패널을 세로로 쌓고 하단 바를 띄운다)을 건다
+//
+//   그 1px 폭에서 내비 패널이 목록 위에 얹혀 잘린 채로 나온다. 채팅뿐 아니라
+//   홈에서도 같다(실측 확인). 테마 SCSS(bird-ui / theme-ui)는 이미 759/760 으로
+//   적혀 있어, 어긋나 있던 것은 이 값 하나뿐이다.
 $mobile-breakpoint: 759px;
 $no-columns-breakpoint: 600px;
 

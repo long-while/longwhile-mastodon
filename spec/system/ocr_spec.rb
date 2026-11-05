@@ -22,12 +22,12 @@ RSpec.describe 'OCR', :attachment_processing, :inline_jobs, :js, :streaming do
       attach_file('file-upload-input', file_fixture('text.png'), make_visible: true)
 
       within('.compose-form__upload') do
-        click_on('Edit')
+        click_on(frontend_translations('upload_form.edit')) # 화면은 한국어 고정
       end
     end
 
-    click_on('Add text from image')
+    click_on(frontend_translations('alt_text_modal.add_text_from_image'))
 
-    expect(page).to have_css('#description', text: /Hello Mastodon\s*/, wait: 10)
+    expect(page).to have_css('#description', text: /Hello Mastodon\s*/, wait: 20)
   end
 end

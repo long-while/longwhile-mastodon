@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class UserMailer < Devise::Mailer
+  include BulkMailSettingsConcern
+
   layout 'mailer'
 
   helper :accounts
@@ -12,9 +14,12 @@ class UserMailer < Devise::Mailer
 
   helper_method :welcome_guide_url
 
+  # @_longwhile — 가입 확인·환영 메일의 '마스토돈 가이드' 단추. LONGWHILE_GUIDE_URL 로 덮을 수 있다.
   DEFAULT_GUIDE_URL = 'https://stellar-ground-601.notion.site/303d06ebad998013bebbd2946804a568?pvs=73'
 
   before_action :set_instance
+
+  after_action :use_bulk_mail_delivery_settings, only: [:announcement_published, :terms_of_service_changed]
 
   default to: -> { @resource.email }
 
@@ -166,6 +171,8 @@ class UserMailer < Devise::Mailer
   end
 
   def appeal_approved(user, appeal)
+    return if user.nil?
+
     @resource = user
     @appeal   = appeal
 
@@ -175,6 +182,8 @@ class UserMailer < Devise::Mailer
   end
 
   def appeal_rejected(user, appeal)
+    return if user.nil?
+
     @resource = user
     @appeal   = appeal
 
@@ -210,7 +219,6 @@ class UserMailer < Devise::Mailer
   def terms_of_service_changed(user, terms_of_service)
     @resource = user
     @terms_of_service = terms_of_service
-    @markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML, escape_html: true, no_images: true)
 
     I18n.with_locale(locale) do
       mail subject: default_i18n_subject
@@ -223,6 +231,23 @@ class UserMailer < Devise::Mailer
 
     I18n.with_locale(locale) do
       mail subject: default_i18n_subject
+    end
+  end
+
+  def sign_in_token(user, remote_ip, user_agent, timestamp)
+    @resource   = user
+    @instance   = Rails.configuration.x.local_domain
+    @remote_ip  = remote_ip
+    @user_agent = user_agent
+    @detection  = Browser.new(user_agent)
+    @timestamp  = timestamp.to_time.utc
+
+    return if @resource.disabled?
+
+    I18n.with_locale(locale) do
+      mail to: @resource.email,
+           subject: I18n.t('user_mailer.sign_in_token.subject'),
+           reply_to: Setting.site_contact_email
     end
   end
 
@@ -240,7 +265,8 @@ class UserMailer < Devise::Mailer
     @instance = Rails.configuration.x.local_domain
   end
 
-  def locale(use_current_locale: false)
-    @resource.locale.presence || (use_current_locale && I18n.locale) || I18n.default_locale
+  # ApplicationMailer::MAIL_LOCALE 참고. 호출부(use_current_locale:)는 상류 그대로 둔다.
+  def locale(**)
+    ApplicationMailer::MAIL_LOCALE
   end
 end

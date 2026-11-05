@@ -2,7 +2,9 @@
 
 require 'rails_helper'
 
-RSpec.describe Oauth::AuthorizationsController do
+RSpec.describe OAuth::AuthorizationsController do
+  render_views
+
   let(:app) { Doorkeeper::Application.create!(name: 'test', redirect_uri: 'http://localhost/', scopes: 'read') }
 
   describe 'GET #new' do
@@ -24,6 +26,8 @@ RSpec.describe Oauth::AuthorizationsController do
           .to have_http_status(200)
         expect(response.headers['Cache-Control'])
           .to include('private, no-store')
+        expect(response.parsed_body.at('body.modal-layout'))
+          .to be_present
         expect(controller.stored_location_for(:user))
           .to eq authorize_path_for(app)
       end
@@ -70,10 +74,10 @@ RSpec.describe Oauth::AuthorizationsController do
     end
   end
 
-  # The consent POST (and the deny DELETE) carry no query string. Back when
-  # they also recorded a return location, `user_return_to` became a bare
-  # `/oauth/authorize`, and any later sign-in was sent there, where Doorkeeper
-  # answers "missing required parameter: client_id".
+  # @_longwhile — 동의 폼의 POST(그리고 거부의 DELETE)에는 쿼리스트링이 없다.
+  #   여기서도 돌아갈 곳을 적어 두던 시절에는 `user_return_to` 가 **파라미터
+  #   없는 `/oauth/authorize`** 가 됐고, 그 뒤 아무 때나 로그인하면 Devise 가
+  #   거기로 보내 Doorkeeper 가 "필수 매개변수 누락: client_id." 를 띄웠다.
   describe 'the stored return location' do
     let!(:user) { Fabricate(:user) }
 

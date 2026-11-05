@@ -10,7 +10,6 @@ hy:
     followers:
       one: Հետեւորդ
       other: Հետևորդներ
-    following: Հետեւած
     instance_actor_flash: Այս հաշիւը վիրտուալ դերասան է, որը ներկայացնում է հանգոյցը, եւ ոչ որեւէ անհատ օգտատիրոջ։ Այն օգտագործուում է ֆեդերացիայի նպատակներով եւ չպէտք է կասեցուի։
     last_active: վերջին այցը
     link_verified_on: Սոյն յղման տիրապետումը ստուգուած է՝ %{date}֊ին
@@ -348,7 +347,6 @@ hy:
       comment:
         none: Ոչ մի
       created_at: Բողոքարկուած
-      delete_and_resolve: Ջնջեք գրառումը
       mark_as_resolved: Նշել որպէս լուծուած
       mark_as_unresolved: Նշել որպէս չլուծուած
       no_one_assigned: Ոչ ոք
@@ -434,7 +432,6 @@ hy:
         title: Թրենդային գրառումներ
   appearance:
     animations_and_accessibility: Անիմացիաներ եւ հասանելիութիւն
-    confirmation_dialogs: Հաստատման պատուհաններ
     discovery: Բացայայտում
     localization:
       body: Մաստոդոնը թարգմանուում է կամաւորների կողմից։
@@ -511,7 +508,6 @@ hy:
   deletes:
     challenge_not_passed: Մուտքագրուած տեղեկութիւնը ստոյգ չէ
     confirm_password: Նոյնականացման համար մուտքագրիր ծածկագիրդ
-    confirm_username: Մուտքագրիր օգտանունդ գործողութիւնը հաստատելու համար
     proceed: Ջնջել հաշիվը
     success_msg: Հաշիւդ բարեյաջող ջնջուեց
     warning:
@@ -536,8 +532,6 @@ hy:
     lists: Ցանկեր
     mutes: Լռեցրել ես
     storage: Մեդիա պահոց
-  featured_tags:
-    add_new: Աւելացնել նորը
   filters:
     contexts:
       account: Պրոֆիլներ
@@ -617,7 +611,6 @@ hy:
     warning:
       followers: Այս քայլով քո բոլոր հետեւորդներին այս հաշուից կը տեղափոխես դէպի նորը
       only_redirect_html: Որպէս այլընտրանք, կարող ես ուղղակի <a href="%{path}">վերահասցէաւորել քո հաշիւը</a>
-      other_data: Մնացեալ տուեալները ինքնուրոյն չեն փոխադրուի
   moderation:
     title: Մոդերացիա
   notification_mailer:
@@ -747,7 +740,6 @@ hy:
     appearance: Տեսք
     authorized_apps: Լիազօրուած յաւելուածներ
     back: Ետ գնալ մաստադոն
-    delete: Հաշուի ջնջում
     development: Ծրագրավորում
     edit_profile: Խմբագրել պրոֆիլը
     featured_tags: Ընտրուած հէշթեգեր
@@ -775,13 +767,7 @@ hy:
     over_character_limit: "%{max} նիշի սահմանը գերազանցուած է"
     title: '%{name}: "%{quote}"'
     visibilities:
-      direct: Հասցէագրուած
-      private: Միայն հետեւողներին
-      private_long: Հասանելի միայն հետեւորդներին
       public: Հրապարակային
-      public_long: Տեսանելի բոլորին
-      unlisted: Ծածուկ
-      unlisted_long: Տեսանելի է բոլորին, բայց չի յայտնւում հանրային հոսքերում
   statuses_cleanup:
     exceptions: Բացառություններ
     min_age:
@@ -795,10 +781,6 @@ hy:
       '7889238': 3 ամիս
   stream_entries:
     sensitive_content: Կասկածելի բովանդակութիւն
-  themes:
-    contrast: Mastodon (բարձր կոնտրաստով)
-    default: Mastodon (Մուգ)
-    mastodon-light: Mastodon (Լուսավոր)
   time:
     formats:
       default: "%b %d, %Y, %H:%M"

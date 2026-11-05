@@ -18,9 +18,15 @@ class AccountsController < ApplicationController
     respond_to do |format|
       format.html do
         expires_in(15.seconds, public: true, stale_while_revalidate: 30.seconds, stale_if_error: 1.hour) unless user_signed_in?
+
+        redirect_to short_account_path(@account) if account_id_param.present? && username_param.blank?
       end
 
       format.rss do
+        # @_longwhile — 익명화(탈퇴) 계정은 프로필 글 목록이 비어 있다(Api::V1::Accounts::StatusesController).
+        # 옛 사용자명 주소로 그 글을 모은 피드를 내지 않는다.
+        next not_found if @account.anonymized?
+
         expires_in 1.minute, public: true
 
         limit     = params[:limit].present? ? [params[:limit].to_i, PAGE_SIZE_MAX].min : PAGE_SIZE
@@ -45,8 +51,10 @@ class AccountsController < ApplicationController
     end
   end
 
+  # @_longwhile — 미등재는 팔로워 전용이라(StatusPolicy#show?) 누구나 읽는 RSS 에는
+  # public 만 싣는다. 원시 SQL 이라 아래 merge! 가 지우지 못한다.
   def default_statuses
-    @account.statuses.distributable_visibility
+    @account.statuses.where("statuses.visibility = #{Status.visibilities.fetch('public')}")
   end
 
   def only_media_scope
@@ -69,6 +77,10 @@ class AccountsController < ApplicationController
 
   def username_param
     params[:username]
+  end
+
+  def account_id_param
+    params[:id]
   end
 
   def skip_temporary_suspension_response?

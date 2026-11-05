@@ -18,7 +18,9 @@ RSpec.describe 'Home', :inline_jobs do
     it_behaves_like 'forbidden for wrong scope', 'write write:statuses'
 
     context 'when the timeline is available' do
-      let(:home_statuses) { bob.statuses + ana.statuses }
+      # 남의 글을 부스트한 것은 원작자와 부스터를 모두 팔로우한 사람에게만 간다(943745d134).
+      # user 는 tim 을 팔로우하지 않으므로 bob 이 부스트한 tim 의 글은 홈에 오지 않는다.
+      let(:home_statuses) { bob.statuses.where(reblog_of_id: nil) + ana.statuses }
       let!(:bob)          { Fabricate(:account) }
       let!(:tim)          { Fabricate(:account) }
       let!(:ana)          { Fabricate(:account) }
@@ -29,6 +31,8 @@ RSpec.describe 'Home', :inline_jobs do
         quoted = PostStatusService.new.call(bob, text: 'New toot from bob.')
         PostStatusService.new.call(tim, text: 'New toot from tim.')
         reblogged = PostStatusService.new.call(tim, text: 'New toot from tim, which will end up boosted.')
+        # 글이 전부 팔로워 전용이라 부스트하려면 bob 이 tim 을 팔로우해야 한다.
+        bob.follow!(tim)
         ReblogService.new.call(bob, reblogged)
         # TODO: use PostStatusService argument when available rather than manually creating quote
         quoting = PostStatusService.new.call(bob, text: 'Self-quote from bob.')
@@ -66,7 +70,8 @@ RSpec.describe 'Home', :inline_jobs do
     end
 
     context 'when the timeline is regenerating' do
-      let(:timeline) { instance_double(HomeFeed, regenerating?: true, get: []) }
+      let(:async_refresh) { AsyncRefresh.create("account:#{user.account_id}:regeneration") }
+      let(:timeline) { instance_double(HomeFeed, regenerating?: true, get: [], async_refresh:) }
 
       before do
         allow(HomeFeed).to receive(:new).and_return(timeline)
@@ -76,6 +81,7 @@ RSpec.describe 'Home', :inline_jobs do
         subject
 
         expect(response).to have_http_status(206)
+        expect(response.headers['Mastodon-Async-Refresh']).to eq "id=\"#{async_refresh.id}\", retry=5"
         expect(response.content_type)
           .to start_with('application/json')
       end

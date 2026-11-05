@@ -131,6 +131,8 @@ const Firehose = ({ feedType, multiColumn }) => {
       />
     </DismissableBanner>
   ) : null;
+  // @_longwhile — 퍼블릭(`/public`)의 안내 띠는 뺐다. 홈과 탭으로 묶여 따로
+  //   설명할 것이 없고, 목록이 그려질 때 잠깐 보였다 사라져 깜빡이기만 했다.
 
   const emptyMessage = feedType === 'community' ? (
     <FormattedMessage
@@ -144,6 +146,10 @@ const Firehose = ({ feedType, multiColumn }) => {
     />
   );
 
+  // @_longwhile — 홈과 탭으로 묶이는 것은 `/public` 하나다(`/local` 은 아니다).
+  //   위치 기억은 utils/scroll_anchor.ts 의 REMEMBERED_SCROLL_PATHS 와 짝이라
+  //   로그인 여부와 무관하게 켠다(끄면 직전 화면의 스크롤 값이 남는다).
+  //   탭은 로그인했을 때만 — 로그아웃 상태에서 "홈" 탭은 막다른 길이다.
   const remembersPosition = feedType === 'public' && !multiColumn;
   const showsTimelineTabs = remembersPosition && signedIn;
 
@@ -171,6 +177,7 @@ const Firehose = ({ feedType, multiColumn }) => {
         emptyMessage={emptyMessage}
         bindToDocument={!multiColumn}
         rememberPosition={remembersPosition}
+        threadPreview={signedIn}
       />
 
       <Helmet>

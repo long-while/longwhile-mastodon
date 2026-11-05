@@ -3,11 +3,7 @@
 require 'rails_helper'
 
 RSpec.describe 'Domain Blocks' do
-  let(:role)    { UserRole.find_by(name: 'Admin') }
-  let(:user)    { Fabricate(:user, role: role) }
-  let(:scopes)  { 'admin:read:domain_blocks admin:write:domain_blocks' }
-  let(:token)   { Fabricate(:accessible_access_token, resource_owner_id: user.id, scopes: scopes) }
-  let(:headers) { { 'Authorization' => "Bearer #{token.token}" } }
+  include_context 'with API authentication', user_fabricator: :admin_user, oauth_scopes: 'admin:read:domain_blocks admin:write:domain_blocks'
 
   describe 'GET /api/v1/admin/domain_blocks' do
     subject do
@@ -50,7 +46,8 @@ RSpec.describe 'Domain Blocks' do
             id: domain_block.id.to_s,
             domain: domain_block.domain,
             digest: domain_block.domain_digest,
-            created_at: domain_block.created_at.strftime('%Y-%m-%dT%H:%M:%S.%LZ'),
+            # 시간대가 Asia/Seoul 이라(config/application.rb) 'Z' 를 박지 않고 오프셋째 비교한다.
+            created_at: domain_block.created_at.iso8601(3),
             severity: domain_block.severity.to_s,
             reject_media: domain_block.reject_media,
             reject_reports: domain_block.reject_reports,
@@ -106,7 +103,8 @@ RSpec.describe 'Domain Blocks' do
         id: domain_block.id.to_s,
         domain: domain_block.domain,
         digest: domain_block.domain_digest,
-        created_at: domain_block.created_at.strftime('%Y-%m-%dT%H:%M:%S.%LZ'),
+        # 시간대가 Asia/Seoul 이라(config/application.rb) 'Z' 를 박지 않고 오프셋째 비교한다.
+        created_at: domain_block.created_at.iso8601(3),
         severity: domain_block.severity.to_s,
         reject_media: domain_block.reject_media,
         reject_reports: domain_block.reject_reports,
@@ -230,7 +228,9 @@ RSpec.describe 'Domain Blocks' do
         expect(response).to have_http_status(422)
         expect(response.content_type)
           .to start_with('application/json')
-        expect(response.parsed_body[:error]).to eq('Validation failed: Severity is not included in the list')
+        # 화면 언어는 한국어로 고정돼 있다(Localized#requested_locale).
+        expect(response.parsed_body[:error])
+          .to eq(I18n.t('activerecord.errors.messages.record_invalid', errors: I18n.t('errors.messages.inclusion', attribute: DomainBlock.human_attribute_name(:severity, locale: :ko), locale: :ko), locale: :ko))
       end
     end
   end

@@ -3,8 +3,8 @@
 require 'rails_helper'
 
 RSpec.describe ApplicationHelper do
-  describe 'body_classes' do
-    context 'with a body class string from a controller' do
+  describe 'html_classes' do
+    context 'with non-default user settings' do
       before do
         user = Fabricate :user
         user.settings['web.use_system_font'] = true
@@ -14,18 +14,15 @@ RSpec.describe ApplicationHelper do
         helper.extend controller_helpers
       end
 
-      it 'uses the current theme and user settings classes in the result' do
+      # 포크: 설정 클래스는 <body> 에만 단다. <html> 에도 달면 body 의 스크롤바 모양이 4.5 와 달라진다.
+      it 'leaves the user settings classes to body_classes' do
+        expect(helper.html_classes)
+          .to not_include('system-font')
+          .and not_include('reduce-motion')
+          .and not_include('custom-scrollbars')
         expect(helper.body_classes)
-          .to match(/theme-default/)
-          .and match(/system-font/)
-          .and match(/reduce-motion/)
-      end
-
-      it 'includes values set via content_for' do
-        helper.content_for(:body_classes) { 'admin' }
-
-        expect(helper.body_classes)
-          .to match(/admin/)
+          .to include('system-font')
+          .and include('reduce-motion')
       end
 
       private
@@ -35,8 +32,40 @@ RSpec.describe ApplicationHelper do
           def current_account
             @current_account ||= Fabricate(:account, user: User.last)
           end
+        end
+      end
+    end
+  end
 
-          def current_theme = 'default'
+  describe 'body_classes' do
+    # body_classes 는 포크에서 테마·사용자 설정을 읽는다(아래). 로그인하지 않은 화면으로 둔다.
+    before do
+      helper.extend(Module.new do
+        def current_account = nil
+        def current_user = nil
+      end)
+    end
+
+    context 'with a body class string from a controller' do
+      it 'includes values set via content_for' do
+        helper.content_for(:body_classes) { 'admin' }
+
+        expect(helper.body_classes)
+          .to include('admin')
+      end
+    end
+
+    # @_longwhile — 고정 프런트와 테마 SCSS 는 이 클래스들을 <body> 에서 찾는다(body.theme-…,
+    # body.rtl, emoji.js 의 테마 판별, columns_area.jsx 의 rtl). 4.6 은 html_classes 로 옮겼다.
+    context 'with the frozen web frontend' do
+      it 'keeps the theme and the user setting classes on the body' do
+        expect(helper.body_classes.split)
+          .to include("theme-#{Setting.theme.parameterize}", 'custom-scrollbars', 'no-reduce-motion')
+      end
+
+      it 'adds the rtl class for right-to-left locales' do
+        I18n.with_locale(:ar) do
+          expect(helper.body_classes.split).to include('rtl')
         end
       end
     end
@@ -93,14 +122,14 @@ RSpec.describe ApplicationHelper do
     end
   end
 
-  describe 'available_sign_up_path' do
+  describe 'available_sign_up_url' do
     context 'when registrations are closed' do
       before do
         allow(Setting).to receive(:[]).with('registrations_mode').and_return 'none'
       end
 
       it 'redirects to joinmastodon site' do
-        expect(helper.available_sign_up_path).to match(/joinmastodon.org/)
+        expect(helper.available_sign_up_url).to match(/joinmastodon.org/)
       end
     end
 
@@ -112,13 +141,13 @@ RSpec.describe ApplicationHelper do
       end
 
       it 'redirects to joinmastodon site' do
-        expect(helper.available_sign_up_path).to match(/joinmastodon.org/)
+        expect(helper.available_sign_up_url).to match(/joinmastodon.org/)
       end
     end
 
     context 'when registrations are allowed' do
       it 'returns a link to the registration page' do
-        expect(helper.available_sign_up_path).to eq(new_user_registration_path)
+        expect(helper.available_sign_up_url).to eq(new_user_registration_url)
       end
     end
   end

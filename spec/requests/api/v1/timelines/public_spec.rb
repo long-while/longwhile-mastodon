@@ -15,7 +15,9 @@ RSpec.describe 'Public' do
       expect(response).to have_http_status(200)
       expect(response.content_type)
         .to start_with('application/json')
-      expect(response.parsed_body.pluck(:id)).to match_array(expected_statuses.map { |status| status.id.to_s })
+      expect(response.parsed_body.pluck(:id))
+        .to match_array(expected_statuses.map { |status| status.id.to_s })
+        .and not_include(stranger_status.id.to_s)
     end
   end
 
@@ -24,13 +26,18 @@ RSpec.describe 'Public' do
       get '/api/v1/timelines/public', headers: headers, params: params
     end
 
-    let!(:local_status)   { Fabricate(:status, account: Fabricate.build(:account, domain: nil)) }
-    let!(:remote_status)  { Fabricate(:status, account: Fabricate.build(:account, domain: 'example.com')) }
-    let!(:media_status)   { Fabricate(:status, media_attachments: [Fabricate.build(:media_attachment)]) }
+    # 이 포크의 퍼블릭 타임라인은 팔로우 중인 계정(+ 본인·공지 계정)의 private/unlisted 글만
+    # 보여준다(PublicFeed, 943745d134). 그래서 사용자가 글쓴이들을 팔로우하고, 팔로우하지 않은
+    # 사람의 private 글은 끝까지 빠져 있는지 함께 본다.
+    let!(:local_status)   { Fabricate(:status, visibility: :private, account: Fabricate.build(:account, domain: nil)) }
+    let!(:remote_status)  { Fabricate(:status, visibility: :private, account: Fabricate.build(:account, domain: 'example.com')) }
+    let!(:media_status)   { Fabricate(:status, visibility: :private, media_attachments: [Fabricate.build(:media_attachment)]) }
+    let(:stranger_status) { Fabricate(:status, visibility: :private) }
     let(:params) { {} }
 
     before do
-      Fabricate(:status, visibility: :private)
+      stranger_status
+      [local_status, remote_status, media_status].each { |status| user.account.follow!(status.account) }
     end
 
     context 'when the instance allows public preview' do
@@ -42,8 +49,10 @@ RSpec.describe 'Public' do
         it_behaves_like 'a successful request to the public timeline'
       end
 
+      # 보는 사람이 없으면 모집단이 비어 있다. 아무 글도 나가지 않아야 한다.
       context 'with an anonymous user' do
         let(:headers) { {} }
+        let(:expected_statuses) { [] }
 
         it_behaves_like 'a successful request to the public timeline'
       end
@@ -98,7 +107,7 @@ RSpec.describe 'Public' do
 
     context 'when the instance does not allow public preview' do
       before do
-        Form::AdminSettings.new(timeline_preview: false).save
+        Form::AdminSettings.new(local_live_feed_access: 'authenticated', remote_live_feed_access: 'authenticated').save
       end
 
       it_behaves_like 'forbidden for wrong scope', 'profile'

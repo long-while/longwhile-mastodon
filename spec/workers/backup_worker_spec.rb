@@ -24,7 +24,7 @@ RSpec.describe BackupWorker do
       expect(emails.first)
         .to have_attributes(
           to: contain_exactly(backup.user.email),
-          subject: I18n.t('user_mailer.backup_ready.subject')
+          subject: I18n.t('user_mailer.backup_ready.subject', locale: ApplicationMailer::MAIL_LOCALE)
         )
     end
 

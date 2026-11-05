@@ -14,7 +14,12 @@ class RateLimiter
       period: 3.hours.freeze,
     }.freeze,
 
-    # @_longwhile custom feature
+    # @_longwhile custom feature / 한참(longwhile) 제작 기능 — DM 채팅
+    #   채팅은 짧은 메시지를 자주 보낸다. 전역 statuses 제한(300/3시간)으로는 쓸 수
+    #   없다. 전역을 올리면 공개 글 스팸까지 함께 풀리므로 DM 만 별도 family 로
+    #   분리한다. Status#rate_limiter 가 direct 일 때 이 family 로 갈아끼운다.
+    #   근거: dm-chat-phase-0.md P0-3, dm-chat-decisions.md D-09
+    #   ENV 오타로 0 이 들어가면 DM 이 전부 막히므로 하한을 둔다.
     direct_statuses: {
       limit: [(ENV['DM_RATE_LIMIT'] || 1000).to_i, 1].max,
       period: [(ENV['DM_RATE_LIMIT_PERIOD'] || 3600).to_i, 60].max.seconds.freeze,

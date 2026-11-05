@@ -44,9 +44,11 @@ RSpec.describe BatchedRemoveStatusService, :inline_jobs do
       .to have_received(:publish)
       .with("timeline:#{jeff.id}", any_args).at_least(:once)
 
+    # PostStatusService 의 글은 이 포크에서 언제나 private 라(943745d134) 공개 스트림에
+    # 나간 적이 없고, 삭제도 거기로 보내지 않는다.
     expect(redis)
-      .to have_received(:publish)
-      .with('timeline:public', any_args).at_least(:once)
+      .to_not have_received(:publish)
+      .with('timeline:public', any_args)
 
     expect(a_request(:post, 'http://example.com/inbox'))
       .to have_been_made.at_least_once

@@ -28,6 +28,9 @@ class Feed
       unhydrated = redis.zrangebyscore(key, "(#{min_id}", "(#{max_id}", limit: [0, limit], with_scores: true).map { |id| id.first.to_i }
     end
 
+    # @_longwhile — DM 은 타임라인에서 보지 않는다. 팬아웃 쪽에서 이미 막지만,
+    # **이 기능이 켜지기 전에 들어간 항목이 Redis 에 그대로 남아 있다.** 읽을 때
+    # 한 번 더 거른다 — 지우려면 전 계정 피드를 다시 만들어야 한다.
     Status.where(id: unhydrated).where.not(visibility: :direct)
   end
 

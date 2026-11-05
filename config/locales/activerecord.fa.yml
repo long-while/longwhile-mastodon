@@ -32,6 +32,12 @@ fa:
           attributes:
             url:
               invalid: نشانی معتبری نیست
+        collection:
+          attributes:
+            collection_items:
+              too_many: بیش از حد. بیش از %{count} مجاز نیست
+            tag:
+              unusable: ممکن است استفاده نشود
         doorkeeper/application:
           attributes:
             website:
@@ -55,6 +61,8 @@ fa:
               too_soon: بیش از حد زود است. باید بعد از %{date} باشد
         user:
           attributes:
+            date_of_birth:
+              below_limit: زیر کران سن است
             email:
               blocked: از فراهم‌کنندهٔ رایانامهٔ غیرمجازی استفاده می‌کند
               unreachable: به نظر نمی‌رسد وجود داشته باشد

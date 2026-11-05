@@ -8,12 +8,15 @@ RSpec.describe WebhookService do
       let!(:report) { Fabricate(:report) }
       let!(:webhook) { Fabricate(:webhook, events: ['report.created']) }
 
+      before { freeze_time Time.current }
+
       it 'finds and delivers webhook payloads' do
         expect { subject.call('report.created', report) }
           .to enqueue_sidekiq_job(Webhooks::DeliveryWorker)
           .with(
             webhook.id,
-            anything
+            # 웹훅 페이로드는 UTC 로 나간다. 이 포크의 Time.zone(Asia/Seoul)과 맞춰 비교한다.
+            match_json_values(event: 'report.created', created_at: Time.current.utc.iso8601(3))
           )
       end
     end

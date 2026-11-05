@@ -5,10 +5,11 @@ class Auth::SessionsController < Devise::SessionsController
 
   MAX_2FA_ATTEMPTS_PER_HOUR = 10
 
-  # How long the "come back here after signing in" marker left by the
-  # add-account popup stays valid. That flow normally takes a minute or two,
-  # so anything older is debris from an abandoned attempt.
-  MULTI_ACCOUNT_RETURN_TO_TTL = 10.minutes
+  # 계정 추가 팝업이 남긴 "로그인 뒤 돌아갈 곳" 표식의 유효 기간. 팝업 흐름은
+  # 보통 1~2분이면 끝나므로, 그보다 오래된 표식은 **중단된 흐름의 잔해**로 보고
+  # 버린다. 팝업의 state(MultiAccounts::StateStore::TTL)와 맞춘다 — 더 짧으면
+  # 보안 코드 메일을 기다리다 state 는 살아 있는데 팝업이 홈으로 떨어진다.
+  MULTI_ACCOUNT_RETURN_TO_TTL = MultiAccounts::StateStore::TTL
 
   layout 'auth'
 
@@ -17,9 +18,21 @@ class Auth::SessionsController < Devise::SessionsController
   skip_before_action :require_functional!
   skip_before_action :update_user_sign_in
 
+  around_action :preserve_stored_location, only: :destroy, if: :continue_after?
+
   prepend_before_action :check_suspicious!, only: [:create]
 
   include Auth::TwoFactorAuthenticationConcern
+  include Auth::SignInTokenAuthenticationConcern
+
+  # @_longwhile — 위 두 concern 의 `prepend_before_action` 은 Localized 의
+  #   around_action 보다 **먼저** 돌아서, 거기서 그리는 보안 코드 화면과 "코드가
+  #   틀렸습니다" 알림이 기본 로캘(`DEFAULT_LOCALE` 이 없으면 :en)로 나왔다.
+  #   Devise 의 verify_signed_out_user("이미 로그아웃됨" 플래시)도 같은 이유로 앞선다.
+  #   맨 앞으로 옮긴다. 반드시 include 뒤에 둔다 — 나중에 prepend 한 것이 먼저 돈다.
+  #   `only:` 를 붙이지 말 것: 같은 심볼을 다시 등록하면 Localized 의 무조건 등록이 지워져
+  #   나머지 액션(로그인 폼 `new` 등)이 영어로 나온다.
+  prepend_around_action :set_locale
 
   content_security_policy only: :new do |p|
     p.form_action(false)
@@ -36,28 +49,9 @@ class Auth::SessionsController < Devise::SessionsController
   end
 
   def destroy
-    tmp_stored_location = stored_location_for(:user)
     super
     session.delete(:challenge_passed_at)
     flash.delete(:notice)
-    store_location_for(:user, tmp_stored_location) if continue_after?
-  end
-
-  def webauthn_options
-    user = User.find_by(id: session[:attempt_user_id])
-
-    if user&.webauthn_enabled?
-      options_for_get = WebAuthn::Credential.options_for_get(
-        allow: user.webauthn_credentials.pluck(:external_id),
-        user_verification: 'discouraged'
-      )
-
-      session[:webauthn_challenge] = options_for_get.challenge
-
-      render json: options_for_get, status: 200
-    else
-      render json: { error: t('webauthn_credentials.not_enabled') }, status: 401
-    end
   end
 
   protected
@@ -84,16 +78,15 @@ class Auth::SessionsController < Devise::SessionsController
   end
 
   def user_params
-    params.expect(user: [:email, :password, :otp_attempt, credential: {}])
+    params.expect(user: [:email, :password, :otp_attempt, :sign_in_token_attempt, credential: {}])
   end
 
   def after_sign_in_path_for(resource)
-    # `stored_location_for` deletes from the session the moment it is read.
-    # This used to say `multi_account_return_to.presence ||
-    # stored_location_for(:user)`, which short-circuits: whenever the
-    # multi-account marker was set, `user_return_to` was neither read nor
-    # cleared. It stayed in the session and steered the sign-in after next to
-    # the wrong place. Take both out unconditionally, then choose.
+    # @_longwhile — `stored_location_for` 는 **읽는 순간 세션에서 지워진다.**
+    #   예전에는 `multi_account_return_to.presence || stored_location_for(:user)`
+    #   라고 써서, 다중 계정 표식이 있으면 `user_return_to` 를 읽지도 지우지도
+    #   않았다. 그 값이 세션에 그대로 남아 **다음 로그인을 엉뚱한 곳으로**
+    #   끌고 갔다. 둘 다 무조건 꺼내 비운 뒤에 고른다.
     multi_account_return_to = consume_multi_account_return_to
     stored_url = stored_location_for(:user)
 
@@ -116,19 +109,18 @@ class Auth::SessionsController < Devise::SessionsController
 
   private
 
-  # If the add-account popup is in flight, its authorize URL really is where
-  # the sign-in should return. It only has to not be debris.
+  # 계정 추가 팝업이 지금 진행 중이면, 로그인 뒤 돌아갈 곳은 그 팝업의
+  # authorize URL 이 맞다. 끊긴 흐름의 잔해가 아니기만 하면 된다.
   def consume_multi_account_return_to
     url = session.delete(:multi_account_return_to)
     marked_at = session.delete(:multi_account_return_to_at)
 
     return if url.blank?
-    # No timestamp means the marker predates this code. Do not trust it.
+    # 시각이 없는 것은 이 코드 이전에 남은 표식이다. 믿지 않는다.
     return if marked_at.blank?
     return if Time.now.utc.to_i - marked_at.to_i > MULTI_ACCOUNT_RETURN_TO_TTL.to_i
 
-    # We wrote this value ourselves, but it came back out of the session as a
-    # plain string, so check its shape.
+    # 우리가 적은 값이지만 세션에 들어 있던 문자열이므로 모양은 확인한다.
     uri = parse_return_path(url)
     return unless uri&.path == '/oauth/authorize'
     return if uri.query_values.to_h['client_id'].blank?
@@ -136,27 +128,23 @@ class Auth::SessionsController < Devise::SessionsController
     url
   end
 
-  # Filters out the paths that must never be used as a post-sign-in
-  # destination.
+  # @_longwhile — 로그인 뒤 돌아갈 곳으로 **쓰면 안 되는 경로**를 걸러낸다.
   #
-  #   * `/oauth/authorize` with no parameters. Doorkeeper answers "missing
-  #     required parameter: client_id". The consent form POST used to leave
-  #     this behind; `Oauth::AuthorizationsController` no longer writes it,
-  #     but an old value may still be sitting in someone's session.
-  #   * `/multi_accounts/*`. Popup-only screens. Opened in a normal tab,
-  #     `window.close()` is blocked and the page sits forever on "this window
-  #     will close automatically".
-  #   * `/oauth/authorize` for the multi-account client. This is the important
-  #     one. When the popup arrives with `prompt=login`,
-  #     `store_current_location` writes that URL into `user_return_to` as
-  #     well. If the flow were still alive the `multi_account_return_to`
-  #     marker above would already have won, so reaching this point means the
-  #     flow was abandoned. Following it drags the user to an OAuth consent
-  #     screen instead of home, and approving opens
-  #     `/multi_accounts/callback` in a normal tab, where it stays forever.
+  #   · 파라미터 없는 `/oauth/authorize` — Doorkeeper 가 "필수 매개변수 누락:
+  #     client_id." 를 띄운다. 동의 폼의 POST 가 남기던 것으로,
+  #     `OAuth::AuthorizationsController` 쪽에서 더는 적지 않지만 이미 세션에
+  #     들어 있는 옛 값이 있을 수 있다.
+  #   · `/multi_accounts/*` — 팝업 전용 화면이다. 일반 탭에서 열리면
+  #     `window.close()` 가 막혀 "이 창은 자동으로 닫힙니다" 만 뜬 채 남는다.
+  #   · **다중 계정 클라이언트의 `/oauth/authorize`** — 이게 핵심이다.
+  #     팝업이 `prompt=login` 으로 들어오면 `store_current_location` 이 그 URL 을
+  #     `user_return_to` 에 적는다. 흐름이 살아 있다면 위의 `multi_account_return_to`
+  #     가 이미 이겼을 테니, 여기까지 내려왔다는 건 **중단된 흐름의 잔해**라는
+  #     뜻이다. 그걸 따라가면 사용자는 메인 대신 OAuth 동의 화면으로 끌려가고,
+  #     승인하면 일반 탭에서 `/multi_accounts/callback` 이 열려 영영 남는다.
   #
-  # Every other `/oauth/authorize` passes through - third-party app sign-in
-  # depends on it.
+  #   그 밖의 `/oauth/authorize` 는 통과시킨다 — 서드파티 앱 로그인이 그 경로로
+  #   정상 동작한다.
   def sanitized_return_path(path)
     uri = parse_return_path(path)
     return if uri.nil?
@@ -182,6 +170,12 @@ class Auth::SessionsController < Devise::SessionsController
     uri
   rescue Addressable::URI::InvalidURIError
     nil
+  end
+
+  def preserve_stored_location
+    original_stored_location = stored_location_for(:user)
+    yield
+    store_location_for(:user, original_stored_location)
   end
 
   def check_suspicious!
@@ -239,12 +233,11 @@ class Auth::SessionsController < Devise::SessionsController
     sign_in(user)
     flash.delete(:notice)
 
-    LoginActivity.create(
-      user: user,
-      success: true,
-      authentication_method: security_measure,
-      ip: request.remote_ip,
-      user_agent: request.user_agent
+    user.login_activities.create(
+      request_details.merge(
+        authentication_method: security_measure,
+        success: true
+      )
     )
 
     UserMailer.suspicious_sign_in(user, request.remote_ip, request.user_agent, Time.now.utc).deliver_later! if @login_is_suspicious
@@ -255,35 +248,39 @@ class Auth::SessionsController < Devise::SessionsController
   end
 
   def on_authentication_failure(user, security_measure, failure_reason)
-    LoginActivity.create(
-      user: user,
-      success: false,
-      authentication_method: security_measure,
-      failure_reason: failure_reason,
-      ip: request.remote_ip,
-      user_agent: request.user_agent
+    user.login_activities.create(
+      request_details.merge(
+        authentication_method: security_measure,
+        failure_reason: failure_reason,
+        success: false
+      )
     )
 
     # Only send a notification email every hour at most
-    return if redis.get("2fa_failure_notification:#{user.id}").present?
-
-    redis.set("2fa_failure_notification:#{user.id}", '1', ex: 1.hour)
+    return if redis.set("2fa_failure_notification:#{user.id}", '1', ex: 1.hour, get: true).present?
 
     UserMailer.failed_2fa(user, request.remote_ip, request.user_agent, Time.now.utc).deliver_later!
+  end
+
+  def request_details
+    {
+      ip: request.remote_ip,
+      user_agent: request.user_agent,
+    }
   end
 
   def second_factor_attempts_key(user)
     "2fa_auth_attempts:#{user.id}:#{Time.now.utc.hour}"
   end
 
-  def respond_to_on_destroy
+  def respond_to_on_destroy(**)
     respond_to do |format|
       format.json do
         render json: {
           redirect_to: after_sign_out_path_for(resource_name),
         }, status: 200
       end
-      format.all { super }
+      format.all { super(**) }
     end
   end
 end

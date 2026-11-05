@@ -4,10 +4,7 @@ require 'rails_helper'
 
 RSpec.describe 'Search API' do
   context 'with token' do
-    let(:user)    { Fabricate(:user) }
-    let(:token)   { Fabricate(:accessible_access_token, resource_owner_id: user.id, scopes: scopes) }
-    let(:scopes)  { 'read:search' }
-    let(:headers) { { 'Authorization' => "Bearer #{token.token}" } }
+    include_context 'with API authentication', oauth_scopes: 'read:search'
 
     describe 'GET /api/v2/search' do
       let!(:bob)   { Fabricate(:account, username: 'bob_test') }
@@ -95,10 +92,46 @@ RSpec.describe 'Search API' do
         end
       end
 
+      # 검색어가 문자열이 아니면(q[]=…, q[k]=…) 검사 단계의 String 메서드에서
+      # NoMethodError 가 나 500 이었다. 다른 잘못된 파라미터처럼 400 이어야 한다.
+      context 'when `q` is not a string' do
+        it 'returns http bad request for an array' do
+          get '/api/v2/search', headers: headers, params: { q: %w(a b) }
+
+          expect(response).to have_http_status(400)
+          expect(response.content_type)
+            .to start_with('application/json')
+        end
+
+        it 'returns http bad request for a hash' do
+          get '/api/v2/search', headers: headers, params: { q: { key: 'value' } }
+
+          expect(response).to have_http_status(400)
+        end
+      end
+
+      # 검색어는 남의 이름·메일·비밀 문구일 수 있다. 실패 로그에 원문을 남기지 않는다.
+      context 'when search fails' do
+        let(:params) { { q: 'secret-query-text' } }
+
+        before do
+          allow(Search).to receive(:new).and_raise(StandardError, 'boom')
+          allow(Rails.logger).to receive(:error)
+        end
+
+        it 'does not write the raw query to the log' do
+          get '/api/v2/search', headers: headers, params: params
+
+          expect(response).to have_http_status(503)
+          expect(Rails.logger).to have_received(:error).with(a_string_including('query length: 17'))
+          expect(Rails.logger).to_not have_received(:error).with(a_string_including('secret-query-text'))
+        end
+      end
+
       context 'when search raises syntax error' do
         before { allow(Search).to receive(:new).and_raise(Mastodon::SyntaxError) }
 
-        it 'returns http unprocessable_entity' do
+        it 'returns http unprocessable_content' do
           get '/api/v2/search', headers: headers, params: params
 
           expect(response).to have_http_status(422)
@@ -116,6 +149,15 @@ RSpec.describe 'Search API' do
           expect(response).to have_http_status(404)
           expect(response.content_type)
             .to start_with('application/json')
+        end
+      end
+
+      context 'when `account_search` FASP is enabled', feature: :fasp do
+        it 'enqueues a retrieval job and adds a header to inform the client' do
+          get '/api/v2/search', headers: headers, params: params
+
+          expect(Fasp::AccountSearchWorker).to have_enqueued_sidekiq_job
+          expect(response.headers['Mastodon-Async-Refresh']).to be_present
         end
       end
     end

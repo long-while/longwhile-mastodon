@@ -1,3 +1,17 @@
+-# @_longwhile — 서버 설정의 그림 올리기. 프로필 사진과 같은 컴포넌트를 쓴다
+-# (.image-picker, styles/mastodon/admin.scss). 사진 자체가 단추다.
+-#
+-# 올린 것이 없으면 지금 쓰이는 기본 그림을 보여 준다(빈 칸이면 무엇이 바뀌는지
+-# 모른다). 고르는 즉시 data-upload-preview 가 입력 id 와 같은 img 가 모두
+-# 바뀐다(entrypoints/admin.tsx).
+-#
+-# locals: f (폼), attribute (:thumbnail 등), upload (SiteUpload)
+-#         frame      (선택 — 'avatar' 기본. 'header' · 'thumbnail' · 'wordmark-dark' · 'wordmark-light')
+-#         size       (선택 — admin.settings.uploads.sizes 의 키. 기본은 attribute)
+-#         accept     (선택 — 받는 MIME 형식)
+-#         input_data (선택 — 파일 입력의 data-*. 브라우저에서 미리 검사할 조건)
+-#         extra      (선택 — 칸 아래에 덧붙일 부분 템플릿. attribute · input_id · shown_url 을 받는다)
+-#         show_size  (선택 — false 면 크기 줄을 숨긴다. 묶음 위에 한 번만 적을 때)
 - frame = local_assigns.fetch(:frame, 'avatar')
 - accept = local_assigns.fetch(:accept, %w(image/jpeg image/png image/gif image/webp))
 - size_key = local_assigns.fetch(:size, attribute)

@@ -7,8 +7,9 @@ class REST::AccountSerializer < ActiveModel::Serializer
   # Please update `app/javascript/mastodon/api_types/accounts.ts` when making changes to the attributes
 
   attributes :id, :username, :acct, :display_name, :locked, :bot, :discoverable, :indexable, :group, :created_at,
-             :note, :url, :uri, :avatar, :avatar_static, :header, :header_static,
-             :followers_count, :following_count, :statuses_count, :last_status_at, :hide_collections
+             :note, :url, :uri, :avatar, :avatar_static, :avatar_description, :header, :header_static, :header_description,
+             :followers_count, :following_count, :statuses_count, :last_status_at, :hide_collections,
+             :show_media, :show_media_replies, :show_featured
 
   has_one :moved_to_account, key: :moved, serializer: REST::AccountSerializer, if: :moved_and_not_nested?
 
@@ -19,6 +20,11 @@ class REST::AccountSerializer < ActiveModel::Serializer
   attribute :noindex, if: :local?
 
   attribute :memorial, if: :memorial?
+
+  attribute :feature_approval
+  attribute :email_subscriptions, if: -> { Rails.application.config.x.email_subscriptions && Setting.email_subscriptions }
+
+  attribute :invalid_handle, if: :invalid_handle?
 
   class AccountDecorator < SimpleDelegator
     def self.model_name
@@ -57,9 +63,10 @@ class REST::AccountSerializer < ActiveModel::Serializer
   end
 
   # An anonymised account answers to a single shared handle: whatever it used
-  # to be called is exactly what must not leak.
+  # to be called is exactly what must not leak. (상류 4.7 의 `pretty_username` 은 원격
+  # 계정의 무효 핸들 표시다. 같은 이름의 메서드를 둘 두면 뒤의 것이 익명화를 덮는다.)
   def username
-    object.anonymized? ? Account::ANONYMIZED_USERNAME : object.username
+    object.anonymized? ? Account::ANONYMIZED_USERNAME : object.pretty_username
   end
 
   def acct
@@ -74,8 +81,9 @@ class REST::AccountSerializer < ActiveModel::Serializer
     ActivityPub::TagManager.instance.url_for(object) || ActivityPub::TagManager.instance.uri_for(object)
   end
 
+  # ActivityPub 주소(/users/옛이름)도 옛 이름을 담는다. 연합하지 않는 인스턴스라 웹 주소로 대신한다.
   def uri
-    ActivityPub::TagManager.instance.uri_for(object)
+    object.anonymized? ? url : ActivityPub::TagManager.instance.uri_for(object)
   end
 
   def avatar
@@ -86,12 +94,20 @@ class REST::AccountSerializer < ActiveModel::Serializer
     full_asset_url(object.unavailable? ? object.avatar.default_url : object.avatar_static_url)
   end
 
+  def avatar_description
+    object.unavailable? ? '' : object.avatar_description
+  end
+
   def header
     full_asset_url(object.unavailable? ? object.header.default_url : object.header_original_url)
   end
 
   def header_static
     full_asset_url(object.unavailable? ? object.header.default_url : object.header_static_url)
+  end
+
+  def header_description
+    object.unavailable? ? '' : object.header_description
   end
 
   def created_at
@@ -148,6 +164,11 @@ class REST::AccountSerializer < ActiveModel::Serializer
     object.memorial?
   end
 
+  def invalid_handle
+    object.invalidated_username?
+  end
+  alias invalid_handle? invalid_handle
+
   def roles
     if object.unavailable? || object.user.nil?
       []
@@ -160,9 +181,21 @@ class REST::AccountSerializer < ActiveModel::Serializer
     object.anonymized? || object.user_prefers_noindex?
   end
 
-  delegate :suspended?, :silenced?, :local?, :memorial?, :unavailable?, to: :object
+  delegate :unavailable?, :silenced?, :local?, :memorial?, to: :object
 
   def moved_and_not_nested?
     object.moved?
+  end
+
+  def feature_approval
+    {
+      automatic: object.feature_policy_as_keys(:automatic),
+      manual: object.feature_policy_as_keys(:manual),
+      current_user: object.feature_policy_for_account(current_user&.account),
+    }
+  end
+
+  def email_subscriptions
+    object.user_can?(:manage_email_subscriptions) && object.user_email_subscriptions_enabled?
   end
 end

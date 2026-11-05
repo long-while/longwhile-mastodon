@@ -54,16 +54,18 @@ module TestEndpoints
 
   # Pages only available to logged-in users.
   # Should never be cached.
+  # 설정 화면을 정리하면서 바뀐 주소를 쓴다(docs/settings). 모양새는 /settings/display,
+  # 연결된 앱 목록은 /settings/applications 로 옮겼고(옛 주소는 리다이렉트만 한다),
+  # 추천 해시태그(/settings/featured_tags)와 팔로우 관계(/relationships) 화면은 없앴다.
   REQUIRE_LOGIN = %w(
-    /settings/preferences/appearance
+    /settings/display
+    /settings/notifications
     /settings/profile
-    /settings/featured_tags
     /settings/export
-    /relationships
     /filters
     /statuses_cleanup
     /auth/edit
-    /oauth/authorized_applications
+    /settings/applications
     /admin/dashboard
   ).freeze
 
@@ -472,12 +474,12 @@ RSpec.describe 'Caching behavior' do
   context 'when enabling LIMITED_FEDERATION_MODE mode' do
     around do |example|
       ClimateControl.modify LIMITED_FEDERATION_MODE: 'true' do
-        old_limited_federation_mode = Rails.configuration.x.limited_federation_mode
-        Rails.configuration.x.limited_federation_mode = true
+        old_limited_federation_mode = Rails.configuration.x.mastodon.limited_federation_mode
+        Rails.configuration.x.mastodon.limited_federation_mode = true
 
         example.run
 
-        Rails.configuration.x.limited_federation_mode = old_limited_federation_mode
+        Rails.configuration.x.mastodon.limited_federation_mode = old_limited_federation_mode
       end
     end
 

@@ -104,7 +104,7 @@ export const Profile: React.FC<{
     () =>
       header
         ? URL.createObjectURL(header)
-        : nullIfMissing(account?.header ?? 'missing_h.png'),
+        : nullIfMissing(account?.header ?? 'h_missing.png'),
     [header, account],
   );
 

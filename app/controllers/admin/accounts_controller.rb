@@ -16,11 +16,14 @@ module Admin
     def batch
       authorize :account, :index?
 
-      @form = Form::AccountBatch.new(form_account_batch_params)
-      @form.current_account = current_account
-      @form.action = action_from_button
-      @form.select_all_matching = params[:select_all_matching]
-      @form.query = filtered_accounts
+      @form = Form::AccountBatch.new(
+        form_account_batch_params.merge(
+          action: action_from_button,
+          current_account:,
+          query: filtered_accounts,
+          select_all_matching: params[:select_all_matching]
+        )
+      )
       @form.save
     rescue ActionController::ParameterMissing
       flash[:alert] = I18n.t('admin.accounts.no_account_selected')
@@ -69,6 +72,7 @@ module Admin
     def destroy
       authorize @account, :destroy?
       Admin::AccountDeletionWorker.perform_async(@account.id, { 'preserve_content' => true })
+      log_action :destroy, @account
       redirect_to admin_account_path(@account.id), notice: I18n.t('admin.accounts.destroyed_msg', username: @account.acct)
     end
 
@@ -135,7 +139,7 @@ module Admin
       redirect_to admin_account_path(@account.id), notice: I18n.t('admin.accounts.unblocked_email_msg', username: @account.acct)
     end
 
-    # ─── @_longwhile custom feature
+    # ─── @_longwhile custom feature / 한참(longwhile) 제작 기능 — 관리자 프로텍트(잠금) 계정 토글 ───
     # 사용·재사용 시 서버 내 출처 표기 필수 / Credit required to use or reuse:
     #   Twitter/X @_longwhile · Crepe https://kre.pe/QTRx
     def toggle_protect
@@ -143,6 +147,7 @@ module Admin
 
       enabling = !@account.locked?
 
+      # 공개 범위는 잠금과 무관하게 항상 팔로워 전용이므로 default_privacy 는 손대지 않는다.
       @account.update!(locked: enabling, hide_collections: enabling)
 
       reject_pending_follow_requests! unless enabling
@@ -157,7 +162,8 @@ module Admin
     private
 
     def reject_pending_follow_requests!
-      @account.follow_requests.includes(:account).find_each do |follow_request|
+      # `@account.follow_requests` 는 이 계정이 **보낸** 요청이다. 받은 요청을 거부한다.
+      FollowRequest.where(target_account: @account).includes(:account).find_each do |follow_request|
         RejectFollowService.new.call(follow_request.account, @account)
       rescue ActiveRecord::RecordNotFound
         next

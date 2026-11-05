@@ -15,7 +15,7 @@ class ActivityPub::Parser::MediaAttachmentParser
   end
 
   def remote_url
-    url = Addressable::URI.parse(@json['url'])&.normalize&.to_s
+    url = Addressable::URI.parse(url_to_href(@json['url']))&.normalize&.to_s
     url unless unsupported_uri_scheme?(url)
   rescue Addressable::URI::InvalidURIError
     nil
@@ -29,8 +29,8 @@ class ActivityPub::Parser::MediaAttachmentParser
   end
 
   def description
-    str = @json['summary'].presence || @json['name'].presence
-    str = str.strip[0...MediaAttachment::MAX_DESCRIPTION_LENGTH] if str.present?
+    str = first_lang_string(@json, 'summary').presence || first_lang_string(@json, 'name').presence
+    str = str.strip[0...MediaAttachment::MAX_DESCRIPTION_HARD_LENGTH_LIMIT] if str.present?
     str
   end
 
@@ -43,7 +43,7 @@ class ActivityPub::Parser::MediaAttachmentParser
   end
 
   def file_content_type
-    @json['mediaType']
+    @json['mediaType'] || url_to_media_type(@json['url'])
   end
 
   private

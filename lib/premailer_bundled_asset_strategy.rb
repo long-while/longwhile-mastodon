@@ -2,25 +2,27 @@
 
 module PremailerBundledAssetStrategy
   def load(url)
-    if ViteRuby.instance.dev_server_running?
+    if Rails.env.development? && Vite.dev_server.running?
       # Request from the dev server
-      return unless url.start_with?("/#{ViteRuby.config.public_output_dir}/")
+      return unless url.start_with?(Vite.config.base_path)
 
       headers = {}
       # Vite dev server wants this header for CSS files, otherwise it will respond with a JS file that inserts the CSS (to support hot reloading)
       headers['Accept'] = 'text/css' if url.end_with?('.scss', '.css')
 
       Net::HTTP.get(
-        URI("#{ViteRuby.config.origin}#{url}"),
+        URI("#{Vite.config.backend}#{url}"),
         headers
       ).presence
     else
-      path = Rails.public_path.join(url.delete_prefix('/'))
+      url = url.delete_prefix(Rails.configuration.action_controller.asset_host) if Rails.configuration.action_controller.asset_host.present?
+      url = url.delete_prefix('/')
+      path = Rails.public_path.join(url)
       return unless path.exist?
 
       path.read
     end
-  rescue ViteRuby::MissingEntrypointError
+  rescue Vite::Manifest::MissingEntryError
     # If the path is not in the manifest, ignore it
   end
 

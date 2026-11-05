@@ -14,5 +14,12 @@ if ENV['REDIS_NAMESPACE']
     In addition, as REDIS_NAMESPACE is being used as a prefix for Elasticsearch, please do not forget to set ES_PREFIX to "#{ENV.fetch('REDIS_NAMESPACE')}".
   MESSAGE
 
-  abort message
+  abort message # rubocop:disable Rails/Exit
+end
+
+if ENV.key?('WHITELIST_MODE')
+  warn(<<~MESSAGE.squish)
+    WARNING: The environment variable WHITELIST_MODE has been replaced with
+    LIMITED_FEDERATION_MODE. Please update your configuration.
+  MESSAGE
 end

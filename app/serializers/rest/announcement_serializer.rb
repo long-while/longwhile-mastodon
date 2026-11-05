@@ -41,12 +41,17 @@ class REST::AnnouncementSerializer < ActiveModel::Serializer
       object.id.to_s
     end
 
+    # @_longwhile — 공지의 멘션도 익명화(탈퇴) 계정은 익명 핸들로 낸다.
+    def username
+      object.anonymized? ? Account::ANONYMIZED_USERNAME : object.pretty_username
+    end
+
     def url
       ActivityPub::TagManager.instance.url_for(object)
     end
 
     def acct
-      object.pretty_acct
+      object.anonymized? ? Account::ANONYMIZED_USERNAME : object.pretty_acct
     end
   end
 end

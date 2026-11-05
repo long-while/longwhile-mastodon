@@ -3,11 +3,7 @@
 require 'rails_helper'
 
 RSpec.describe 'IP Blocks' do
-  let(:role)    { UserRole.find_by(name: 'Admin') }
-  let(:user)    { Fabricate(:user, role: role) }
-  let(:token)   { Fabricate(:accessible_access_token, resource_owner_id: user.id, scopes: scopes) }
-  let(:scopes)  { 'admin:read:ip_blocks admin:write:ip_blocks' }
-  let(:headers) { { 'Authorization' => "Bearer #{token.token}" } }
+  include_context 'with API authentication', user_fabricator: :admin_user, oauth_scopes: 'admin:read:ip_blocks admin:write:ip_blocks'
 
   describe 'GET /api/v1/admin/ip_blocks' do
     subject do
@@ -49,8 +45,9 @@ RSpec.describe 'IP Blocks' do
             ip: ip_block.ip,
             severity: ip_block.severity.to_s,
             comment: ip_block.comment,
-            created_at: ip_block.created_at.strftime('%Y-%m-%dT%H:%M:%S.%LZ'),
-            expires_at: ip_block.expires_at&.strftime('%Y-%m-%dT%H:%M:%S.%LZ'),
+            # 시간대가 Asia/Seoul 이라(config/application.rb) 'Z' 를 박지 않고 오프셋째 비교한다.
+            created_at: ip_block.created_at.iso8601(3),
+            expires_at: ip_block.expires_at&.iso8601(3),
           }
         end
       end
@@ -99,7 +96,7 @@ RSpec.describe 'IP Blocks' do
 
       expect(response.parsed_body)
         .to include(
-          ip: eq("#{ip_block.ip}/#{ip_block.ip.prefix}"),
+          ip: eq(ip_block.to_cidr),
           severity: eq(ip_block.severity.to_s)
         )
     end
@@ -219,7 +216,7 @@ RSpec.describe 'IP Blocks' do
       expect(response.content_type)
         .to start_with('application/json')
       expect(response.parsed_body).to match(hash_including({
-        ip: "#{ip_block.ip}/#{ip_block.ip.prefix}",
+        ip: ip_block.to_cidr,
         severity: 'sign_up_requires_approval',
         comment: 'Decreasing severity',
       }))

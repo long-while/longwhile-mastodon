@@ -4,6 +4,7 @@ import {
   undoTypographicReplacement,
 } from '../typographic_replacements';
 
+// 한 글자씩 치는 것을 흉내 낸다. 커서는 늘 끝에 있다.
 const typeText = (text: string, initial = '') => {
   let value = initial;
   let last: TypographicReplacement | null = null;
@@ -33,6 +34,7 @@ describe('replaceTypedSequence', () => {
   });
 
   it('keeps a long run of hyphens as a line of dashes', () => {
+    // --- 마다 — 하나. 한 글자로 줄어들지 않는다.
     expect(typeText('----------').value).toBe('———-');
   });
 

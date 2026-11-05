@@ -5,65 +5,67 @@
 # Table name: accounts
 #
 #  id                            :bigint(8)        not null, primary key
-#  username                      :string           default(""), not null
-#  domain                        :string
-#  private_key                   :text
-#  public_key                    :text             default(""), not null
-#  created_at                    :datetime         not null
-#  updated_at                    :datetime         not null
-#  note                          :text             default(""), not null
-#  display_name                  :string           default(""), not null
-#  uri                           :string           default(""), not null
-#  url                           :string
-#  avatar_file_name              :string
-#  avatar_content_type           :string
-#  avatar_file_size              :integer
-#  avatar_updated_at             :datetime
-#  header_file_name              :string
-#  header_content_type           :string
-#  header_file_size              :integer
-#  header_updated_at             :datetime
-#  avatar_remote_url             :string
-#  locked                        :boolean          default(FALSE), not null
-#  header_remote_url             :string           default(""), not null
-#  last_webfingered_at           :datetime
-#  inbox_url                     :string           default(""), not null
-#  outbox_url                    :string           default(""), not null
-#  shared_inbox_url              :string           default(""), not null
-#  followers_url                 :string           default(""), not null
-#  protocol                      :integer          default("ostatus"), not null
-#  memorial                      :boolean          default(FALSE), not null
-#  moved_to_account_id           :bigint(8)
-#  featured_collection_url       :string
-#  fields                        :jsonb
 #  actor_type                    :string
-#  discoverable                  :boolean
 #  also_known_as                 :string           is an Array
 #  anonymized_at                 :datetime
+#  attribution_domains           :string           default([]), is an Array
+#  avatar_content_type           :string
+#  avatar_description            :string           default(""), not null
+#  avatar_file_name              :string
+#  avatar_file_size              :integer
+#  avatar_remote_url             :string
+#  avatar_storage_schema_version :integer
+#  avatar_updated_at             :datetime
+#  collections_url               :string
+#  discoverable                  :boolean
+#  display_name                  :string           default(""), not null
+#  domain                        :string
+#  feature_approval_policy       :integer          default(0), not null
+#  featured_collection_url       :string
+#  fields                        :jsonb
+#  followers_url                 :string           default(""), not null
+#  following_url                 :string           default(""), not null
+#  header_content_type           :string
+#  header_description            :string           default(""), not null
+#  header_file_name              :string
+#  header_file_size              :integer
+#  header_remote_url             :string           default(""), not null
+#  header_storage_schema_version :integer
+#  header_updated_at             :datetime
+#  hide_collections              :boolean
+#  id_scheme                     :integer          default("numeric_ap_id")
+#  inbox_url                     :string           default(""), not null
+#  indexable                     :boolean          default(FALSE), not null
+#  last_webfingered_at           :datetime
+#  locked                        :boolean          default(FALSE), not null
+#  memorial                      :boolean          default(FALSE), not null
+#  note                          :text             default(""), not null
+#  outbox_url                    :string           default(""), not null
+#  private_key                   :text
+#  protocol                      :integer          default("ostatus"), not null
+#  public_key                    :text             default(""), not null
+#  requested_deletion_at         :datetime
+#  requested_review_at           :datetime
+#  reviewed_at                   :datetime
+#  sensitized_at                 :datetime
+#  shared_inbox_url              :string           default(""), not null
+#  show_featured                 :boolean          default(TRUE), not null
+#  show_media                    :boolean          default(TRUE), not null
+#  show_media_replies            :boolean          default(TRUE), not null
 #  silenced_at                   :datetime
 #  suspended_at                  :datetime
-#  hide_collections              :boolean
-#  avatar_storage_schema_version :integer
-#  header_storage_schema_version :integer
 #  suspension_origin             :integer
-#  sensitized_at                 :datetime
 #  trendable                     :boolean
-#  reviewed_at                   :datetime
-#  requested_review_at           :datetime
-#  indexable                     :boolean          default(FALSE), not null
-#  attribution_domains           :string           default([]), is an Array
+#  uri                           :string
+#  url                           :string
+#  username                      :string           default(""), not null
+#  created_at                    :datetime         not null
+#  updated_at                    :datetime         not null
+#  moved_to_account_id           :bigint(8)
 #
 
 class Account < ApplicationRecord
-  self.ignored_columns += %w(
-    devices_url
-    hub_url
-    remote_url
-    salmon_url
-    secret
-    subscription_expires_at
-    trust_level
-  )
+  self.ignored_columns += %w(devices_url)
 
   BACKGROUND_REFRESH_INTERVAL = 1.week.freeze
   REFRESH_DEADLINE = 6.hours
@@ -81,8 +83,15 @@ class Account < ApplicationRecord
   URL_PREFIX_RE = %r{\Ahttp(s?)://[^/]+}
   USERNAME_ONLY_RE = /\A#{USERNAME_RE}\z/i
   USERNAME_LENGTH_LIMIT = 30
-  DISPLAY_NAME_LENGTH_LIMIT = 30
+  DISPLAY_NAME_LENGTH_LIMIT = 40
   NOTE_LENGTH_LIMIT = 500
+
+  # Hard limits for federated content
+  USERNAME_LENGTH_HARD_LIMIT = 2048
+  DISPLAY_NAME_LENGTH_HARD_LIMIT = 2048
+  NOTE_LENGTH_HARD_LIMIT = 20.kilobytes
+  ATTRIBUTION_DOMAINS_HARD_LIMIT = 256
+  ALSO_KNOWN_AS_HARD_LIMIT = 256
 
   AUTOMATED_ACTOR_TYPES = %w(Application Service).freeze
 
@@ -94,7 +103,9 @@ class Account < ApplicationRecord
   include Account::FaspConcern
   include Account::FinderConcern
   include Account::Header
+  include Account::InteractionPolicyConcern
   include Account::Interactions
+  include Account::Mappings
   include Account::Merging
   include Account::Search
   include Account::Sensitizes
@@ -110,15 +121,16 @@ class Account < ApplicationRecord
 
   enum :protocol, { ostatus: 0, activitypub: 1 }
   enum :suspension_origin, { local: 0, remote: 1 }, prefix: true
+  enum :id_scheme, { username_ap_id: 0, numeric_ap_id: 1 }
 
   validates :username, presence: true
   validates_with UniqueUsernameValidator, if: -> { will_save_change_to_username? }
 
   # Remote user validations, also applies to internal actors
-  validates :username, format: { with: USERNAME_ONLY_RE }, if: -> { (remote? || actor_type_application?) && will_save_change_to_username? }
+  validates :username, format: { with: USERNAME_ONLY_RE }, length: { maximum: USERNAME_LENGTH_HARD_LIMIT }, if: -> { (remote? || actor_type_application?) && will_save_change_to_username? }
 
   # Remote user validations
-  validates :uri, presence: true, unless: :local?, on: :create
+  validates :uri, presence: true, exclusion: { in: [''] }, uniqueness: true, unless: :local?, on: :create
 
   # Local user validations
   validates :username, format: { with: /\A[a-z0-9_]+\z/i }, length: { maximum: USERNAME_LENGTH_LIMIT }, if: -> { local? && will_save_change_to_username? && !actor_type_application? }
@@ -129,9 +141,10 @@ class Account < ApplicationRecord
   validates_with EmptyProfileFieldNamesValidator, if: -> { local? && will_save_change_to_fields? }
   with_options on: :create, if: :local? do
     validates :followers_url, absence: true
+    validates :following_url, absence: true
     validates :inbox_url, absence: true
     validates :shared_inbox_url, absence: true
-    validates :uri, absence: true
+    validates :uri, absence: true, exclusion: { in: [''] }
   end
 
   validates :domain, exclusion: { in: [''] }
@@ -144,16 +157,14 @@ class Account < ApplicationRecord
   scope :partitioned, -> { order(Arel.sql('row_number() over (partition by domain)')) }
   scope :without_instance_actor, -> { where.not(id: INSTANCE_ACTOR_ID) }
   scope :recent, -> { reorder(id: :desc) }
-  scope :bots, -> { where(actor_type: AUTOMATED_ACTOR_TYPES) }
   scope :non_automated, -> { where.not(actor_type: AUTOMATED_ACTOR_TYPES) }
-  scope :groups, -> { where(actor_type: 'Group') }
-  scope :alphabetic, -> { order(domain: :asc, username: :asc) }
   scope :matches_uri_prefix, ->(value) { where(arel_table[:uri].matches("#{sanitize_sql_like(value)}/%", false, true)).or(where(uri: value)) }
   scope :matches_username, ->(value) { where('lower((username)::text) LIKE lower(?)', "#{value}%") }
   scope :matches_display_name, ->(value) { where(arel_table[:display_name].matches("#{value}%")) }
   scope :without_unapproved, -> { left_outer_joins(:user).merge(User.approved.confirmed).or(remote) }
   scope :auditable, -> { where(id: Admin::ActionLog.select(:account_id).distinct) }
-  scope :searchable, -> { without_unapproved.without_suspended.where(moved_to_account_id: nil) }
+  # @_longwhile — 익명화(탈퇴) 계정도 뺀다(검색 색인·추천). 옛 사용자명으로 찾히면 안 된다.
+  scope :searchable, -> { without_unapproved.without_unavailable.where(moved_to_account_id: nil) }
   scope :discoverable, -> { searchable.without_silenced.where(discoverable: true).joins(:account_stat) }
   scope :by_recent_status, -> { includes(:account_stat).merge(AccountStat.by_recent_status).references(:account_stat) }
   scope :by_recent_activity, -> { left_joins(:user, :account_stat).order(coalesced_activity_timestamps.desc).order(id: :desc) }
@@ -169,6 +180,7 @@ class Account < ApplicationRecord
   after_update_commit :trigger_update_webhooks
 
   delegate :email,
+           :email_domain,
            :unconfirmed_email,
            :current_sign_in_at,
            :created_at,
@@ -182,8 +194,10 @@ class Account < ApplicationRecord
            :role,
            :locale,
            :shows_application?,
+           :email_subscriptions_enabled?,
            :prefers_noindex?,
            :time_zone,
+           :can?,
            to: :user,
            prefix: true,
            allow_nil: true
@@ -232,7 +246,17 @@ class Account < ApplicationRecord
     local? ? username : "#{username}@#{domain}"
   end
 
+  def pretty_username
+    # Return special username for user-facing invalid handle accounts
+    return id.to_s if invalidated_username?
+
+    username
+  end
+
   def pretty_acct
+    # Return special handle for user-facing invalid handle accounts
+    return "#{id}@handle.invalid" if invalidated_username?
+
     local? ? username : "#{username}@#{Addressable::IDNA.to_unicode(domain)}"
   end
 
@@ -248,18 +272,72 @@ class Account < ApplicationRecord
     "acct:#{local_username_and_domain}"
   end
 
+  def invalidate_username!
+    raise ArgumentError if local?
+    return if invalidated_username?
+
+    # It is very unlikely that we will allow `!` in usernames in the future,
+    # and we will never allow ` ` in them either, so this ensure this will never
+    # match a valid username on a remote server.
+
+    # Using the local ID ensures we won't have any conflict.
+
+    update_attribute(:username, "! #{id}")
+  end
+
+  def invalidated_username?
+    username.start_with?('! ')
+  end
+
   def possibly_stale?
-    last_webfingered_at.nil? || last_webfingered_at <= STALE_THRESHOLD.ago
+    last_webfingered_at.nil? || last_webfingered_at <= STALE_THRESHOLD.ago || invalidated_username?
+  end
+
+  def needs_background_refresh?
+    return false if local?
+
+    return true if last_webfingered_at.blank? || last_webfingered_at <= BACKGROUND_REFRESH_INTERVAL.ago || invalidated_username?
+
+    # TODO: Remove some time after 4.6
+    # This is temporary workaround to speed up account refreshs after
+    # collections have been enabled / deployed.
+    # Accounts will be refreshed when they lack a feature_approval_policy
+    # but we know from other account's on the same server that they should
+    # have.
+    return false unless feature_approval_policy.zero?
+
+    Rails.cache.fetch("feature_approval_policy_availability:#{domain}", expires_in: 30.minutes) do
+      Account.where(domain:).where.not(feature_approval_policy: 0).exists?
+    end
   end
 
   def schedule_refresh_if_stale!
-    return unless last_webfingered_at.present? && last_webfingered_at <= BACKGROUND_REFRESH_INTERVAL.ago
+    return unless needs_background_refresh?
 
     AccountRefreshWorker.perform_in(rand(REFRESH_DEADLINE), id)
   end
 
   def refresh!
     ResolveAccountService.new.call(acct) unless local?
+  end
+
+  def deleted?
+    requested_deletion_at.present? && !instance_actor?
+  end
+
+  def permanently_deleted?
+    deleted? && deletion_request.nil?
+  end
+
+  def mark_deleted!(date: Time.now.utc)
+    transaction do
+      create_deletion_request!
+      update!(requested_deletion_at: date)
+    end
+
+    # This terminates all connections for the given account with the streaming
+    # server:
+    redis.publish("timeline:system:#{id}", { event: :kill }.to_json) if local?
   end
 
   def memorialize!
@@ -278,8 +356,22 @@ class Account < ApplicationRecord
     strikes.where(overruled_at: nil).count
   end
 
-  def keypair
-    @keypair ||= OpenSSL::PKey::RSA.new(private_key || public_key)
+  def keypair(type: nil)
+    # Pick the first (oldest) keypair matching the expected type,
+    # as we can expect our key rotation code to add stand-by keys with higher IDs
+    # before pruning older keys with lower IDs after some time.
+
+    scope = keypairs.usable.order(id: :asc)
+    scope = scope.where(type: type) if type.present?
+
+    case type
+    when :rsa, nil
+      # The legacy key is always RSA, so only fallback
+      # when no other type is requested
+      scope.first || Keypair.from_legacy_account(self)
+    else
+      scope.first
+    end
   end
 
   def tags_as_strings=(tag_names)
@@ -317,16 +409,16 @@ class Account < ApplicationRecord
     old_fields = self[:fields] || []
     old_fields = [] if old_fields.is_a?(Hash)
 
-    if attributes.is_a?(Hash)
-      attributes.each_value do |attr|
-        next if attr[:name].blank? && attr[:value].blank?
+    attributes = attributes.values if attributes.is_a?(Hash)
 
-        previous = old_fields.find { |item| item['value'] == attr[:value] }
+    attributes.each do |attr|
+      next if attr[:name].blank? && attr[:value].blank?
 
-        attr[:verified_at] = previous['verified_at'] if previous && previous['verified_at'].present?
+      previous = old_fields.find { |item| item['value'] == attr[:value] }
 
-        fields << attr
-      end
+      attr[:verified_at] = previous['verified_at'] if previous && previous['verified_at'].present?
+
+      fields << attr
     end
 
     self[:fields] = fields
@@ -444,13 +536,18 @@ class Account < ApplicationRecord
   inverse_alias :show_collections, :hide_collections
   inverse_alias :unlocked, :locked
 
-  # ─── @_longwhile custom feature
+  # ─── @_longwhile custom feature / 한참(longwhile) 제작 기능 — 프로텍트(잠금) 계정 판별/동기화 ───
   # 사용·재사용 시 서버 내 출처 표기 필수 / Credit required to use or reuse:
   #   Twitter/X @_longwhile · Crepe https://kre.pe/QTRx
+  # 이제 잠금 여부가 곧 프로텍트 계정이다. 공개 범위는 모든 계정이 팔로워 전용이라
+  # default_privacy 로 구분할 것이 없다.
   def private_account
     locked?
   end
 
+  # 공지용 계정(@longwhile) 여부. 이 계정만 unlisted 로 올릴 수 있고, 그 툿은
+  # 팔로우 여부와 무관하게 모두에게 간다 — FanOutOnWriteService#announcement_broadcast?
+  # 와 PublicFeed 참고.
   def announcement_account?
     local? && username.present? && username.casecmp?(PublicFeed::ANNOUNCEMENT_USERNAME)
   end
@@ -465,10 +562,16 @@ class Account < ApplicationRecord
   before_destroy :clean_feed_manager
 
   def ensure_keys!
-    return unless local? && private_key.blank? && public_key.blank?
+    return unless local? && private_key.blank? && public_key.blank? && keypairs.empty?
 
     generate_keys
     save!
+  end
+
+  def featureable_by?(other_account)
+    return discoverable? && (!locked? || followed_by?(other_account) || other_account.id == id) if local?
+
+    feature_policy_for_account(other_account).in?(%i(automatic manual))
   end
 
   private
@@ -483,11 +586,10 @@ class Account < ApplicationRecord
   end
 
   def generate_keys
-    return unless local? && private_key.blank? && public_key.blank?
+    return unless local? && private_key.blank? && public_key.blank? && keypairs.empty?
 
     keypair = OpenSSL::PKey::RSA.new(2048)
-    self.private_key = keypair.to_pem
-    self.public_key  = keypair.public_key.to_pem
+    keypairs << keypairs.build(local_fragment: "#rsa-#{SecureRandom.hex(8)}", type: :rsa, public_key: keypair.public_key.to_pem, private_key: keypair.to_pem)
   end
 
   def normalize_domain

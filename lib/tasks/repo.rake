@@ -22,7 +22,7 @@ namespace :repo do
 
     while url.present?
       response     = HTTP.get(url)
-      contributors = Oj.load(response.body)
+      contributors = JSON.parse(response.body)
 
       contributors.each do |c|
         file << "* [#{c['login']}](#{c['html_url']})\n" if c['login']
@@ -57,7 +57,7 @@ namespace :repo do
                 response = nil
 
                 loop do
-                  response = HTTP.headers('Authorization' => "token #{ENV['GITHUB_API_TOKEN']}").get("https://api.github.com/repos/#{REPOSITORY_NAME}/pulls/#{pull_request_number}")
+                  response = HTTP.headers('Authorization' => "token #{ENV.fetch('GITHUB_API_TOKEN')}").get("https://api.github.com/repos/#{REPOSITORY_NAME}/pulls/#{pull_request_number}")
 
                   if response.code == 403
                     sleep_for = (response.headers['X-RateLimit-Reset'].to_i - Time.now.to_i).abs
@@ -68,7 +68,7 @@ namespace :repo do
                   end
                 end
 
-                pull_request = Oj.load(response.to_s)
+                pull_request = JSON.parse(response.to_s)
                 pull_request['user']['login']
               end
 

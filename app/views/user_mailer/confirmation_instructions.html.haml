@@ -9,9 +9,11 @@
         %tr
           %td.email-inner-card-td.email-prose
             %p= t('devise.mailer.confirmation_instructions.installed_by_html', host: site_hostname)
+            -# @_longwhile — 번역문의 빈 줄을 문단으로 나눈다(devise.ko.yml 의 explanation · explanation_when_pending).
             - explanation = t(@resource.approved? ? 'devise.mailer.confirmation_instructions.explanation' : 'devise.mailer.confirmation_instructions.explanation_when_pending', host: site_hostname)
             - explanation.split(/\n{2,}/).each do |paragraph|
               %p= paragraph
+            -# @_longwhile — 확인 단추 옆에 이용 가이드. 좁은 화면에서는 아래로 내려간다.
             .email-btn-row
               .email-btn-row-item
                 - if @resource.created_by_application

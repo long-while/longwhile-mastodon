@@ -3,6 +3,8 @@
 class ActivityPub::Parser::PollParser
   include JsonLdHelper
 
+  # Limit the number of items for performance purposes.
+  # We truncate rather than error out to avoid missing the post entirely.
   MAX_ITEMS = 500
 
   def initialize(json)
