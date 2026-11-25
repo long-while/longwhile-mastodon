@@ -43,7 +43,7 @@ module ThemeHelper
     end
     return if declarations.empty?
 
-    tag.style(":root{#{declarations.join}}".html_safe) # rubocop:disable Rails/OutputSafety
+    tag.style(":root{#{declarations.join}}".html_safe, nonce: request.content_security_policy_nonce) # rubocop:disable Rails/OutputSafety
   end
 
   def current_theme
