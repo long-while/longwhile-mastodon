@@ -125,15 +125,17 @@ export function unfavouriteFail(status, error) {
   };
 }
 
-export function bookmark(status) {
+export function bookmark(status, { skipAlert = false } = {}) {
   return function (dispatch) {
     dispatch(bookmarkRequest(status));
 
-    api().post(`/api/v1/statuses/${status.get('id')}/bookmark`).then(function (response) {
+    return api().post(`/api/v1/statuses/${status.get('id')}/bookmark`).then(function (response) {
       dispatch(importFetchedStatus(response.data));
       dispatch(bookmarkSuccess(status, response.data));
+      return true;
     }).catch(function (error) {
-      dispatch(bookmarkFail(status, error));
+      dispatch({ ...bookmarkFail(status, error), skipAlert });
+      return false;
     });
   };
 }
@@ -142,11 +144,13 @@ export function unbookmark(status) {
   return (dispatch) => {
     dispatch(unbookmarkRequest(status));
 
-    api().post(`/api/v1/statuses/${status.get('id')}/unbookmark`).then(response => {
+    return api().post(`/api/v1/statuses/${status.get('id')}/unbookmark`).then(response => {
       dispatch(importFetchedStatus(response.data));
       dispatch(unbookmarkSuccess(status, response.data));
+      return true;
     }).catch(error => {
       dispatch(unbookmarkFail(status, error));
+      return false;
     });
   };
 }
