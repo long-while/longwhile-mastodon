@@ -25,7 +25,7 @@ class TextFormatter
     [/(?<!\*)\*\*\*(?=\S)([^*\n<>]+?)(?<=\S)\*\*\*(?!\*)/, '<strong><em>\1</em></strong>'],
     [/(?<!\*)\*\*(?=\S)([^*\n<>]+?)(?<=\S)\*\*(?!\*)/, '<strong>\1</strong>'],
     [/(?<!\*)\*(?=\S)([^*\n<>]+?)(?<=\S)\*(?!\*)/, '<em>\1</em>'],
-    [/(?<!\S)~~~(?=\S)([^~\n<>]+?)(?<=\S)~~~/, '<del>\1</del>'],
+    [/(?<![^\s>\]])~~~(?=\S)([^~\n<>]+?)(?<=\S)~~~/, '<del>\1</del>'],
   ].freeze
 
   HEX_COLOR = '(\h{3}|\h{6})'
@@ -41,16 +41,12 @@ class TextFormatter
   ].freeze
   BRACKET_PASSES = 10
 
+  URL_FORMAT_TAG_REGEX = %r{\[/?(?:color|bg|center|right|left)(?=[\]:]|\z)}
+
   FORMAT_TAG_REGEX = %r{<(/?)(strong|em|del|span)\b[^>]*>}
 
   attr_reader :text, :options
 
-  # @param [String] text
-  # @param [Hash] options
-  # @option options [Boolean] :multiline
-  # @option options [Boolean] :with_domains
-  # @option options [Boolean] :with_rel_me
-  # @option options [Array<Account>] :preloaded_accounts
   def initialize(text, options = {})
     @text    = text
     @options = DEFAULT_OPTIONS.merge(options)
@@ -58,6 +54,7 @@ class TextFormatter
 
   def entities
     @entities ||= Extractor.extract_entities_with_indices(text, extract_url_without_protocol: false)
+      .filter_map { |entity| entity[:url] ? trim_url_entity(entity) : entity }
   end
 
   def to_s
@@ -162,6 +159,16 @@ class TextFormatter
     stack.empty?
   end
 
+  def trim_url_entity(entity)
+    cut = entity[:url].index(URL_FORMAT_TAG_REGEX)
+    return entity if cut.nil?
+
+    url = entity[:url][0...cut]
+    return if url.sub(URL_PREFIX_REGEX, '').empty?
+
+    entity.merge(url: url, indices: [entity[:indices].first, entity[:indices].first + cut])
+  end
+
   def render_entity(entity)
     if entity[:url]
       link_to_url(entity)
@@ -239,7 +246,7 @@ class TextFormatter
     if preloaded_accounts?
       same_username_hits = 0
 
-      preloaded_accounts.each do |other_account|
+      Array(preloaded_accounts).each do |other_account|
         same_username = other_account.username.casecmp(username).zero?
         same_domain   = other_account.domain.nil? ? domain.nil? : other_account.domain.casecmp(domain)&.zero?
 
@@ -290,7 +297,11 @@ class TextFormatter
   end
 
   def preloaded_accounts?
-    preloaded_accounts.present?
+    strict_mentions? || preloaded_accounts.present?
+  end
+
+  def strict_mentions?
+    options[:strict_mentions]
   end
 
   def add_quote_fallback(html)

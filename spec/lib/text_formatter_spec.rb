@@ -45,6 +45,21 @@ RSpec.describe TextFormatter do
       end
     end
 
+    context 'when mentions are strict and no account is allowed' do
+      subject { described_class.new(text, preloaded_accounts: [], strict_mentions: true).to_s }
+
+      let(:text) { '@alice' }
+
+      before { Fabricate(:user, account_attributes: { username: 'alice' }) }
+
+      it 'does not link a known account nor look it up' do
+        allow(EntityCache.instance).to receive(:mention)
+
+        expect(subject).to eq '<p>@alice</p>'
+        expect(EntityCache.instance).to_not have_received(:mention)
+      end
+    end
+
     context 'when given the reserved handle of anonymized accounts' do
       let(:preloaded_accounts) { [] }
       let(:text) { '@deleted 안녕 @Deleted@elsewhere.example' }
@@ -526,9 +541,36 @@ RSpec.describe TextFormatter do
 
       it 'keeps the links intact' do
         expect(subject).to include 'href="https://example.com/a*b*c"'
-        expect(subject).to include 'href="https://example.com/[color:f00]x[/color"'
+        expect(subject).to include 'href="https://example.com/"'
+        expect(subject).to include '<span style="color: #f00;">x</span>'
         expect(subject).to_not include '<em>'
-        expect(subject).to_not include 'style='
+      end
+    end
+
+    context 'when a link is directly followed by a closing tag' do
+      let(:text) { '[color:f00]https://e.com/page[/color]' }
+
+      it 'links only the address and closes the tag' do
+        expect(subject).to match %r{\A<p><span style="color: #f00;"><a href="https://e\.com/page"[^>]*>.*</a></span></p>\z}
+        expect(subject).to_not include '[/color'
+      end
+    end
+
+    context 'when a link is followed by an alignment closing tag' do
+      let(:text) { '[center]https://e.com/page[/center]' }
+
+      it 'links only the address and closes the tag' do
+        expect(subject).to match %r{<span style="display: block; text-align: center;"><a href="https://e\.com/page"[^>]*>.*</a></span>}
+        expect(subject).to_not include '[/center'
+      end
+    end
+
+    context 'when a URL path merely contains a bracket' do
+      let(:text) { 'https://e.com/a[1]' }
+
+      it 'does not cut the link at a non-formatting bracket' do
+        expect(subject).to include('href="https://e.com/a')
+        expect(subject).to_not include '<span style='
       end
     end
 
@@ -589,7 +631,15 @@ RSpec.describe TextFormatter do
       let(:text) { '안녕~~~ 반가워~~~' }
 
       it 'does not strike it through' do
-        expect(subject).to_not include '<del>'
+        expect(subject).to eq '<p>안녕~~~ 반가워~~~</p>'
+      end
+    end
+
+    context 'when a tilde run follows a Korean word without a space' do
+      let(:text) { '좋아~~~취소~~~' }
+
+      it 'does not strike it through' do
+        expect(subject).to eq '<p>좋아~~~취소~~~</p>'
       end
     end
 
@@ -601,19 +651,43 @@ RSpec.describe TextFormatter do
       end
     end
 
+    context 'when a strikethrough sits inside an emphasis' do
+      let(:text) { '**~~~취소~~~**' }
+
+      it 'renders both' do
+        expect(subject).to eq '<p><strong><del>취소</del></strong></p>'
+      end
+    end
+
+    context 'when a strikethrough sits inside a color tag' do
+      let(:text) { '[color:f00]~~~취소~~~[/color]' }
+
+      it 'renders both' do
+        expect(subject).to eq '<p><span style="color: #f00;"><del>취소</del></span></p>'
+      end
+    end
+
+    context 'when a strikethrough follows a space' do
+      let(:text) { '그건 ~~~취소~~~' }
+
+      it 'renders it' do
+        expect(subject).to eq '<p>그건 <del>취소</del></p>'
+      end
+    end
+
     context 'when given a hex color with an alpha channel' do
       let(:text) { '[color:ff000000]숨김[/color] [bg:0000]숨김[/bg]' }
 
       it 'does not process it' do
-        expect(subject).to_not include 'style='
+        expect(subject).to eq '<p>[color:ff000000]숨김[/color] [bg:0000]숨김[/bg]</p>'
       end
     end
 
     context 'when given text wrapped in hair spaces' do
       let(:text) { "\u200A파랑\u200A" }
 
-      it 'no longer colors it' do
-        expect(subject).to_not include 'style='
+      it 'leaves it as plain text' do
+        expect(subject).to eq "<p>\u200A파랑\u200A</p>"
       end
     end
 

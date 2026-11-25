@@ -10,6 +10,8 @@ import ImmutablePureComponent from 'react-immutable-pure-component';
 
 import { length } from 'stringz';
 
+import VisibilityIcon from '@/material-icons/400-24px/visibility.svg?react';
+import { IconButton } from 'mastodon/components/icon_button';
 import { missingAltTextModal } from 'mastodon/initial_state';
 
 import AutosuggestInput from '../../../components/autosuggest_input';
@@ -23,6 +25,7 @@ import { countableText } from '../util/counter';
 
 import { CharacterCounter } from './character_counter';
 import { EditIndicator } from './edit_indicator';
+import { FormattingPreview, hasFormatting } from './formatting_preview';
 import { LanguageDropdown } from './language_dropdown';
 import { NavigationBar } from './navigation_bar';
 import { PollForm } from "./poll_form";
@@ -43,7 +46,27 @@ const messages = defineMessages({
   schedule: { id: 'compose_form.schedule', defaultMessage: 'Schedule' },
   scheduleReply: { id: 'compose_form.schedule_reply', defaultMessage: 'Schedule reply' },
   updateSchedule: { id: 'compose_form.update_schedule', defaultMessage: 'Update scheduled post' },
+  previewToggle: { id: 'compose_form.preview.title', defaultMessage: 'Formatting preview' },
 });
+
+const PREVIEW_OPEN_KEY = 'mastodon:compose_formatting_preview';
+
+let previewIdCounter = 0;
+
+const readPreviewOpen = () => {
+  try {
+    return window.localStorage.getItem(PREVIEW_OPEN_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+
+const writePreviewOpen = (open) => {
+  try {
+    window.localStorage.setItem(PREVIEW_OPEN_KEY, open ? '1' : '0');
+  } catch {
+  }
+};
 
 class ComposeForm extends ImmutablePureComponent {
   static propTypes = {
@@ -89,11 +112,21 @@ class ComposeForm extends ImmutablePureComponent {
 
   state = {
     highlighted: false,
+    previewOpen: readPreviewOpen(),
+  };
+
+  handleTogglePreview = () => {
+    const previewOpen = !this.state.previewOpen;
+
+    writePreviewOpen(previewOpen);
+    this.setState({ previewOpen });
   };
 
   constructor(props) {
     super(props);
     this.textareaRef = createRef(null);
+    previewIdCounter += 1;
+    this.previewId = `compose-formatting-preview-${previewIdCounter}`;
   }
 
   handleChange = (e) => {
@@ -345,6 +378,14 @@ class ComposeForm extends ImmutablePureComponent {
             />
           </div>
 
+          {this.state.previewOpen && (
+            <FormattingPreview
+              id={this.previewId}
+              text={this.props.text}
+              spoilerText={this.props.spoiler ? this.props.spoilerText : ''}
+            />
+          )}
+
           <UploadForm />
           <PollForm />
 
@@ -355,6 +396,17 @@ class ComposeForm extends ImmutablePureComponent {
                 <PollButtonContainer />
                 <SpoilerButtonContainer />
                 <EmojiPickerDropdown onPickEmoji={this.handleEmojiPick} />
+                <IconButton
+                  icon='visibility'
+                  iconComponent={VisibilityIcon}
+                  title={intl.formatMessage(messages.previewToggle)}
+                  active={this.state.previewOpen}
+                  expanded={this.state.previewOpen}
+                  ariaControls={this.state.previewOpen ? this.previewId : undefined}
+                  className={classNames({ 'compose-form__preview-toggle--suggested': !this.state.previewOpen && hasFormatting(this.props.text) })}
+                  onClick={this.handleTogglePreview}
+                  inverted
+                />
                 {/* Already-published posts cannot be scheduled. */}
                 <ScheduleButton disabled={this.props.isEditing} />
                 <CharacterCounter max={maxChars} text={this.getFulltextForCharacterCounting()} />

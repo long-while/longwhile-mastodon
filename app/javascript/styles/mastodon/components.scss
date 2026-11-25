@@ -15447,6 +15447,76 @@ body .search__popout__menu__item {
   }
 }
 
+.compose-form__preview {
+  margin: 8px 0;
+  padding: 10px 12px;
+  max-height: 40vh;
+  max-height: 30dvh;
+  overflow-y: auto;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+
+  &__empty,
+  &__spoiler {
+    font-size: 14px;
+    color: $darker-text-color;
+  }
+
+  &__spoiler {
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+
+  &__body {
+    font-size: 15px;
+    line-height: 22px;
+    word-wrap: break-word;
+
+    &--stale {
+      opacity: 0.5;
+    }
+  }
+
+  &__error {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    line-height: 18px;
+    color: $error-value-color;
+
+    .link-button {
+      font-size: 13px;
+      line-height: 18px;
+      color: var(--color-brand-longwhile-links, #{$highlight-text-color});
+    }
+  }
+}
+
+.compose-form__buttons .compose-form__preview-toggle--suggested {
+  position: relative;
+  color: var(--color-brand-longwhile-links, #{$highlight-text-color});
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    inset-inline-end: 4px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+}
+
 .confirmation-modal__option-hint {
   display: block;
   margin-top: 4px;
