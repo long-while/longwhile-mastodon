@@ -12,6 +12,8 @@ import {
   ReportModal,
   EmbedModal,
   ListAdder,
+  BookmarkFolderAdder,
+  BookmarkFolderManager,
   CompareHistoryModal,
   FilterModal,
   InteractionModal,
@@ -82,6 +84,8 @@ export const MODAL_COMPONENTS = {
   'DM_RECIPIENT': DmRecipientModal,
   'DM_MEMBERS': DmMemberModal,
   'REPLY_RECIPIENTS': ReplyRecipientsModal,
+  'BOOKMARK_FOLDER_ADDER': BookmarkFolderAdder,
+  'BOOKMARK_FOLDER_MANAGER': BookmarkFolderManager,
 };
 
 const SCROLL_UNLOCKED_MODALS = ['SCHEDULE'];

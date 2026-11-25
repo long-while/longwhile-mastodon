@@ -25,6 +25,7 @@ import { identityContextPropShape, withIdentity } from 'mastodon/identity_contex
 import { PERMISSION_MANAGE_USERS, PERMISSION_MANAGE_FEDERATION } from 'mastodon/permissions';
 import { WithRouterPropTypes } from 'mastodon/utils/react_router';
 
+import { openModal } from 'mastodon/actions/modal';
 import { Dropdown } from 'mastodon/components/dropdown_menu';
 import { me } from '../initial_state';
 
@@ -54,6 +55,7 @@ const messages = defineMessages({
   unmuteConversation: { id: 'status.unmute_conversation', defaultMessage: 'Unmute conversation' },
   pin: { id: 'status.pin', defaultMessage: 'Pin on profile' },
   unpin: { id: 'status.unpin', defaultMessage: 'Unpin from profile' },
+  bookmarkFolders: { id: 'status.bookmark_folders', defaultMessage: 'Add to bookmark folder' },
   admin_account: { id: 'status.admin_account', defaultMessage: 'Open moderation interface for @{name}' },
   admin_status: { id: 'status.admin_status', defaultMessage: 'Open this post in the moderation interface' },
   admin_domain: { id: 'status.admin_domain', defaultMessage: 'Open moderation interface for {domain}' },
@@ -74,6 +76,7 @@ const countOrNone = (count) => (count > 0 ? count : undefined);
 
 class StatusActionBar extends ImmutablePureComponent {
   static propTypes = {
+    dispatch: PropTypes.func.isRequired,
     identity: identityContextPropShape,
     status: ImmutablePropTypes.map.isRequired,
     relationship: ImmutablePropTypes.record,
@@ -160,6 +163,13 @@ class StatusActionBar extends ImmutablePureComponent {
     this.props.onPin(this.props.status);
   };
 
+  handleBookmarkFoldersClick = () => {
+    this.props.dispatch(openModal({
+      modalType: 'BOOKMARK_FOLDER_ADDER',
+      modalProps: { statusId: this.props.status.get('id') },
+    }));
+  };
+
   handleMentionClick = () => {
     this.props.onMention(this.props.status.get('account'));
   };
@@ -242,6 +252,7 @@ class StatusActionBar extends ImmutablePureComponent {
 
     if (signedIn) {
       menu.push(null);
+      menu.push({ text: intl.formatMessage(messages.bookmarkFolders), action: this.handleBookmarkFoldersClick });
 
       if (writtenByMe && pinnableStatus) {
         menu.push({ text: intl.formatMessage(status.get('pinned') ? messages.unpin : messages.pin), action: this.handlePinClick });

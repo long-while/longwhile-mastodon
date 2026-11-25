@@ -19,6 +19,8 @@ class Bookmark < ApplicationRecord
   belongs_to :account, inverse_of: :bookmarks
   belongs_to :status,  inverse_of: :bookmarks
 
+  has_many :bookmark_folder_items, dependent: :delete_all
+
   validates :status_id, uniqueness: { scope: :account_id }
 
   before_validation do

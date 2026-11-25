@@ -10,6 +10,7 @@ class DeleteAccountService < BaseService
     aliases
     block_relationships
     blocked_by_relationships
+    bookmark_folders
     collections
     collection_items
     conversation_mutes
@@ -40,6 +41,7 @@ class DeleteAccountService < BaseService
     account_notes
     account_pins
     aliases
+    bookmark_folders
     conversation_mutes
     conversations
     custom_filters

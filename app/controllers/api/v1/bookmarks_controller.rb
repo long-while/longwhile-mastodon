@@ -28,7 +28,17 @@ class Api::V1::BookmarksController < Api::BaseController
   end
 
   def account_bookmarks
-    current_account.bookmarks
+    folder_id = params[:folder_id]
+    return current_account.bookmarks if folder_id.blank?
+
+    raise ActiveRecord::RecordNotFound unless folder_id.is_a?(String) && folder_id.match?(/\A\d{1,19}\z/)
+
+    folder = current_account.bookmark_folders.find(folder_id)
+    current_account.bookmarks.where(id: folder.bookmark_folder_items.select(:bookmark_id))
+  end
+
+  def pagination_params(core_params)
+    params.slice(:limit, :folder_id).permit(:limit, :folder_id).merge(core_params)
   end
 
   def next_path

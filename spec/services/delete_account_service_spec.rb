@@ -249,4 +249,28 @@ RSpec.describe DeleteAccountService do
       expect(User.find_by(id: user.id)).to_not be_nil
     end
   end
+
+  describe 'bookmark folders' do
+    subject { described_class.new }
+
+    let(:account) { Fabricate(:user).account }
+
+    before do
+      folder = Fabricate(:bookmark_folder, account: account)
+      BookmarkFolderItem.create!(bookmark_folder: folder, bookmark: Fabricate(:bookmark, account: account))
+    end
+
+    [
+      { reserve_username: true, reserve_email: false },
+      { reserve_username: true, reserve_email: false, preserve_content: true },
+      { reserve_username: false, reserve_email: false },
+    ].each do |options|
+      it "removes them and their items with #{options}" do
+        subject.call(account, **options)
+
+        expect(BookmarkFolder.where(account_id: account.id)).to be_empty
+        expect(BookmarkFolderItem.count).to eq 0
+      end
+    end
+  end
 end

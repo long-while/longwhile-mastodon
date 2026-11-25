@@ -15657,6 +15657,142 @@ body .compose-format-toolbar.dropdown-menu {
 }
 .icon.icon-bookmark-author-caret,
 
+.bookmark-folder-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px 0 12px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-column, transparent);
+
+  &__list {
+    display: flex;
+    flex: 1 1 auto;
+    gap: 4px;
+    overflow-x: auto;
+    padding: 8px 24px 8px 0;
+    scrollbar-width: none;
+    mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+
+    [dir='rtl'] & {
+      padding: 8px 0 8px 24px;
+      mask-image: linear-gradient(to left, #000 calc(100% - 24px), transparent);
+    }
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  &__tab {
+    flex: 0 0 auto;
+    max-width: 14em;
+    padding: 6px 14px;
+    border: 1px solid var(--color-button-border, var(--color-border));
+    border-radius: 999px;
+    background: transparent;
+    color: $darker-text-color;
+    font: inherit;
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+
+    @media (pointer: coarse) {
+      min-height: 44px;
+    }
+
+    &:hover {
+      color: $primary-text-color;
+    }
+
+    &:focus-visible {
+      color: $primary-text-color;
+      outline: $ui-button-icon-focus-outline;
+    }
+
+    &--active {
+      border-color: var(--color-brand-longwhile, #{$highlight-text-color});
+      background: color-mix(
+        in srgb,
+        var(--color-brand-longwhile, #{$highlight-text-color}) 14%,
+        transparent
+      );
+      color: var(--color-brand-longwhile-links, #{$highlight-text-color});
+      font-weight: 600;
+
+      &:hover,
+      &:focus-visible {
+        color: var(--color-brand-longwhile-links, #{$highlight-text-color});
+      }
+    }
+  }
+
+  &__manage {
+    flex: 0 0 auto;
+  }
+
+  .icon-button.bookmark-folder-tabs__manage {
+    color: var(--color-fg, #{$primary-text-color});
+  }
+}
+
+.bookmark-folders {
+  &__hint {
+    margin: 0 0 12px;
+    font-size: 13px;
+    color: $darker-text-color;
+  }
+
+  &__retry {
+    margin: 0 0 12px;
+  }
+
+  &__new {
+    padding: 8px 13px;
+  }
+
+  &__new input,
+  &__row input {
+    flex: 1 1 auto;
+    min-width: 0;
+    background: var(--input-background-color);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: var(--on-input-color);
+    padding: 8px 12px;
+    font-family: inherit;
+    font-size: 15px;
+    line-height: normal;
+
+    &::placeholder {
+      color: var(--input-placeholder-color);
+      opacity: 1;
+    }
+
+    &:focus-visible {
+      outline: $ui-button-icon-focus-outline;
+    }
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 13px;
+    border-bottom: 1px solid var(--color-border);
+
+    &__name {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+}
+
 .confirmation-modal__option-hint {
   display: block;
   margin-top: 4px;
