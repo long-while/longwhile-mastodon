@@ -33,6 +33,11 @@ export const config: UserConfigFnPromise = async ({ mode, command }) => {
           }),
         ],
       },
+      preprocessorOptions: {
+        scss: {
+          silenceDeprecations: ['import'],
+        },
+      },
     },
     server: {
       headers: {

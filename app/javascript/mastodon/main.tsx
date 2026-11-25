@@ -13,6 +13,7 @@ import { getAccessToken, me } from 'mastodon/initial_state';
 import * as perf from 'mastodon/performance';
 import ready from 'mastodon/ready';
 import { store } from 'mastodon/store';
+import { installPushPresenceResponder } from 'mastodon/utils/push_presence';
 import { decryptToken } from 'mastodon/utils/multi_account_crypto';
 import {
   deleteEncryptedToken,
@@ -119,6 +120,29 @@ function main() {
     const root = createRoot(mountNode);
     root.render(<Mastodon {...props} />);
     store.dispatch(setupBrowserNotifications());
+
+    installPushPresenceResponder(
+      () => {
+        const state = store.getState() as {
+          getIn: (path: string[]) => unknown;
+        };
+
+        return (
+          state.getIn([
+            'settings',
+            'notifications',
+            'suppressPushWhileActive',
+          ]) !== false
+        );
+      },
+      () => {
+        const state = store.getState() as {
+          getIn: (path: string[]) => unknown;
+        };
+
+        return state.getIn(['timelines', 'home', 'online']) === true;
+      },
+    );
 
     if (isProduction() && me && 'serviceWorker' in navigator) {
       const { Workbox } = await import('workbox-window');

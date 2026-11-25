@@ -6,7 +6,7 @@
 
 .flash-message= t('edit_profile.followers_only_notice')
 
-= simple_form_for @account, url: settings_profile_path, html: { id: :edit_profile } do |f|
+= simple_form_for @account, url: settings_profile_path, html: { id: :edit_profile, data: { unsaved_guard: true } } do |f|
   = render 'shared/error_messages', object: @account
 
   %h4= t('edit_profile.basic_information')

@@ -164,9 +164,10 @@ RSpec.describe ThemeHelper do
       let(:dark) { instance_double(SiteUpload, file: instance_double(Paperclip::Attachment, url: url)) }
       let(:url) { '/system/site_uploads/files/000/000/001/original/wordmark.png?1700000000' }
 
-      it 'exposes only the uploaded one as a CSS variable' do
+      it 'exposes only the uploaded one as a CSS variable, with the CSP nonce' do
         expect(custom_wordmark_tag)
-          .to eq(%(<style>:root{--lw-wordmark-dark:url("#{url}");}</style>))
+          .to eq(%(<style nonce="#{request.content_security_policy_nonce}">:root{--lw-wordmark-dark:url("#{url}");}</style>))
+        expect(request.content_security_policy_nonce).to be_present
       end
     end
 

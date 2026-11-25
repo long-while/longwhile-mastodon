@@ -15515,6 +15515,7 @@ body .search__popout__menu__item {
 .compose-format-toolbar {
   --compose-format-hover: color-mix(
     in srgb,
+    var(--color-dim, #{$darker-text-color}) 15%,
     transparent
   );
 
@@ -15654,6 +15655,7 @@ body .compose-format-toolbar.dropdown-menu {
     background: currentColor;
   }
 }
+.icon.icon-bookmark-author-caret,
 
 .confirmation-modal__option-hint {
   display: block;

@@ -6,6 +6,12 @@ import { unescape } from 'lodash';
 // eslint-disable-next-line import/no-unresolved
 import locales from "virtual:mastodon-sw-locales";
 
+import {
+  collectPresence,
+  MAX_CONSECUTIVE,
+  shouldSuppressPush,
+} from './push_suppression';
+
 const MAX_NOTIFICATIONS = 5;
 const GROUP_TAG = 'tag';
 
@@ -79,11 +85,59 @@ const formatMessage = (messageId, locale, values = {}) =>
 const htmlToPlainText = html =>
   unescape(html.replace(/<br\s*\/?>/g, '\n').replace(/<\/p><p>/g, '\n\n').replace(/<[^>]*>/g, ''));
 
+const SUPPRESSION_CACHE = 'mastodon-push-suppression';
+const SUPPRESSION_KEY = '/__push_suppressed_count';
+
+const readSuppressedCount = async () => {
+  try {
+    const cache = await caches.open(SUPPRESSION_CACHE);
+    const response = await cache.match(SUPPRESSION_KEY);
+    if (!response) return 0;
+    const count = Number.parseInt(await response.text(), 10);
+    return Number.isFinite(count) ? count : 0;
+  } catch {
+    return MAX_CONSECUTIVE;
+  }
+};
+
+const writeSuppressedCount = async (count) => {
+  try {
+    const cache = await caches.open(SUPPRESSION_CACHE);
+    await cache.put(SUPPRESSION_KEY, new Response(String(count)));
+  } catch (error) {
+    console.warn('[push] could not store the suppression counter', error);
+  }
+};
+
+const shouldSkipNotification = async (push) => {
+  const [replies, consecutive] = await Promise.all([
+    collectPresence(self.clients),
+    readSuppressedCount(),
+  ]);
+  const suppress = shouldSuppressPush(push, replies, Date.now(), {
+    consecutive,
+    userAgent: self.navigator?.userAgent ?? '',
+  });
+
+  await writeSuppressedCount(suppress ? consecutive + 1 : 0);
+  return suppress;
+};
+
 export const handlePush = (event) => {
-  const { access_token, notification_id, preferred_locale, title, body, icon } = event.data.json();
+  const push = event.data.json();
+
+  event.waitUntil(
+    shouldSkipNotification(push)
+      .catch(() => false)
+      .then((skip) => (skip ? undefined : showPushNotification(push))),
+  );
+};
+
+const showPushNotification = (push) => {
+  const { access_token, notification_id, preferred_locale, title, body, icon } = push;
 
   // Placeholder until more information can be loaded
-  event.waitUntil(
+  return (
     fetchFromApi(`/api/v1/notifications/${notification_id}`, 'get', access_token).then(notification => {
       const options = {};
 
@@ -102,7 +156,7 @@ export const handlePush = (event) => {
         options.data.url = `/@${notification.account.acct}`;
       }
 
-      if (notification.status && notification.status.spoiler_text || notification.status.sensitive) {
+      if (notification.status && (notification.status.spoiler_text || notification.status.sensitive)) {
         options.data.hiddenBody  = htmlToPlainText(notification.status.content);
         options.data.hiddenImage = notification.status.media_attachments.length > 0 && notification.status.media_attachments[0].preview_url;
 
@@ -127,7 +181,7 @@ export const handlePush = (event) => {
         badge: '/badge.png',
         data: { access_token, preferred_locale, url: '/notifications' },
       });
-    }),
+    })
   );
 };
 

@@ -15,6 +15,7 @@ module Api::ContentSecurityPolicy
       policy.font_src false
       policy.img_src false
       policy.style_src false
+      policy.style_src_attr false
       policy.media_src false
       policy.frame_src false
       policy.manifest_src false

@@ -55,6 +55,7 @@ const initialState = ImmutableMap({
 
     dismissPermissionBanner: false,
     showUnread: true,
+    suppressPushWhileActive: true,
     minimizeFilteredBanner: false,
 
     shows: ImmutableMap({

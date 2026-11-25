@@ -1,7 +1,12 @@
 import type { MouseEventHandler } from 'react';
 import { useCallback } from 'react';
 
-import { FormattedMessage, defineMessages, useIntl } from 'react-intl';
+import {
+  FormattedMessage,
+  FormattedNumber,
+  defineMessages,
+  useIntl,
+} from 'react-intl';
 
 import classNames from 'classnames';
 import { Link } from 'react-router-dom';
@@ -195,7 +200,7 @@ export const AccountCard: React.FC<{ accountId: string }> = ({ accountId }) => {
       <div className='account-card__actions'>
         <div className='account-card__counters'>
           <div className='account-card__counters__item'>
-            <ShortNumber value={account.get('statuses_count')} />
+            <FormattedNumber value={account.get('statuses_count') ?? 0} />
             <small>
               <FormattedMessage id='account.posts' defaultMessage='Posts' />
             </small>

@@ -20,6 +20,7 @@ class RemoteInteractionHelperController < ApplicationController
     p.font_src false
     p.img_src false
     p.style_src false
+    p.style_src_attr false
     p.media_src false
     p.frame_src false
     p.manifest_src false

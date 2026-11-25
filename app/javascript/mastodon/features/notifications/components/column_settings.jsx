@@ -77,6 +77,27 @@ class ColumnSettings extends PureComponent {
           </div>
         </section>
 
+        <section role='group' aria-labelledby='notifications-push-while-active'>
+          <h3 id='notifications-push-while-active'>
+            <FormattedMessage id='notifications.column_settings.push_while_active.category' defaultMessage='Pause push notifications' />
+          </h3>
+
+          <div className='column-settings__row'>
+            <SettingToggle
+              id='suppress-push-while-active'
+              prefix='notifications'
+              settings={settings}
+              settingPath={['suppressPushWhileActive']}
+              onChange={onChange}
+              label={<FormattedMessage id='notifications.column_settings.push_while_active.suppress' defaultMessage='Do not show push notifications while I am viewing the app' />}
+            />
+          </div>
+
+          <p className='column-settings__hint'>
+            <FormattedMessage id='notifications.column_settings.push_while_active.hint' defaultMessage='Applies only while the window is in view and you have used it within the last 2 minutes. Direct messages are hidden only while you are viewing that conversation, and reports and sign-up notifications are always shown. Not applied on iPhone or Safari.' />
+          </p>
+        </section>
+
         <section role='group' aria-labelledby='notifications-filter-bar'>
           <h3 id='notifications-filter-bar'>
             <FormattedMessage id='notifications.column_settings.filter_bar.category' defaultMessage='Quick filter bar' />
