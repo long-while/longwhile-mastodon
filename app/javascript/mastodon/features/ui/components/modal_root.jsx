@@ -14,6 +14,7 @@ import {
   ListAdder,
   BookmarkFolderAdder,
   BookmarkFolderManager,
+  BookmarkNoteModal,
   CompareHistoryModal,
   FilterModal,
   InteractionModal,
@@ -86,6 +87,7 @@ export const MODAL_COMPONENTS = {
   'REPLY_RECIPIENTS': ReplyRecipientsModal,
   'BOOKMARK_FOLDER_ADDER': BookmarkFolderAdder,
   'BOOKMARK_FOLDER_MANAGER': BookmarkFolderManager,
+  'BOOKMARK_NOTE': BookmarkNoteModal,
 };
 
 const SCROLL_UNLOCKED_MODALS = ['SCHEDULE'];

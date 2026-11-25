@@ -3,6 +3,7 @@ import { Map as ImmutableMap, fromJS } from 'immutable';
 import { timelineDelete } from 'mastodon/actions/timelines_typed';
 import { me } from 'mastodon/initial_state';
 
+import { removeBookmarks } from '../actions/bookmark_list';
 import { COMPOSE_SUBMIT_SUCCESS } from '../actions/compose';
 import { STATUS_IMPORT, STATUSES_IMPORT } from '../actions/importer';
 import { normalizeStatusTranslation } from '../actions/importer/normalizer';
@@ -76,11 +77,21 @@ const statusTranslateUndo = (state, id) => {
 };
 
 
+const clearBookmarked = (state, ids) => state.withMutations(map => {
+  ids.forEach(id => {
+    if (map.has(id)) map.setIn([id, 'bookmarked'], false);
+  });
+});
+
 /** @type {ImmutableMap<string, import('mastodon/models/status').Status>} */
 const initialState = ImmutableMap();
 
 /** @type {import('@reduxjs/toolkit').Reducer<typeof initialState>} */
 export default function statuses(state = initialState, action) {
+  if (removeBookmarks.fulfilled.match(action)) {
+    return clearBookmarked(state, action.payload.statusIds);
+  }
+
   switch(action.type) {
   case STATUS_FETCH_REQUEST:
     return state.setIn([action.id, 'isLoading'], true);

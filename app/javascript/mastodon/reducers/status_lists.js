@@ -5,11 +5,18 @@ import {
   muteAccountSuccess,
 } from '../actions/accounts';
 import {
-  bookmarkFolderListKey,
   deleteBookmarkFolder,
-  fetchBookmarkFolderStatuses,
   setStatusBookmarkFolders,
 } from '../actions/bookmark_folders';
+import {
+  UNSORTED_FOLDER_ID,
+  addStatusesToBookmarkFolder,
+  fetchBookmarkList,
+  bookmarkListKey,
+  parseBookmarkListKey,
+  removeBookmarks,
+  removeStatusesFromBookmarkFolder,
+} from '../actions/bookmark_list';
 import {
   BOOKMARKED_STATUSES_FETCH_REQUEST,
   BOOKMARKED_STATUSES_FETCH_SUCCESS,
@@ -109,66 +116,118 @@ const emptyList = () => ImmutableMap({
   items: ImmutableOrderedSet(),
 });
 
-const isFolderListKey = (key) => typeof key === 'string' && key.startsWith('bookmarks:');
+const bookmarkListKeys = (state) => state.keySeq().filter((key) => parseBookmarkListKey(key) !== null).toArray();
 
-const folderListKeys = (state) => state.keySeq().filter(isFolderListKey).toArray();
+const keysInScope = (state, scope) =>
+  bookmarkListKeys(state).filter((key) => parseBookmarkListKey(key).scope === scope);
+
+const deleteKeys = (state, keys) => keys.reduce((acc, key) => acc.delete(key), state);
+
+const removeIds = (state, keys, statusIds) =>
+  keys.reduce((acc, key) => acc.updateIn([key, 'items'], (items) => items.subtract(statusIds)), state);
+
+const invalidateUnlessContains = (state, keys, statusIds) =>
+  keys.reduce((acc, key) => {
+    const items = acc.getIn([key, 'items']);
+    return statusIds.every((id) => items.has(id)) ? acc : acc.delete(key);
+  }, state);
 
 const applyStatusFolders = (state, statusId, folderIds) => {
-  const wanted = new Set(folderIds.map(bookmarkFolderListKey));
+  const wanted = new Set(folderIds);
 
-  return folderListKeys(state).reduce((acc, key) => {
-    if (!wanted.has(key)) {
-      return acc.updateIn([key, 'items'], (items) => items.delete(statusId));
-    }
+  return bookmarkListKeys(state).reduce((acc, key) => {
+    const { scope } = parseBookmarkListKey(key);
 
-    if (!acc.getIn([key, 'loaded'])) {
-      return acc;
-    }
+    if (scope === 'all') return acc;
 
-    return acc.updateIn([key, 'items'], (items) => items.has(statusId) ? items : ImmutableOrderedSet([statusId]).union(items));
+    const belongs = scope === UNSORTED_FOLDER_ID ? wanted.size === 0 : wanted.has(scope);
+
+    if (!belongs) return removeIds(acc, [key], [statusId]);
+
+    return invalidateUnlessContains(acc, [key], [statusId]);
   }, state);
 };
 
-const removeFromFolderLists = (state, statusId) =>
-  folderListKeys(state).reduce((acc, key) => acc.updateIn([key, 'items'], (items) => items.delete(statusId)), state);
+const addToFolder = (state, folderId, statusIds) => {
+  const withFolder = invalidateUnlessContains(state, keysInScope(state, folderId), statusIds);
+  return removeIds(withFolder, keysInScope(withFolder, UNSORTED_FOLDER_ID), statusIds);
+};
 
-const bookmarkFolderLists = (state, action) => {
-  if (fetchBookmarkFolderStatuses.pending.match(action)) {
-    const key = bookmarkFolderListKey(action.meta.arg.folderId);
-    return state.update(key, (list) => (list ?? emptyList()).set('isLoading', true));
+const removeFromFolder = (state, folderId, statusIds) => {
+  const withoutIds = removeIds(state, keysInScope(state, folderId), statusIds);
+  return deleteKeys(withoutIds, keysInScope(withoutIds, UNSORTED_FOLDER_ID));
+};
+
+const removeFromAllBookmarkLists = (state, statusIds) =>
+  removeIds(state, bookmarkListKeys(state), statusIds);
+
+const fetchedList = (state, action) => {
+  const { key, statusIds, next, append } = action.payload;
+  const list = state.get(key);
+
+  if (!list) return state;
+  if (!append && list.get('requestId') !== action.meta.requestId) return state;
+
+  const statuses = statusIds.map((id) => ({ id }));
+
+  return append ? appendToList(state, key, statuses, next) : normalizeList(state, key, statuses, next);
+};
+
+const startedList = (state, action) => {
+  const key = bookmarkListKey(action.meta.arg.query);
+
+  return state.update(key, (list) => {
+    const base = (list ?? emptyList()).set('isLoading', true);
+    return action.meta.arg.url ? base : base.set('requestId', action.meta.requestId);
+  });
+};
+
+const bookmarkLists = (state, action) => {
+  if (fetchBookmarkList.pending.match(action)) return startedList(state, action);
+
+  if (fetchBookmarkList.rejected.match(action)) {
+    const key = bookmarkListKey(action.meta.arg.query);
+    return state.has(key) ? state.setIn([key, 'isLoading'], false) : state;
   }
 
-  if (fetchBookmarkFolderStatuses.rejected.match(action)) {
-    const key = bookmarkFolderListKey(action.meta.arg.folderId);
-    return state.update(key, (list) => (list ?? emptyList()).set('isLoading', false));
-  }
-
-  if (fetchBookmarkFolderStatuses.fulfilled.match(action)) {
-    const { folderId, statusIds, next, append } = action.payload;
-    const statuses = statusIds.map((id) => ({ id }));
-    const key = bookmarkFolderListKey(folderId);
-    const withList = state.update(key, (list) => list ?? emptyList());
-
-    return append ? appendToList(withList, key, statuses, next ?? null) : normalizeList(withList, key, statuses, next ?? null);
-  }
+  if (fetchBookmarkList.fulfilled.match(action)) return fetchedList(state, action);
 
   if (setStatusBookmarkFolders.fulfilled.match(action)) {
     return applyStatusFolders(state, action.payload.statusId, action.payload.folderIds);
   }
 
+  if (addStatusesToBookmarkFolder.fulfilled.match(action)) {
+    return addToFolder(state, action.payload.folderId, action.payload.statusIds);
+  }
+
+  if (removeStatusesFromBookmarkFolder.fulfilled.match(action)) {
+    return removeFromFolder(state, action.payload.folderId, action.payload.statusIds);
+  }
+
+  if (removeBookmarks.fulfilled.match(action)) {
+    return removeFromAllBookmarkLists(state, action.payload.statusIds);
+  }
+
   if (deleteBookmarkFolder.fulfilled.match(action)) {
-    return state.delete(bookmarkFolderListKey(action.payload.id));
+    return deleteKeys(state, [...keysInScope(state, action.payload.id), ...keysInScope(state, UNSORTED_FOLDER_ID)]);
   }
 
   return null;
 };
 
+const prependNewBookmark = (state, status) => {
+  const withMain = prependOneToList(state, 'bookmarks', status);
+  const unsortedKey = bookmarkListKey({ folderId: UNSORTED_FOLDER_ID });
+
+  return withMain.has(unsortedKey) ? prependOneToList(withMain, unsortedKey, status) : withMain;
+};
+
 /** @type {import('@reduxjs/toolkit').Reducer<typeof initialState>} */
 export default function statusLists(state = initialState, action) {
-  const folderState = bookmarkFolderLists(state, action);
+  const bookmarkState = bookmarkLists(state, action);
 
-  if (folderState !== null) {
-    return folderState;
+  if (bookmarkState !== null) {
+    return bookmarkState;
   }
 
   switch(action.type) {
@@ -207,9 +266,9 @@ export default function statusLists(state = initialState, action) {
   case UNFAVOURITE_SUCCESS:
     return removeOneFromList(state, 'favourites', action.status);
   case BOOKMARK_SUCCESS:
-    return prependOneToList(state, 'bookmarks', action.status);
+    return prependNewBookmark(state, action.status);
   case UNBOOKMARK_SUCCESS:
-    return removeFromFolderLists(removeOneFromList(state, 'bookmarks', action.status), action.status.get('id'));
+    return removeFromAllBookmarkLists(state, [action.status.get('id')]);
   case PINNED_STATUSES_FETCH_SUCCESS:
     return normalizeList(state, 'pins', action.statuses, action.next);
   case PIN_SUCCESS:

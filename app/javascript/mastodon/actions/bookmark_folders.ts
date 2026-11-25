@@ -2,7 +2,6 @@ import {
   apiCreateBookmarkFolder,
   apiDeleteBookmarkFolder,
   apiGetBookmarkFolders,
-  apiGetBookmarkFolderStatuses,
   apiRenameBookmarkFolder,
   apiReorderBookmarkFolders,
   apiSetStatusBookmarkFolders,
@@ -43,22 +42,6 @@ export const reorderBookmarkFolders = createDataLoadingThunk(
   'bookmark_folders/reorder',
   ({ folderIds }: { folderIds: string[] }) =>
     apiReorderBookmarkFolders(folderIds),
-);
-
-export const fetchBookmarkFolderStatuses = createDataLoadingThunk(
-  'bookmark_folders/fetch_statuses',
-  ({ folderId, url }: { folderId: string; url?: string }) =>
-    apiGetBookmarkFolderStatuses(folderId, url),
-  ({ statuses, next }, { dispatch, actionArg }) => {
-    dispatch(importFetchedStatuses(statuses));
-
-    return {
-      folderId: actionArg.folderId,
-      statusIds: statuses.map((status) => status.id),
-      next,
-      append: !!actionArg.url,
-    };
-  },
 );
 
 export const setStatusBookmarkFolders = createDataLoadingThunk(

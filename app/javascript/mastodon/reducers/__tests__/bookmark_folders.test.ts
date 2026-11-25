@@ -4,11 +4,11 @@ import {
   createBookmarkFolder,
   deleteBookmarkFolder,
   fetchBookmarkFolders,
-  fetchBookmarkFolderStatuses,
   renameBookmarkFolder,
   reorderBookmarkFolders,
   setStatusBookmarkFolders,
 } from '../../actions/bookmark_folders';
+import { fetchBookmarkList } from '../../actions/bookmark_list';
 import { UNBOOKMARK_SUCCESS } from '../../actions/interactions';
 import { moveFolderId } from '../../features/bookmark_folders/folder_manager_modal';
 import { bookmarkFoldersReducer } from '../bookmark_folders';
@@ -18,6 +18,7 @@ const folder = (id: string, position: number, name = `F${id}`) => ({
   id,
   name,
   position,
+  statuses_count: 0,
 });
 
 const items = (state: ReturnType<typeof statusLists>, key: string) =>
@@ -29,15 +30,20 @@ const loadFolder = (
   state: ReturnType<typeof statusLists>,
   folderId: string,
   statusIds: string[],
-) =>
-  statusLists(
-    state,
-    fetchBookmarkFolderStatuses.fulfilled(
-      { folderId, statusIds, next: undefined, append: false },
-      'req',
-      { folderId },
+) => {
+  const arg = { query: { folderId } };
+  const requestId = `req-${folderId}`;
+  const started = statusLists(state, fetchBookmarkList.pending(requestId, arg));
+
+  return statusLists(
+    started,
+    fetchBookmarkList.fulfilled(
+      { key: `bookmarks:${folderId}`, statusIds, next: null, append: false },
+      requestId,
+      arg,
     ),
   );
+};
 
 describe('bookmarkFoldersReducer', () => {
   const initial = bookmarkFoldersReducer(undefined, { type: '@@INIT' });
@@ -135,19 +141,29 @@ describe('status_lists — bookmark folder lists', () => {
   const initial = statusLists(undefined, { type: '@@INIT' });
 
   it('creates the list on first load and appends further pages', () => {
-    let state = statusLists(
-      initial,
-      fetchBookmarkFolderStatuses.pending('req', { folderId: '7' }),
-    );
+    const arg = { query: { folderId: '7' } };
+    let state = statusLists(initial, fetchBookmarkList.pending('req', arg));
     expect(state.getIn(['bookmarks:7', 'isLoading'])).toBe(true);
 
-    state = loadFolder(state, '7', ['30', '20']);
     state = statusLists(
       state,
-      fetchBookmarkFolderStatuses.fulfilled(
-        { folderId: '7', statusIds: ['10'], next: undefined, append: true },
+      fetchBookmarkList.fulfilled(
+        {
+          key: 'bookmarks:7',
+          statusIds: ['30', '20'],
+          next: 'n',
+          append: false,
+        },
         'req',
-        { folderId: '7', url: 'next' },
+        arg,
+      ),
+    );
+    state = statusLists(
+      state,
+      fetchBookmarkList.fulfilled(
+        { key: 'bookmarks:7', statusIds: ['10'], next: null, append: true },
+        'req2',
+        { ...arg, url: 'n' },
       ),
     );
 
@@ -155,7 +171,7 @@ describe('status_lists — bookmark folder lists', () => {
     expect(state.getIn(['bookmarks:7', 'isLoading'])).toBe(false);
   });
 
-  it('applies a new folder set to loaded folders only', () => {
+  it('removes the status from folders it left and drops lists it newly joined', () => {
     let state = loadFolder(initial, '1', ['20']);
     state = loadFolder(state, '2', ['40', '30']);
 
@@ -168,9 +184,24 @@ describe('status_lists — bookmark folder lists', () => {
       ),
     );
 
-    expect(items(state, 'bookmarks:1')).toEqual(['30', '20']);
+    expect(state.has('bookmarks:1')).toBe(false);
     expect(items(state, 'bookmarks:2')).toEqual(['40']);
     expect(state.has('bookmarks:3')).toBe(false);
+  });
+
+  it('keeps a folder list that already contains the status', () => {
+    let state = loadFolder(initial, '1', ['30', '20']);
+
+    state = statusLists(
+      state,
+      setStatusBookmarkFolders.fulfilled(
+        { statusId: '30', folderIds: ['1'] },
+        'req',
+        { statusId: '30', folderIds: ['1'] },
+      ),
+    );
+
+    expect(items(state, 'bookmarks:1')).toEqual(['30', '20']);
   });
 
   it('drops an unbookmarked status from every folder and the main list', () => {

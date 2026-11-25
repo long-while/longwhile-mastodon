@@ -13,6 +13,7 @@ import { accountsMapReducer } from './accounts_map';
 import { adminDmRoomsReducer } from './admin_dm_rooms';
 import { alertsReducer } from './alerts';
 import announcements from './announcements';
+import { bookmarkDetailsReducer } from './bookmark_details';
 import { bookmarkFoldersReducer } from './bookmark_folders';
 import { composeReducer } from './compose';
 import { contextsReducer } from './contexts';
@@ -80,6 +81,7 @@ const reducers = {
   custom_emojis,
   lists: listsReducer,
   bookmarkFolders: bookmarkFoldersReducer,
+  bookmarkDetails: bookmarkDetailsReducer,
   filters,
   conversations,
   suggestions: suggestionsReducer,

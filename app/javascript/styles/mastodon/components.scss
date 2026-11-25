@@ -15685,6 +15685,8 @@ body .compose-format-toolbar.dropdown-menu {
   }
 
   &__tab {
+    display: inline-flex;
+    align-items: center;
     flex: 0 0 auto;
     max-width: 14em;
     padding: 6px 14px;
@@ -15727,6 +15729,19 @@ body .compose-format-toolbar.dropdown-menu {
         color: var(--color-brand-longwhile-links, #{$highlight-text-color});
       }
     }
+  }
+
+  &__name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__count {
+    flex: 0 0 auto;
+    margin-inline-start: 2px;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.8;
   }
 
   &__manage {
@@ -15789,6 +15804,366 @@ body .compose-format-toolbar.dropdown-menu {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+  }
+}
+
+.bookmark-filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 12px 10px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-column, transparent);
+
+  &__chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+
+  &__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+    min-height: 32px;
+    padding: 4px 12px;
+    border: 1px solid var(--color-button-border, var(--color-border));
+    background: transparent;
+    color: $darker-text-color;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+
+    @media (pointer: coarse) {
+      min-height: 44px;
+    }
+
+    .icon {
+      flex: 0 0 auto;
+      width: 18px;
+      height: 18px;
+    }
+
+    &:hover,
+    &:focus-visible {
+      color: $primary-text-color;
+    }
+
+    &:focus-visible {
+      outline: $ui-button-icon-focus-outline;
+    }
+
+    &--active {
+      border-color: var(--color-brand-longwhile, #{$highlight-text-color});
+      background: color-mix(
+        in srgb,
+        var(--color-brand-longwhile, #{$highlight-text-color}) 14%,
+        transparent
+      );
+      color: var(--color-brand-longwhile-links, #{$highlight-text-color});
+      font-weight: 600;
+
+      &:hover,
+      &:focus-visible {
+        color: var(--color-brand-longwhile-links, #{$highlight-text-color});
+      }
+    }
+  }
+
+  &__select {
+    margin-inline-start: auto;
+  }
+}
+
+.bookmark-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  &__icon {
+    position: absolute;
+    inset-inline-start: 10px;
+    width: 18px;
+    height: 18px;
+    color: $darker-text-color;
+    pointer-events: none;
+  }
+
+  &__input {
+    flex: 1 1 auto;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 8px 36px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-column, var(--input-background-color));
+    color: var(--on-input-color);
+    font-family: inherit;
+    font-size: 15px;
+    line-height: 20px;
+
+    &::placeholder {
+      color: var(--input-placeholder-color);
+      opacity: 1;
+    }
+  }
+
+  &__clear {
+    position: absolute;
+    inset-inline-end: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: $darker-text-color;
+    cursor: pointer;
+
+    .icon {
+      width: 18px;
+      height: 18px;
+    }
+
+    &:hover,
+    &:focus-visible {
+      color: $primary-text-color;
+    }
+
+    &:focus-visible {
+      outline: $ui-button-icon-focus-outline;
+    }
+  }
+}
+
+.bookmark-author-filter {
+  &__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  &__name {
+    min-width: 0;
+    max-width: 12em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    .display-name__account {
+      display: none;
+    }
+  }
+
+  &__option > button {
+    display: flex;
+    align-items: center;
+    width: 100%;
+  }
+
+  &__option--active > button {
+    font-weight: 600;
+  }
+}
+
+.bookmark-select-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+
+  &__button {
+    min-height: 32px;
+    padding: 4px 12px;
+    background: transparent;
+    color: $primary-text-color;
+    font: inherit;
+    cursor: pointer;
+
+    @media (pointer: coarse) {
+      min-height: 44px;
+    }
+
+    &--dangerous {
+      color: var(--color-brand-longwhile-danger, #{$error-value-color});
+    }
+  }
+}
+
+.bookmark-select-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  user-select: none;
+
+  &:has(.bookmark-select-row__checkbox:checked) {
+    background: color-mix(
+      in srgb,
+      var(--color-brand-longwhile, #{$highlight-text-color}) 8%,
+      transparent
+    );
+  }
+
+  &:hover,
+
+  &__checkbox {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    margin: 9px 0 0;
+    accent-color: var(--color-brand-longwhile, #{$highlight-text-color});
+  }
+
+  &__avatar {
+    flex: 0 0 auto;
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  &__name,
+  &__excerpt,
+  &__note {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__name {
+    font-size: 14px;
+    color: $primary-text-color;
+  }
+
+  &__excerpt {
+    font-size: 14px;
+    color: $darker-text-color;
+  }
+
+  &__note {
+    font-size: 13px;
+    color: var(--color-brand-longwhile-links, #{$highlight-text-color});
+  }
+}
+
+.bookmark-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.bookmark-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 4px;
+  background: color-mix(in srgb, currentColor 5%, transparent);
+  color: $darker-text-color;
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  text-align: start;
+  cursor: pointer;
+
+  &:hover {
+    background: color-mix(in srgb, currentColor 9%, transparent);
+    color: $primary-text-color;
+  }
+
+  &:focus-visible {
+    outline: $ui-button-icon-focus-outline;
+  }
+
+  &__text {
+    min-width: 0;
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  &__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
+.bookmark-note-modal {
+  &__field {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 120px;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--input-background-color);
+    color: var(--on-input-color);
+    font-family: inherit;
+    font-size: 15px;
+    line-height: 22px;
+    resize: vertical;
+
+    &::placeholder {
+      color: var(--input-placeholder-color);
+      opacity: 1;
+    }
+
+    &:focus-visible {
+      outline: $ui-button-icon-focus-outline;
+    }
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: -8px;
+    font-size: 13px;
+  }
+
+  &__error {
+    color: var(--color-brand-longwhile-danger, #{$error-value-color});
+  }
+
+  &__count {
+    margin-inline-start: auto;
+    color: $darker-text-color;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+
+    .spacer {
+      flex: 1 1 auto;
     }
   }
 }

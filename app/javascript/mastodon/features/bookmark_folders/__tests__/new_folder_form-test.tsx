@@ -50,7 +50,12 @@ describe('<NewFolderForm />', () => {
   });
 
   it('sends the trimmed name and reports the created folder', async () => {
-    const created = { id: '9', name: 'Recipes', position: 0 };
+    const created = {
+      id: '9',
+      name: 'Recipes',
+      position: 0,
+      statuses_count: 0,
+    };
     vi.mocked(apiCreateBookmarkFolder).mockResolvedValue(created);
     const onCreate = renderForm(0);
 

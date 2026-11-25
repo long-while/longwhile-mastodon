@@ -26,6 +26,7 @@ import { PERMISSION_MANAGE_USERS, PERMISSION_MANAGE_FEDERATION } from 'mastodon/
 import { IconButton } from '../../../components/icon_button';
 import { openModal } from 'mastodon/actions/modal';
 import { Dropdown } from 'mastodon/components/dropdown_menu';
+import { BookmarkContext } from 'mastodon/features/bookmarked_statuses/bookmark_context';
 import { me } from '../../../initial_state';
 
 const messages = defineMessages({
@@ -52,6 +53,9 @@ const messages = defineMessages({
   pin: { id: 'status.pin', defaultMessage: 'Pin on profile' },
   unpin: { id: 'status.unpin', defaultMessage: 'Unpin from profile' },
   bookmarkFolders: { id: 'status.bookmark_folders', defaultMessage: 'Add to bookmark folder' },
+  addBookmarkNote: { id: 'bookmark_note.add', defaultMessage: 'Add note' },
+  editBookmarkNote: { id: 'bookmark_note.edit', defaultMessage: 'Edit note' },
+  removeFromBookmarkFolder: { id: 'bookmark_folders.remove_from_folder', defaultMessage: 'Remove from this folder' },
   admin_account: { id: 'status.admin_account', defaultMessage: 'Open moderation interface for @{name}' },
   admin_status: { id: 'status.admin_status', defaultMessage: 'Open this post in the moderation interface' },
   admin_domain: { id: 'status.admin_domain', defaultMessage: 'Open moderation interface for {domain}' },
@@ -68,6 +72,8 @@ const mapStateToProps = (state, { status }) => ({
 });
 
 class ActionBar extends PureComponent {
+  static contextType = BookmarkContext;
+
   static propTypes = {
     dispatch: PropTypes.func.isRequired,
     identity: identityContextPropShape,
@@ -177,6 +183,14 @@ class ActionBar extends PureComponent {
     this.props.onPin(this.props.status);
   };
 
+  handleBookmarkNoteClick = () => {
+    this.context?.onEditNote(this.props.status.get('id'));
+  };
+
+  handleRemoveFromBookmarkFolderClick = () => {
+    this.context?.onRemoveFromFolder(this.props.status.get('id'));
+  };
+
   handleBookmarkFoldersClick = () => {
     this.props.dispatch(openModal({
       modalType: 'BOOKMARK_FOLDER_ADDER',
@@ -211,6 +225,15 @@ class ActionBar extends PureComponent {
     if (signedIn) {
       menu.push(null);
       menu.push({ text: intl.formatMessage(messages.bookmarkFolders), action: this.handleBookmarkFoldersClick });
+
+      if (this.context) {
+        const hasNote = !!this.context.details[status.get('id')]?.note;
+        menu.push({ text: intl.formatMessage(hasNote ? messages.editBookmarkNote : messages.addBookmarkNote), action: this.handleBookmarkNoteClick });
+
+        if (this.context.folderId) {
+          menu.push({ text: intl.formatMessage(messages.removeFromBookmarkFolder), action: this.handleRemoveFromBookmarkFolderClick });
+        }
+      }
 
       if (writtenByMe) {
         if (pinnableStatus) {

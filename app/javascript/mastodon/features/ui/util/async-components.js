@@ -190,6 +190,10 @@ export function BookmarkFolderManager() {
   return import('../../bookmark_folders/folder_manager_modal');
 }
 
+export function BookmarkNoteModal() {
+  return import('../../bookmarked_statuses/note_modal');
+}
+
 export function ListAdder() {
   return import('../../list_adder');
 }

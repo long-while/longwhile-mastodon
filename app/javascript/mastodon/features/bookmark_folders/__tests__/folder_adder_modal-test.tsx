@@ -24,8 +24,8 @@ vi.mock('mastodon/actions/importer', async (importOriginal) => ({
 type SetResult = Awaited<ReturnType<typeof apiSetStatusBookmarkFolders>>;
 
 const folders: ApiBookmarkFolderJSON[] = [
-  { id: '1', name: 'Read later', position: 0 },
-  { id: '2', name: 'Recipes', position: 1 },
+  { id: '1', name: 'Read later', position: 0, statuses_count: 0 },
+  { id: '2', name: 'Recipes', position: 1, statuses_count: 0 },
 ];
 
 const saved = (folderIds: string[]) =>
@@ -89,6 +89,7 @@ describe('<BookmarkFolderAdderModal />', () => {
       id: '9',
       name: 'Fresh',
       position: 2,
+      statuses_count: 0,
     });
     renderModal();
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback, useMemo, useState } from 'react';
 
 import { defineMessages, useIntl, FormattedMessage } from 'react-intl';
 
@@ -6,30 +6,45 @@ import { Helmet } from 'react-helmet';
 
 import BookmarksIcon from '@/material-icons/400-24px/bookmarks-fill.svg?react';
 import {
-  fetchBookmarkFolders,
-  fetchBookmarkFolderStatuses,
-  bookmarkFolderListKey,
-} from 'mastodon/actions/bookmark_folders';
-import {
-  fetchBookmarkedStatuses,
-  expandBookmarkedStatuses,
-} from 'mastodon/actions/bookmarks';
+  UNSORTED_FOLDER_ID,
+  isRealFolderId,
+  removeStatusesFromBookmarkFolder,
+} from 'mastodon/actions/bookmark_list';
 import {
   addColumn,
   removeColumn,
   moveColumn,
   changeColumnParams,
 } from 'mastodon/actions/columns';
+import { openModal } from 'mastodon/actions/modal';
+import type { ApiBookmarkFolderJSON } from 'mastodon/api_types/bookmark_folders';
 import { Button } from 'mastodon/components/button';
 import { Column } from 'mastodon/components/column';
 import type { ColumnRef } from 'mastodon/components/column';
 import { ColumnHeader } from 'mastodon/components/column_header';
 import { useAppHistory } from 'mastodon/components/router';
 import StatusList from 'mastodon/components/status_list';
-import { getStatusList } from 'mastodon/selectors';
 import { useAppDispatch, useAppSelector } from 'mastodon/store';
 
 import { BookmarkFolderTabs } from '../bookmark_folders/folder_tabs';
+
+import { BookmarkContext } from './bookmark_context';
+import type { BookmarkContextValue } from './bookmark_context';
+import { BookmarkFilterBar } from './components/filter_bar';
+import { BookmarkSelectActions } from './components/select_actions';
+import { BookmarkSelectList } from './components/select_list';
+import type { BookmarkColumnParams } from './use_bookmark_filters';
+import {
+  buildBookmarkQuery,
+  hasActiveFilters,
+  useBookmarkFilters,
+} from './use_bookmark_filters';
+import {
+  useBookmarkDetailsLoader,
+  useBookmarkFolders,
+  useBookmarkList,
+  useSelectMode,
+} from './use_bookmark_page';
 
 const messages = defineMessages({
   heading: { id: 'column.bookmarks', defaultMessage: 'Bookmarks' },
@@ -37,9 +52,14 @@ const messages = defineMessages({
     id: 'column.bookmarks_folder',
     defaultMessage: 'Bookmarks · {name}',
   },
+  unsorted: { id: 'bookmark_folders.unsorted', defaultMessage: 'Unsorted' },
   showAll: {
     id: 'bookmark_folders.show_all',
     defaultMessage: 'Show all bookmarks',
+  },
+  resetFilters: {
+    id: 'bookmarks.filter.reset_all',
+    defaultMessage: 'Clear search and filters',
   },
 });
 
@@ -76,13 +96,15 @@ const useSelectedFolder = (
 const EmptyMessage: React.FC<{
   folderId?: string;
   missing: boolean;
+  filtered: boolean;
   onShowAll: () => void;
-}> = ({ folderId, missing, onShowAll }) => {
+  onResetFilters: () => void;
+}> = ({ folderId, missing, filtered, onShowAll, onResetFilters }) => {
   const intl = useIntl();
 
   if (missing) {
     return (
-      <>
+      <div className='bookmark-empty'>
         <FormattedMessage
           id='bookmark_folders.missing'
           defaultMessage='Folder not found. It may have been deleted.'
@@ -91,7 +113,32 @@ const EmptyMessage: React.FC<{
           text={intl.formatMessage(messages.showAll)}
           onClick={onShowAll}
         />
-      </>
+      </div>
+    );
+  }
+
+  if (filtered) {
+    return (
+      <div className='bookmark-empty'>
+        <FormattedMessage
+          id='empty_column.bookmarks_filtered'
+          defaultMessage='No bookmarks match your search or filters.'
+        />
+        <Button
+          secondary
+          text={intl.formatMessage(messages.resetFilters)}
+          onClick={onResetFilters}
+        />
+      </div>
+    );
+  }
+
+  if (folderId === UNSORTED_FOLDER_ID) {
+    return (
+      <FormattedMessage
+        id='empty_column.bookmarks_unsorted'
+        defaultMessage='Every bookmark is in a folder.'
+      />
     );
   }
 
@@ -112,12 +159,66 @@ const EmptyMessage: React.FC<{
   );
 };
 
+const useColumnTitle = (
+  folderId: string | undefined,
+  folder: ApiBookmarkFolderJSON | undefined,
+) => {
+  const intl = useIntl();
+
+  if (folder) {
+    return intl.formatMessage(messages.headingWithFolder, {
+      name: folder.name,
+    });
+  }
+
+  if (folderId === UNSORTED_FOLDER_ID) {
+    return intl.formatMessage(messages.headingWithFolder, {
+      name: intl.formatMessage(messages.unsorted),
+    });
+  }
+
+  return intl.formatMessage(messages.heading);
+};
+
+const useBookmarkContextValue = (
+  realFolderId: string | undefined,
+): BookmarkContextValue => {
+  const dispatch = useAppDispatch();
+  const details = useAppSelector((state) => state.bookmarkDetails);
+
+  const onEditNote = useCallback(
+    (statusId: string) => {
+      dispatch(
+        openModal({ modalType: 'BOOKMARK_NOTE', modalProps: { statusId } }),
+      );
+    },
+    [dispatch],
+  );
+
+  const onRemoveFromFolder = useCallback(
+    (statusId: string) => {
+      if (!realFolderId) return;
+      void dispatch(
+        removeStatusesFromBookmarkFolder({
+          folderId: realFolderId,
+          statusIds: [statusId],
+        }),
+      );
+    },
+    [dispatch, realFolderId],
+  );
+
+  return useMemo(
+    () => ({ folderId: realFolderId, details, onEditNote, onRemoveFromFolder }),
+    [realFolderId, details, onEditNote, onRemoveFromFolder],
+  );
+};
+
 const Bookmarks: React.FC<{
   columnId: string;
   multiColumn: boolean;
-  params?: { folderId?: string | null };
+  params?: BookmarkColumnParams;
 }> = ({ columnId, multiColumn, params }) => {
-  const intl = useIntl();
   const dispatch = useAppDispatch();
   const columnRef = useRef<ColumnRef>(null);
   const pinned = !!columnId;
@@ -125,55 +226,50 @@ const Bookmarks: React.FC<{
     params?.folderId ?? undefined,
     columnId,
   );
-  const listKey = folderId ? bookmarkFolderListKey(folderId) : 'bookmarks';
-
-  const folders = useAppSelector((state) => state.bookmarkFolders.items);
-  const foldersLoaded = useAppSelector((state) => state.bookmarkFolders.loaded);
-  const foldersLoading = useAppSelector(
-    (state) => state.bookmarkFolders.isLoading,
-  );
-  const foldersFailed = useAppSelector(
-    (state) => state.bookmarkFolders.hasError,
-  );
-  const folder = folderId ? folders.find((f) => f.id === folderId) : undefined;
-  const folderExists = !!folder;
-  const folderMissing =
-    !!folderId && foldersLoaded && !foldersLoading && !folderExists;
-  const title = folder
-    ? intl.formatMessage(messages.headingWithFolder, { name: folder.name })
-    : intl.formatMessage(messages.heading);
-  const statusIds = useAppSelector((state) => getStatusList(state, listKey));
-  const isLoading = useAppSelector(
-    (state) =>
-      state.status_lists.getIn([listKey, 'isLoading'], true) as boolean,
-  );
-  const next = useAppSelector(
-    (state) =>
-      state.status_lists.getIn([listKey, 'next'], null) as string | null,
+  const realFolderId = isRealFolderId(folderId) ? folderId : undefined;
+  const filterState = useBookmarkFilters(columnId, params);
+  const { filters } = filterState;
+  const filtered = hasActiveFilters(filters);
+  const query = useMemo(
+    () => buildBookmarkQuery(folderId, filters),
+    [folderId, filters],
   );
 
-  useEffect(() => {
-    void dispatch(fetchBookmarkFolders());
-  }, [dispatch]);
+  const { folders, failed: foldersFailed, settled } = useBookmarkFolders();
+  const folder = realFolderId
+    ? folders.find((f) => f.id === realFolderId)
+    : undefined;
+  const folderMissing = !!realFolderId && settled && !foldersFailed && !folder;
+  const title = useColumnTitle(folderId, folder);
 
-  useEffect(() => {
-    if (!folderId) {
-      dispatch(fetchBookmarkedStatuses());
-      return;
-    }
+  const canLoad = !realFolderId || !!folder || foldersFailed;
+  const list = useBookmarkList(query, canLoad);
+  useBookmarkDetailsLoader(list.statusIds);
 
-    if (folderExists || foldersFailed) {
-      void dispatch(fetchBookmarkFolderStatuses({ folderId }));
-    }
-  }, [dispatch, folderId, folderExists, foldersFailed]);
+  const select = useSelectMode({
+    statusIds: list.statusIds,
+    listKey: list.key,
+    folderId: realFolderId,
+    folders,
+  });
+  const contextValue = useBookmarkContextValue(realFolderId);
 
   const handlePin = useCallback(() => {
     if (columnId) {
       dispatch(removeColumn(columnId));
-    } else {
-      dispatch(addColumn('BOOKMARKS', folderId ? { folderId } : {}));
+      return;
     }
-  }, [dispatch, columnId, folderId]);
+
+    const { folderId: pinnedFolderId, q, onlyMedia, accountId } = query;
+    dispatch(
+      addColumn('BOOKMARKS', {
+        ...(pinnedFolderId && { folderId: pinnedFolderId }),
+        ...(q && { q }),
+        ...(onlyMedia && { onlyMedia }),
+        ...(accountId && { accountId }),
+      }),
+    );
+  }, [dispatch, columnId, query]);
 
   const handleMove = useCallback(
     (dir: number) => {
@@ -190,16 +286,17 @@ const Bookmarks: React.FC<{
     columnRef.current?.scrollTop();
   }, []);
 
-  const handleLoadMore = useCallback(() => {
-    if (!folderId) {
-      dispatch(expandBookmarkedStatuses());
-      return;
-    }
-
-    if (next && !isLoading) {
-      void dispatch(fetchBookmarkFolderStatuses({ folderId, url: next }));
-    }
-  }, [dispatch, folderId, next, isLoading]);
+  const statusIds = folderMissing ? list.statusIds.clear() : list.statusIds;
+  const scrollKey = `bookmarked_statuses-${columnId}-${list.key}`;
+  const emptyMessage = (
+    <EmptyMessage
+      folderId={folderId}
+      missing={folderMissing}
+      filtered={filtered}
+      onShowAll={handleShowAll}
+      onResetFilters={filterState.clearAll}
+    />
+  );
 
   return (
     <Column bindToDocument={!multiColumn} ref={columnRef} label={title}>
@@ -213,31 +310,74 @@ const Bookmarks: React.FC<{
         pinned={pinned}
         multiColumn={multiColumn}
         appendContent={
-          <BookmarkFolderTabs
-            folders={folders}
-            selectedId={folderId}
-            onSelect={selectFolder}
-          />
+          <>
+            <BookmarkFolderTabs
+              folders={folders}
+              selectedId={folderId}
+              onSelect={selectFolder}
+            />
+
+            <BookmarkFilterBar
+              searchText={filterState.searchText}
+              onSearchTextChange={filterState.setSearchText}
+              onSearchSubmit={filterState.submitSearch}
+              onSearchClear={filterState.clearSearch}
+              onlyMedia={filters.onlyMedia}
+              onOnlyMediaChange={filterState.setOnlyMedia}
+              accountId={filters.accountId}
+              onAccountChange={filterState.setAccountId}
+              filtered={filtered}
+              onClearAll={filterState.clearAll}
+              selecting={select.selecting}
+              onSelectingChange={select.changeSelecting}
+            />
+
+            {select.selecting && (
+              <BookmarkSelectActions
+                selectedCount={select.selected.size}
+                loadedCount={statusIds.size}
+                folders={folders}
+                currentFolderId={realFolderId}
+                busy={select.busy}
+                onSelectAll={select.selectAll}
+                onClearSelection={select.clear}
+                onAddToFolder={select.addSelectedToFolder}
+                onRemoveFromFolder={select.removeSelectedFromFolder}
+                onUnbookmark={select.unbookmarkSelected}
+                onDone={select.leave}
+              />
+            )}
+          </>
         }
       />
 
-      <StatusList
-        trackScroll={!pinned}
-        statusIds={folderMissing ? statusIds.clear() : statusIds}
-        scrollKey={`bookmarked_statuses-${columnId}-${folderId ?? 'all'}`}
-        hasMore={!folderMissing && !!next}
-        isLoading={!folderMissing && isLoading}
-        onLoadMore={handleLoadMore}
-        emptyMessage={
-          <EmptyMessage
-            folderId={folderId}
-            missing={folderMissing}
-            onShowAll={handleShowAll}
+      <BookmarkContext.Provider value={contextValue}>
+        {select.selecting ? (
+          <BookmarkSelectList
+            statusIds={statusIds.toArray()}
+            selected={select.selected}
+            onToggle={select.toggle}
+            scrollKey={`${scrollKey}-select`}
+            hasMore={!folderMissing && !!list.next}
+            isLoading={!folderMissing && list.isLoading}
+            onLoadMore={list.loadMore}
+            emptyMessage={emptyMessage}
+            bindToDocument={!multiColumn}
           />
-        }
-        bindToDocument={!multiColumn}
-        timelineId='bookmarks'
-      />
+        ) : (
+          <StatusList
+            trackScroll={!pinned}
+            statusIds={statusIds}
+            scrollKey={scrollKey}
+            hasMore={!folderMissing && !!list.next}
+            isLoading={!folderMissing && list.isLoading}
+            onLoadMore={list.loadMore}
+            emptyMessage={emptyMessage}
+            bindToDocument={!multiColumn}
+            timelineId='bookmarks'
+          />
+        )}
+      </BookmarkContext.Provider>
 
       <Helmet>
         <title>{title}</title>

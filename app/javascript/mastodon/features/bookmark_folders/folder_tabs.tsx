@@ -5,6 +5,7 @@ import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
 import classNames from 'classnames';
 
 import SettingsIcon from '@/material-icons/400-24px/settings.svg?react';
+import { UNSORTED_FOLDER_ID } from 'mastodon/actions/bookmark_list';
 import { openModal } from 'mastodon/actions/modal';
 import type { ApiBookmarkFolderJSON } from 'mastodon/api_types/bookmark_folders';
 import { IconButton } from 'mastodon/components/icon_button';
@@ -16,6 +17,10 @@ const messages = defineMessages({
     defaultMessage: 'Bookmark folders',
   },
   manage: { id: 'bookmark_folders.manage', defaultMessage: 'Manage folders' },
+  folderTitle: {
+    id: 'bookmark_folders.tab_title',
+    defaultMessage: '{name} ({count, plural, one {# post} other {# posts}})',
+  },
 });
 
 const Tab: React.FC<{
@@ -77,15 +82,32 @@ export const BookmarkFolderTabs: React.FC<{
           <FormattedMessage id='bookmark_folders.all' defaultMessage='All' />
         </Tab>
 
+        <Tab
+          id={UNSORTED_FOLDER_ID}
+          selected={selectedId === UNSORTED_FOLDER_ID}
+          onSelect={onSelect}
+        >
+          <FormattedMessage
+            id='bookmark_folders.unsorted'
+            defaultMessage='Unsorted'
+          />
+        </Tab>
+
         {folders.map((folder) => (
           <Tab
             key={folder.id}
             id={folder.id}
-            title={folder.name}
+            title={intl.formatMessage(messages.folderTitle, {
+              name: folder.name,
+              count: folder.statuses_count,
+            })}
             selected={folder.id === selectedId}
             onSelect={onSelect}
           >
-            {folder.name}
+            <span className='bookmark-folder-tabs__name'>{folder.name}</span>{' '}
+            <span className='bookmark-folder-tabs__count'>
+              {folder.statuses_count}
+            </span>
           </Tab>
         ))}
       </nav>
