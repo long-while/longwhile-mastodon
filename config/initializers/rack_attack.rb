@@ -50,7 +50,11 @@ class Rack::Attack
     end
 
     def path_matches?(other_path)
-      /\A#{Regexp.escape(other_path)}(\..*)?\z/ =~ path
+      /\A#{Regexp.escape(other_path)}(\..*)?\z/ =~ normalized_path
+    end
+
+    def normalized_path
+      @normalized_path ||= Rack::Utils.unescape_path(path).scrub.squeeze('/').chomp('/')
     end
 
     def web_request?
@@ -94,6 +98,10 @@ class Rack::Attack
 
   throttle('throttle_media_proxy', limit: 30, period: 10.minutes) do |req|
     req.throttleable_remote_ip if req.path.start_with?('/media_proxy')
+  end
+
+  throttle('throttle_status_preview/account', limit: 300, period: 5.minutes) do |req|
+    req.authenticated_user_id if req.post? && req.path_matches?('/api/v1/statuses/preview')
   end
 
   throttle('throttle_api_sign_up', limit: 5, period: 30.minutes) do |req|

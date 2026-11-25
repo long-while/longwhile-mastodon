@@ -47,6 +47,7 @@ import {
   selectDmRoom,
   selectDmRooms,
   selectDmRoomMessages,
+  selectMaxCharacters,
   selectMaxMediaAttachments,
   selectMessageAccount,
   selectMessageStatuses,
@@ -108,7 +109,7 @@ const messages = defineMessages({
   offline: {
     id: 'messages.offline',
     defaultMessage:
-      'Connection lost. Checking for new messages every so often until it is back.',
+      'Connection lost. Checking for new messages about every 30 seconds until it is back.',
   },
 });
 
@@ -179,6 +180,7 @@ const Room: React.FC = () => {
   const keyboardInset = useKeyboardInset();
 
   const maxAttachments = useAppSelector(selectMaxMediaAttachments);
+  const maxCharacters = useAppSelector(selectMaxCharacters);
   const uploads = useUploads(maxAttachments);
 
   const uploadsRef = useRef(uploads);
@@ -980,6 +982,7 @@ const Room: React.FC = () => {
         )}
 
         <Composer
+          maxCharacters={maxCharacters}
           value={draftText}
           onChange={handleDraftChange}
           onSubmit={handleSubmit}

@@ -78,7 +78,7 @@ RSpec.describe 'Instances' do
             profile_field_value_limit: Account::Field::MAX_CHARACTERS_LOCAL
           ),
           statuses: include(
-            max_characters: StatusLengthValidator::MAX_CHARS,
+            max_characters: StatusLengthValidator.max_chars,
             max_media_attachments: Status::MEDIA_ATTACHMENTS_LIMIT
           ),
           media_attachments: include(

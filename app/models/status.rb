@@ -75,6 +75,8 @@ class Status < ApplicationRecord
   # will be based on current time instead of `created_at`
   attr_accessor :override_timestamps
 
+  attr_accessor :length_limit_override
+
   update_index('statuses', :proper)
   update_index('public_statuses', :proper)
 

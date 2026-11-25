@@ -11,8 +11,17 @@ import {
   uploadCompose,
 } from 'mastodon/actions/compose';
 import { openModal } from 'mastodon/actions/modal';
+import { maxCharacters } from 'mastodon/initial_state';
 
 import ComposeForm from '../components/compose_form';
+
+const selectComposeMaxChars = state => {
+  const limit = state.getIn(['server', 'server', 'configuration', 'statuses', 'max_characters'], maxCharacters);
+
+  if (state.getIn(['compose', 'id']) === null) return limit;
+
+  return Math.max(limit, state.getIn(['compose', 'edit_original_length'], 0));
+};
 
 const mapStateToProps = state => ({
   text: state.getIn(['compose', 'text']),
@@ -35,7 +44,7 @@ const mapStateToProps = state => ({
   isScheduled: state.getIn(['compose', 'scheduled_at']) !== null,
   isEditingScheduled: state.getIn(['compose', 'scheduled_status_id']) !== null,
   lang: state.getIn(['compose', 'language']),
-  maxChars: state.getIn(['server', 'server', 'configuration', 'statuses', 'max_characters'], 1000),
+  maxChars: selectComposeMaxChars(state),
 });
 
 const mapDispatchToProps = (dispatch) => ({

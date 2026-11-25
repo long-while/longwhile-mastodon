@@ -20,3 +20,9 @@
               hint: false,
               input_html: { rows: 8 },
               wrapper: :with_block_label
+
+  .fields-group
+    = f.input :status_length_limit,
+              as: :integer,
+              wrapper: :with_label,
+              input_html: { min: StatusLengthValidator::MIN_LIMIT, max: StatusLengthValidator::MAX_LIMIT, step: 1 }

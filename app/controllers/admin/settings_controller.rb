@@ -28,7 +28,11 @@ module Admin
 
     def settings_params
       params
-        .expect(form_admin_settings: [*Form::AdminSettings::KEYS])
+        .expect(form_admin_settings: [
+                  *(Form::AdminSettings::KEYS - Form::AdminSettings::STRUCTURED_KEYS),
+                  :text_color_palette_submitted,
+                  { text_color_palette: [[:name, :hex]] },
+                ])
     end
   end
 end

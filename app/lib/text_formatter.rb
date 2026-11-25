@@ -17,14 +17,38 @@ class TextFormatter
     '한참 커미션' => 'https://kre.pe/QTRx',
   }.freeze
 
+  PLACEHOLDER_OPEN  = "\uE000"
+  PLACEHOLDER_CLOSE = "\uE001"
+  PLACEHOLDER_REGEX = /\uE000(\d+)\uE001/
+
+  EMPHASIS_RULES = [
+    [/(?<!\*)\*\*\*(?=\S)([^*\n<>]+?)(?<=\S)\*\*\*(?!\*)/, '<strong><em>\1</em></strong>'],
+    [/(?<!\*)\*\*(?=\S)([^*\n<>]+?)(?<=\S)\*\*(?!\*)/, '<strong>\1</strong>'],
+    [/(?<!\*)\*(?=\S)([^*\n<>]+?)(?<=\S)\*(?!\*)/, '<em>\1</em>'],
+    [/(?<![^\s>\]])~~~(?=\S)([^~\n<>]+?)(?<=\S)~~~/, '<del>\1</del>'],
+  ].freeze
+
+  HEX_COLOR = '(\h{3}|\h{6})'
+
+  BRACKET_TAG = '\[(?:\/?(?:color|bg)|color:|bg:|\/?(?:center|right|left)|\/?[us]\])'
+  INNER_TEXT  = "((?:(?!#{BRACKET_TAG}).)*?)".freeze
+  BRACKET_RULES = [
+    [%r{\[color:#{HEX_COLOR}\]#{INNER_TEXT}\[/color\]}, ->(m) { %(<span style="color: ##{m[1]};">#{m[2]}</span>) }],
+    [%r{\[bg:#{HEX_COLOR}\]#{INNER_TEXT}\[/bg\]}, ->(m) { %(<span style="background-color: ##{m[1]};">#{m[2]}</span>) }],
+    [%r{\[u\]#{INNER_TEXT}\[/u\]}, ->(m) { %(<u>#{m[1]}</u>) }],
+    [%r{\[s\]#{INNER_TEXT}\[/s\]}, ->(m) { %(<del>#{m[1]}</del>) }],
+    [%r{\[center\]#{INNER_TEXT}\[/center\]\n?}, ->(m) { %(<span style="display: block; text-align: center;">#{m[1]}</span>) }],
+    [%r{\[right\]#{INNER_TEXT}\[/right\]\n?}, ->(m) { %(<span style="display: block; text-align: right;">#{m[1]}</span>) }],
+    [%r{\[left\]#{INNER_TEXT}\[/left\]\n?}, ->(m) { %(<span style="display: block; text-align: left;">#{m[1]}</span>) }],
+  ].freeze
+  BRACKET_PASSES = 10
+
+  URL_FORMAT_TAG_REGEX = %r{\[/?(?:(?:color|bg|center|right|left)(?=[\]:]|\z)|[us](?=\]|\z))}
+
+  FORMAT_TAG_REGEX = %r{<(/?)(strong|em|del|span|u)\b[^>]*>}
+
   attr_reader :text, :options
 
-  # @param [String] text
-  # @param [Hash] options
-  # @option options [Boolean] :multiline
-  # @option options [Boolean] :with_domains
-  # @option options [Boolean] :with_rel_me
-  # @option options [Array<Account>] :preloaded_accounts
   def initialize(text, options = {})
     @text    = text
     @options = DEFAULT_OPTIONS.merge(options)
@@ -32,24 +56,21 @@ class TextFormatter
 
   def entities
     @entities ||= Extractor.extract_entities_with_indices(text, extract_url_without_protocol: false)
+      .filter_map { |entity| entity[:url] ? trim_url_entity(entity) : entity }
   end
 
   def to_s
     return add_quote_fallback('').html_safe if text.blank? # rubocop:disable Rails/OutputSafety
 
+    placeholders = []
     html = rewrite do |entity|
-      if entity[:url]
-        link_to_url(entity)
-      elsif entity[:hashtag]
-        link_to_hashtag(entity)
-      elsif entity[:screen_name]
-        link_to_mention(entity)
-      end
+      placeholders << render_entity(entity)
+      "#{PLACEHOLDER_OPEN}#{placeholders.size - 1}#{PLACEHOLDER_CLOSE}"
     end
 
     html = apply_simple_markdown(html)
-
     html = apply_auto_link_keywords(html)
+    html = html.gsub(PLACEHOLDER_REGEX) { placeholders[Regexp.last_match(1).to_i] }
 
     html = simple_format(html, {}, sanitize: false).delete("\n") if multiline?
     html = add_quote_fallback(html) if options[:quoted_status].present?
@@ -102,27 +123,62 @@ class TextFormatter
   private
 
   def apply_simple_markdown(html)
-    html = html.gsub(/\*\*\*([^\*\n<>]+)\*\*\*/, '<strong><em>\1</em></strong>')
+    html = EMPHASIS_RULES.reduce(html) { |result, (pattern, replacement)| result.gsub(pattern, replacement) }
+    apply_bracket_tags(html)
+  end
 
-    html = html.gsub(/\*\*([^\*\n<>]+)\*\*/, '<strong>\1</strong>')
+  def apply_bracket_tags(html)
+    BRACKET_PASSES.times do
+      changed = false
 
-    html = html.gsub(/(?<!\*)\*([^\*\n<>]+)\*(?!\*)/, '<em>\1</em>')
+      BRACKET_RULES.each do |pattern, render|
+        html = html.gsub(pattern) do |source|
+          match = Regexp.last_match
+          next source unless balanced_format_tags?(match[-1])
 
-    html = html.gsub(/~~~([^~\n<>]+)~~~/, '<del>\1</del>')
+          changed = true
+          render.call(match)
+        end
+      end
 
-    html = html.gsub(/\u200A([^\u200A\n<>]+)\u200A/, '<span style="color: #1d9bf0;">\1</span>')
-
-    html = html.gsub(/\[color:([0-9a-fA-F]{3,8})\](.*?)\[\/color\]/, '<span style="color: #\1;">\2</span>')
-
-    html = html.gsub(/\[bg:([0-9a-fA-F]{3,8})\](.*?)\[\/bg\]/, '<span style="background-color: #\1;">\2</span>')
-
-    html = html.gsub(/\[center\](.*?)\[\/center\]\n?/, '<span style="display: block; text-align: center;">\1</span>')
-
-    html = html.gsub(/\[right\](.*?)\[\/right\]\n?/, '<span style="display: block; text-align: right;">\1</span>')
-
-    html = html.gsub(/\[left\](.*?)\[\/left\]\n?/, '<span style="display: block; text-align: left;">\1</span>')
+      break unless changed
+    end
 
     html
+  end
+
+  def balanced_format_tags?(fragment)
+    stack = []
+
+    fragment.scan(FORMAT_TAG_REGEX) do |closing, name|
+      if closing.empty?
+        stack << name
+      else
+        return false unless stack.pop == name
+      end
+    end
+
+    stack.empty?
+  end
+
+  def trim_url_entity(entity)
+    cut = entity[:url].index(URL_FORMAT_TAG_REGEX)
+    return entity if cut.nil?
+
+    url = entity[:url][0...cut]
+    return if url.sub(URL_PREFIX_REGEX, '').empty?
+
+    entity.merge(url: url, indices: [entity[:indices].first, entity[:indices].first + cut])
+  end
+
+  def render_entity(entity)
+    if entity[:url]
+      link_to_url(entity)
+    elsif entity[:hashtag]
+      link_to_hashtag(entity)
+    elsif entity[:screen_name]
+      link_to_mention(entity)
+    end
   end
 
   def apply_auto_link_keywords(html)
@@ -157,14 +213,18 @@ class TextFormatter
 
     last_index = entities.reduce(0) do |index, entity|
       indices = entity[:indices]
-      result << h(text[index...indices.first])
+      result << plain_segment(text[index...indices.first])
       result << yield(entity)
       indices.last
     end
 
-    result << h(text[last_index..])
+    result << plain_segment(text[last_index..])
 
     result
+  end
+
+  def plain_segment(segment)
+    h(segment).delete("#{PLACEHOLDER_OPEN}#{PLACEHOLDER_CLOSE}")
   end
 
   def link_to_url(entity)
@@ -188,7 +248,7 @@ class TextFormatter
     if preloaded_accounts?
       same_username_hits = 0
 
-      preloaded_accounts.each do |other_account|
+      Array(preloaded_accounts).each do |other_account|
         same_username = other_account.username.casecmp(username).zero?
         same_domain   = other_account.domain.nil? ? domain.nil? : other_account.domain.casecmp(domain)&.zero?
 
@@ -239,7 +299,11 @@ class TextFormatter
   end
 
   def preloaded_accounts?
-    preloaded_accounts.present?
+    strict_mentions? || preloaded_accounts.present?
+  end
+
+  def strict_mentions?
+    options[:strict_mentions]
   end
 
   def add_quote_fallback(html)

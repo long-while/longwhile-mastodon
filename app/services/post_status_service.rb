@@ -315,6 +315,7 @@ class PostStatusService < BaseService
       application: @options[:application],
       rate_limit: @options[:with_rate_limit],
       quote_approval_policy: @options[:quote_approval_policy],
+      length_limit_override: @options[:length_limit],
     }.compact
   end
 
@@ -340,6 +341,7 @@ class PostStatusService < BaseService
       options_hash[:scheduled_at]    = nil
       options_hash[:idempotency]     = nil
       options_hash[:with_rate_limit] = false
+      options_hash[:length_limit]    = StatusLengthValidator.max_chars
     end
   end
 end

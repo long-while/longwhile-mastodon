@@ -33,4 +33,12 @@ RSpec.describe InitialStateSerializer do
       'scheduled_status_minimum_offset' => ScheduledStatus::MINIMUM_OFFSET.to_i
     )
   end
+
+  it 'sends the text colors the admin set' do
+    expect(subject['text_colors'].size).to eq 9
+
+    Setting.text_color_palette = [{ 'name' => '빨강', 'hex' => 'cf5148' }]
+    expect(serialized_record_json(presenter, described_class)['meta']['text_colors'])
+      .to eq [{ 'name' => '빨강', 'hex' => 'cf5148' }]
+  end
 end

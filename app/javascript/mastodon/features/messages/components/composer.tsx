@@ -2,10 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { defineMessages, useIntl } from 'react-intl';
 
+import { length } from 'stringz';
+
 import AttachmentIcon from '@/images/compose-form-photo.svg?react';
 import SendIcon from '@/images/send-fill.svg?react';
 import EditIcon from '@/styles/bird-theme-svg/pencil-fill.svg?react';
 import { Icon } from 'mastodon/components/icon';
+import { countableText } from 'mastodon/features/compose/util/counter';
 import type { TypographicReplacement } from 'mastodon/utils/typographic_replacements';
 import {
   applyEditToTextarea,
@@ -52,8 +55,6 @@ const messages = defineMessages({
     defaultMessage: 'Remove {name}',
   },
 });
-
-const MAX_CHARACTERS = 1000;
 
 const COUNTER_THRESHOLD = 100;
 
@@ -119,6 +120,8 @@ interface Props {
 
   reservedCharacters?: number;
 
+  maxCharacters: number;
+
   uploads?: Upload[];
   canAttach?: boolean;
   isUploading?: boolean;
@@ -138,6 +141,7 @@ export const Composer: React.FC<Props> = ({
   disabled = false,
   disabledReason,
   reservedCharacters = 0,
+  maxCharacters,
   uploads = [],
   canAttach = false,
   isUploading = false,
@@ -158,7 +162,8 @@ export const Composer: React.FC<Props> = ({
 
   const sendOnEnter = useSendOnEnter();
 
-  const remaining = MAX_CHARACTERS - reservedCharacters - value.length;
+  const remaining =
+    maxCharacters - reservedCharacters - length(countableText(value));
   const tooLong   = remaining < 0;
 
   const hasReadyMedia = uploads.some((upload) => upload.state === 'done');

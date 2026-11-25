@@ -30,6 +30,7 @@ namespace :api, format: false do
     resources :statuses, only: [:index, :create, :show, :update, :destroy] do
       collection do
         get :thread_heads, to: 'statuses/thread_heads#index'
+        post :preview, to: 'statuses/previews#create'
       end
 
       scope module: :statuses do

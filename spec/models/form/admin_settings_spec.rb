@@ -16,6 +16,11 @@ RSpec.describe Form::AdminSettings do
         it { is_expected.to allow_value('Glorp').for(:site_contact_username) }
       end
     end
+
+    describe 'status_length_limit' do
+      it { is_expected.to allow_values('500', '1000', '10000').for(:status_length_limit) }
+      it { is_expected.to_not allow_values('499', '10001', '', 'abc', '1000.5').for(:status_length_limit) }
+    end
   end
 
   describe '#save' do

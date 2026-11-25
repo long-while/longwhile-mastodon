@@ -15447,6 +15447,214 @@ body .search__popout__menu__item {
   }
 }
 
+.compose-form__preview {
+  margin: 8px 0;
+  padding: 10px 12px;
+  border-top: 1px solid var(--color-border, #{$ui-base-lighter-color});
+  border-bottom: 1px solid var(--color-border, #{$ui-base-lighter-color});
+  max-height: 40vh;
+  max-height: 30dvh;
+  overflow-y: auto;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--color-dim, #{$darker-text-color});
+    margin-bottom: 6px;
+  }
+
+  &__empty,
+  &__spoiler {
+    font-size: 14px;
+    color: $darker-text-color;
+  }
+
+  &__spoiler {
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+
+  &__body {
+    font-size: 15px;
+    line-height: 22px;
+    word-wrap: break-word;
+
+    &--stale {
+      opacity: 0.5;
+    }
+  }
+
+  &__error {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    line-height: 18px;
+    color: $error-value-color;
+
+    .link-button {
+      font-size: 13px;
+      line-height: 18px;
+      color: var(--color-brand-longwhile-links, #{$highlight-text-color});
+    }
+  }
+}
+
+::selection {
+  background-color: var(
+    --color-accent,
+    var(--color-brand-longwhile, #{$ui-highlight-color})
+  );
+  color: var(--color-on-brand, #{$white});
+}
+
+.compose-format-toolbar {
+  --compose-format-hover: color-mix(
+    in srgb,
+    transparent
+  );
+
+  position: fixed;
+  z-index: 10000;
+  top: 0;
+  left: 0;
+  padding: 4px;
+  border-radius: 10px;
+  color: $primary-text-color;
+  touch-action: manipulation;
+  user-select: none;
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  &__button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+
+    @media (pointer: coarse) {
+      width: 40px;
+      height: 40px;
+    }
+
+    .icon {
+      width: 18px;
+      height: 18px;
+    }
+
+    &:hover,
+    &:focus-visible {
+      background: var(--compose-format-hover);
+    }
+
+    &:focus-visible {
+      outline: $ui-button-icon-focus-outline;
+    }
+
+    &--active {
+      color: var(
+        --color-accent,
+        var(--color-brand-longwhile, #{$highlight-text-color})
+      );
+    }
+  }
+
+  .icon path {
+    fill: none;
+  }
+
+  &__swatch {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    border: 1px solid var(--color-button-border, var(--color-border));
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  &__colors {
+    display: flex;
+    flex-direction: column;
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid var(--color-border, #{$ui-base-lighter-color});
+  }
+
+  &__color {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 32px;
+    padding: 4px 8px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 14px;
+    text-align: start;
+    cursor: pointer;
+
+    @media (pointer: coarse) {
+      min-height: 40px;
+    }
+
+    &:hover,
+    &:focus-visible {
+      background: var(--compose-format-hover);
+    }
+
+    &:focus-visible {
+      outline: $ui-button-icon-focus-outline;
+    }
+
+    &--active {
+      font-weight: 600;
+    }
+  }
+}
+
+body .compose-format-toolbar.dropdown-menu {
+  border: 1px solid var(--color-border, #{$ui-base-lighter-color});
+  box-shadow: 0 1px 3px rgb(0 0 0 / 6%);
+}
+
+.compose-form__buttons .compose-form__preview-toggle--suggested {
+  position: relative;
+  color: var(--color-brand-longwhile-links, #{$highlight-text-color});
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    inset-inline-end: 4px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+}
+
 .confirmation-modal__option-hint {
   display: block;
   margin-top: 4px;

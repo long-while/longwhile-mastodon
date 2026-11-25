@@ -1,0 +1,53 @@
+:ruby
+  colors = TextColorPalette.normalize(settings.text_color_palette || [])
+  problems = settings.errors[:text_color_palette]
+
+%section.text-color-palette{ data: { max: TextColorPalette::MAX_COLORS } }
+  %h4.text-color-palette__title= t('admin.settings.text_colors.title')
+
+  - if problems.any?
+    %ul.text-color-palette__errors{ role: 'alert' }
+      - problems.each do |problem|
+        %li= problem
+
+  = hidden_field_tag 'form_admin_settings[text_color_palette_submitted]', '1', id: nil
+
+  .text-color-palette__head{ aria: { hidden: 'true' } }
+    %span= t('admin.settings.text_colors.preview')
+    %span= t('admin.settings.text_colors.name')
+    %span= t('admin.settings.text_colors.hex')
+
+  %ol.text-color-palette__list
+    %li.text-color-palette__row.text-color-palette__row--locked
+      .text-color-palette__previews{ aria: { hidden: 'true' } }
+        %span.text-color-palette__preview.text-color-palette__preview--dark A
+        %span.text-color-palette__preview.text-color-palette__preview--light A
+      %input.text-color-palette__name{ type: 'text',
+                                       value: t('admin.settings.text_colors.default_name'),
+                                       disabled: true,
+                                       'aria-label': t('admin.settings.text_colors.name') }
+      .text-color-palette__hex
+        %span.text-color-palette__hash{ aria: { hidden: 'true' } } #
+        %input.text-color-palette__code{ type: 'text',
+                                         value: '',
+                                         placeholder: t('admin.settings.text_colors.default_hex'),
+                                         disabled: true,
+                                         'aria-label': t('admin.settings.text_colors.hex') }
+      %span.text-color-palette__locked{ title: t('admin.settings.text_colors.locked') }
+        = material_symbol('lock')
+
+    - colors.each_with_index do |color, index|
+      = render 'admin/settings/branding/text_color_row', color: color, index: index, first: index.zero?, last: index == colors.size - 1
+
+  .text-color-palette__footer
+    %span.text-color-palette__count{ aria: { live: 'polite' },
+                                     data: { format: t('admin.settings.text_colors.count', current: '{current}', max: TextColorPalette::MAX_COLORS) } }
+      = t('admin.settings.text_colors.count', current: colors.size, max: TextColorPalette::MAX_COLORS)
+    %button.button.button-secondary.text-color-palette__add{ type: 'button', disabled: colors.size >= TextColorPalette::MAX_COLORS }
+      = t('admin.settings.text_colors.add')
+
+  .text-color-palette__actions
+    = button_tag t('generic.save_changes'), type: 'submit', class: 'button'
+
+  %template.text-color-palette__template
+    = render 'admin/settings/branding/text_color_row', color: { 'name' => '', 'hex' => '' }, index: '__INDEX__', first: false, last: false

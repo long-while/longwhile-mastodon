@@ -132,6 +132,7 @@ class UpdateScheduledStatusService < BaseService
       spoiler_text: params[:spoiler_text].to_s,
       visibility: params[:visibility],
       language: params[:language],
+      length_limit_override: params[:length_limit],
     }.compact)
 
     raise ActiveRecord::RecordInvalid, status unless status.valid?
