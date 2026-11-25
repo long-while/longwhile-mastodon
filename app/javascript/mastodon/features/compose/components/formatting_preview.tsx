@@ -26,14 +26,14 @@ const messages = defineMessages({
   },
   empty: {
     id: 'compose_form.preview.empty',
-    defaultMessage: 'Start writing to see the preview',
+    defaultMessage: 'Drag over text to format it.',
   },
 });
 
 export const PREVIEW_DEBOUNCE_MS = 400;
 
 const FORMATTING_PATTERN =
-  /\*\*|\*\S[^*\n]*\S?\*|~~~|\[(?:color|bg):|\[\/?(?:center|right|left)\]/;
+  /\*\*|\*\S[^*\n]*\S?\*|~~~|\[(?:color|bg):|\[\/?(?:center|right|left|u|s)\]/;
 
 export const hasFormatting = (text: string) => FORMATTING_PATTERN.test(text);
 

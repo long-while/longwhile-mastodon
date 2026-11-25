@@ -30,20 +30,22 @@ class TextFormatter
 
   HEX_COLOR = '(\h{3}|\h{6})'
 
-  BRACKET_TAG = '\[(?:\/?(?:color|bg)|color:|bg:|\/?(?:center|right|left))'
+  BRACKET_TAG = '\[(?:\/?(?:color|bg)|color:|bg:|\/?(?:center|right|left)|\/?[us]\])'
   INNER_TEXT  = "((?:(?!#{BRACKET_TAG}).)*?)".freeze
   BRACKET_RULES = [
     [%r{\[color:#{HEX_COLOR}\]#{INNER_TEXT}\[/color\]}, ->(m) { %(<span style="color: ##{m[1]};">#{m[2]}</span>) }],
     [%r{\[bg:#{HEX_COLOR}\]#{INNER_TEXT}\[/bg\]}, ->(m) { %(<span style="background-color: ##{m[1]};">#{m[2]}</span>) }],
+    [%r{\[u\]#{INNER_TEXT}\[/u\]}, ->(m) { %(<u>#{m[1]}</u>) }],
+    [%r{\[s\]#{INNER_TEXT}\[/s\]}, ->(m) { %(<del>#{m[1]}</del>) }],
     [%r{\[center\]#{INNER_TEXT}\[/center\]\n?}, ->(m) { %(<span style="display: block; text-align: center;">#{m[1]}</span>) }],
     [%r{\[right\]#{INNER_TEXT}\[/right\]\n?}, ->(m) { %(<span style="display: block; text-align: right;">#{m[1]}</span>) }],
     [%r{\[left\]#{INNER_TEXT}\[/left\]\n?}, ->(m) { %(<span style="display: block; text-align: left;">#{m[1]}</span>) }],
   ].freeze
   BRACKET_PASSES = 10
 
-  URL_FORMAT_TAG_REGEX = %r{\[/?(?:color|bg|center|right|left)(?=[\]:]|\z)}
+  URL_FORMAT_TAG_REGEX = %r{\[/?(?:(?:color|bg|center|right|left)(?=[\]:]|\z)|[us](?=\]|\z))}
 
-  FORMAT_TAG_REGEX = %r{<(/?)(strong|em|del|span)\b[^>]*>}
+  FORMAT_TAG_REGEX = %r{<(/?)(strong|em|del|span|u)\b[^>]*>}
 
   attr_reader :text, :options
 

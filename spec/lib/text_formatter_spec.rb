@@ -370,6 +370,63 @@ RSpec.describe TextFormatter do
       end
     end
 
+    context 'when given text with an underline tag' do
+      let(:text) { '[u]밑줄[/u] 그대로' }
+
+      it 'renders the underlined text' do
+        expect(subject).to include '<u>밑줄</u> 그대로'
+      end
+    end
+
+    context 'when an underline tag is combined with a color and emphasis' do
+      let(:text) { '[color:cf5148][u]**빨간 굵은 밑줄**[/u][/color]' }
+
+      it 'nests the tags in order' do
+        expect(subject).to include '<span style="color: #cf5148;"><u><strong>빨간 굵은 밑줄</strong></u></span>'
+      end
+    end
+
+    context 'when given a strike tag in the middle of a word' do
+      let(:text) { '안녕[s]하세[/s]요' }
+
+      it 'strikes the letters through' do
+        expect(subject).to include '안녕<del>하세</del>요'
+      end
+    end
+
+    context 'when given text with double underscores' do
+      let(:text) { 'snake__case__name' }
+
+      it 'does not underline it' do
+        expect(subject).to_not include '<u>'
+      end
+    end
+
+    context 'when an underline tag only covers one end of an emphasis' do
+      let(:text) { '**a [u]b** c[/u]' }
+
+      it 'does not produce crossed tags' do
+        expect(subject).to_not include '<u>'
+      end
+    end
+
+    context 'when a link is directly followed by an underline closing tag' do
+      let(:text) { '[u]https://e.com/page[/u]' }
+
+      it 'links only the address and closes the tag' do
+        expect(subject).to match %r{<u><a href="https://e\.com/page"[^>]*>.*</a></u>}
+        expect(subject).to_not include '[/u'
+      end
+    end
+
+    context 'when a URL path contains a bracket that starts with u' do
+      let(:text) { 'https://e.com/a[url]' }
+
+      it 'does not cut the link there' do
+        expect(subject).to include 'href="https://e.com/a[url'
+      end
+    end
+
     context 'when given text with a color tag' do
       let(:text) { '[color:ff0000]안녕[/color]하세요!' }
 

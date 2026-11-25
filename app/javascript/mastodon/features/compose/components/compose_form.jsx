@@ -26,6 +26,7 @@ import { countableText } from '../util/counter';
 import { CharacterCounter } from './character_counter';
 import { EditIndicator } from './edit_indicator';
 import { FormattingPreview, hasFormatting } from './formatting_preview';
+import { FormattingToolbar } from './formatting_toolbar';
 import { LanguageDropdown } from './language_dropdown';
 import { NavigationBar } from './navigation_bar';
 import { PollForm } from "./poll_form";
@@ -376,6 +377,8 @@ class ComposeForm extends ImmutablePureComponent {
               autoFocus={autoFocus}
               lang={this.props.lang}
             />
+
+            <FormattingToolbar textareaRef={this.textareaRef} />
           </div>
 
           {this.state.previewOpen && (
