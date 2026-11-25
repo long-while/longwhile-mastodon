@@ -17,6 +17,32 @@ class TextFormatter
     '한참 커미션' => 'https://kre.pe/QTRx',
   }.freeze
 
+  PLACEHOLDER_OPEN  = "\uE000"
+  PLACEHOLDER_CLOSE = "\uE001"
+  PLACEHOLDER_REGEX = /\uE000(\d+)\uE001/
+
+  EMPHASIS_RULES = [
+    [/(?<!\*)\*\*\*(?=\S)([^*\n<>]+?)(?<=\S)\*\*\*(?!\*)/, '<strong><em>\1</em></strong>'],
+    [/(?<!\*)\*\*(?=\S)([^*\n<>]+?)(?<=\S)\*\*(?!\*)/, '<strong>\1</strong>'],
+    [/(?<!\*)\*(?=\S)([^*\n<>]+?)(?<=\S)\*(?!\*)/, '<em>\1</em>'],
+    [/(?<!\S)~~~(?=\S)([^~\n<>]+?)(?<=\S)~~~/, '<del>\1</del>'],
+  ].freeze
+
+  HEX_COLOR = '(\h{3}|\h{6})'
+
+  BRACKET_TAG = '\[(?:\/?(?:color|bg)|color:|bg:|\/?(?:center|right|left))'
+  INNER_TEXT  = "((?:(?!#{BRACKET_TAG}).)*?)".freeze
+  BRACKET_RULES = [
+    [%r{\[color:#{HEX_COLOR}\]#{INNER_TEXT}\[/color\]}, ->(m) { %(<span style="color: ##{m[1]};">#{m[2]}</span>) }],
+    [%r{\[bg:#{HEX_COLOR}\]#{INNER_TEXT}\[/bg\]}, ->(m) { %(<span style="background-color: ##{m[1]};">#{m[2]}</span>) }],
+    [%r{\[center\]#{INNER_TEXT}\[/center\]\n?}, ->(m) { %(<span style="display: block; text-align: center;">#{m[1]}</span>) }],
+    [%r{\[right\]#{INNER_TEXT}\[/right\]\n?}, ->(m) { %(<span style="display: block; text-align: right;">#{m[1]}</span>) }],
+    [%r{\[left\]#{INNER_TEXT}\[/left\]\n?}, ->(m) { %(<span style="display: block; text-align: left;">#{m[1]}</span>) }],
+  ].freeze
+  BRACKET_PASSES = 10
+
+  FORMAT_TAG_REGEX = %r{<(/?)(strong|em|del|span)\b[^>]*>}
+
   attr_reader :text, :options
 
   # @param [String] text
@@ -37,19 +63,15 @@ class TextFormatter
   def to_s
     return add_quote_fallback('').html_safe if text.blank? # rubocop:disable Rails/OutputSafety
 
+    placeholders = []
     html = rewrite do |entity|
-      if entity[:url]
-        link_to_url(entity)
-      elsif entity[:hashtag]
-        link_to_hashtag(entity)
-      elsif entity[:screen_name]
-        link_to_mention(entity)
-      end
+      placeholders << render_entity(entity)
+      "#{PLACEHOLDER_OPEN}#{placeholders.size - 1}#{PLACEHOLDER_CLOSE}"
     end
 
     html = apply_simple_markdown(html)
-
     html = apply_auto_link_keywords(html)
+    html = html.gsub(PLACEHOLDER_REGEX) { placeholders[Regexp.last_match(1).to_i] }
 
     html = simple_format(html, {}, sanitize: false).delete("\n") if multiline?
     html = add_quote_fallback(html) if options[:quoted_status].present?
@@ -102,27 +124,52 @@ class TextFormatter
   private
 
   def apply_simple_markdown(html)
-    html = html.gsub(/\*\*\*([^\*\n<>]+)\*\*\*/, '<strong><em>\1</em></strong>')
+    html = EMPHASIS_RULES.reduce(html) { |result, (pattern, replacement)| result.gsub(pattern, replacement) }
+    apply_bracket_tags(html)
+  end
 
-    html = html.gsub(/\*\*([^\*\n<>]+)\*\*/, '<strong>\1</strong>')
+  def apply_bracket_tags(html)
+    BRACKET_PASSES.times do
+      changed = false
 
-    html = html.gsub(/(?<!\*)\*([^\*\n<>]+)\*(?!\*)/, '<em>\1</em>')
+      BRACKET_RULES.each do |pattern, render|
+        html = html.gsub(pattern) do |source|
+          match = Regexp.last_match
+          next source unless balanced_format_tags?(match[-1])
 
-    html = html.gsub(/~~~([^~\n<>]+)~~~/, '<del>\1</del>')
+          changed = true
+          render.call(match)
+        end
+      end
 
-    html = html.gsub(/\u200A([^\u200A\n<>]+)\u200A/, '<span style="color: #1d9bf0;">\1</span>')
-
-    html = html.gsub(/\[color:([0-9a-fA-F]{3,8})\](.*?)\[\/color\]/, '<span style="color: #\1;">\2</span>')
-
-    html = html.gsub(/\[bg:([0-9a-fA-F]{3,8})\](.*?)\[\/bg\]/, '<span style="background-color: #\1;">\2</span>')
-
-    html = html.gsub(/\[center\](.*?)\[\/center\]\n?/, '<span style="display: block; text-align: center;">\1</span>')
-
-    html = html.gsub(/\[right\](.*?)\[\/right\]\n?/, '<span style="display: block; text-align: right;">\1</span>')
-
-    html = html.gsub(/\[left\](.*?)\[\/left\]\n?/, '<span style="display: block; text-align: left;">\1</span>')
+      break unless changed
+    end
 
     html
+  end
+
+  def balanced_format_tags?(fragment)
+    stack = []
+
+    fragment.scan(FORMAT_TAG_REGEX) do |closing, name|
+      if closing.empty?
+        stack << name
+      else
+        return false unless stack.pop == name
+      end
+    end
+
+    stack.empty?
+  end
+
+  def render_entity(entity)
+    if entity[:url]
+      link_to_url(entity)
+    elsif entity[:hashtag]
+      link_to_hashtag(entity)
+    elsif entity[:screen_name]
+      link_to_mention(entity)
+    end
   end
 
   def apply_auto_link_keywords(html)
@@ -157,14 +204,18 @@ class TextFormatter
 
     last_index = entities.reduce(0) do |index, entity|
       indices = entity[:indices]
-      result << h(text[index...indices.first])
+      result << plain_segment(text[index...indices.first])
       result << yield(entity)
       indices.last
     end
 
-    result << h(text[last_index..])
+    result << plain_segment(text[last_index..])
 
     result
+  end
+
+  def plain_segment(segment)
+    h(segment).delete("#{PLACEHOLDER_OPEN}#{PLACEHOLDER_CLOSE}")
   end
 
   def link_to_url(entity)

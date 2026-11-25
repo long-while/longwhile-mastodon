@@ -520,5 +520,133 @@ RSpec.describe TextFormatter do
         expect(subject).to_not include 'text-align'
       end
     end
+
+    context 'when a URL contains formatting characters' do
+      let(:text) { 'see https://example.com/a*b*c and https://example.com/[color:f00]x[/color]' }
+
+      it 'keeps the links intact' do
+        expect(subject).to include 'href="https://example.com/a*b*c"'
+        expect(subject).to include 'href="https://example.com/[color:f00]x[/color"'
+        expect(subject).to_not include '<em>'
+        expect(subject).to_not include 'style='
+      end
+    end
+
+    context 'when a link is wrapped in a color tag' do
+      let(:text) { '[color:ff0000]https://example.com/ [/color]' }
+
+      it 'colors the whole link' do
+        expect(subject).to match %r{<span style="color: #ff0000;"><a href="https://example.com/"[^>]*>.*</a> </span>}
+      end
+    end
+
+    context 'when a mention is emphasized' do
+      let(:preloaded_accounts) { [Fabricate(:account, username: 'alice')] }
+      let(:text) { '**@alice**' }
+
+      it 'keeps the mention link inside the emphasis' do
+        expect(subject).to match %r{<strong><span class="h-card"[^>]*><a [^>]*class="u-url mention">@<span>alice</span></a></span></strong>}
+      end
+    end
+
+    context 'when the text contains placeholder characters' do
+      let(:text) { "a \uE0000\uE001 b https://example.com/" }
+
+      it 'drops them instead of turning them into links' do
+        expect(subject).to_not include "\uE000"
+        expect(subject.scan('<a ').size).to eq 1
+      end
+    end
+
+    context 'when given arithmetic with spaced asterisks' do
+      let(:text) { '2 * 3 * 4 = 24' }
+
+      it 'does not italicize it' do
+        expect(subject).to_not include '<em>'
+        expect(subject).to include '2 * 3 * 4'
+      end
+    end
+
+    context 'when given bold, italic and bold italic text' do
+      let(:text) { '***둘 다*** **굵게** *기울임*' }
+
+      it 'renders each of them' do
+        expect(subject).to include '<strong><em>둘 다</em></strong>'
+        expect(subject).to include '<strong>굵게</strong>'
+        expect(subject).to include '<em>기울임</em>'
+      end
+    end
+
+    context 'when an emphasis closes right before a Korean particle' do
+      let(:text) { '*강조*를 했다' }
+
+      it 'still renders the emphasis' do
+        expect(subject).to include '<em>강조</em>를'
+      end
+    end
+
+    context 'when Korean text stretches a word with tildes' do
+      let(:text) { '안녕~~~ 반가워~~~' }
+
+      it 'does not strike it through' do
+        expect(subject).to_not include '<del>'
+      end
+    end
+
+    context 'when given a strikethrough' do
+      let(:text) { '~~~취소~~~를 했다' }
+
+      it 'renders it' do
+        expect(subject).to include '<del>취소</del>를'
+      end
+    end
+
+    context 'when given a hex color with an alpha channel' do
+      let(:text) { '[color:ff000000]숨김[/color] [bg:0000]숨김[/bg]' }
+
+      it 'does not process it' do
+        expect(subject).to_not include 'style='
+      end
+    end
+
+    context 'when given text wrapped in hair spaces' do
+      let(:text) { "\u200A파랑\u200A" }
+
+      it 'no longer colors it' do
+        expect(subject).to_not include 'style='
+      end
+    end
+
+    context 'when a bracket tag would close inside an emphasis' do
+      let(:text) { '**a [color:f00]b** c[/color]' }
+
+      it 'leaves the bracket tag as text instead of overlapping the tags' do
+        expect(subject).to include '<strong>a [color:f00]b</strong> c[/color]'
+      end
+    end
+
+    context 'when an emphasis wraps a whole color tag' do
+      let(:text) { '**[color:f00]빨강[/color]**' }
+
+      it 'nests them' do
+        expect(subject).to include '<strong><span style="color: #f00;">빨강</span></strong>'
+      end
+    end
+
+    context 'when a color tag wraps an emphasis' do
+      let(:text) { '[color:f00]**빨강**[/color]' }
+
+      it 'nests them' do
+        expect(subject).to include '<span style="color: #f00;"><strong>빨강</strong></span>'
+      end
+    end
+
+    context 'when given the attribution keyword' do
+      let(:text) { '한참 커미션 https://example.com/한참 커미션' }
+
+      it 'links the keyword in the text but not inside an existing link' do
+        expect(subject.scan('href="https://kre.pe/QTRx"').size).to eq 1
+      end
+    end
   end
 end
