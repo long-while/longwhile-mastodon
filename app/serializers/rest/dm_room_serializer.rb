@@ -46,7 +46,7 @@ class REST::DmRoomSerializer < ActiveModel::Serializer
   def last_status
     status = object.last_status
 
-    return status if status.nil? || hidden_status_ids.exclude?(status.id)
+    return status if status.nil? || (hidden_status_ids.exclude?(status.id) && addressed_to_viewer?(status))
 
     object.visible_statuses_for(current_account).reorder(id: :desc).first
   end
@@ -63,6 +63,10 @@ class REST::DmRoomSerializer < ActiveModel::Serializer
 
   def hidden_status_ids
     instance_options[:hidden_status_ids] || []
+  end
+
+  def addressed_to_viewer?(status)
+    status.account_id == current_account.id || status.active_mentions.any? { |mention| mention.account_id == current_account.id }
   end
 
   def read_cursor

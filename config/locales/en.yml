@@ -1602,6 +1602,7 @@ en:
       your_appeal_rejected: Your appeal has been rejected
   dm_rooms:
     errors:
+      blocked_member: You cannot invite people to a conversation with someone you have blocked. Unblock them or start a new conversation.
       last_members: A conversation needs at least two people.
       nickname_too_long: A nickname cannot be longer than %{max} characters.
       no_recipients: Select at least one person to message.
