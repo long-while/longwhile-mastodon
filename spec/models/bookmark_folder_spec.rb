@@ -171,4 +171,19 @@ RSpec.describe BookmarkFolder do
       expect(BookmarkFolderItem.count).to eq 0
     end
   end
+
+  describe '.statuses_counts' do
+    it 'counts the bookmarks of each folder whose status is still there' do
+      folder = Fabricate(:bookmark_folder, account: account)
+      empty = Fabricate(:bookmark_folder, account: account)
+      Fabricate.times(2, :bookmark_folder_item, bookmark_folder: folder)
+      Fabricate(:bookmark_folder_item, bookmark_folder: folder).bookmark.status.discard
+
+      expect(described_class.statuses_counts([folder.id, empty.id])).to eq(folder.id => 2)
+    end
+
+    it 'answers an empty hash for no folders' do
+      expect(described_class.statuses_counts([])).to eq({})
+    end
+  end
 end

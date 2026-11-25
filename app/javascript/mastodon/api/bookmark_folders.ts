@@ -5,7 +5,12 @@ import api, {
   apiRequestPut,
   getLinks,
 } from 'mastodon/api';
-import type { ApiBookmarkFolderJSON } from 'mastodon/api_types/bookmark_folders';
+import type { ApiAccountJSON } from 'mastodon/api_types/accounts';
+import type {
+  ApiBookmarkDetailJSON,
+  ApiBookmarkFolderJSON,
+  BookmarkQuery,
+} from 'mastodon/api_types/bookmark_folders';
 import type { ApiStatusJSON } from 'mastodon/api_types/statuses';
 
 export const apiGetBookmarkFolders = () =>
@@ -53,3 +58,62 @@ export const apiGetBookmarkFolderStatuses = async (
 
   return { statuses: response.data, next: next?.uri };
 };
+
+const queryParams = (query: BookmarkQuery) => {
+  const params: Record<string, string> = {};
+
+  if (query.folderId) params.folder_id = query.folderId;
+  if (query.q?.trim()) params.q = query.q.trim();
+  if (query.onlyMedia) params.only_media = 'true';
+  if (query.accountId) params.account_id = query.accountId;
+
+  return params;
+};
+
+export const apiGetBookmarks = async (query: BookmarkQuery, url?: string) => {
+  const response = await api().request<ApiStatusJSON[]>({
+    method: 'GET',
+    url: url ?? '/api/v1/bookmarks',
+    params: url ? undefined : queryParams(query),
+  });
+
+  const next = getLinks(response).refs.find((link) => link.rel === 'next');
+
+  return { statuses: response.data, next: next?.uri };
+};
+
+export const apiGetBookmarkDetails = (statusIds: string[]) =>
+  apiRequestGet<ApiBookmarkDetailJSON[]>('v1/bookmarks/details', {
+    status_ids: statusIds,
+  });
+
+export const apiSetBookmarkNote = (statusId: string, note: string) =>
+  apiRequestPut<ApiBookmarkDetailJSON>(`v1/bookmarks/${statusId}/note`, {
+    note,
+  });
+
+export const apiGetBookmarkAuthors = () =>
+  apiRequestGet<ApiAccountJSON[]>('v1/bookmarks/authors');
+
+export const apiRemoveBookmarks = (statusIds: string[]) =>
+  apiRequestPost<{ status_ids: string[] }>('v1/bookmarks/remove', {
+    status_ids: statusIds,
+  });
+
+export const apiAddStatusesToBookmarkFolder = (
+  folderId: string,
+  statusIds: string[],
+) =>
+  apiRequestPost<{ status_ids: string[] }>(
+    `v1/bookmark_folders/${folderId}/statuses`,
+    { status_ids: statusIds },
+  );
+
+export const apiRemoveStatusesFromBookmarkFolder = (
+  folderId: string,
+  statusIds: string[],
+) =>
+  apiRequestDelete<{ status_ids: string[] }>(
+    `v1/bookmark_folders/${folderId}/statuses`,
+    { status_ids: statusIds },
+  );

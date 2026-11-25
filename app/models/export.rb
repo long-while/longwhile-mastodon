@@ -17,6 +17,20 @@ class Export
     end
   end
 
+  def to_bookmark_folders_csv
+    folders = account.bookmark_folders.ordered.to_a
+    items = BookmarkFolderItem.where(bookmark_folder_id: folders.map(&:id)).includes(bookmark: :status).order(bookmark_id: :desc).group_by(&:bookmark_folder_id)
+
+    CSV.generate do |csv|
+      folders.each do |folder|
+        items.fetch(folder.id, []).each do |item|
+          status = item.bookmark.status
+          csv << [folder.name, ActivityPub::TagManager.instance.uri_for(status)] if status.present?
+        end
+      end
+    end
+  end
+
   def to_blocked_accounts_csv
     to_csv account.blocking.select(:username, :domain)
   end

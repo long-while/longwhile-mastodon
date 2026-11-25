@@ -20,6 +20,7 @@ namespace :settings do
     resources :mutes, only: :index, controller: :muted_accounts
     resources :lists, only: :index
     resources :bookmarks, only: :index
+    resources :bookmark_folders, only: :index
     resources :custom_filters, only: :index, constraints: { format: :json }, controller: :custom_filters
   end
 

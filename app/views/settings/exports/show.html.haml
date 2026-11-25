@@ -37,6 +37,10 @@
         %td= number_with_delimiter @export_summary.total_bookmarks
         %td= table_link_to 'download', t('exports.csv'), settings_exports_bookmarks_path(format: :csv)
       %tr
+        %th= t('exports.bookmark_folders')
+        %td= number_with_delimiter @export_summary.total_bookmark_folders
+        %td= table_link_to 'download', t('exports.csv'), settings_exports_bookmark_folders_path(format: :csv)
+      %tr
         %th= t('exports.custom_filters')
         %td= number_with_delimiter @export_summary.total_custom_filters
         %td= table_link_to 'download', t('exports.json'), settings_exports_custom_filters_path(format: :json)

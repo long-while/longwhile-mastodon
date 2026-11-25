@@ -312,4 +312,44 @@ RSpec.describe 'API V1 Bookmark Folders' do
       expect(response).to have_http_status(404)
     end
   end
+
+  describe 'statuses_count' do
+    let!(:folder) { Fabricate(:bookmark_folder, account: account, name: 'A') }
+
+    before do
+      Fabricate(:bookmark_folder, account: account, name: 'B')
+      Fabricate.times(2, :bookmark, account: account).each { |b| BookmarkFolderItem.create!(bookmark_folder: folder, bookmark: b) }
+      gone = Fabricate(:bookmark, account: account)
+      BookmarkFolderItem.create!(bookmark_folder: folder, bookmark: gone)
+      gone.status.discard
+    end
+
+    it 'counts what the folder lists, without statuses that are gone', :aggregate_failures do
+      get '/api/v1/bookmark_folders', headers: headers
+      expect(response.parsed_body.map { |f| [f[:name], f[:statuses_count]] }).to eq [['A', 2], ['B', 0]]
+
+      get '/api/v1/bookmarks', headers: headers, params: { folder_id: folder.id.to_s }
+      expect(response.parsed_body.size).to eq 2
+    end
+
+    it 'counts every folder in one query' do
+      Fabricate.times(3, :bookmark_folder, account: account)
+
+      events = capture_notifications('sql.active_record') { get '/api/v1/bookmark_folders', headers: headers }
+      count_queries = events.count { |event| event.payload[:sql].include?('bookmark_folder_items') }
+
+      expect(count_queries).to eq 1
+    end
+
+    it 'is in the create, update and order answers', :aggregate_failures do
+      post '/api/v1/bookmark_folders', headers: headers, params: { name: 'C' }
+      expect(response.parsed_body[:statuses_count]).to eq 0
+
+      put "/api/v1/bookmark_folders/#{folder.id}", headers: headers, params: { name: 'A2' }
+      expect(response.parsed_body[:statuses_count]).to eq 2
+
+      put '/api/v1/bookmark_folders/order', headers: headers, params: { folder_ids: account.bookmark_folders.ordered.map { |f| f.id.to_s }.reverse }, as: :json
+      expect(response.parsed_body.find { |f| f[:id] == folder.id.to_s }[:statuses_count]).to eq 2
+    end
+  end
 end

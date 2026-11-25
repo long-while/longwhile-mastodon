@@ -5,6 +5,8 @@ class Api::V1::Statuses::BookmarkFoldersController < Api::V1::Statuses::BaseCont
   before_action -> { doorkeeper_authorize! :write, :'write:bookmarks' }, only: [:update]
   before_action :require_user!
   before_action :require_socially_visible!
+  skip_before_action :log_direct_message_view!
+  before_action :log_direct_message_view!
 
   def show
     render json: { folder_ids: folder_ids_for(current_bookmark) }

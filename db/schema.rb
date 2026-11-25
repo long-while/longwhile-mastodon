@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_24_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_24_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -325,9 +325,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_24_000000) do
     t.index ["target_account_id"], name: "index_blocks_on_target_account_id"
   end
 
+  create_table "bookmark_folder_items", force: :cascade do |t|
+    t.bigint "bookmark_folder_id", null: false
+    t.bigint "bookmark_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["bookmark_folder_id", "bookmark_id"], name: "index_bookmark_folder_items_on_folder_and_bookmark", unique: true
+    t.index ["bookmark_id"], name: "index_bookmark_folder_items_on_bookmark_id"
+  end
+
+  create_table "bookmark_folders", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "position"], name: "index_bookmark_folders_on_account_id_and_position"
+  end
+
   create_table "bookmarks", force: :cascade do |t|
     t.bigint "account_id", null: false
     t.datetime "created_at", precision: nil, null: false
+    t.text "note"
     t.bigint "status_id", null: false
     t.datetime "updated_at", precision: nil, null: false
     t.index ["account_id", "status_id"], name: "index_bookmarks_on_account_id_and_status_id", unique: true
@@ -489,6 +508,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_24_000000) do
     t.text "phrase", default: "", null: false
     t.datetime "updated_at", precision: nil, null: false
     t.index ["account_id"], name: "index_custom_filters_on_account_id"
+  end
+
+  create_table "deleted_user_ips", force: :cascade do |t|
+    t.bigint "deleted_user_record_id", null: false
+    t.inet "ip", null: false
+    t.datetime "used_at", null: false
+    t.index ["deleted_user_record_id"], name: "index_deleted_user_ips_on_deleted_user_record_id"
+    t.index ["ip"], name: "index_deleted_user_ips_on_ip"
+  end
+
+  create_table "deleted_user_records", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.datetime "confirmed_at"
+    t.datetime "created_at", null: false
+    t.datetime "current_sign_in_at"
+    t.string "email", default: "", null: false
+    t.bigint "invited_by_account_id"
+    t.string "locale"
+    t.inet "sign_up_ip"
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_deleted_user_records_on_account_id", unique: true
+    t.index ["created_at"], name: "index_deleted_user_records_on_created_at"
+    t.index ["invited_by_account_id"], name: "index_deleted_user_records_on_invited_by_account_id"
   end
 
   create_table "dm_hidden_statuses", force: :cascade do |t|
@@ -871,6 +913,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_24_000000) do
     t.datetime "updated_at", precision: nil, null: false
     t.index ["account_id", "status_id"], name: "index_mentions_on_account_id_and_status_id", unique: true
     t.index ["status_id"], name: "index_mentions_on_status_id"
+  end
+
+  create_table "multi_account_links", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "peer_user_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["peer_user_id"], name: "index_multi_account_links_on_peer_user_id"
+    t.index ["user_id", "peer_user_id"], name: "index_multi_account_links_on_user_id_and_peer_user_id", unique: true
   end
 
   create_table "mutes", force: :cascade do |t|
@@ -1583,6 +1634,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_24_000000) do
   add_foreign_key "backups", "users", on_delete: :nullify
   add_foreign_key "blocks", "accounts", column: "target_account_id", name: "fk_9571bfabc1", on_delete: :cascade
   add_foreign_key "blocks", "accounts", name: "fk_4269e03e65", on_delete: :cascade
+  add_foreign_key "bookmark_folder_items", "bookmark_folders", on_delete: :cascade
+  add_foreign_key "bookmark_folder_items", "bookmarks", on_delete: :cascade
+  add_foreign_key "bookmark_folders", "accounts", on_delete: :cascade
   add_foreign_key "bookmarks", "accounts", on_delete: :cascade
   add_foreign_key "bookmarks", "statuses", on_delete: :cascade
   add_foreign_key "bulk_import_rows", "bulk_imports", on_delete: :cascade
@@ -1602,6 +1656,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_24_000000) do
   add_foreign_key "custom_filter_statuses", "custom_filters", on_delete: :cascade
   add_foreign_key "custom_filter_statuses", "statuses", on_delete: :cascade
   add_foreign_key "custom_filters", "accounts", on_delete: :cascade
+  add_foreign_key "deleted_user_ips", "deleted_user_records", on_delete: :cascade
+  add_foreign_key "deleted_user_records", "accounts", column: "invited_by_account_id", on_delete: :nullify
+  add_foreign_key "deleted_user_records", "accounts", on_delete: :cascade
   add_foreign_key "dm_hidden_statuses", "accounts", on_delete: :cascade
   add_foreign_key "dm_hidden_statuses", "statuses", on_delete: :cascade
   add_foreign_key "dm_room_members", "accounts", on_delete: :cascade
@@ -1651,6 +1708,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_24_000000) do
   add_foreign_key "media_attachments", "statuses", on_delete: :nullify
   add_foreign_key "mentions", "accounts", name: "fk_970d43f9d1", on_delete: :cascade
   add_foreign_key "mentions", "statuses", on_delete: :cascade
+  add_foreign_key "multi_account_links", "users", column: "peer_user_id", on_delete: :cascade
+  add_foreign_key "multi_account_links", "users", on_delete: :cascade
   add_foreign_key "mutes", "accounts", column: "target_account_id", name: "fk_eecff219ea", on_delete: :cascade
   add_foreign_key "mutes", "accounts", name: "fk_b8d8daf315", on_delete: :cascade
   add_foreign_key "notification_permissions", "accounts", column: "from_account_id", on_delete: :cascade

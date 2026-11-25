@@ -46,6 +46,12 @@ class BookmarkFolder < ApplicationRecord
     end
   end
 
+  def self.statuses_counts(folder_ids)
+    return {} if folder_ids.empty?
+
+    BookmarkFolderItem.joins(bookmark: :status).where(bookmark_folder_id: folder_ids).group(:bookmark_folder_id).count
+  end
+
   def self.create_for!(account, attributes)
     with_account_lock(account) { account.bookmark_folders.create!(attributes) }
   end

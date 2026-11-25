@@ -197,4 +197,37 @@ RSpec.describe 'API V1 Statuses Bookmark Folders' do
     expect(BookmarkFolderItem.count).to eq 0
     expect(folder_a.reload).to be_persisted
   end
+
+  describe 'the staff DM view log' do
+    let(:dm_reader) { Fabricate(:user, role: Fabricate(:user_role, permissions: UserRole::FLAGS[:view_direct_messages])) }
+    let(:reader_token) { Fabricate(:accessible_access_token, resource_owner_id: dm_reader.id, scopes: 'read:bookmarks write:bookmarks') }
+    let(:reader_headers) { { 'Authorization' => "Bearer #{reader_token.token}" } }
+    let(:dm) { Fabricate(:status, visibility: :direct) }
+
+    it 'writes no log row for a 404', :aggregate_failures do
+      get "/api/v1/statuses/#{dm.id}/bookmark_folders", headers: reader_headers
+      expect(response).to have_http_status(404)
+
+      put "/api/v1/statuses/#{dm.id}/bookmark_folders", headers: reader_headers, params: { folder_ids: [] }, as: :json
+      expect(response).to have_http_status(404)
+
+      expect(Admin::ActionLog.where(account: dm_reader.account, action: 'view')).to be_empty
+    end
+
+    it 'still logs the same read through another status path' do
+      get "/api/v1/statuses/#{dm.id}/favourited_by", headers: reader_headers
+
+      expect(Admin::ActionLog.where(account: dm_reader.account, action: 'view', target: dm)).to exist
+    end
+
+    it 'answers a DM that mentions the reader without a log row' do
+      mentioned = Fabricate(:status, visibility: :direct)
+      Fabricate(:mention, status: mentioned, account: dm_reader.account)
+
+      get "/api/v1/statuses/#{mentioned.id}/bookmark_folders", headers: reader_headers
+
+      expect(response).to have_http_status(200)
+      expect(Admin::ActionLog.where(account: dm_reader.account, action: 'view')).to be_empty
+    end
+  end
 end

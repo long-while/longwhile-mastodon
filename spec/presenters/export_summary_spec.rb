@@ -36,6 +36,17 @@ RSpec.describe ExportSummary do
     end
   end
 
+  describe '#total_bookmark_folders' do
+    before do
+      Fabricate.times(2, :bookmark_folder, account: account)
+      Fabricate(:bookmark_folder)
+    end
+
+    it 'returns the number of my bookmark folders' do
+      expect(subject.total_bookmark_folders).to eq(2)
+    end
+  end
+
   describe '#total_follows' do
     before { target_accounts.each { |target_account| account.follow!(target_account) } }
 
