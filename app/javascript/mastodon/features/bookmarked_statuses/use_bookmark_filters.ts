@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { changeColumnParams } from 'mastodon/actions/columns';
-import type { BookmarkQuery } from 'mastodon/api_types/bookmark_folders';
+import type {
+  BookmarkNoteFilter,
+  BookmarkQuery,
+} from 'mastodon/api_types/bookmark_folders';
 import { useAppDispatch } from 'mastodon/store';
 
 export const SEARCH_DEBOUNCE_MS = 300;
@@ -10,6 +13,7 @@ export interface BookmarkFilters {
   q: string;
   onlyMedia: boolean;
   accountId?: string;
+  note?: BookmarkNoteFilter;
 }
 
 export interface BookmarkColumnParams {
@@ -17,6 +21,7 @@ export interface BookmarkColumnParams {
   q?: string | null;
   onlyMedia?: boolean | null;
   accountId?: string | null;
+  note?: BookmarkNoteFilter | null;
 }
 
 export const buildBookmarkQuery = (
@@ -30,17 +35,22 @@ export const buildBookmarkQuery = (
   if (q) query.q = q;
   if (filters.onlyMedia) query.onlyMedia = true;
   if (filters.accountId) query.accountId = filters.accountId;
+  if (filters.note) query.note = filters.note;
 
   return query;
 };
 
 export const hasActiveFilters = (filters: BookmarkFilters) =>
-  !!filters.q.trim() || filters.onlyMedia || !!filters.accountId;
+  !!filters.q.trim() ||
+  filters.onlyMedia ||
+  !!filters.accountId ||
+  !!filters.note;
 
 const initialFilters = (params?: BookmarkColumnParams): BookmarkFilters => ({
   q: params?.q ?? '',
   onlyMedia: !!params?.onlyMedia,
   accountId: params?.accountId ?? undefined,
+  note: params?.note ?? undefined,
 });
 
 const useColumnParam = (columnId: string) => {
@@ -109,12 +119,26 @@ export const useBookmarkFilters = (
     [persist],
   );
 
+  const setNote = useCallback(
+    (note: BookmarkNoteFilter | undefined) => {
+      setFilters((current) => ({ ...current, note }));
+      persist('note', note ?? null);
+    },
+    [persist],
+  );
+
   const clearAll = useCallback(() => {
     setSearchText('');
-    setFilters({ q: '', onlyMedia: false, accountId: undefined });
+    setFilters({
+      q: '',
+      onlyMedia: false,
+      accountId: undefined,
+      note: undefined,
+    });
     persist('q', null);
     persist('onlyMedia', null);
     persist('accountId', null);
+    persist('note', null);
   }, [persist]);
 
   return {
@@ -126,5 +150,6 @@ export const useBookmarkFilters = (
     filters,
     setOnlyMedia,
     setAccountId,
+    setNote,
   };
 };

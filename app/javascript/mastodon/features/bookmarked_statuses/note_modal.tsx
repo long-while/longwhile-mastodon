@@ -95,7 +95,7 @@ export const BookmarkNoteModal: React.FC<{
   }, [busy, save]);
 
   return (
-    <div className='modal-root__modal dialog-modal bookmark-note-modal'>
+    <div className='modal-root__modal dialog-modal bookmark-modal bookmark-note-modal'>
       <div className='dialog-modal__header'>
         <IconButton
           className='dialog-modal__header__close'

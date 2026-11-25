@@ -194,6 +194,10 @@ export function BookmarkNoteModal() {
   return import('../../bookmarked_statuses/note_modal');
 }
 
+export function BookmarkMoveModal() {
+  return import('../../bookmarked_statuses/move_modal');
+}
+
 export function ListAdder() {
   return import('../../list_adder');
 }

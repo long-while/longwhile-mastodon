@@ -4,11 +4,11 @@ import { defineMessages, useIntl } from 'react-intl';
 
 import { isFulfilled } from '@reduxjs/toolkit';
 
-import ArrowDownwardIcon from '@/material-icons/400-24px/arrow_downward.svg?react';
-import ArrowUpwardIcon from '@/material-icons/400-24px/arrow_upward.svg?react';
 import CloseIcon from '@/material-icons/400-24px/close.svg?react';
-import DeleteIcon from '@/material-icons/400-24px/delete.svg?react';
-import EditIcon from '@/material-icons/400-24px/edit.svg?react';
+import ChevronDownIcon from '@/styles/bird-theme-svg/chevron-down.svg?react';
+import ChevronUpIcon from '@/styles/bird-theme-svg/chevron-up.svg?react';
+import PencilIcon from '@/styles/bird-theme-svg/pencil.svg?react';
+import TrashIcon from '@/styles/bird-theme-svg/trash.svg?react';
 import { renameBookmarkFolder } from 'mastodon/actions/bookmark_folders';
 import type { ApiBookmarkFolderJSON } from 'mastodon/api_types/bookmark_folders';
 import { Button } from 'mastodon/components/button';
@@ -199,7 +199,7 @@ export const FolderRow: React.FC<FolderRowProps> = ({
       <IconButton
         ref={upRef}
         icon='arrow-up'
-        iconComponent={ArrowUpwardIcon}
+        iconComponent={ChevronUpIcon}
         title={intl.formatMessage(messages.moveUp, name)}
         onClick={moveUp}
         disabled={index === 0}
@@ -207,7 +207,7 @@ export const FolderRow: React.FC<FolderRowProps> = ({
       <IconButton
         ref={downRef}
         icon='arrow-down'
-        iconComponent={ArrowDownwardIcon}
+        iconComponent={ChevronDownIcon}
         title={intl.formatMessage(messages.moveDown, name)}
         onClick={moveDown}
         disabled={index === count - 1}
@@ -215,13 +215,13 @@ export const FolderRow: React.FC<FolderRowProps> = ({
       <IconButton
         ref={renameRef}
         icon='pencil'
-        iconComponent={EditIcon}
+        iconComponent={PencilIcon}
         title={intl.formatMessage(messages.renameNamed, name)}
         onClick={startEditing}
       />
       <IconButton
         icon='trash'
-        iconComponent={DeleteIcon}
+        iconComponent={TrashIcon}
         title={intl.formatMessage(messages.deleteNamed, name)}
         onClick={remove}
       />

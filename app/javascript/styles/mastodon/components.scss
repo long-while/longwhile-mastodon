@@ -3226,12 +3226,11 @@ $ui-navigation-bar-height: 54px;
   justify-content: space-around;
   padding: 0 12px;
   z-index: 40;
+  transition: opacity 170ms cubic-bezier(0, 0, 1, 1);
 
   @media (min-width: $mobile-breakpoint + 1px) {
     display: none;
   }
-
-  transition: opacity 170ms cubic-bezier(0, 0, 1, 1);
 
   &--dimmed {
     opacity: 0.3;
@@ -15655,7 +15654,216 @@ body .compose-format-toolbar.dropdown-menu {
     background: currentColor;
   }
 }
+
+.bookmark-folder-tabs__manage .icon,
+.bookmark-folders__row .icon-arrow-up,
+.bookmark-folders__row .icon-arrow-down,
+.bookmark-folders__row .icon-pencil,
+.bookmark-folders__row .icon-trash,
+.icon.icon-bookmark-author,
 .icon.icon-bookmark-author-caret,
+.icon.icon-bookmark-media,
+.icon.icon-bookmark-search {
+  path,
+  circle {
+    fill: none;
+  }
+}
+
+.layout-single-column .status__action-bar .bookmark-note-icon .icon,
+.layout-multiple-columns .status__action-bar .bookmark-note-icon .icon {
+  background-image: none !important;
+  background-color: transparent !important;
+  mask-image: none !important;
+  -webkit-mask-image: none !important;
+
+  path {
+    display: block;
+    fill: currentColor;
+  }
+
+  path[fill='none'] {
+    fill: none;
+  }
+}
+
+.layout-single-column .status__action-bar .bookmark-note-icon:not(.bookmark-note-icon--filled) .icon path,
+.layout-multiple-columns .status__action-bar .bookmark-note-icon:not(.bookmark-note-icon--filled) .icon path {
+  fill: none;
+}
+
+.status:not(.status--in-thread) .bookmark-note {
+  margin-inline-start: calc(var(--size-avatar, 0px) + var(--gap-default, 0px));
+  width: calc(100% - var(--size-avatar, 0px) - var(--gap-default, 0px));
+}
+
+.status--in-thread .bookmark-note {
+  margin-inline-start: 56px;
+  width: calc(100% - 56px);
+}
+
+.modal-root:has(.bookmark-modal) .modal-root__overlay {
+  opacity: 1;
+  background: color-mix(in srgb,
+      color-mix(in srgb,
+        var(--color-brand-longwhile, #{$ui-highlight-color}) 40%,
+        #1a1a1a 60%),
+      transparent 80%);
+}
+
+.dialog-modal.bookmark-modal {
+  box-sizing: border-box;
+  width: min(550px, calc(100vw - 32px));
+  padding: 18px 6px 10px;
+  background: var(--color-bg, var(--modal-background-color));
+  color: $primary-text-color;
+  border: 1px solid
+    var(--dropdown-border-color, rgba($ui-highlight-color, 0.12));
+  border-radius: 26px;
+  box-shadow: var(--modal-shadow);
+  backdrop-filter: none;
+  font-size: 14px;
+  line-height: 20px;
+
+  .dialog-modal__header {
+    min-height: 0;
+    padding: 6px 24px 12px;
+    border-bottom: 0;
+
+    &__title {
+      font-size: 17px;
+      line-height: 24px;
+      font-weight: 700;
+    }
+  }
+
+  .dialog-modal__content {
+    padding: 0 18px 8px;
+
+    &__form {
+      padding: 0 6px 8px;
+    }
+  }
+
+  .lists__item,
+  .bookmark-folders__row {
+    border: 0;
+    border-radius: 8px;
+  }
+
+  .lists__item:hover,
+  .bookmark-folders__row:hover {
+    background: var(--color-noti-hover, rgba($ui-highlight-color, 0.06));
+  }
+
+  .bookmark-folders__new input,
+  .bookmark-folders__row input,
+  .bookmark-note-modal__field {
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: 5px;
+
+    &:focus-visible {
+      outline: none;
+      border-color: var(--color-brand-longwhile, #{$ui-highlight-color});
+    }
+  }
+}
+
+.bookmark-move-modal {
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-noti-hover, rgba($ui-highlight-color, 0.06));
+  }
+
+  &__option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 16px;
+    line-height: 22px;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--color-noti-hover, rgba($ui-highlight-color, 0.06));
+    }
+  }
+
+  &__radio {
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    margin: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background: var(--color-bg, #{$ui-base-color});
+    appearance: none;
+    cursor: pointer;
+
+    &:checked {
+      border-color: var(--color-brand-longwhile, #{$ui-highlight-color});
+      background: var(--color-brand-longwhile, #{$ui-highlight-color});
+      box-shadow: inset 0 0 0 4px var(--color-bg, #{$ui-base-color});
+    }
+
+    &:focus-visible {
+      outline: $ui-button-icon-focus-outline;
+      outline-offset: 2px;
+    }
+  }
+
+  &__name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+.bookmark-folders__row .icon-button:disabled {
+  &,
+  &:hover,
+  &:focus-visible,
+  &:active {
+    color: var(--color-dim, #{$darker-text-color});
+    background-color: transparent;
+    opacity: 1;
+    cursor: default;
+  }
+}
+
+.bookmark-folders__row .icon-button:not(:disabled):has(.icon-trash) {
+  &:hover,
+  &:focus-visible {
+    color: var(--color-brand-longwhile-danger, #{$error-value-color});
+  }
+}
+
+body .bookmark-note-modal .button.button-secondary.bookmark-note-modal__delete {
+  color: var(--color-brand-longwhile-danger, #{$error-value-color});
+  border-color: var(--color-brand-longwhile-danger, #{$error-value-color});
+  background-color: transparent;
+
+  &:not(:disabled):hover,
+  &:not(:disabled):focus-visible,
+  &:not(:disabled):active {
+    color: #fff;
+    border-color: var(--color-brand-longwhile-danger, #{$error-value-color});
+    background-color: var(--color-brand-longwhile-danger, #{$error-value-color});
+  }
+}
 
 .bookmark-folder-tabs {
   display: flex;
@@ -15831,6 +16039,7 @@ body .compose-format-toolbar.dropdown-menu {
     min-height: 32px;
     padding: 4px 12px;
     border: 1px solid var(--color-button-border, var(--color-border));
+    border-radius: 8px;
     background: transparent;
     color: $darker-text-color;
     font: inherit;
@@ -15979,20 +16188,70 @@ body .compose-format-toolbar.dropdown-menu {
   align-items: center;
 
   &__button {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
     min-height: 32px;
     padding: 4px 12px;
+    border: 0;
+    border-radius: 6px;
     background: transparent;
     color: $primary-text-color;
     font: inherit;
+    font-size: 14px;
+    font-weight: 600;
     cursor: pointer;
 
     @media (pointer: coarse) {
       min-height: 44px;
     }
 
+    &:first-child {
+      padding-inline-start: 0;
+    }
+
+    & + & {
+      margin-inline-start: 1px;
+    }
+
+    & + &::before {
+      content: '';
+      position: absolute;
+      inset-inline-start: -1px;
+      top: 50%;
+      width: 1px;
+      height: 12px;
+      transform: translateY(-50%);
+      background: var(--color-border);
+    }
+
+    &:focus-visible {
+      outline: $ui-button-icon-focus-outline;
+    }
+
     &--dangerous {
       color: var(--color-brand-longwhile-danger, #{$error-value-color});
     }
+
+    &:disabled {
+      color: var(--color-dim, #{$darker-text-color});
+      cursor: default;
+    }
+  }
+
+  &__count {
+    color: $darker-text-color;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.item-list.bookmark-select-list > article {
+  &,
+  &:focus,
+  &:hover {
+    background-color: transparent;
   }
 }
 
@@ -16014,6 +16273,9 @@ body .compose-format-toolbar.dropdown-menu {
   }
 
   &:hover,
+  &:has(:focus-visible) {
+    background: var(--color-noti-hover, rgba($ui-highlight-color, 0.06));
+  }
 
   &__checkbox {
     flex: 0 0 auto;

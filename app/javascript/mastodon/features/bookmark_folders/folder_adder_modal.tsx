@@ -176,7 +176,7 @@ export const BookmarkFolderAdderModal: React.FC<{
   );
 
   return (
-    <div className='modal-root__modal dialog-modal'>
+    <div className='modal-root__modal dialog-modal bookmark-modal'>
       <div className='dialog-modal__header'>
         <IconButton
           className='dialog-modal__header__close'

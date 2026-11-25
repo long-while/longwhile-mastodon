@@ -5,8 +5,9 @@ import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
 import classNames from 'classnames';
 
 import CloseIcon from '@/material-icons/400-24px/close.svg?react';
-import PhotoLibraryIcon from '@/material-icons/400-24px/photo_library.svg?react';
-import SearchIcon from '@/material-icons/400-24px/search.svg?react';
+import PhotoIcon from '@/styles/bird-theme-svg/photo.svg?react';
+import SearchIcon from '@/styles/bird-theme-svg/search.svg?react';
+import type { BookmarkNoteFilter } from 'mastodon/api_types/bookmark_folders';
 import { Icon } from 'mastodon/components/icon';
 
 import { AuthorFilter } from './author_filter';
@@ -95,10 +96,13 @@ export const BookmarkFilterBar: React.FC<{
   onOnlyMediaChange: (onlyMedia: boolean) => void;
   accountId?: string;
   onAccountChange: (accountId: string | undefined) => void;
+  note?: BookmarkNoteFilter;
+  onNoteChange: (note: BookmarkNoteFilter | undefined) => void;
   filtered: boolean;
   onClearAll: () => void;
   selecting: boolean;
   onSelectingChange: (selecting: boolean) => void;
+  selectActions?: React.ReactNode;
 }> = ({
   searchText,
   onSearchTextChange,
@@ -108,14 +112,25 @@ export const BookmarkFilterBar: React.FC<{
   onOnlyMediaChange,
   accountId,
   onAccountChange,
+  note,
+  onNoteChange,
   filtered,
   onClearAll,
   selecting,
   onSelectingChange,
+  selectActions,
 }) => {
   const handleMediaClick = useCallback(() => {
     onOnlyMediaChange(!onlyMedia);
   }, [onlyMedia, onOnlyMediaChange]);
+
+  const handleWithNoteClick = useCallback(() => {
+    onNoteChange(note === 'with' ? undefined : 'with');
+  }, [note, onNoteChange]);
+
+  const handleWithoutNoteClick = useCallback(() => {
+    onNoteChange(note === 'without' ? undefined : 'without');
+  }, [note, onNoteChange]);
 
   const handleSelectClick = useCallback(() => {
     onSelectingChange(!selecting);
@@ -131,24 +146,58 @@ export const BookmarkFilterBar: React.FC<{
       />
 
       <div className='bookmark-filter-bar__chips'>
-        <button
-          type='button'
-          className={classNames('bookmark-filter-bar__chip', {
-            'bookmark-filter-bar__chip--active': onlyMedia,
-          })}
-          aria-pressed={onlyMedia}
-          onClick={handleMediaClick}
-        >
-          <Icon id='bookmark-media' icon={PhotoLibraryIcon} />
-          <FormattedMessage
-            id='bookmarks.filter.only_media'
-            defaultMessage='Media only'
-          />
-        </button>
+        {selecting ? (
+          selectActions
+        ) : (
+          <>
+            <button
+              type='button'
+              className={classNames('bookmark-filter-bar__chip', {
+                'bookmark-filter-bar__chip--active': onlyMedia,
+              })}
+              aria-pressed={onlyMedia}
+              onClick={handleMediaClick}
+            >
+              <Icon id='bookmark-media' icon={PhotoIcon} />
+              <FormattedMessage
+                id='bookmarks.filter.only_media'
+                defaultMessage='Media only'
+              />
+            </button>
 
-        <AuthorFilter accountId={accountId} onChange={onAccountChange} />
+            <AuthorFilter accountId={accountId} onChange={onAccountChange} />
 
-        {filtered && (
+            <button
+              type='button'
+              className={classNames('bookmark-filter-bar__chip', {
+                'bookmark-filter-bar__chip--active': note === 'with',
+              })}
+              aria-pressed={note === 'with'}
+              onClick={handleWithNoteClick}
+            >
+              <FormattedMessage
+                id='bookmarks.filter.with_note'
+                defaultMessage='With note'
+              />
+            </button>
+
+            <button
+              type='button'
+              className={classNames('bookmark-filter-bar__chip', {
+                'bookmark-filter-bar__chip--active': note === 'without',
+              })}
+              aria-pressed={note === 'without'}
+              onClick={handleWithoutNoteClick}
+            >
+              <FormattedMessage
+                id='bookmarks.filter.without_note'
+                defaultMessage='Without note'
+              />
+            </button>
+          </>
+        )}
+
+        {!selecting && filtered && (
           <button
             type='button'
             className='bookmark-filter-bar__chip bookmark-filter-bar__reset'
@@ -172,10 +221,17 @@ export const BookmarkFilterBar: React.FC<{
           aria-pressed={selecting}
           onClick={handleSelectClick}
         >
-          <FormattedMessage
-            id='bookmarks.select.toggle'
-            defaultMessage='Select'
-          />
+          {selecting ? (
+            <FormattedMessage
+              id='bookmarks.select.done'
+              defaultMessage='Done'
+            />
+          ) : (
+            <FormattedMessage
+              id='bookmarks.select.toggle'
+              defaultMessage='Edit'
+            />
+          )}
         </button>
       </div>
     </div>

@@ -99,6 +99,7 @@ const useFolderActions = () => {
               name: folder.name,
             }),
             confirm: intl.formatMessage(messages.deleteConfirm),
+            dangerous: true,
             onConfirm: () => {
               void dispatch(deleteBookmarkFolder({ id: folder.id })).then(
                 (result) => {
@@ -153,7 +154,7 @@ export const BookmarkFolderManagerModal: React.FC<{ onClose: () => void }> = ({
   }, [pendingFocus, handleFocusHandled]);
 
   return (
-    <div className='modal-root__modal dialog-modal'>
+    <div className='modal-root__modal dialog-modal bookmark-modal'>
       <div className='dialog-modal__header'>
         <IconButton
           className='dialog-modal__header__close'

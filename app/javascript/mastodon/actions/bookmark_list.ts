@@ -29,6 +29,7 @@ const filterSuffix = (query: BookmarkQuery) => {
   if (q) parts.push(`q=${encodeURIComponent(q)}`);
   if (query.onlyMedia) parts.push('media');
   if (query.accountId) parts.push(`account=${query.accountId}`);
+  if (query.note) parts.push(`note=${query.note}`);
 
   return parts.join('&');
 };

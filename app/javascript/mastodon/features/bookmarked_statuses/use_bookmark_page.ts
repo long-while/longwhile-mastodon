@@ -14,6 +14,7 @@ import {
   bookmarkListKey,
   fetchBookmarkDetails,
   fetchBookmarkList,
+  isRealFolderId,
   removeBookmarks,
   removeStatusesFromBookmarkFolder,
 } from 'mastodon/actions/bookmark_list';
@@ -31,6 +32,12 @@ const messages = defineMessages({
     defaultMessage:
       'Added {count, plural, one {# post} other {# posts}} to {name}.',
   },
+  moved: {
+    id: 'bookmarks.select.moved',
+    defaultMessage:
+      'Moved {count, plural, one {# post} other {# posts}} to {name}.',
+  },
+  unsorted: { id: 'bookmark_folders.unsorted', defaultMessage: 'Unsorted' },
   removedFromFolder: {
     id: 'bookmarks.select.removed_from_folder',
     defaultMessage:
@@ -286,7 +293,78 @@ export const useBulkActions = ({
     [dispatch, finish, intl],
   );
 
-  return { busy, addToFolder, removeFromFolder, unbookmark };
+  const move = useCallback(
+    (targetId: string, statusIds: string[]) => {
+      const toFolder = isRealFolderId(targetId) ? targetId : undefined;
+      const fromFolder =
+        isRealFolderId(folderId) && folderId !== targetId
+          ? folderId
+          : undefined;
+      if (!toFolder && !fromFolder) return;
+
+      const step = async (
+        run: () => Promise<unknown>,
+        done: ChunkedResult,
+      ): Promise<ChunkedResult | null> => {
+        const result = await run();
+        if (!isFulfilled(result)) return null;
+        const next = result.payload as ChunkedResult;
+        return {
+          statusIds: next.statusIds,
+          partial: done.partial || next.partial,
+        };
+      };
+
+      setBusy(true);
+      void (async () => {
+        let state: ChunkedResult | null = { statusIds, partial: false };
+
+        if (toFolder) {
+          const ids = state.statusIds;
+          state = await step(
+            () =>
+              dispatch(
+                addStatusesToBookmarkFolder({
+                  folderId: toFolder,
+                  statusIds: ids,
+                }),
+              ),
+            state,
+          );
+        }
+        if (state && fromFolder) {
+          const ids = state.statusIds;
+          state = await step(
+            () =>
+              dispatch(
+                removeStatusesFromBookmarkFolder({
+                  folderId: fromFolder,
+                  statusIds: ids,
+                }),
+              ),
+            state,
+          );
+        }
+
+        setBusy(false);
+        if (!state) return;
+
+        const name = toFolder
+          ? folderName(toFolder)
+          : intl.formatMessage(messages.unsorted);
+        dispatch(
+          showAlert({
+            message: state.partial ? messages.partial : messages.moved,
+            values: { count: state.statusIds.length, name },
+          }),
+        );
+        onDone();
+      })();
+    },
+    [dispatch, folderId, folderName, intl, onDone],
+  );
+
+  return { busy, addToFolder, removeFromFolder, unbookmark, move };
 };
 
 export const useSelectMode = ({
@@ -312,11 +390,13 @@ export const useSelectMode = ({
     (id: string) => folders.find((f) => f.id === id)?.name ?? '',
     [folders],
   );
-  const { busy, addToFolder, removeFromFolder, unbookmark } = useBulkActions({
-    folderId,
-    folderName,
-    onDone: leave,
-  });
+  const dispatch = useAppDispatch();
+  const { busy, addToFolder, removeFromFolder, unbookmark, move } =
+    useBulkActions({
+      folderId,
+      folderName,
+      onDone: leave,
+    });
 
   useEffect(() => {
     clear();
@@ -347,6 +427,23 @@ export const useSelectMode = ({
     unbookmark(ids);
   }, [unbookmark, ids]);
 
+  const moveSelected = useCallback(() => {
+    if (ids.length === 0) return;
+
+    dispatch(
+      openModal({
+        modalType: 'BOOKMARK_MOVE',
+        modalProps: {
+          folders: folders.filter((folder) => folder.id !== folderId),
+          includeUnsorted: isRealFolderId(folderId),
+          onMove: (targetId: string) => {
+            move(targetId, ids);
+          },
+        },
+      }),
+    );
+  }, [dispatch, folders, folderId, move, ids]);
+
   return {
     selecting,
     changeSelecting,
@@ -359,5 +456,6 @@ export const useSelectMode = ({
     addSelectedToFolder,
     removeSelectedFromFolder,
     unbookmarkSelected,
+    moveSelected,
   };
 };

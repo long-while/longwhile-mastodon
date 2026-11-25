@@ -94,6 +94,39 @@ RSpec.describe 'API V1 Bookmarks filters' do
     end
   end
 
+  describe 'note' do
+    let!(:with_note) { bookmark }
+    let!(:without_note) { bookmark }
+
+    before { with_note.update!(note: '메모') }
+
+    it 'lists only bookmarks with a note for note=with' do
+      expect(listed_ids(note: 'with')).to eq [with_note.status_id.to_s]
+    end
+
+    it 'lists only bookmarks without a note for note=without' do
+      expect(listed_ids(note: 'without')).to eq [without_note.status_id.to_s]
+    end
+
+    it 'counts a cleared note as no note' do
+      with_note.update!(note: '  ')
+
+      expect(listed_ids(note: 'without')).to contain_exactly(with_note.status_id.to_s, without_note.status_id.to_s)
+    end
+
+    it 'ignores an unknown value' do
+      expect(listed_ids(note: 'maybe')).to contain_exactly(with_note.status_id.to_s, without_note.status_id.to_s)
+    end
+
+    it 'carries the note filter in the pagination links' do
+      Fabricate(:bookmark, account: account).update!(note: '둘째')
+
+      get '/api/v1/bookmarks', headers: headers, params: { note: 'with', limit: 1 }
+
+      expect(response.headers['Link'].to_s).to include('note=with')
+    end
+  end
+
   describe 'account_id' do
     let(:author) { Fabricate(:account) }
     let!(:by_author) { bookmark(account: author) }

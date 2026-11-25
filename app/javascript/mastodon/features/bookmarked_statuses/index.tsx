@@ -260,13 +260,14 @@ const Bookmarks: React.FC<{
       return;
     }
 
-    const { folderId: pinnedFolderId, q, onlyMedia, accountId } = query;
+    const { folderId: pinnedFolderId, q, onlyMedia, accountId, note } = query;
     dispatch(
       addColumn('BOOKMARKS', {
         ...(pinnedFolderId && { folderId: pinnedFolderId }),
         ...(q && { q }),
         ...(onlyMedia && { onlyMedia }),
         ...(accountId && { accountId }),
+        ...(note && { note }),
       }),
     );
   }, [dispatch, columnId, query]);
@@ -326,27 +327,24 @@ const Bookmarks: React.FC<{
               onOnlyMediaChange={filterState.setOnlyMedia}
               accountId={filters.accountId}
               onAccountChange={filterState.setAccountId}
+              note={filters.note}
+              onNoteChange={filterState.setNote}
               filtered={filtered}
               onClearAll={filterState.clearAll}
               selecting={select.selecting}
               onSelectingChange={select.changeSelecting}
+              selectActions={
+                <BookmarkSelectActions
+                  selectedCount={select.selected.size}
+                  loadedCount={statusIds.size}
+                  busy={select.busy}
+                  onSelectAll={select.selectAll}
+                  onClearSelection={select.clear}
+                  onMove={select.moveSelected}
+                  onUnbookmark={select.unbookmarkSelected}
+                />
+              }
             />
-
-            {select.selecting && (
-              <BookmarkSelectActions
-                selectedCount={select.selected.size}
-                loadedCount={statusIds.size}
-                folders={folders}
-                currentFolderId={realFolderId}
-                busy={select.busy}
-                onSelectAll={select.selectAll}
-                onClearSelection={select.clear}
-                onAddToFolder={select.addSelectedToFolder}
-                onRemoveFromFolder={select.removeSelectedFromFolder}
-                onUnbookmark={select.unbookmarkSelected}
-                onDone={select.leave}
-              />
-            )}
           </>
         }
       />

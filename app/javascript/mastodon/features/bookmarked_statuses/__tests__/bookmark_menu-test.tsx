@@ -51,6 +51,25 @@ const openMenu = () => {
   fireEvent.click(screen.getByRole('button', { name: 'More' }));
 };
 
+const inMenu = (button: HTMLElement) =>
+  button.closest('.dropdown-menu__item') !== null;
+
+const only = (buttons: HTMLElement[], name: string) => {
+  expect(buttons).toHaveLength(1);
+  const [button] = buttons;
+  if (!button) throw new Error(`no "${name}" button`);
+  return button;
+};
+
+const menuItem = (name: string) =>
+  only(screen.getAllByRole('button', { name }).filter(inMenu), name);
+
+const barButton = (name: string) =>
+  only(
+    screen.getAllByRole('button', { name }).filter((button) => !inMenu(button)),
+    name,
+  );
+
 describe('bookmark items in the status menu', () => {
   it('are absent outside the bookmarks page', () => {
     renderBar(null);
@@ -67,14 +86,16 @@ describe('bookmark items in the status menu', () => {
     renderBar(value);
     openMenu();
 
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Remove from this folder' }),
-    );
+    fireEvent.click(menuItem('Remove from this folder'));
     expect(value.onRemoveFromFolder).toHaveBeenCalledWith('10');
 
     openMenu();
-    fireEvent.click(screen.getByRole('button', { name: 'Add note' }));
+    fireEvent.click(menuItem('Add note'));
+    expect(value.onEditNote).toHaveBeenCalledTimes(1);
     expect(value.onEditNote).toHaveBeenCalledWith('10');
+
+    fireEvent.click(barButton('Add note'));
+    expect(value.onEditNote).toHaveBeenCalledTimes(2);
   });
 
   it('say "edit note" when the post already has one, and hide folder removal outside folders', () => {
@@ -83,7 +104,8 @@ describe('bookmark items in the status menu', () => {
     );
     openMenu();
 
-    expect(screen.getByRole('button', { name: 'Edit note' })).toBeTruthy();
+    expect(menuItem('Edit note')).toBeTruthy();
+    expect(barButton('Edit note')).toBeTruthy();
     expect(
       screen.queryByRole('button', { name: 'Remove from this folder' }),
     ).toBeNull();

@@ -66,6 +66,7 @@ const queryParams = (query: BookmarkQuery) => {
   if (query.q?.trim()) params.q = query.q.trim();
   if (query.onlyMedia) params.only_media = 'true';
   if (query.accountId) params.account_id = query.accountId;
+  if (query.note) params.note = query.note;
 
   return params;
 };

@@ -4,7 +4,7 @@ import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
 
 import classNames from 'classnames';
 
-import SettingsIcon from '@/material-icons/400-24px/settings.svg?react';
+import FolderCogIcon from '@/styles/bird-theme-svg/folder-cog.svg?react';
 import { UNSORTED_FOLDER_ID } from 'mastodon/actions/bookmark_list';
 import { openModal } from 'mastodon/actions/modal';
 import type { ApiBookmarkFolderJSON } from 'mastodon/api_types/bookmark_folders';
@@ -115,7 +115,7 @@ export const BookmarkFolderTabs: React.FC<{
       <IconButton
         className='bookmark-folder-tabs__manage'
         icon='cog'
-        iconComponent={SettingsIcon}
+        iconComponent={FolderCogIcon}
         title={intl.formatMessage(messages.manage)}
         onClick={handleManage}
       />

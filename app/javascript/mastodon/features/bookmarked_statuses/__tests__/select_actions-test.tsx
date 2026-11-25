@@ -35,10 +35,8 @@ const renderActions = (
   const handlers = {
     onSelectAll: vi.fn(),
     onClearSelection: vi.fn(),
-    onAddToFolder: vi.fn(),
-    onRemoveFromFolder: vi.fn(),
+    onMove: vi.fn(),
     onUnbookmark: vi.fn(),
-    onDone: vi.fn(),
   };
 
   render(
@@ -47,7 +45,6 @@ const renderActions = (
         <BookmarkSelectActions
           selectedCount={2}
           loadedCount={5}
-          folders={folders}
           busy={false}
           {...handlers}
           {...props}
@@ -59,62 +56,55 @@ const renderActions = (
   return handlers;
 };
 
-const button = (name: string) => screen.getByRole('button', { name });
+const button = (name: string | RegExp) => screen.getByRole('button', { name });
+const isDisabled = (name: string | RegExp) =>
+  (button(name) as HTMLButtonElement).disabled;
 
 describe('<BookmarkSelectActions />', () => {
-  it('announces the selection count and runs the actions', () => {
-    const handlers = renderActions({ currentFolderId: '1' });
+  it('offers "select all" with move and remove disabled when nothing is selected', () => {
+    const handlers = renderActions({ selectedCount: 0 });
 
-    expect(screen.getByRole('status').textContent).toBe('2 selected');
+    expect(isDisabled('Move')).toBe(true);
+    expect(isDisabled('Remove bookmarks')).toBe(true);
 
     fireEvent.click(button('Select all'));
     expect(handlers.onSelectAll).toHaveBeenCalled();
+  });
 
-    fireEvent.click(button('Remove from this folder'));
-    expect(handlers.onRemoveFromFolder).toHaveBeenCalled();
+  it('turns into "deselect all" with the count once something is selected', () => {
+    const handlers = renderActions({ selectedCount: 4 });
+
+    fireEvent.click(button(/Deselect all \(4\)/));
+    expect(handlers.onClearSelection).toHaveBeenCalled();
+  });
+
+  it('runs move and remove for a selection', () => {
+    const handlers = renderActions();
+
+    fireEvent.click(button('Move'));
+    expect(handlers.onMove).toHaveBeenCalled();
 
     fireEvent.click(button('Remove bookmarks'));
     expect(handlers.onUnbookmark).toHaveBeenCalled();
   });
 
-  it('offers "remove from this folder" only on a folder tab', () => {
+  it('has no separate count or done button', () => {
     renderActions();
 
-    expect(
-      screen.queryByRole('button', { name: 'Remove from this folder' }),
-    ).toBeNull();
-  });
-
-  it('disables actions when nothing is selected', () => {
-    renderActions({ selectedCount: 0 });
-
-    expect((button('Remove bookmarks') as HTMLButtonElement).disabled).toBe(
-      true,
-    );
-    expect((button('Add to folder') as HTMLButtonElement).disabled).toBe(true);
-  });
-
-  it('turns "select all" into "deselect all" once everything is selected', () => {
-    const handlers = renderActions({ selectedCount: 5 });
-
-    fireEvent.click(button('Deselect all'));
-    expect(handlers.onClearSelection).toHaveBeenCalled();
-  });
-
-  it('lists the other folders as targets', async () => {
-    const handlers = renderActions({ currentFolderId: '1' });
-
-    fireEvent.click(button('Add to folder'));
-    fireEvent.click(await screen.findByRole('button', { name: 'Recipes' }));
-
-    expect(handlers.onAddToFolder).toHaveBeenCalledWith('2');
-    expect(screen.queryByRole('button', { name: 'Read later' })).toBeNull();
+    expect(screen.queryByRole('status')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Done' })).toBeNull();
   });
 });
 
 interface TopModal {
   modalType: string;
-  modalProps: { onConfirm: () => void; title: string };
+  modalProps: {
+    onConfirm: () => void;
+    title: string;
+    onMove: (targetId: string) => void;
+    includeUnsorted: boolean;
+    folders: { id: string }[];
+  };
 }
 
 const topModal = () => {
@@ -239,6 +229,102 @@ describe('useSelectMode', () => {
         '2',
       ]);
     });
+  });
+
+  it('moves posts out of the current folder into the picked one', async () => {
+    const { result } = renderSelectMode(ids(3), '1');
+
+    act(() => {
+      result.current.changeSelecting(true);
+      result.current.toggle('2', true);
+    });
+    act(() => {
+      result.current.moveSelected();
+    });
+
+    const modal = topModal();
+    expect(modal.modalType).toBe('BOOKMARK_MOVE');
+    expect(modal.modalProps.includeUnsorted).toBe(true);
+    expect(modal.modalProps.folders.map((f) => f.id)).toEqual(['2']);
+
+    act(() => {
+      modal.modalProps.onMove('2');
+    });
+
+    await waitFor(() => {
+      expect(result.current.selecting).toBe(false);
+    });
+    expect(apiAddStatusesToBookmarkFolder).toHaveBeenCalledWith('2', ['2']);
+    expect(apiRemoveStatusesFromBookmarkFolder).toHaveBeenCalledWith('1', [
+      '2',
+    ]);
+  });
+
+  it('moving to "unsorted" only takes posts out of the current folder', async () => {
+    const { result } = renderSelectMode(ids(3), '1');
+
+    act(() => {
+      result.current.toggle('3', true);
+    });
+    act(() => {
+      result.current.moveSelected();
+    });
+    act(() => {
+      topModal().modalProps.onMove('none');
+    });
+
+    await waitFor(() => {
+      expect(apiRemoveStatusesFromBookmarkFolder).toHaveBeenCalledWith('1', [
+        '3',
+      ]);
+    });
+    expect(apiAddStatusesToBookmarkFolder).not.toHaveBeenCalled();
+  });
+
+  it('outside a folder, moving only adds and offers no "unsorted"', async () => {
+    const { result } = renderSelectMode(ids(3));
+
+    act(() => {
+      result.current.toggle('1', true);
+    });
+    act(() => {
+      result.current.moveSelected();
+    });
+    const modal = topModal();
+    expect(modal.modalProps.includeUnsorted).toBe(false);
+
+    act(() => {
+      modal.modalProps.onMove('1');
+    });
+
+    await waitFor(() => {
+      expect(apiAddStatusesToBookmarkFolder).toHaveBeenCalledWith('1', ['1']);
+    });
+    expect(apiRemoveStatusesFromBookmarkFolder).not.toHaveBeenCalled();
+  });
+
+  it('does not take posts out of the folder when adding them failed', async () => {
+    vi.mocked(apiAddStatusesToBookmarkFolder).mockRejectedValue(
+      new Error('boom'),
+    );
+    const { result } = renderSelectMode(ids(2), '1');
+
+    act(() => {
+      result.current.changeSelecting(true);
+      result.current.toggle('1', true);
+    });
+    act(() => {
+      result.current.moveSelected();
+    });
+    act(() => {
+      topModal().modalProps.onMove('2');
+    });
+
+    await waitFor(() => {
+      expect(result.current.busy).toBe(false);
+    });
+    expect(apiRemoveStatusesFromBookmarkFolder).not.toHaveBeenCalled();
+    expect(result.current.selecting).toBe(true);
   });
 
   it('asks for confirmation before removing bookmarks', async () => {

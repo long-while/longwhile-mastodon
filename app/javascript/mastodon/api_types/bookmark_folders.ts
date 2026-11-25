@@ -16,4 +16,7 @@ export interface BookmarkQuery {
   q?: string;
   onlyMedia?: boolean;
   accountId?: string;
+  note?: BookmarkNoteFilter;
 }
+
+export type BookmarkNoteFilter = 'with' | 'without';

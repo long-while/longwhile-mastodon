@@ -17,6 +17,8 @@ import ReplyIcon from '@/material-icons/400-24px/reply.svg?react';
 import ReplyAllIcon from '@/material-icons/400-24px/reply_all.svg?react';
 import StarIcon from '@/material-icons/400-24px/star-fill.svg?react';
 import StarBorderIcon from '@/material-icons/400-24px/star.svg?react';
+import PencilFillIcon from '@/styles/bird-theme-svg/pencil-fill.svg?react';
+import PencilIcon from '@/styles/bird-theme-svg/pencil.svg?react';
 import RepeatActiveIcon from '@/svg-icons/repeat_active.svg?react';
 import RepeatDisabledIcon from '@/svg-icons/repeat_disabled.svg?react';
 import RepeatPrivateIcon from '@/svg-icons/repeat_private.svg?react';
@@ -379,6 +381,18 @@ class StatusActionBar extends ImmutablePureComponent {
     const favouriteTitle = intl.formatMessage(status.get('favourited') ? messages.removeFavourite : messages.favourite);
     const isReply = status.get('in_reply_to_account_id') === status.getIn(['account', 'id']);
 
+    let bookmarkNoteButton = null;
+
+    if (signedIn && this.context) {
+      const hasNote = !!this.context.details[status.get('id')]?.note;
+
+      bookmarkNoteButton = (
+        <div className='status__action-bar__button-wrapper'>
+          <IconButton className={classNames('status__action-bar__button', 'bookmark-note-icon', { 'bookmark-note-icon--filled': hasNote })} title={intl.formatMessage(hasNote ? messages.editBookmarkNote : messages.addBookmarkNote)} icon='pencil' iconComponent={hasNote ? PencilFillIcon : PencilIcon} onClick={this.handleBookmarkNoteClick} />
+        </div>
+      );
+    }
+
     return (
       <div className='status__action-bar'>
         <div className='status__action-bar__button-wrapper'>
@@ -393,6 +407,7 @@ class StatusActionBar extends ImmutablePureComponent {
         <div className='status__action-bar__button-wrapper'>
           <IconButton className='status__action-bar__button bookmark-icon' disabled={!signedIn} active={status.get('bookmarked')} title={bookmarkTitle} icon='bookmark' iconComponent={status.get('bookmarked') ? BookmarkIcon : BookmarkBorderIcon} onClick={this.handleBookmarkClick} />
         </div>
+        {bookmarkNoteButton}
         <div className='status__action-bar__button-wrapper'>
           <Dropdown
             scrollKey={scrollKey}

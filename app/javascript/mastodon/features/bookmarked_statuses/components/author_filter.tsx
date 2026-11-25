@@ -4,8 +4,8 @@ import { defineMessages, useIntl } from 'react-intl';
 
 import classNames from 'classnames';
 
-import ArrowDropDownIcon from '@/material-icons/400-24px/arrow_drop_down.svg?react';
-import PersonIcon from '@/material-icons/400-24px/person.svg?react';
+import ChevronDownIcon from '@/styles/bird-theme-svg/chevron-down.svg?react';
+import UserCircleIcon from '@/styles/bird-theme-svg/user-circle.svg?react';
 import { importFetchedAccounts } from 'mastodon/actions/importer';
 import { apiGetBookmarkAuthors } from 'mastodon/api/bookmark_folders';
 import { Avatar } from 'mastodon/components/avatar';
@@ -38,7 +38,7 @@ const AuthorLabel: React.FC<{ accountId?: string; avatarSize?: number }> = ({
   if (!account) {
     return (
       <span className='bookmark-author-filter__label'>
-        <Icon id='bookmark-author' icon={PersonIcon} />
+        <Icon id='bookmark-author' icon={UserCircleIcon} />
         <span className='bookmark-author-filter__name'>
           {intl.formatMessage(messages.allAuthors)}
         </span>
@@ -69,7 +69,7 @@ const useBookmarkAuthors = () => {
         dispatch(importFetchedAccounts(accounts));
         setAuthorIds(accounts.map((account) => account.id));
       })
-      .catch(() => {});
+      .catch(() => null);
 
     return () => {
       cancelled = true;
@@ -150,7 +150,7 @@ export const AuthorFilter: React.FC<{
         title={intl.formatMessage(messages.label)}
       >
         <AuthorLabel accountId={accountId} />
-        <Icon id='bookmark-author-caret' icon={ArrowDropDownIcon} />
+        <Icon id='bookmark-author-caret' icon={ChevronDownIcon} />
       </button>
     </Dropdown>
   );

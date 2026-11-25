@@ -2,9 +2,6 @@ import { useCallback, useContext } from 'react';
 
 import { defineMessages, FormattedMessage, useIntl } from 'react-intl';
 
-import EditNoteIcon from '@/material-icons/400-24px/edit_note.svg?react';
-import { Icon } from 'mastodon/components/icon';
-
 import { BookmarkContext } from '../bookmark_context';
 
 const messages = defineMessages({
@@ -30,11 +27,6 @@ export const BookmarkNote: React.FC<{ statusId: string }> = ({ statusId }) => {
       onClick={handleClick}
       title={intl.formatMessage(messages.edit)}
     >
-      <Icon
-        id='bookmark-note'
-        icon={EditNoteIcon}
-        className='bookmark-note__icon'
-      />
       <span className='bookmark-note__text'>
         <span className='bookmark-note__label'>
           <FormattedMessage id='bookmark_note.label' defaultMessage='Note' />
