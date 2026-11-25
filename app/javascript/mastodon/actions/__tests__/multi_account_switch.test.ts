@@ -125,6 +125,45 @@ describe('switchAccount', () => {
     },
   );
 
+  it('asks to add the account again when it is not linked to the signed-in account', async () => {
+    refreshSession.mockRejectedValue({
+      response: {
+        status: 403,
+        data: { error: 'not linked', code: 'multi_account_not_linked' },
+      },
+    });
+
+    await expect(runSwitch()).rejects.toSatisfy(
+      (error: unknown) =>
+        error instanceof MultiAccountSwitchError &&
+        error.code === SwitchErrorCode.REFRESH_REJECTED &&
+        error.message.includes('계정 추가로 다시 로그인'),
+    );
+
+    expect(deleteEncryptedToken).not.toHaveBeenCalled();
+  });
+
+  it('keeps the stored token when the refresh is refused for a missing sign-in', async () => {
+    refreshSession.mockRejectedValue({
+      response: {
+        status: 401,
+        data: {
+          error: 'Sign-in required to switch accounts',
+          code: 'multi_account_sign_in_required',
+        },
+      },
+    });
+
+    await expect(runSwitch()).rejects.toSatisfy(
+      (error: unknown) =>
+        error instanceof MultiAccountSwitchError &&
+        error.code === SwitchErrorCode.REFRESH_REJECTED &&
+        !error.isDeadToken,
+    );
+
+    expect(deleteEncryptedToken).not.toHaveBeenCalled();
+  });
+
   it('leaves the session cookie alone when the refresh fails', async () => {
     document.cookie = '_session_id=keep-me';
     refreshSession.mockRejectedValue(httpError(422));

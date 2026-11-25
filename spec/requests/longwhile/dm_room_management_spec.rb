@@ -188,6 +188,102 @@ RSpec.describe 'DM room management' do
 
       expect(response).to have_http_status(404)
     end
+
+    it 'refuses to invite while the inviter blocks someone in the room' do
+      room = create_room(partner)
+      send_dm('hello', to: [partner])
+      me.block!(partner)
+
+      post "/api/v1/dm_rooms/#{room.id}/members", headers: headers, params: { account_ids: [third.id.to_s] }
+
+      expect(response).to have_http_status(422)
+      expect(response.parsed_body[:error]).to eq I18n.t('dm_rooms.errors.blocked_member', locale: :ko)
+      expect(room.reload.member_count).to eq 2
+    end
+
+    it 'refuses to invite someone who blocks the inviter, without saying who blocked whom' do
+      room = create_room(partner)
+      third.block!(me)
+
+      post "/api/v1/dm_rooms/#{room.id}/members", headers: headers, params: { account_ids: [third.id.to_s] }
+
+      expect(response).to have_http_status(422)
+      expect(response.parsed_body[:error]).to eq I18n.t('dm_rooms.errors.unknown_recipients', locale: :ko)
+      expect(response.parsed_body[:error]).to_not eq I18n.t('dm_rooms.errors.blocked_member', locale: :ko)
+      expect(room.reload.member_count).to eq 2
+    end
+
+    it 'refuses to invite someone who blocks an existing member other than the inviter' do
+      room = create_room(partner)
+      third.block!(partner)
+
+      post "/api/v1/dm_rooms/#{room.id}/members", headers: headers, params: { account_ids: [third.id.to_s] }
+
+      expect(response).to have_http_status(422)
+      expect(response.parsed_body[:error]).to eq I18n.t('dm_rooms.errors.unknown_recipients', locale: :ko)
+      expect(room.reload.member_count).to eq 2
+    end
+
+    it 'refuses to invite someone an existing member blocks' do
+      room = create_room(partner)
+      partner.block!(third)
+
+      post "/api/v1/dm_rooms/#{room.id}/members", headers: headers, params: { account_ids: [third.id.to_s] }
+
+      expect(response).to have_http_status(422)
+      expect(response.parsed_body[:error]).to eq I18n.t('dm_rooms.errors.unknown_recipients', locale: :ko)
+      expect(room.reload.member_count).to eq 2
+    end
+
+    it 'refuses to invite two people who block each other' do
+      room = create_room(partner)
+      fourth = Fabricate(:user).account
+      third.block!(fourth)
+
+      post "/api/v1/dm_rooms/#{room.id}/members", headers: headers, params: { account_ids: [third.id.to_s, fourth.id.to_s] }
+
+      expect(response).to have_http_status(422)
+      expect(room.reload.member_count).to eq 2
+    end
+
+    it 'invites someone when nobody blocks anybody' do
+      room = create_room(partner)
+
+      post "/api/v1/dm_rooms/#{room.id}/members", headers: headers, params: { account_ids: [third.id.to_s] }
+
+      expect(response).to have_http_status(200)
+      expect(room.reload.member_count).to eq 3
+    end
+
+    it 'refuses to invite someone the inviter blocks' do
+      room = create_room(partner)
+      me.block!(third)
+
+      post "/api/v1/dm_rooms/#{room.id}/members", headers: headers, params: { account_ids: [third.id.to_s] }
+
+      expect(response).to have_http_status(422)
+      expect(room.reload.member_count).to eq 2
+    end
+
+    it 'never shows a new member the last message of the old roster' do
+      third_headers = { 'Authorization' => "Bearer #{Fabricate(:accessible_access_token, resource_owner_id: third.user.id, scopes: 'read write').token}" }
+      room = create_room(partner)
+      secret = send_dm('only for the two of us', to: [partner])
+      allow(room).to receive(:post_member_event!)
+      room.add_members!(me, [third.id])
+      expect(room.reload.last_status_id.to_s).to eq secret[:id]
+
+      get "/api/v1/dm_rooms/#{room.id}", headers: third_headers
+      expect(response).to have_http_status(200)
+      expect(response.parsed_body[:last_status]).to be_nil
+
+      get '/api/v1/dm_rooms', headers: third_headers
+      listed = response.parsed_body.find { |item| item[:id] == room.id.to_s }
+      expect(listed).to be_nil.or(include(last_status: nil))
+
+      get "/api/v1/dm_rooms/#{room.id}", headers: headers
+      expect(response.parsed_body.dig(:last_status, :id)).to eq secret[:id]
+    end
   end
 
   describe 'POST /api/v1/dm_rooms/:id/statuses/:status_id/hide' do

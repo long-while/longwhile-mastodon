@@ -84,6 +84,8 @@ class Admin::ActionLogFilter
     update_username_block: { target_type: 'UsernameBlock', action: 'update' }.freeze,
     destroy_username_block: { target_type: 'UsernameBlock', action: 'destroy' }.freeze,
     view_dm_room: { target_type: 'DmRoom', action: 'view' }.freeze,
+    view_status: { target_type: 'Status', action: 'view' }.freeze,
+    search_direct_messages: { target_type: 'Account', action: 'search_direct_messages' }.freeze,
   }.freeze
 
   IGNORED_PARAMS = %w(page).freeze

@@ -10,6 +10,8 @@ module Admin
       authorize [:admin, :direct_message], :index?
 
       @direct_messages = filtered_direct_messages.page(params[:page]).per(PER_PAGE).without_count
+
+      Admin::DirectMessageViewLog.log_list_view!(current_account, query: params[:q], page: params[:page])
     end
 
     private

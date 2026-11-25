@@ -52,6 +52,12 @@ namespace :settings do
 
   resource :delete, only: [:show, :destroy]
 
+  resources :multi_accounts, only: [:index, :destroy] do
+    collection do
+      delete :destroy_all
+    end
+  end
+
   resources :sessions, only: [:destroy]
   resources :login_activities, only: [:index]
 end

@@ -44,6 +44,10 @@
       cron: '<%= Random.rand(0..59) %> <%= Random.rand(3..5) %> * * *'
       class: Scheduler::IpCleanupScheduler
       queue: scheduler
+    deleted_user_record_cleanup_scheduler:
+      cron: '<%= Random.rand(0..59) %> <%= Random.rand(3..5) %> * * *'
+      class: Scheduler::DeletedUserRecordCleanupScheduler
+      queue: scheduler
     pghero_scheduler:
       cron: '0 0 * * *'
       class: Scheduler::PgheroScheduler

@@ -137,11 +137,19 @@ RSpec.describe 'API V1 Admin DM rooms' do
         .to contain_exactly([viewer.id, room.id], [viewer.id, other_room.id], [other_admin.account_id, room.id])
     end
 
-    it 'does not record the room list or the room details' do
-      expect do
-        get '/api/v1/admin/dm_rooms', headers: headers
-        get "/api/v1/admin/dm_rooms/#{room.id}", headers: headers
-      end.to_not change(view_logs, :count)
+    it 'records opening the room list as a list view, which carries no message bodies' do
+      expect { get '/api/v1/admin/dm_rooms', headers: headers }.to_not change(view_logs, :count)
+      expect(Admin::ActionLog.where(action: 'search_direct_messages', account: viewer)).to exist
+
+      expect(response.body).to_not include('secret')
+      expect(response.parsed_body.first[:last_status]).to include(content: '', redacted: true)
+      expect(response.parsed_body.first.dig(:last_status, :account, :id)).to eq alice.id.to_s
+    end
+
+    it 'records opening the room details' do
+      expect { get "/api/v1/admin/dm_rooms/#{room.id}", headers: headers }.to change(view_logs, :count).by(1)
+
+      expect(response.body).to_not include('secret')
     end
 
     it 'does not record a refused request' do

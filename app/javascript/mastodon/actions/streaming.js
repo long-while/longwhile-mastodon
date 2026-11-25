@@ -11,7 +11,9 @@ import {
   deleteAnnouncement,
 } from './announcements';
 import { updateConversations } from './conversations';
-import { dmChatStreamUpdate, dmMessageReceived, setDmStreamConnected, updateDmReadState } from './dm_rooms';
+import { createFallbackPoller } from '../features/messages/util/fallback_poller';
+
+import { dmChatStreamUpdate, dmMessageReceived, pollDmChat, setDmStreamConnected, updateDmReadState } from './dm_rooms';
 import { processNewNotificationForGroups, refreshStaleNotificationGroups, pollRecentNotifications as pollRecentGroupNotifications } from './notification_groups';
 import { updateNotifications } from './notifications';
 import { updateStatus } from './statuses';
@@ -59,7 +61,14 @@ export const connectTimelineStream = (timelineId, channelName, params = {}, opti
      */
 
     const useFallback = async fallback => {
+      // @ts-ignore
+      const scheduledId = pollingId;
+
       await fallback(dispatch, getState);
+
+      // @ts-ignore
+      if (pollingId !== scheduledId) return;
+
       // eslint-disable-next-line react-hooks/rules-of-hooks -- this is not a react hook
       pollingId = setTimeout(() => useFallback(fallback), 20000 + randomUpTo(20000));
     };
@@ -160,6 +169,10 @@ export const connectTimelineStream = (timelineId, channelName, params = {}, opti
  */
 async function refreshHomeTimelineAndNotification(dispatch) {
   await dispatch(expandHomeTimeline({ maxId: undefined }));
+
+  if (dmChatEnabled && !isDmFallbackPolling()) {
+    await dispatch(pollDmChat());
+  }
 
   // TODO: polling for merged notifications
   try {
@@ -273,53 +286,99 @@ export const connectHashtagStream = (columnId, tagName, onlyLocal, accept) =>
 export const connectDirectStream = () =>
   connectTimelineStream('direct', 'direct');
 
+/** @type {Set<object>} */
+const runningDmPollers = new Set();
+
 /**
- * @returns {function(): void}
+ * @returns {boolean}
  */
-export const connectDmChatStream = () =>
-  connectStream('direct', {}, (dispatch) => ({
-    onConnect() {
-      dispatch(setDmStreamConnected({ connected: true }));
+export const isDmFallbackPolling = () => runningDmPollers.size > 0;
+
+/**
+ * @param {Function} dispatch
+ * @param {import('../features/messages/util/fallback_poller').FallbackPoller} poller
+ * @returns {{ onConnect: (function(): void), onReceive: (function(import('../stream').StreamEvent): void), onDisconnect: (function(): void) }}
+ */
+const createDmChatHandlers = (dispatch, poller) => ({
+  onConnect() {
+    poller.stop();
+    dispatch(setDmStreamConnected({ connected: true }));
+
+    dispatch(dmChatStreamUpdate());
+  },
+
+  onDisconnect() {
+    dispatch(setDmStreamConnected({ connected: false }));
+
+    poller.start();
+  },
+
+  onReceive(data) {
+    switch (data.event) {
+    case 'update':
+      dispatch(dmChatStreamUpdate());
+      break;
+    case 'status.update':
+      // @ts-expect-error
+      dispatch(updateStatus(JSON.parse(data.payload)));
+      break;
+    case 'delete':
+      dispatch(deleteFromTimelines(data.payload));
+      break;
+    case 'conversation':
+      // @ts-expect-error
+      dispatch(updateConversations(JSON.parse(data.payload)));
 
       dispatch(dmChatStreamUpdate());
+      break;
+    case 'dm.read': {
+      // @ts-expect-error
+      const read = JSON.parse(data.payload);
+
+      dispatch(updateDmReadState({
+        roomId: read.dm_room_id,
+        accountId: read.account_id,
+        lastReadStatusId: read.last_read_status_id,
+      }));
+      break;
+    }
+    }
+  },
+});
+
+/**
+ * @returns {function(Function): function(): void}
+ */
+export const connectDmChatStream = () => (dispatch) => {
+  const pollerKey = {};
+  const poller = createFallbackPoller({
+    poll: async () => {
+      const result = await dispatch(pollDmChat());
+      return result.payload ?? 'error';
     },
-
-    onDisconnect() {
-      dispatch(setDmStreamConnected({ connected: false }));
-    },
-
-    onReceive(data) {
-      switch (data.event) {
-      case 'update':
-        dispatch(dmChatStreamUpdate());
-        break;
-      case 'status.update':
-        // @ts-expect-error
-        dispatch(updateStatus(JSON.parse(data.payload)));
-        break;
-      case 'delete':
-        dispatch(deleteFromTimelines(data.payload));
-        break;
-      case 'conversation':
-        // @ts-expect-error
-        dispatch(updateConversations(JSON.parse(data.payload)));
-
-        dispatch(dmChatStreamUpdate());
-        break;
-      case 'dm.read': {
-        // @ts-expect-error
-        const read = JSON.parse(data.payload);
-
-        dispatch(updateDmReadState({
-          roomId: read.dm_room_id,
-          accountId: read.account_id,
-          lastReadStatusId: read.last_read_status_id,
-        }));
-        break;
-      }
+    onStateChange: running => {
+      if (running) {
+        runningDmPollers.add(pollerKey);
+      } else {
+        runningDmPollers.delete(pollerKey);
       }
     },
-  }));
+  });
+
+  let disconnect;
+
+  try {
+    disconnect = dispatch(connectStream('direct', {}, () => createDmChatHandlers(dispatch, poller)));
+  } catch (error) {
+    poller.dispose();
+    throw error;
+  }
+
+  return () => {
+    poller.dispose();
+    disconnect();
+  };
+};
 
 /**
  * @param {string} listId

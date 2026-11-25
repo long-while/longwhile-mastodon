@@ -84,6 +84,14 @@ RSpec.describe Settings::TwoFactorAuthentication::ConfirmationsController do
             expect(response.parsed_body)
               .to have_title(I18n.t('settings.two_factor_authentication'))
           end
+
+          it 'revokes long-lived multi-account tokens' do
+            long_lived = Fabricate(:access_token, resource_owner_id: user.id, multi_account: true, purpose: 'multi_account_refresh', long_lived: true)
+
+            post_create_with_options
+
+            expect(long_lived.reload.revoked_at).to be_present
+          end
         end
 
         describe 'when creation fails' do

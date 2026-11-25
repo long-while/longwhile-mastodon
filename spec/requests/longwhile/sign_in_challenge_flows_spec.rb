@@ -3,6 +3,7 @@
 require 'rails_helper'
 
 RSpec.describe 'Sign-in challenges inside the multi-account flows' do
+  let(:same_origin_headers) { { 'Origin' => "https://#{Rails.configuration.x.local_domain}" } }
   let(:password) { 'challenge-password-1234' }
   let(:main_user) { Fabricate(:user) }
   let(:inactive_user) { Fabricate(:user, password: password, current_sign_in_at: 100.days.ago) }
@@ -105,7 +106,7 @@ RSpec.describe 'Sign-in challenges inside the multi-account flows' do
       entry = open_add_account_popup
       post user_session_path, params: { user: { email: inactive_user.email, password: password } }
 
-      post '/multi_accounts/session/restore', params: { payload: { state: entry[:state], nonce: entry[:nonce] } }
+      post '/multi_accounts/session/restore', params: { payload: { state: entry[:state], nonce: entry[:nonce] } }, headers: same_origin_headers
 
       expect(response).to have_http_status(200)
 
@@ -155,9 +156,10 @@ RSpec.describe 'Sign-in challenges inside the multi-account flows' do
     before { allow(MultiAccountConfig).to receive(:refresh_flow_enabled?).and_return(true) }
 
     it 'switches without asking for an e-mailed code' do
+      MultiAccountLink.link!(main_user.id, inactive_user.id)
       sign_in main_user
 
-      post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: refresh_token.token }
+      post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: refresh_token.token }, headers: same_origin_headers
 
       expect(UserMailer).to_not have_received(:sign_in_token)
 
@@ -178,7 +180,7 @@ RSpec.describe 'Sign-in challenges inside the multi-account flows' do
       target.account.update!(memorial: true)
       sign_in main_user
 
-      post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: token.token }
+      post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: token.token }, headers: same_origin_headers
 
       expect(response).to have_http_status(403)
 
@@ -191,7 +193,7 @@ RSpec.describe 'Sign-in challenges inside the multi-account flows' do
       MultiAccounts::StateStore.store!(state: 'state-m', nonce: 'nonce-m', user_id: main_user.id, redirect_uri: application.redirect_uri)
       main_user.account.update!(memorial: true)
 
-      post '/multi_accounts/session/restore', params: { payload: { state: 'state-m', nonce: 'nonce-m' } }
+      post '/multi_accounts/session/restore', params: { payload: { state: 'state-m', nonce: 'nonce-m' } }, headers: same_origin_headers
 
       expect(response).to have_http_status(403)
     end
@@ -214,8 +216,9 @@ RSpec.describe 'Sign-in challenges inside the multi-account flows' do
     end
 
     it 'is served with the page token of the new session, not the switch token' do
+      MultiAccountLink.link!(main_user.id, admin.id)
       sign_in main_user
-      post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: refresh_token.token }
+      post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: refresh_token.token }, headers: same_origin_headers
       switch_token = response.parsed_body[:token]
 
       get '/messages/all'

@@ -8,6 +8,21 @@ vi.mock('../multi_account_db', () => ({
   loadAllEntries: () => loadAllEntries() as Promise<unknown>,
 }));
 
+let linkedAccountIds: string[] | Error = ['A', 'B'];
+
+const getLinks = vi.fn();
+
+vi.mock('mastodon/api', () => ({
+  default: () => ({
+    get: () => {
+      getLinks();
+      return linkedAccountIds instanceof Error
+        ? Promise.reject(linkedAccountIds)
+        : Promise.resolve({ data: { account_ids: linkedAccountIds } });
+    },
+  }),
+}));
+
 let sessionAccountId: string | undefined = 'A';
 
 vi.mock('../../initial_state', () => ({
@@ -57,7 +72,38 @@ describe('multi-account hydrateStore', () => {
   beforeEach(() => {
     vi.resetModules();
     loadAllEntries.mockReset();
+    getLinks.mockReset();
     sessionAccountId = 'A';
+    linkedAccountIds = ['A', 'B'];
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+  });
+
+  it('leaves out stored accounts that are not linked to the signed-in account', async () => {
+    loadAllEntries.mockResolvedValue({
+      A: entry('A'),
+      B: entry('B'),
+      C: entry('C'),
+    });
+
+    const store = createStore();
+    const { hydrateStore } = await import('../multi_account_storage');
+    await hydrateStore(store as never);
+
+    expect(Object.keys(lastHydratePayload(store).accounts).sort()).toEqual([
+      'A',
+      'B',
+    ]);
+  });
+
+  it('keeps only the session account when the links cannot be loaded', async () => {
+    linkedAccountIds = new Error('offline');
+    loadAllEntries.mockResolvedValue({ A: entry('A'), B: entry('B') });
+
+    const store = createStore();
+    const { hydrateStore } = await import('../multi_account_storage');
+    await hydrateStore(store as never);
+
+    expect(Object.keys(lastHydratePayload(store).accounts)).toEqual(['A']);
   });
 
   it('marks the session account active even when another entry was used later', async () => {
@@ -101,7 +147,7 @@ describe('multi-account hydrateStore', () => {
     expect(accounts.A?.id).toEqual('A');
   });
 
-  it('reports no active account when signed out', async () => {
+  it('does nothing and asks no server when signed out', async () => {
     sessionAccountId = undefined;
     loadAllEntries.mockResolvedValue({ B: entry('B') });
 
@@ -109,6 +155,7 @@ describe('multi-account hydrateStore', () => {
     const { hydrateStore } = await import('../multi_account_storage');
     await hydrateStore(store as never);
 
-    expect(lastHydratePayload(store).activeAccountId).toBeNull();
+    expect(store.dispatched).toEqual([]);
+    expect(getLinks).not.toHaveBeenCalled();
   });
 });

@@ -342,6 +342,32 @@ RSpec.describe AccountStatusesFilter do
       it_behaves_like 'filter params'
     end
 
+    describe 'direct messages and the view_direct_messages permission' do
+      let!(:direct_status) { status!(:direct) }
+
+      def viewer_with(permission)
+        Fabricate(:user, role: Fabricate(:user_role, permissions: UserRole::FLAGS[permission])).account
+      end
+
+      it "hides other people's direct messages from a role that only manages roles" do
+        results = described_class.new(account, viewer_with(:manage_roles), {}).results
+
+        expect(results.pluck(:id)).to_not include(direct_status.id)
+      end
+
+      it 'shows them to a role that can view direct messages' do
+        results = described_class.new(account, viewer_with(:view_direct_messages), {}).results
+
+        expect(results.pluck(:id)).to include(direct_status.id)
+      end
+
+      it 'drops them again when the viewer excludes direct messages' do
+        results = described_class.new(account, viewer_with(:view_direct_messages), { exclude_direct: true }).results
+
+        expect(results.pluck(:id)).to_not include(direct_status.id)
+      end
+    end
+
     private
 
     def results_unique_visibilities

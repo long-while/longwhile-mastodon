@@ -41,11 +41,13 @@ module Settings
             sign_count: webauthn_credential.sign_count
           )
 
-          if user_credential.save
+          saved = save_credential!(user_credential)
+
+          if saved
             flash[:success] = I18n.t('webauthn_credentials.create.success')
             status = :ok
 
-            if current_user.webauthn_credentials.size == 1
+            if saved == :first
               UserMailer.webauthn_enabled(current_user).deliver_later!
             else
               UserMailer.webauthn_credential_added(current_user, user_credential).deliver_later!
@@ -65,11 +67,12 @@ module Settings
       def destroy
         credential = current_user.webauthn_credentials.find_by(id: params[:id])
         if credential
-          credential.destroy
-          if credential.destroyed?
+          removed = destroy_credential!(credential)
+
+          if removed
             flash[:success] = I18n.t('webauthn_credentials.destroy.success')
 
-            if current_user.webauthn_credentials.empty?
+            if removed == :last
               UserMailer.webauthn_disabled(current_user).deliver_later!
             else
               UserMailer.webauthn_credential_deleted(current_user, credential).deliver_later!
@@ -84,6 +87,27 @@ module Settings
       end
 
       private
+
+      def save_credential!(user_credential)
+        ApplicationRecord.transaction do
+          next false unless user_credential.save
+
+          first = current_user.webauthn_credentials.size == 1
+          current_user.revoke_multi_account_tokens! if first
+          first ? :first : true
+        end
+      end
+
+      def destroy_credential!(credential)
+        ApplicationRecord.transaction do
+          credential.destroy
+          next false unless credential.destroyed?
+
+          last = current_user.webauthn_credentials.empty?
+          current_user.revoke_multi_account_tokens! if last
+          last ? :last : true
+        end
+      end
 
       def redirect_invalid_otp
         redirect_to settings_two_factor_authentication_methods_path, flash: { error: t('webauthn_credentials.otp_required') }

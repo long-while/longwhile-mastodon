@@ -250,7 +250,9 @@ ko:
         update_tag: 해시태그 수정
         update_user_role: 역할 수정
         update_username_block: 사용자명 규칙 업데이트
+        search_direct_messages: DM 목록 열람
         view_dm_room: 대화방 열람
+        view_status: DM 게시물 열람
       actions:
         approve_appeal_html: "%{name} 님이 %{target}의 중재 결정에 대한 이의 제기를 승인했습니다"
         approve_user_html: "%{name} 님이 %{target} 님의 가입을 승인했습니다"
@@ -332,7 +334,10 @@ ko:
         update_user_role_html: "%{name} 님이 %{target} 역할을 수정했습니다"
         update_username_block_html: "%{name} 님이 %{target}를 포함하는 사용자명에 대한 규칙을 수정했습니다"
         usable_tag_html: 사용할 수 있음;
+        search_direct_messages_account_html: "%{name} 님이 운영 화면에서 DM 목록을 열람했습니다"
+        search_direct_messages_query_account_html: "%{name} 님이 운영 화면에서 DM 을 “%{target}” 로 검색했습니다"
         view_dm_room_html: "%{name} 님이 %{target} 대화방을 열람했습니다"
+        view_status_html: "%{name} 님이 %{target}의 DM 게시물을 열람했습니다"
       deleted_account: 계정을 삭제했습니다
       empty: 로그를 찾을 수 없습니다
       filter_by_action: 동작 별 필터
@@ -938,6 +943,8 @@ ko:
         view_dashboard_description: 사용자가 여러 통계정보를 볼 수 있는 대시보드에 접근할 수 있도록 허용
         view_devops: 데브옵스
         view_devops_description: Sidekiq과 pgHero 대시보드에 접근할 수 있도록 허용
+        view_direct_messages: DM 열람
+        view_direct_messages_description: 운영 화면에서 모든 사용자의 DM 을 읽을 수 있도록 허용 (열람은 감사 기록에 남습니다)
         view_feeds: 실시간 및 화제 피드 보기
         view_feeds_description: 서버 설정에 관계 없이 실시간과 해시태그 피드에 접근할 수 있도록 허용
       requires_2fa: 2단계 인증 필요
@@ -1579,6 +1586,7 @@ ko:
       your_appeal_rejected: 소명이 기각되었습니다
   dm_rooms:
     errors:
+      blocked_member: 차단한 사람이 있는 대화에는 초대할 수 없습니다. 차단을 풀거나 새 대화를 시작해 주세요.
       last_members: 대화에는 두 명 이상이 남아 있어야 합니다.
       nickname_too_long: 별명은 %{max}자를 넘을 수 없습니다.
       no_recipients: 메시지를 보낼 상대를 한 명 이상 선택해 주세요.
@@ -1897,6 +1905,23 @@ ko:
     carry_blocks_over_text: 이 사용자는 예전에 차단한 %{acct}에서 이주 했습니다.
     carry_mutes_over_text: 이 사용자는 예전에 뮤트한 %{acct}에서 이주 했습니다.
     copy_account_note_text: '이 사용자는 %{acct}로부터 이동하였습니다. 당신의 이전 노트는 이렇습니다:'
+  multi_accounts:
+    actions: 작업
+    description: 다른 기기에서 "다른 계정 추가" 로 저장해 둔 계정 전환 연결입니다. 모르는 연결이 있으면 해지하세요. 해지한 기기에서는 "다른 계정 추가" 로 계정을 다시 추가해야 전환할 수 있습니다.
+    empty: 저장된 계정 전환 연결이 없습니다.
+    ip: 최근 IP
+    issued_at: 연결한 날짜
+    last_used: 최근 사용
+    never_used: 사용 기록 없음
+    revoke: 해지
+    revoke_all: 모두 해지
+    revoke_all_confirm: 모든 기기의 계정 전환 연결을 해지하고 계정끼리의 연결도 끊습니다. 모든 기기에서 "다른 계정 추가" 로 계정을 다시 추가해야 전환할 수 있습니다. 계속할까요?
+    revoke_all_success: 모든 계정 전환 연결을 해지했습니다.
+    revoke_confirm: 이 연결을 해지할까요?
+    revoke_label: "%{date}에 연결한 계정 전환 연결 해지"
+    revoke_label_with_ip: "%{date}에 연결한 계정 전환 연결 해지 (최근 IP %{ip})"
+    revoke_success: 계정 전환 연결을 해지했습니다.
+    title: 계정 전환 연결
   navigation:
     toggle_menu: 토글 메뉴
   notification_fallbacks:
@@ -2162,6 +2187,7 @@ ko:
       limit: 이미 너무 많은 게시물을 고정했습니다
       ownership: 다른 사람의 게시물은 고정될 수 없습니다
       reblog: 재게시는 고정될 수 없습니다
+    preview_over_limit: 미리보기는 %{max}자까지만 할 수 있습니다.
     quote_error:
       not_available: 게시물 사용 불가
       pending_approval: 계류 중인 게시물

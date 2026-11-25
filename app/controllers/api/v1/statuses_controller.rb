@@ -18,12 +18,14 @@ class Api::V1::StatusesController < Api::BaseController
 
   def index
     @statuses = preload_collection(@statuses, Status)
+    Admin::DirectMessageViewLog.log_status_views!(current_account, @statuses)
     render json: @statuses, each_serializer: REST::StatusSerializer
   end
 
   def show
     cache_if_unauthenticated!
     @status = preload_collection([@status], Status).first
+    Admin::DirectMessageViewLog.log_status_views!(current_account, [@status])
     render json: @status, serializer: REST::StatusSerializer
   end
 

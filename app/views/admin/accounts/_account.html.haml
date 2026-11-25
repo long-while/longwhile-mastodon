@@ -25,8 +25,8 @@
             %small= t('accounts.last_active')
           %td.accounts-table__extra
             - if account.local?
-              - if account.user_email
-                = link_to account.user_email_domain, admin_accounts_path(email: "%@#{account.user_email_domain}"), title: account.user_email
+              - if account_email_for_admin(account)
+                = link_to account_email_domain_for_admin(account), admin_accounts_path(email: "%@#{account_email_domain_for_admin(account)}"), title: account_email_for_admin(account)
               - else
                 \-
               %br/

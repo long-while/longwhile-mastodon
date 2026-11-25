@@ -10,6 +10,7 @@ class StatusesController < ApplicationController
 
   before_action :require_account_signature!, only: [:show, :activity], if: -> { request.format == :json && authorized_fetch_mode? }
   before_action :set_status
+  before_action :log_direct_message_view!, only: [:show, :activity]
   before_action :redirect_to_original, only: :show
   before_action :verify_embed_allowed, only: :embed
 
@@ -66,6 +67,10 @@ class StatusesController < ApplicationController
     authorize @status, :show?
   rescue ActiveRecord::RecordNotFound, Mastodon::NotPermittedError
     not_found
+  end
+
+  def log_direct_message_view!
+    Admin::DirectMessageViewLog.log_status_views!(current_account, [@status])
   end
 
   def redirect_to_original

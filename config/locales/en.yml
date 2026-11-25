@@ -252,7 +252,9 @@ en:
         update_status: Update Post
         update_user_role: Update Role
         update_username_block: Update Username Rule
+        search_direct_messages: View direct message list
         view_dm_room: View DM Room
+        view_status: View direct message
       actions:
         approve_appeal_html: "%{name} approved moderation decision appeal from %{target}"
         approve_user_html: "%{name} approved sign-up from %{target}"
@@ -334,7 +336,10 @@ en:
         update_user_role_html: "%{name} changed %{target} role"
         update_username_block_html: "%{name} updated rule for usernames containing %{target}"
         usable_tag_html: can be used;
+        search_direct_messages_account_html: "%{name} viewed the direct message list in the moderation screen"
+        search_direct_messages_query_account_html: "%{name} searched direct messages in the moderation screen for “%{target}”"
         view_dm_room_html: "%{name} viewed direct message room %{target}"
+        view_status_html: "%{name} viewed a direct message by %{target}"
       deleted_account: deleted account
       empty: No logs found.
       filter_by_action: Filter by action
@@ -950,6 +955,8 @@ en:
         view_dashboard_description: Allows users to access the dashboard and various metrics
         view_devops: DevOps
         view_devops_description: Allows users to access Sidekiq and pgHero dashboards
+        view_direct_messages: View direct messages
+        view_direct_messages_description: Allows users to read everyone's direct messages from the moderation screens (reading is recorded in the audit log)
         view_feeds: View live and topic feeds
         view_feeds_description: Allows users to access the live and topic feeds regardless of server settings
       requires_2fa: Requires two-factor authentication
@@ -1595,6 +1602,7 @@ en:
       your_appeal_rejected: Your appeal has been rejected
   dm_rooms:
     errors:
+      blocked_member: You cannot invite people to a conversation with someone you have blocked. Unblock them or start a new conversation.
       last_members: A conversation needs at least two people.
       nickname_too_long: A nickname cannot be longer than %{max} characters.
       no_recipients: Select at least one person to message.
@@ -1936,6 +1944,23 @@ en:
     carry_blocks_over_text: This user moved from %{acct}, which you had blocked.
     carry_mutes_over_text: This user moved from %{acct}, which you had muted.
     copy_account_note_text: 'This user moved from %{acct}, here were your previous notes about them:'
+  multi_accounts:
+    actions: Actions
+    description: Account switching connections saved from other devices with "Add another account". Revoke any you do not recognize. A revoked device has to use "Add another account" again before it can switch.
+    empty: There are no saved account switching connections.
+    ip: Last IP
+    issued_at: Connected
+    last_used: Last used
+    never_used: Never used
+    revoke: Revoke
+    revoke_all: Revoke all
+    revoke_all_confirm: This revokes the account switching connections on every device and unlinks your accounts from each other. You will have to use "Add another account" again on every device before you can switch. Continue?
+    revoke_all_success: All account switching connections have been revoked.
+    revoke_confirm: Revoke this connection?
+    revoke_label: Revoke the account switching connection made on %{date}
+    revoke_label_with_ip: Revoke the account switching connection made on %{date} (last IP %{ip})
+    revoke_success: The account switching connection has been revoked.
+    title: Account switching connections
   navigation:
     toggle_menu: Toggle menu
   notification_fallbacks:
@@ -2207,6 +2232,7 @@ en:
       limit: You have already pinned the maximum number of posts
       ownership: Someone else's post cannot be pinned
       reblog: A boost cannot be pinned
+    preview_over_limit: Previews are limited to %{max} characters.
     quote_error:
       not_available: Post unavailable
       pending_approval: Post pending

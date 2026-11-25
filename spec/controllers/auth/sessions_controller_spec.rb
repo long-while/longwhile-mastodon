@@ -34,6 +34,20 @@ RSpec.describe Auth::SessionsController do
         delete :destroy, params: { continue: 'true' }
         expect(controller.stored_location_for(:user)).to eq '/authorize'
       end
+
+      it 'asks the browser to clear site storage when the device should forget saved accounts' do
+        sign_in(user, scope: :user)
+        delete :destroy, params: { forget_device: '1' }
+
+        expect(response.headers['Clear-Site-Data']).to eq('"storage"')
+      end
+
+      it 'keeps site storage on a normal sign out' do
+        sign_in(user, scope: :user)
+        delete :destroy
+
+        expect(response.headers['Clear-Site-Data']).to be_nil
+      end
     end
 
     context 'with a suspended user' do

@@ -2,9 +2,13 @@
 
 class Api::V1::MultiAccounts::SessionsController < Api::BaseController
   include Api::MultiAccountResponse
+  include MultiAccountSameOriginConcern
 
   skip_before_action :require_authenticated_user!, only: :refresh
   skip_before_action :require_not_suspended!, only: :refresh
+
+  skip_forgery_protection only: :refresh
+  before_action :require_same_origin!, only: :refresh
 
   def refresh
     Rails.logger.debug { "[MultiAccount] refresh_flow_enabled?=#{MultiAccountConfig.refresh_flow_enabled?}" }
@@ -12,6 +16,11 @@ class Api::V1::MultiAccounts::SessionsController < Api::BaseController
     unless MultiAccountConfig.refresh_flow_enabled?
       Rails.logger.warn('[MultiAccount] Refresh flow is DISABLED — check MA_MULTI_ACCOUNT_REFRESH_FLOW env var and config/settings.yml')
       render json: { error: 'Multi-account refresh flow is disabled' }, status: 403
+      return
+    end
+
+    unless session_user
+      render json: { error: 'Sign-in required to switch accounts', code: MultiAccounts::RefreshService::SIGN_IN_REQUIRED_CODE }, status: 401
       return
     end
 
@@ -63,13 +72,19 @@ class Api::V1::MultiAccounts::SessionsController < Api::BaseController
   rescue ActionController::ParameterMissing => e
     render json: { error: "필수 파라미터 누락: #{e.param}" }, status: 400
   rescue MultiAccounts::RefreshService::Error => e
-    render json: { error: e.message }, status: e.status
+    render json: { error: e.message, code: e.code }.compact, status: e.status
   end
 
   private
 
   def service
-    @service ||= MultiAccounts::RefreshService.new(refresh_token: refresh_token_param, request: request)
+    @service ||= MultiAccounts::RefreshService.new(refresh_token: refresh_token_param, request: request, session_user: session_user)
+  end
+
+  def session_user
+    return @session_user if defined?(@session_user)
+
+    @session_user = warden.user(:user)
   end
 
   def refresh_token_param

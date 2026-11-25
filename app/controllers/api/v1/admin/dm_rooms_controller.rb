@@ -3,6 +3,7 @@
 class Api::V1::Admin::DmRoomsController < Api::BaseController
   include Api::DmRoomAccess
   include Authorization
+  include AccountableConcern
 
   LIMIT = 20
 
@@ -16,13 +17,13 @@ class Api::V1::Admin::DmRoomsController < Api::BaseController
 
   def index
     @rooms = paginated_rooms
+    Admin::DirectMessageViewLog.log_list_view!(current_account)
 
-    render json: @rooms,
-           each_serializer: REST::Admin::DmRoomSerializer,
-           relationships: StatusRelationshipsPresenter.new(@rooms.filter_map(&:last_status), current_account.id)
+    render json: @rooms, each_serializer: REST::Admin::DmRoomSerializer
   end
 
   def show
+    log_room_view
     render json: @room, serializer: REST::Admin::DmRoomSerializer
   end
 
@@ -32,10 +33,16 @@ class Api::V1::Admin::DmRoomsController < Api::BaseController
     authorize [:admin, :direct_message], :index?
   end
 
+  def log_room_view
+    return if Admin::DmRoomViewLog.recorded_recently?(current_account, @room)
+
+    log_action Admin::DmRoomViewLog::ACTION, @room
+  end
+
   def paginated_rooms
     DmRoom.where.not(last_status_id: nil)
-          .includes(members: [:account_stat, { user: :role }], last_status: [:media_attachments, :status_stat, { account: [:account_stat, { user: :role }], active_mentions: :account }])
-          .to_a_paginated_by_last_status_id(limit_param(LIMIT), params_slice(:max_id, :since_id, :min_id))
+      .includes(members: [:account_stat, { user: :role }], last_status: [{ account: [:account_stat, { user: :role }] }])
+      .to_a_paginated_by_last_status_id(limit_param(LIMIT), params_slice(:max_id, :since_id, :min_id))
   end
 
   def set_room

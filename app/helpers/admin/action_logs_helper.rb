@@ -4,6 +4,8 @@ module Admin::ActionLogsHelper
   def log_target(log)
     case log.target_type
     when 'Account'
+      return log.route_param if search_query_visible?(log)
+
       link_to (log.human_identifier.presence || I18n.t('admin.action_logs.deleted_account')), admin_account_path(log.target_id)
     when 'User'
       if log.route_param.present?
@@ -20,6 +22,8 @@ module Admin::ActionLogsHelper
     when 'Instance', 'DomainBlock', 'DomainAllow', 'UnavailableDomain'
       log.human_identifier.present? ? link_to(log.human_identifier, admin_instance_path(log.human_identifier)) : I18n.t('admin.action_logs.unavailable_instance')
     when 'Status', 'Collection'
+      return "##{log.target_id}" if log.action == :view && !policy([:admin, :direct_message]).index?
+
       link_to log.human_identifier, log.permalink
     when 'AccountWarning'
       link_to log.human_identifier, disputes_strike_path(log.target_id)
@@ -69,6 +73,15 @@ module Admin::ActionLogsHelper
 
     label = "#{label} (#{log.human_identifier})" if log.human_identifier.present?
     log.target.present? ? link_to(label, "/messages/all/#{log.target_id}") : label
+  end
+
+  def search_query_visible?(log)
+    log.action == :search_direct_messages && log.route_param.present? && policy([:admin, :direct_message]).index?
+  end
+
+  def action_log_translation_key(log)
+    suffix = search_query_visible?(log) ? '_query' : ''
+    "admin.action_logs.actions.#{log.action}#{suffix}_#{log.target_type.underscore}_html"
   end
 
   def sorted_action_log_types

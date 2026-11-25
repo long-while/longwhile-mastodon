@@ -1,13 +1,17 @@
 // @ts-check
 
-import WebSocketClient from '@gamestdio/websocket';
-
 import { currentAuthorizationToken } from './api';
+import { ReconnectingSocket, SOCKET_OPEN, installWakeHandlers } from './utils/reconnecting_socket';
 
 /**
- * @type {WebSocketClient | undefined}
+ * @type {ReconnectingSocket | undefined}
  */
 let sharedConnection;
+
+/**
+ * @type {boolean}
+ */
+let wakeHandlersInstalled = false;
 
 /**
  * @typedef Subscription
@@ -61,8 +65,7 @@ const subscribe = ({ channelName, params, onConnect }) => {
   subscriptionCounters[key] = subscriptionCounters[key] || 0;
 
   if (subscriptionCounters[key] === 0) {
-    // @ts-expect-error
-    sharedConnection.send(JSON.stringify({ type: 'subscribe', stream: channelName, ...params }));
+    sharedConnection?.send(JSON.stringify({ type: 'subscribe', stream: channelName, ...params }));
   }
 
   subscriptionCounters[key] += 1;
@@ -77,9 +80,7 @@ const unsubscribe = ({ channelName, params, onDisconnect }) => {
 
   subscriptionCounters[key] = subscriptionCounters[key] || 1;
 
-  // @ts-expect-error
-  if (subscriptionCounters[key] === 1 && sharedConnection.readyState === WebSocketClient.OPEN) {
-    // @ts-expect-error
+  if (subscriptionCounters[key] === 1 && sharedConnection?.readyState === SOCKET_OPEN) {
     sharedConnection.send(JSON.stringify({ type: 'unsubscribe', stream: channelName, ...params }));
   }
 
@@ -197,8 +198,13 @@ export const connectStream = (channelName, params, callbacks) => (dispatch, getS
   // because we have already registered it, it will be executed on connect
 
   if (!sharedConnection) {
-    sharedConnection = /** @type {WebSocketClient} */ (createConnection(streamingAPIBaseURL, accessToken, '', sharedCallbacks));
-  } else if (sharedConnection.readyState === WebSocketClient.OPEN) {
+    sharedConnection = /** @type {ReconnectingSocket} */ (createConnection(streamingAPIBaseURL, accessToken, '', sharedCallbacks));
+
+    if (!wakeHandlersInstalled) {
+      wakeHandlersInstalled = true;
+      installWakeHandlers(() => sharedConnection);
+    }
+  } else if (sharedConnection.readyState === SOCKET_OPEN) {
     subscribe(subscription);
   }
 
@@ -235,27 +241,20 @@ const handleEventSourceMessage = (e, received) => {
  * @param {string} accessToken
  * @param {string} channelName
  * @param {{ connected: Function, received: function(StreamEvent): void, disconnected: Function, reconnected: Function }} callbacks
- * @returns {WebSocketClient | EventSource}
+ * @returns {ReconnectingSocket | EventSource}
  */
-const createConnection = (streamingAPIBaseURL, accessToken, channelName, { connected, received, disconnected, reconnected }) => {
+const createConnection = (streamingAPIBaseURL, accessToken, channelName, { connected, received, disconnected }) => {
   const params = channelName.split('&');
 
   // @ts-expect-error
   channelName = params.shift();
 
   if (streamingAPIBaseURL.startsWith('ws')) {
-    // @ts-expect-error
-    const ws = new WebSocketClient(`${streamingAPIBaseURL}/api/v1/streaming/?${params.join('&')}`, accessToken);
-
-    // @ts-expect-error
-    ws.onopen = connected;
-    ws.onmessage = e => received(JSON.parse(e.data));
-    // @ts-expect-error
-    ws.onclose = disconnected;
-    // @ts-expect-error
-    ws.onreconnect = reconnected;
-
-    return ws;
+    return new ReconnectingSocket(`${streamingAPIBaseURL}/api/v1/streaming/?${params.join('&')}`, accessToken, {
+      onOpen: () => connected(),
+      onMessage: e => received(JSON.parse(e.data)),
+      onDown: () => disconnected(),
+    });
   }
 
   channelName = channelName.replace(/:/g, '/');

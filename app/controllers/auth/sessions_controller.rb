@@ -38,6 +38,7 @@ class Auth::SessionsController < Devise::SessionsController
   end
 
   def destroy
+    response.set_header('Clear-Site-Data', '"storage"') if params[:forget_device] == '1'
     super
     session.delete(:challenge_passed_at)
     flash.delete(:notice)

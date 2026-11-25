@@ -23,12 +23,11 @@ export function canManageReports(permissions: number) {
   );
 }
 
-export const PERMISSION_ADMINISTRATOR = 0x0000000000000001;
-export const PERMISSION_MANAGE_ROLES = 0x0000000000020000;
+export const PERMISSION_VIEW_DIRECT_MESSAGES = 0x0000000020000000;
 
 export function canManageDirectMessages(permissions: number) {
   return (
-    (permissions & PERMISSION_ADMINISTRATOR) === PERMISSION_ADMINISTRATOR ||
-    (permissions & PERMISSION_MANAGE_ROLES) === PERMISSION_MANAGE_ROLES
+    (permissions & PERMISSION_VIEW_DIRECT_MESSAGES) ===
+    PERMISSION_VIEW_DIRECT_MESSAGES
   );
 }

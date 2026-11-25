@@ -98,6 +98,55 @@ RSpec.describe Admin::AccountsController do
         expect(response).to have_http_status(200)
       end
     end
+
+    context 'with a local deleted account whose record is kept' do
+      render_views
+
+      let(:inviter) { Fabricate(:account, username: 'inviter') }
+      let(:account) { Fabricate(:account, domain: nil, user: nil) }
+
+      before do
+        record = Fabricate(:deleted_user_record, account: account, email: 'luxintenebris.1794.s+4@gmail.com',
+                                                 locale: 'ko', current_sign_in_at: 1.day.ago, invited_by_account: inviter)
+        record.ips.create!(ip: '180.70.211.51', used_at: 1.hour.ago)
+        record.ips.create!(ip: '118.46.254.167', used_at: 2.days.ago)
+      end
+
+      it 'shows the email, its status, the language, the IPs, the last activity and the inviter', :aggregate_failures do
+        get :show, params: { id: account.id }
+
+        expect(response).to have_http_status(200)
+        body = response.parsed_body
+        expect(body).to have_text('luxintenebris.1794.s+4@gmail.com')
+        expect(body).to have_css("a[href='#{admin_accounts_path(email: '%@gmail.com')}']")
+        expect(body).to have_css("a[href='#{new_admin_email_domain_block_path(_domain: 'gmail.com')}']")
+        expect(body).to have_text(I18n.t('admin.accounts.confirmed'))
+        expect(body).to have_text('180.70.211.51').and have_text('118.46.254.167')
+        expect(body).to have_css("a[href='#{admin_accounts_path(ip: '180.70.211.51')}']")
+        expect(body).to have_text(I18n.t('admin.accounts.most_recent_activity'))
+        expect(body).to have_css("a[href='#{admin_account_path(inviter.id)}']")
+        expect(body.text.index('180.70.211.51')).to be < body.text.index('118.46.254.167')
+      end
+    end
+
+    context 'with a deleted account shown in the list' do
+      render_views
+
+      let(:account) { Fabricate(:account, domain: nil, user: nil) }
+
+      before do
+        record = Fabricate(:deleted_user_record, account: account, email: 'gone@kept.example')
+        record.ips.create!(ip: '203.0.113.5', used_at: 1.hour.ago)
+      end
+
+      it 'shows the email domain and IP like a live account', :aggregate_failures do
+        get :index, params: { email: '%@kept.example' }
+
+        expect(response).to have_http_status(200)
+        expect(response.parsed_body).to have_css("a[title='gone@kept.example']", text: 'kept.example')
+        expect(response.parsed_body).to have_text('203.0.113.5')
+      end
+    end
   end
 
   describe 'POST #memorialize' do

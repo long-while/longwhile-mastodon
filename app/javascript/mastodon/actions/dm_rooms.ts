@@ -20,6 +20,7 @@ import {
   selectDmRoomMessages,
   selectDmRooms,
 } from 'mastodon/features/messages/selectors';
+import type { PollResult } from 'mastodon/features/messages/util/fallback_poller';
 import {
   createSendQueue,
   newerId,
@@ -48,10 +49,13 @@ export const setDmStreamConnected = createAction<{ connected: boolean }>(
   'dm_rooms/set_stream_connected',
 );
 
-export const dmMessageReceived = createAction('dm_rooms/message_received', () => ({
-  payload: undefined,
-  meta: { sound: 'boop' },
-}));
+export const dmMessageReceived = createAction(
+  'dm_rooms/message_received',
+  () => ({
+    payload: undefined,
+    meta: { sound: 'boop' },
+  }),
+);
 
 export const updateDmReadState = createAction<{
   roomId: string;
@@ -66,7 +70,9 @@ export const discardDmMessage = createAction<{
 
 export const fetchDmRooms = createDataLoadingThunk(
   'dm_rooms/fetch',
-  async ({ url }: { url?: string; refresh?: boolean } = {}) => {
+  async ({
+    url,
+  }: { url?: string; refresh?: boolean; skipAlert?: boolean } = {}) => {
     const { rooms, links } = await apiGetDmRooms(url);
 
     return { rooms, next: nextLinkOf(links) };
@@ -267,6 +273,8 @@ export const fetchDmRoomStatuses = createDataLoadingThunk(
     roomId: string;
     maxId?: string;
     sinceId?: string;
+    skipAlert?: boolean;
+    silent?: boolean;
   }) => apiGetDmRoomStatuses(roomId, { maxId, sinceId }),
   ({ statuses, links }, { dispatch, actionArg }) => {
     dispatch(importFetchedStatuses(statuses));
@@ -277,10 +285,49 @@ export const fetchDmRoomStatuses = createDataLoadingThunk(
 
       hasMore: Boolean(nextLinkOf(links)),
 
-      mode: actionArg.sinceId ? ('append' as const) : actionArg.maxId ? ('prepend' as const) : ('replace' as const),
+      mode: actionArg.sinceId
+        ? ('append' as const)
+        : actionArg.maxId
+          ? ('prepend' as const)
+          : ('replace' as const),
     };
   },
   { useLoadingBar: false },
+);
+
+export const pollDmChat = createThunk(
+  'dm_rooms/poll',
+  async (_arg, { dispatch, getState }): Promise<PollResult> => {
+    try {
+      await dispatch(fetchDmRooms({ refresh: true, skipAlert: true })).unwrap();
+
+      const state: unknown = getState();
+      const roomId = selectDmRooms(state).activeRoomId;
+
+      const room = roomId ? selectDmRoomMessages(state, roomId) : undefined;
+
+      if (roomId && room?.loaded) {
+        const ids = room.statusIds;
+
+        await dispatch(
+          fetchDmRoomStatuses({
+            roomId,
+            sinceId: ids[ids.length - 1],
+            skipAlert: true,
+            silent: true,
+          }),
+        ).unwrap();
+      }
+
+      return 'ok';
+    } catch (rejection) {
+      const status = (
+        rejection as { error?: { response?: { status?: number } } }
+      ).error?.response?.status;
+
+      return status === 401 ? 'stop' : 'error';
+    }
+  },
 );
 
 const STREAM_REFRESH_DELAY = 400;

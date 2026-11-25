@@ -24,6 +24,8 @@ import {
 import type { GroupableMessage } from '../util/group_messages';
 import { groupMessages } from '../util/group_messages';
 
+import { useAdminOlderPaging } from './use_older_paging';
+
 const messages = defineMessages({
   title: { id: 'column.messages_all', defaultMessage: 'All messages' },
   readOnly: {
@@ -91,6 +93,13 @@ export const AdminRoom: React.FC = () => {
     selectMessageAccount(state, leftAccountId),
   );
 
+  const firstEntryId = sections[0]?.groups[0]?.messages[0]?.message.id;
+  const { scrollArea, handleScroll } = useAdminOlderPaging(
+    roomId,
+    messageState,
+    firstEntryId,
+  );
+
   if (!roomId) return null;
 
   const isLoading = !messageState || messageState.isLoading;
@@ -123,7 +132,7 @@ export const AdminRoom: React.FC = () => {
         </div>
       </div>
 
-      <div className='dm-room__scroll'>
+      <div className='dm-room__scroll' ref={scrollArea} onScroll={handleScroll}>
         {isLoading && sections.length === 0 && <LoadingIndicator />}
 
         {messageState?.hasError && (

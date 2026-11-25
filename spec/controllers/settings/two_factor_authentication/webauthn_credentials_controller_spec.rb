@@ -319,4 +319,73 @@ RSpec.describe Settings::TwoFactorAuthentication::WebauthnCredentialsController 
       end
     end
   end
+
+  describe 'multi-account long-lived tokens' do
+    let(:challenge) do
+      WebAuthn::Credential.options_for_create(
+        user: { id: user.id, name: user.account.username, display_name: user.account.display_name }
+      ).challenge
+    end
+
+    let!(:long_lived_token) do
+      Fabricate(:access_token, resource_owner_id: user.id, scopes: 'read write follow', expires_in: 10.years.to_i,
+                               multi_account: true, purpose: 'multi_account_refresh', long_lived: true)
+    end
+
+    before do
+      user.update(otp_required_for_login: true, webauthn_id: WebAuthn.generate_user_id)
+      sign_in user, scope: :user
+    end
+
+    describe 'POST #create' do
+      def create_credential(nickname)
+        controller.session[:webauthn_challenge] = challenge
+        post :create, params: { credential: fake_client.create(challenge: challenge), nickname: nickname }
+      end
+
+      it 'revokes the token when the first credential is created' do
+        create_credential('first')
+
+        expect(response).to have_http_status(200)
+        expect(long_lived_token.reload.revoked_at).to be_present
+      end
+
+      it 'keeps the token when a second credential is created' do
+        add_webauthn_credential(user)
+
+        create_credential('second')
+
+        expect(response).to have_http_status(200)
+        expect(long_lived_token.reload.revoked_at).to be_nil
+      end
+
+      it 'rolls the credential back when the revocation fails' do
+        allow_any_instance_of(User).to receive(:revoke_multi_account_tokens!).and_raise(ActiveRecord::StatementInvalid, 'boom') # rubocop:disable RSpec/AnyInstance
+
+        expect { create_credential('first') }.to raise_error(ActiveRecord::StatementInvalid)
+        expect(user.webauthn_credentials.count).to eq 0
+      end
+    end
+
+    describe 'DELETE #destroy' do
+      it 'revokes the token when the last credential is deleted' do
+        credential = add_webauthn_credential(user)
+
+        delete :destroy, params: { id: credential.id }
+
+        expect(user.webauthn_credentials.count).to eq 0
+        expect(long_lived_token.reload.revoked_at).to be_present
+      end
+
+      it 'keeps the token when one of two credentials is deleted' do
+        credential = add_webauthn_credential(user)
+        Fabricate(:webauthn_credential, user_id: user.id, nickname: 'Second Key')
+
+        delete :destroy, params: { id: credential.id }
+
+        expect(user.webauthn_credentials.count).to eq 1
+        expect(long_lived_token.reload.revoked_at).to be_nil
+      end
+    end
+  end
 end

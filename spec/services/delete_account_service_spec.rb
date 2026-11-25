@@ -196,4 +196,57 @@ RSpec.describe DeleteAccountService do
       expect(Account.without_requested_deletion).to include(account)
     end
   end
+
+  describe 'keeping the email and IPs of a user who deleted their account' do
+    subject { described_class.new }
+
+    let(:inviter) { Fabricate(:user) }
+    let(:user) do
+      Fabricate(:user, email: 'leaver+4@example.com', locale: 'ko', sign_up_ip: '192.0.2.1',
+                       current_sign_in_at: 2.days.ago, invite: Fabricate(:invite, user: inviter))
+    end
+    let(:account) { user.account }
+
+    before do
+      Fabricate(:login_activity, user: user, ip: '198.51.100.7', created_at: 1.day.ago)
+      Fabricate(:session_activation, user: user, ip: '203.0.113.9')
+    end
+
+    it 'archives them before destroying the user', :aggregate_failures do
+      subject.call(account, reserve_username: true, reserve_email: false)
+
+      expect(User.find_by(id: user.id)).to be_nil
+      record = DeletedUserRecord.find_by(account_id: account.id)
+      expect(record).to have_attributes(email: 'leaver+4@example.com', locale: 'ko', invited_by_account_id: inviter.account_id)
+      expect(record.sign_up_ip.to_s).to eq '192.0.2.1'
+      expect(record.current_sign_in_at).to be_within(1.second).of(user.current_sign_in_at)
+      expect(record.confirmed?).to be true
+      expect(record.ips.map { |ip| ip.ip.to_s }).to contain_exactly('192.0.2.1', '198.51.100.7', '203.0.113.9')
+    end
+
+    it 'also archives when the posts are kept under an anonymous name' do
+      subject.call(account, reserve_username: true, reserve_email: false, preserve_content: true)
+
+      expect(DeletedUserRecord.find_by(account_id: account.id)&.email).to eq 'leaver+4@example.com'
+    end
+
+    it 'leaves the same email free to sign up again' do
+      subject.call(account, reserve_username: true, reserve_email: false)
+
+      expect(Fabricate.build(:user, email: 'leaver+4@example.com')).to be_valid
+    end
+
+    it 'keeps nothing when the account row is destroyed as well' do
+      subject.call(account, reserve_username: false, reserve_email: false)
+
+      expect(DeletedUserRecord.count).to eq 0
+    end
+
+    it 'keeps the user when archiving fails', :aggregate_failures do
+      allow(DeletedUserRecord).to receive(:capture!).and_raise(ActiveRecord::RecordInvalid)
+
+      expect { subject.call(account, reserve_username: true, reserve_email: false) }.to raise_error(ActiveRecord::RecordInvalid)
+      expect(User.find_by(id: user.id)).to_not be_nil
+    end
+  end
 end

@@ -709,6 +709,25 @@ RSpec.describe PublicFeed do
 
         expect(subject).to_not include(reblog.id)
       end
+
+      context 'with a role that only manages roles' do
+        let(:user) { Fabricate(:user, role: Fabricate(:user_role, permissions: UserRole::FLAGS[:manage_roles])) }
+        let!(:direct) { Fabricate(:status, account: booster, visibility: :direct) }
+
+        it 'gets the standard scope: no unfollowed reblogs, no direct messages' do
+          expect(subject).to_not include(reblog.id, direct.id)
+        end
+      end
+
+      context 'with a role that can view direct messages' do
+        let(:user) { Fabricate(:user, role: Fabricate(:user_role, permissions: UserRole::FLAGS[:view_direct_messages])) }
+        let!(:direct) { Fabricate(:status, account: booster, visibility: :direct) }
+
+        it 'gets the administrator scope but still no direct messages' do
+          expect(subject).to include(reblog.id)
+          expect(subject).to_not include(direct.id)
+        end
+      end
     end
   end
 end

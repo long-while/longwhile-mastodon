@@ -2,7 +2,7 @@
 
 module Admin::DashboardHelper
   def relevant_account_ip(account, ip_query)
-    ips = account.user.present? ? account.user.ips.to_a : []
+    ips = account_ips_for_admin(account)
 
     matched_ip = begin
       ip_query_addr = IPAddr.new(ip_query)
@@ -16,6 +16,23 @@ module Admin::DashboardHelper
     else
       '-'
     end
+  end
+
+  def account_ips_for_admin(account)
+    return account.user.ips.to_a if account.user.present?
+
+    record = account.deleted_user_record
+    record ? record.ips.to_a : []
+  end
+
+  def account_email_for_admin(account)
+    account.user_email.presence || account.deleted_user_record&.email.presence
+  end
+
+  def account_email_domain_for_admin(account)
+    return account.user_email_domain if account.user_email.present?
+
+    account.deleted_user_record&.email_domain
   end
 
   def date_range(range)

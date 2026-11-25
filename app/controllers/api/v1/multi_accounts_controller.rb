@@ -5,12 +5,14 @@ class Api::V1::MultiAccountsController < Api::BaseController
 
   DEFAULT_REFRESH_SCOPES = 'read write follow'
 
-  REUSABLE_TOKEN_LOOKUP_LIMIT = 20
+  MAX_REFRESH_TOKENS_PER_USER = 10
 
-  skip_before_action :require_authenticated_user!, only: [:consume]
-  skip_before_action :require_not_suspended!, only: [:consume]
+  skip_before_action :require_authenticated_user!, only: [:consume, :revoke_refresh_token]
+  skip_before_action :require_not_suspended!, only: [:consume, :revoke_refresh_token]
 
   before_action :require_refresh_token_caller!, only: [:refresh_token]
+  before_action :authorize_links_caller!, only: [:links]
+  before_action :require_user!, only: [:links]
 
   def consume
     # NOTE: never log raw params here — payload contains the OAuth authorization_code,
@@ -19,8 +21,7 @@ class Api::V1::MultiAccountsController < Api::BaseController
 
     payload_params = params.require(:payload).permit(:state, :nonce, :authorization_code, :code_verifier)
 
-    # Verify and consume state from Redis
-    MultiAccounts::StateStore.consume!(
+    state_data = MultiAccounts::StateStore.consume!(
       payload_params[:state],
       payload_params[:nonce]
     )
@@ -108,6 +109,20 @@ class Api::V1::MultiAccountsController < Api::BaseController
       return
     end
 
+    begin
+      MultiAccountLink.link!(state_data&.dig(:user_id), account.user&.id)
+    rescue MultiAccountLink::GroupTooLargeError => e
+      Rails.logger.warn("[MultiAccount] Link group too large on consume: #{e.message}")
+      access_token.revoke
+      render json: { error: "연결할 수 있는 계정은 최대 #{MultiAccountLink::MAX_GROUP_SIZE}개입니다.", code: 'multi_account_group_too_large' }, status: 422
+      return
+    rescue => e
+      Rails.logger.error("[MultiAccount] Failed to link accounts on consume: #{e.class}: #{e.message}")
+      access_token.revoke
+      render json: { error: '계정을 연결하지 못했습니다. 다시 시도해주세요.' }, status: 500
+      return
+    end
+
     render json: {
       token: access_token.token,
       account: self_account_json(account),
@@ -145,8 +160,7 @@ class Api::V1::MultiAccountsController < Api::BaseController
     # are already fully trusted and fall back to the default multi-account scopes.
     requested_scopes = doorkeeper_token&.scopes&.to_s.presence || DEFAULT_REFRESH_SCOPES
 
-    token = reusable_refresh_token(application, requested_scopes) ||
-            create_refresh_token!(application, requested_scopes)
+    token = issue_refresh_token!(application, requested_scopes)
 
     render json: {
       token: token.token,
@@ -160,7 +174,32 @@ class Api::V1::MultiAccountsController < Api::BaseController
     render json: { error: '토큰을 갱신하는 중 오류가 발생했습니다.' }, status: 500
   end
 
+  def links
+    user_ids = [current_user.id] | MultiAccountLink.peer_ids_of(current_user.id)
+    account_ids = User.where(id: user_ids).pluck(:account_id).map(&:to_s)
+
+    render json: { account_ids: account_ids }
+  end
+
+  def revoke_refresh_token
+    value = params[:refresh_token]
+    token = value.is_a?(String) && value.present? ? Doorkeeper::AccessToken.by_token(value) : nil
+    token.revoke if token && !token.revoked? && revocable_switch_token?(token)
+
+    head 204
+  end
+
   private
+
+  def authorize_links_caller!
+    return doorkeeper_authorize!(:read) if doorkeeper_token
+
+    render json: { error: 'This method requires an authenticated user' }, status: 401 unless current_user
+  end
+
+  def revocable_switch_token?(token)
+    token.long_lived_refresh? || Doorkeeper::AccessToken.multi_account_owned.exists?(id: token.id)
+  end
 
   def multi_account_application
     client_id = Rails.configuration.x.multi_account[:client_id]
@@ -177,21 +216,38 @@ class Api::V1::MultiAccountsController < Api::BaseController
 
     return if doorkeeper_token.nil?
     return if doorkeeper_token.application&.superapp?
-    return if doorkeeper_token.try(:multi_account)
+    return if doorkeeper_token.try(:purpose) == MultiAccounts::RefreshService::SESSION_TOKEN_PURPOSE
 
     render json: { error: 'This endpoint is only available to the web interface' }, status: 403
   end
 
-  def reusable_refresh_token(application, scopes)
-    wanted = scopes.to_s.split.sort
+  def issue_refresh_token!(application, scopes)
+    Doorkeeper::AccessToken.transaction do
+      revoke_replaced_token!
+      token = create_refresh_token!(application, scopes)
+      trim_refresh_tokens!(application)
+      token
+    end
+  end
 
+  def revoke_replaced_token!
+    value = params[:previous_token]
+    return unless value.is_a?(String) && value.present?
+
+    previous = Doorkeeper::AccessToken.by_token(value)
+    return unless previous && !previous.revoked? && previous.resource_owner_id == current_user.id && revocable_switch_token?(previous)
+
+    previous.revoke
+  end
+
+  def trim_refresh_tokens!(application)
     Doorkeeper::AccessToken
       .long_lived_refresh
       .not_revoked
       .where(application_id: application.id, resource_owner_id: current_user.id)
-      .order(created_at: :desc)
-      .limit(REUSABLE_TOKEN_LOOKUP_LIMIT)
-      .find { |candidate| candidate.scopes.to_s.split.sort == wanted }
+      .order(created_at: :desc, id: :desc)
+      .offset(MAX_REFRESH_TOKENS_PER_USER)
+      .each(&:revoke)
   end
 
   def create_refresh_token!(application, scopes)

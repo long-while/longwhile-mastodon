@@ -38,6 +38,7 @@ class Api::V1::Statuses::ContextsController < Api::BaseController
 
     @context = Context.new(ancestors: loaded_ancestors, descendants: loaded_descendants)
     statuses = [@status] + @context.ancestors + @context.descendants
+    Admin::DirectMessageViewLog.log_status_views!(current_account, statuses)
 
     refresh_key = "context:#{@status.id}:refresh"
     async_refresh = AsyncRefresh.new(refresh_key)

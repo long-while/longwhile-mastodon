@@ -709,7 +709,7 @@ class FeedManager
   end
 
   def home_visibility_scope_for(receiver)
-    if receiver.user&.can?(:administrator, :manage_roles)
+    if receiver.user&.can?(:view_direct_messages)
       Status.where(visibility: %i(unlisted private))
     else
       Status.list_eligible_visibility

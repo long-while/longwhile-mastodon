@@ -4,7 +4,7 @@ import type { ApiStatusJSON } from './statuses';
 export interface ApiDmRoomJSON {
   id: string;
   accounts: ApiAccountJSON[];
-  last_status?: ApiStatusJSON | null;
+  last_status?: (ApiStatusJSON & { redacted?: boolean }) | null;
   unread_count: number;
 
   root_status_id: string | null;

@@ -1,6 +1,9 @@
 import type { AppDispatch, GetState } from '../store';
 import type { ApiAccountJSON } from '../api_types/accounts';
-import type { EncryptedPayload, MultiAccountEntry } from '../types/multi_account';
+import type {
+  EncryptedPayload,
+  MultiAccountEntry,
+} from '../types/multi_account';
 import {
   MultiAccountSwitchError,
   SwitchErrorCode,
@@ -8,6 +11,7 @@ import {
 import api, { setActiveAccountToken, updateCSRFToken } from '../api';
 import {
   deleteEncryptedToken,
+  loadAllEntries,
   loadEncryptedToken,
   saveEncryptedToken,
 } from '../utils/multi_account_db';
@@ -15,6 +19,7 @@ import { decryptToken, encryptToken } from '../utils/multi_account_crypto';
 import { MULTI_ACCOUNT_REQUEST_TIMEOUT } from '../api/multi_accounts_constants';
 import { importFetchedAccount } from './importer';
 import SwitchLogger from '../utils/switch_logger';
+import { resetLinkedAccountIdsCache } from '../utils/multi_account_links';
 import {
   clearActiveAccountIdIfMatches,
   markSwitchIntent,
@@ -100,6 +105,8 @@ export const registerAccount =
       const encryptedPayload = await encryptToken(token);
       await saveEncryptedToken(entry.id, encryptedPayload, entryWithTimestamp);
 
+      resetLinkedAccountIdsCache();
+
       // Register the account in Redux
       dispatch(registerAccountAction(entryWithTimestamp));
     } catch (error) {
@@ -131,7 +138,7 @@ export const switchAccount =
       const hasGetIn = typeof state?.getIn === 'function';
       const accountsSource = hasGetIn
         ? state.getIn(['multiAccount', 'accounts'])
-        : state?.multiAccount?.accounts ?? null;
+        : (state?.multiAccount?.accounts ?? null);
       const accountExists =
         !!accountsSource &&
         (typeof accountsSource?.has === 'function'
@@ -207,6 +214,20 @@ export const switchAccount =
             refreshError,
           );
 
+          if (
+            status === 401 &&
+            (
+              refreshError as {
+                response?: { data?: { code?: unknown } };
+              } | null
+            )?.response?.data?.code === 'multi_account_sign_in_required'
+          ) {
+            throw new MultiAccountSwitchError(
+              SwitchErrorCode.REFRESH_REJECTED,
+              '로그인이 풀렸습니다. 새로고침한 뒤 다시 로그인해 주세요.',
+            );
+          }
+
           if (status === 401 || status === 422) {
             try {
               await deleteEncryptedToken(accountId);
@@ -226,6 +247,15 @@ export const switchAccount =
           const rejectionMessage = (() => {
             if (status === 429) {
               return '요청이 너무 잦습니다. 잠시 후 다시 시도해주세요.';
+            }
+
+            if (
+              status === 403 &&
+              (refreshError as any)?.response?.data?.code ===
+                'multi_account_not_linked'
+            ) {
+              resetLinkedAccountIdsCache();
+              return '이 계정은 지금 로그인한 계정과 연결되어 있지 않습니다. 계정 추가로 다시 로그인해 주세요.';
             }
 
             if (status === 403) {
@@ -330,34 +360,37 @@ export const switchAccount =
 
       const verifiedAccount = await (async () => {
         try {
-          const response = await api().get('/api/v1/accounts/verify_credentials', {
-            timeout: MULTI_ACCOUNT_REQUEST_TIMEOUT,
-          });
+          const response = await api().get(
+            '/api/v1/accounts/verify_credentials',
+            {
+              timeout: MULTI_ACCOUNT_REQUEST_TIMEOUT,
+            },
+          );
           dispatch(importFetchedAccount(response.data));
           return response.data as ApiAccountJSON;
         } catch (verifyError) {
-        const status = (verifyError as any)?.response?.status;
-        const errorDescription =
-          (verifyError as any)?.response?.data?.error_description ?? '';
+          const status = (verifyError as any)?.response?.status;
+          const errorDescription =
+            (verifyError as any)?.response?.data?.error_description ?? '';
 
-        const isInvalidToken =
-          status === 401 ||
-          (status === 403 &&
-            typeof errorDescription === 'string' &&
-            errorDescription.toLowerCase().includes('invalid_token'));
+          const isInvalidToken =
+            status === 401 ||
+            (status === 403 &&
+              typeof errorDescription === 'string' &&
+              errorDescription.toLowerCase().includes('invalid_token'));
 
-        if (isInvalidToken) {
-          throw new Error(
-            '저장된 계정 토큰이 만료되었거나 사용할 수 없습니다. 계정을 다시 로그인하여 추가해주세요.',
+          if (isInvalidToken) {
+            throw new Error(
+              '저장된 계정 토큰이 만료되었거나 사용할 수 없습니다. 계정을 다시 로그인하여 추가해주세요.',
+            );
+          }
+
+          console.error(
+            `Failed to verify credentials for account ${accountId}:`,
+            verifyError,
           );
+          throw verifyError;
         }
-
-        console.error(
-          `Failed to verify credentials for account ${accountId}:`,
-          verifyError,
-        );
-        throw verifyError;
-      }
       })();
 
       await updateEntryMetadata(verifiedAccount);
@@ -387,12 +420,98 @@ export const switchAccount =
     }
   };
 
+type RevokeFn = (refreshToken: string) => Promise<void>;
+
+const readStoredToken = async (accountId: string): Promise<string | null> => {
+  try {
+    const payload = await loadEncryptedToken(accountId);
+    return payload ? await decryptToken(payload) : null;
+  } catch (error) {
+    console.warn(
+      `[MultiAccount] Could not read the stored token for ${accountId}:`,
+      error,
+    );
+    return null;
+  }
+};
+
+const revokeWith = async (accountId: string, revoke: RevokeFn) => {
+  const token = await readStoredToken(accountId);
+  if (!token) {
+    return;
+  }
+
+  try {
+    await revoke(token);
+  } catch (error) {
+    console.warn(
+      `[MultiAccount] Could not revoke the stored token for ${accountId} on the server:`,
+      error,
+    );
+  }
+};
+
+const loadRevokeFn = async (): Promise<RevokeFn | null> => {
+  try {
+    const { revokeRefreshToken } = await import('../api/multi_accounts');
+    return revokeRefreshToken;
+  } catch (error) {
+    console.warn('[MultiAccount] Could not load the revoke API:', error);
+    return null;
+  }
+};
+
+export const revokeStoredToken = async (accountId: string): Promise<void> => {
+  const revoke = await loadRevokeFn();
+  if (revoke) {
+    await revokeWith(accountId, revoke);
+  }
+};
+
+export const collectStoredTokens = async (): Promise<string[]> => {
+  try {
+    const accountIds = Object.keys(await loadAllEntries());
+    const tokens = await Promise.all(accountIds.map(readStoredToken));
+    return tokens.filter((token): token is string => !!token);
+  } catch (error) {
+    console.warn('[MultiAccount] Could not read the stored tokens:', error);
+    return [];
+  }
+};
+
+export const revokeTokens = async (tokens: string[]): Promise<void> => {
+  if (tokens.length === 0) {
+    return;
+  }
+
+  const revoke = await loadRevokeFn();
+  if (!revoke) {
+    return;
+  }
+
+  await Promise.allSettled(
+    tokens.map(async (token) => {
+      try {
+        await revoke(token);
+      } catch (error) {
+        console.warn('[MultiAccount] Could not revoke a stored token:', error);
+      }
+    }),
+  );
+};
+
+export const revokeAllStoredTokens = async (): Promise<void> => {
+  await revokeTokens(await collectStoredTokens());
+};
+
 export const removeAccount =
   (accountId: string) => async (dispatch: AppDispatch, getState: GetState) => {
     try {
       const state: any = getState();
       const wasActive =
         state?.getIn?.(['multiAccount', 'activeAccountId']) === accountId;
+
+      await revokeStoredToken(accountId);
 
       // Delete the encrypted token
       await deleteEncryptedToken(accountId);
@@ -405,6 +524,7 @@ export const removeAccount =
       }
 
       clearActiveAccountIdIfMatches(accountId);
+      resetLinkedAccountIdsCache();
     } catch (error) {
       console.error('Failed to remove account:', error);
       throw error;

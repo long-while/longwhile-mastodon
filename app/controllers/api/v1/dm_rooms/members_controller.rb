@@ -2,6 +2,7 @@
 
 class Api::V1::DmRooms::MembersController < Api::BaseController
   include Api::DmRoomAccess
+  include Api::DmRoomLastStatusFilter
 
   rescue_from DmRoom::DuplicateRoomError do
     render json: { error: I18n.t('dm_rooms.errors.room_exists') }, status: 422
@@ -18,6 +19,8 @@ class Api::V1::DmRooms::MembersController < Api::BaseController
     raise Mastodon::ValidationError, I18n.t('dm_rooms.errors.no_recipients') if account_ids.empty?
 
     raise Mastodon::ValidationError, I18n.t('dm_rooms.errors.unknown_recipients') if Account.where(id: account_ids).count != account_ids.size
+
+    ensure_no_blocks!(account_ids)
 
     @room.add_members!(current_account, account_ids)
 
@@ -69,12 +72,20 @@ class Api::V1::DmRooms::MembersController < Api::BaseController
     render json: room,
            serializer: REST::DmRoomSerializer,
            current_account: current_account,
-           hidden_status_ids: hidden_last_status_ids(room)
+           hidden_status_ids: hidden_last_status_ids([room])
   end
 
-  def hidden_last_status_ids(room)
-    return [] if room.last_status_id.blank?
+  def ensure_no_blocks!(invitee_ids)
+    member_ids = @room.dm_room_members.pluck(:account_id)
+    everyone_ids = member_ids | invitee_ids
 
-    DmHiddenStatus.where(account_id: current_account.id, status_id: room.last_status_id).pluck(:status_id)
+    raise Mastodon::ValidationError, I18n.t('dm_rooms.errors.blocked_member') if current_account.block_relationships.exists?(target_account_id: everyone_ids)
+    raise Mastodon::ValidationError, I18n.t('dm_rooms.errors.unknown_recipients') if blocked_between_others?(invitee_ids, member_ids, everyone_ids)
+  end
+
+  def blocked_between_others?(invitee_ids, member_ids, everyone_ids)
+    Block.where(account_id: invitee_ids, target_account_id: everyone_ids)
+      .or(Block.where(account_id: member_ids, target_account_id: invitee_ids))
+      .exists?
   end
 end

@@ -11,6 +11,11 @@ module MultiAccountConfig
     boolean_cast.cast(Rails.configuration.x.multi_account[:refresh_flow]) || false
   end
 
+  def application_id
+    client_id = Rails.configuration.x.multi_account[:client_id].presence
+    client_id && Doorkeeper::Application.where(uid: client_id).pick(:id)
+  end
+
   def boolean_cast
     @boolean_cast ||= ActiveModel::Type::Boolean.new
   end

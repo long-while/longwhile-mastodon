@@ -520,6 +520,40 @@ RSpec.describe FeedManager do
     end
   end
 
+  describe '#merge_into_home with the view_direct_messages permission' do
+    let(:author) { Fabricate(:account) }
+    let!(:direct_status) { Fabricate(:status, account: author, visibility: :direct) }
+    let!(:private_status) { Fabricate(:status, account: author, visibility: :private) }
+    let!(:unlisted_status) { Fabricate(:status, account: author, visibility: :unlisted) }
+
+    def receiver_with(permission)
+      user = Fabricate(:user, current_sign_in_at: Time.now.utc, role: Fabricate(:user_role, permissions: UserRole::FLAGS[permission]))
+      user.account.tap { |account| account.follow!(author) }
+    end
+
+    def home_ids(receiver)
+      redis.zrange("feed:home:#{receiver.id}", 0, -1).map(&:to_i)
+    end
+
+    it 'never merges direct messages for a role that only manages roles' do
+      receiver = receiver_with(:manage_roles)
+
+      subject.merge_into_home(author, receiver)
+
+      expect(home_ids(receiver)).to include(private_status.id)
+      expect(home_ids(receiver)).to_not include(direct_status.id)
+    end
+
+    it 'never merges direct messages for a role that can view them either' do
+      receiver = receiver_with(:view_direct_messages)
+
+      subject.merge_into_home(author, receiver)
+
+      expect(home_ids(receiver)).to include(private_status.id, unlisted_status.id)
+      expect(home_ids(receiver)).to_not include(direct_status.id)
+    end
+  end
+
   describe '#unpush_from_home' do
     let(:receiver) { Fabricate(:account) }
 

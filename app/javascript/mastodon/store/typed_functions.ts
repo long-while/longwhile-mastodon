@@ -45,6 +45,11 @@ interface AppThunkOptions<Arg> {
 
 const createBaseAsyncThunk = createAsyncThunk.withTypes<AppThunkConfig>();
 
+const wantsSkipAlert = (arg: unknown) =>
+  typeof arg === 'object' &&
+  arg !== null &&
+  (arg as { skipAlert?: unknown }).skipAlert === true;
+
 export function createThunk<Arg = void, Returned = void>(
   name: string,
   creator: (arg: Arg, api: AppThunkApi) => Returned | Promise<Returned>,
@@ -64,7 +69,7 @@ export function createThunk<Arg = void, Returned = void>(
         });
       } catch (error) {
         return rejectWithValue(
-          { error },
+          wantsSkipAlert(arg) ? { error, skipAlert: true } : { error },
           {
             useLoadingBar: options.useLoadingBar,
           },

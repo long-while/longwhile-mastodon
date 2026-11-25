@@ -82,6 +82,27 @@ RSpec.describe Auth::RegistrationsController do
       end.to change { user.reload.unconfirmed_email }.to('newemail@example.com')
     end
 
+    context 'when changing the password' do
+      let!(:long_lived_token) do
+        Fabricate(:access_token, resource_owner_id: user.id, scopes: 'read', expires_in: 10.years.to_i,
+                                 multi_account: true, purpose: 'multi_account_refresh', long_lived: true)
+      end
+      let(:password_params) { { user: { password: 'a brand new password', password_confirmation: 'a brand new password', current_password: current_password } } }
+
+      it 'revokes the multi-account tokens' do
+        put :update, params: password_params
+
+        expect(long_lived_token.reload.revoked_at).to be_present
+      end
+
+      it 'keeps the old password when the revocation fails' do
+        allow_any_instance_of(User).to receive(:revoke_multi_account_tokens!).and_raise(ActiveRecord::StatementInvalid, 'boom') # rubocop:disable RSpec/AnyInstance
+
+        expect { put :update, params: password_params }.to raise_error(ActiveRecord::StatementInvalid)
+        expect(user.reload.valid_password?(current_password)).to be(true)
+      end
+    end
+
     it 'requires the current password to update the email' do
       expect do
         put :update, params: {
@@ -105,6 +126,24 @@ RSpec.describe Auth::RegistrationsController do
         }
         expect(response).to redirect_to(edit_user_registration_path)
       end.to(change { user.reload.encrypted_password })
+    end
+
+    it 'revokes multi-account tokens but keeps other tokens when the password changes' do
+      long_lived = Fabricate(:access_token, resource_owner_id: user.id, multi_account: true, purpose: 'multi_account_refresh', long_lived: true)
+      web_token = Fabricate(:access_token, resource_owner_id: user.id)
+
+      put :update, params: { user: { password: 'new password', password_confirmation: 'new password', current_password: current_password } }
+
+      expect(long_lived.reload.revoked_at).to be_present
+      expect(web_token.reload.revoked_at).to be_nil
+    end
+
+    it 'keeps multi-account tokens when only the email changes' do
+      long_lived = Fabricate(:access_token, resource_owner_id: user.id, multi_account: true, purpose: 'multi_account_refresh', long_lived: true)
+
+      put :update, params: { user: { email: 'newemail@example.com', current_password: current_password } }
+
+      expect(long_lived.reload.revoked_at).to be_nil
     end
 
     it 'requires the password confirmation' do
