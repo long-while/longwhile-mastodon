@@ -13470,6 +13470,21 @@ div.compose-panel .account__bio {
     margin-bottom: 2px;
   }
 
+  & &__sender--link {
+    color: $darker-text-color;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: underline;
+    }
+  }
+
+  &__avatar-link {
+    display: block;
+    border-radius: 50%;
+  }
+
   &__bubble {
     background: var(--color-recieve-message-background);
     color: var(--color-recieve-message-text);

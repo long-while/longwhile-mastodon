@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { defineMessages, FormattedMessage, FormattedTime, useIntl } from 'react-intl';
 
 import classNames from 'classnames';
+import { Link } from 'react-router-dom';
 
 import type { List as ImmutableList, Map as ImmutableMap } from 'immutable';
 
@@ -19,6 +20,7 @@ import { stripLeadingMentions } from 'mastodon/utils/strip_leading_mentions';
 
 import { selectMessageAccount } from '../selectors';
 import { isOnlyMemberMentions } from '../util/only_mentions';
+import { profilePathOf } from '../util/profile_path';
 
 import { MessageMenu } from './message_menu';
 
@@ -103,6 +105,7 @@ export const MessageBubble: React.FC<Props> = ({
   const account = useAppSelector((state) =>
     selectMessageAccount(state, accountId),
   );
+  const profilePath = profilePathOf(account);
 
   const [expanded, setExpanded] = useState(false);
   const handleToggle = useCallback(() => {
@@ -218,16 +221,39 @@ export const MessageBubble: React.FC<Props> = ({
 
       {showSenderName && (readOnly || !isMine) && (
         <div className='dm-message__avatar' aria-hidden='true'>
-          {isFirstInGroup && account && <Avatar account={account} size={28} />}
+          {isFirstInGroup &&
+            account &&
+            (profilePath ? (
+              <Link
+                to={profilePath}
+                className='dm-message__avatar-link'
+                tabIndex={-1}
+              >
+                <Avatar account={account} size={28} />
+              </Link>
+            ) : (
+              <Avatar account={account} size={28} />
+            ))}
         </div>
       )}
 
       <div className='dm-message__body' title={fullTime}>
-        {showSenderName && isFirstInGroup && (readOnly || !isMine) && account && (
-          <span className='dm-message__sender'>
-            {account.display_name || account.username}
-          </span>
-        )}
+        {showSenderName &&
+          isFirstInGroup &&
+          (readOnly || !isMine) &&
+          account &&
+          (profilePath ? (
+            <Link
+              to={profilePath}
+              className='dm-message__sender dm-message__sender--link'
+            >
+              {account.display_name || account.username}
+            </Link>
+          ) : (
+            <span className='dm-message__sender'>
+              {account.display_name || account.username}
+            </span>
+          ))}
 
         {hasWarning && (
           <ContentWarning
