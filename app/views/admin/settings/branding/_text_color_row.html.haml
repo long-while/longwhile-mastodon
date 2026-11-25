@@ -1,0 +1,40 @@
+:ruby
+  swatch_style = TextColorPalette::HEX_PATTERN.match?(color['hex']) ? "color: ##{color['hex']}" : nil
+  field = "form_admin_settings[text_color_palette][#{index}]"
+
+%li.text-color-palette__row
+  .text-color-palette__previews{ aria: { hidden: 'true' } }
+    %span.text-color-palette__preview.text-color-palette__preview--dark{ style: swatch_style } A
+    %span.text-color-palette__preview.text-color-palette__preview--light{ style: swatch_style } A
+  %input.text-color-palette__name{ type: 'text',
+                                   name: "#{field}[name]",
+                                   value: color['name'],
+                                   maxlength: TextColorPalette::NAME_MAX_LENGTH,
+                                   required: true,
+                                   'aria-label': t('admin.settings.text_colors.name') }
+  .text-color-palette__hex
+    %span.text-color-palette__hash{ aria: { hidden: 'true' } } #
+    %input.text-color-palette__code{ type: 'text',
+                                     name: "#{field}[hex]",
+                                     value: color['hex'],
+                                     maxlength: 6,
+                                     required: true,
+                                     pattern: '[0-9a-fA-F]{3}([0-9a-fA-F]{3})?',
+                                     autocomplete: 'off',
+                                     autocapitalize: 'off',
+                                     spellcheck: 'false',
+                                     'aria-label': t('admin.settings.text_colors.hex') }
+  %button.text-color-palette__action.text-color-palette__up{ type: 'button',
+                                                             disabled: first,
+                                                             title: t('admin.settings.text_colors.move_up'),
+                                                             'aria-label': t('admin.settings.text_colors.move_up') }
+    = material_symbol('expand_more')
+  %button.text-color-palette__action.text-color-palette__down{ type: 'button',
+                                                               disabled: last,
+                                                               title: t('admin.settings.text_colors.move_down'),
+                                                               'aria-label': t('admin.settings.text_colors.move_down') }
+    = material_symbol('expand_more')
+  %button.text-color-palette__action.text-color-palette__remove{ type: 'button',
+                                                                 title: t('admin.settings.text_colors.remove'),
+                                                                 'aria-label': t('admin.settings.text_colors.remove') }
+    = material_symbol('close')

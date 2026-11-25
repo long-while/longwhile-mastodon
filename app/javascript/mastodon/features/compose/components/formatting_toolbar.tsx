@@ -19,6 +19,7 @@ import ClearIcon from '@/styles/bird-theme-svg/typography-off.svg?react';
 import UnderlineIcon from '@/styles/bird-theme-svg/underline.svg?react';
 import { Icon } from 'mastodon/components/icon';
 import type { IconProp } from 'mastodon/components/icon';
+import { textColors } from 'mastodon/initial_state';
 
 import type {
   ActiveMarks,
@@ -26,7 +27,6 @@ import type {
   TextSelectionEdit,
 } from '../util/text_formatting';
 import {
-  TEXT_COLORS,
   applyTextColor,
   clearFormatting,
   getActiveMarks,
@@ -58,42 +58,7 @@ const messages = defineMessages({
     id: 'compose_form.format.color.default',
     defaultMessage: 'Default text',
   },
-  gray: { id: 'compose_form.format.color.gray', defaultMessage: 'Gray text' },
-  brown: {
-    id: 'compose_form.format.color.brown',
-    defaultMessage: 'Brown text',
-  },
-  orange: {
-    id: 'compose_form.format.color.orange',
-    defaultMessage: 'Orange text',
-  },
-  yellow: {
-    id: 'compose_form.format.color.yellow',
-    defaultMessage: 'Yellow text',
-  },
-  green: {
-    id: 'compose_form.format.color.green',
-    defaultMessage: 'Green text',
-  },
-  blue: { id: 'compose_form.format.color.blue', defaultMessage: 'Blue text' },
-  purple: {
-    id: 'compose_form.format.color.purple',
-    defaultMessage: 'Purple text',
-  },
-  pink: { id: 'compose_form.format.color.pink', defaultMessage: 'Pink text' },
-  red: { id: 'compose_form.format.color.red', defaultMessage: 'Red text' },
 });
-
-type ColorMessageKey =
-  | 'gray'
-  | 'brown'
-  | 'orange'
-  | 'yellow'
-  | 'green'
-  | 'blue'
-  | 'purple'
-  | 'pink'
-  | 'red';
 
 const MARK_BUTTONS: {
   mark: InlineMark;
@@ -327,10 +292,10 @@ const ColorPanel: React.FC<{
       hex: null,
       label: intl.formatMessage(messages.colorDefault),
     },
-    ...TEXT_COLORS.map((color) => ({
-      id: color.id,
+    ...textColors.map((color, index) => ({
+      id: `${index}-${color.hex}`,
       hex: color.hex,
-      label: intl.formatMessage(messages[color.id as ColorMessageKey]),
+      label: color.name,
     })),
   ];
 

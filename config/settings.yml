@@ -4,6 +4,16 @@
 defaults: &defaults
   site_title: Mastodon
   status_length_limit: 1000
+  text_color_palette:
+    - { name: '회색 텍스트', hex: '7d7a75' }
+    - { name: '갈색 텍스트', hex: '9f765a' }
+    - { name: '주황색 텍스트', hex: 'd27b2d' }
+    - { name: '노란색 텍스트', hex: 'cb9434' }
+    - { name: '초록색 텍스트', hex: '50946e' }
+    - { name: '파란색 텍스트', hex: '387dc9' }
+    - { name: '보라색 텍스트', hex: '9a6bb4' }
+    - { name: '분홍색 텍스트', hex: 'c14c8a' }
+    - { name: '빨간색 텍스트', hex: 'cf5148' }
   site_short_description: ''
   site_description: ''
   site_extended_description: ''

@@ -51,6 +51,7 @@
  * @property {number=} scheduled_status_minimum_offset
  * @property {number=} scheduled_status_total_limit
  * @property {number=} scheduled_status_daily_limit
+ * @property {{ name: string, hex: string }[]=} text_colors
  */
 
 /**
@@ -94,6 +95,8 @@ export const activityApiEnabled = getMeta('activity_api_enabled');
 export const autoPlayGif = getMeta('auto_play_gif');
 export const boostModal = getMeta('boost_modal');
 export const dmChatEnabled = getMeta('dm_chat_enabled');
+/** @type {{ name: string, hex: string }[]} */
+export const textColors = getMeta('text_colors') ?? [];
 export const deleteModal = getMeta('delete_modal');
 export const missingAltTextModal = getMeta('missing_alt_text_modal');
 export const disableSwiping = getMeta('disable_swiping');

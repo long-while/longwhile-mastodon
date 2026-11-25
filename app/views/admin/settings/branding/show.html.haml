@@ -54,3 +54,5 @@
     .branding-wordmark__pair
       - SiteUpload::WORDMARK_VARS.each do |var|
         = render 'admin/settings/branding/wordmark_preview', attribute: var.to_sym, upload: @admin_settings.public_send(var)
+
+  = render 'admin/settings/branding/text_colors', settings: @admin_settings

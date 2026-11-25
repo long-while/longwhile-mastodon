@@ -50,6 +50,11 @@ class Form::AdminSettings
     wrapstodon
     email_footer_text
     status_length_limit
+    text_color_palette
+  ).freeze
+
+  STRUCTURED_KEYS = %i(
+    text_color_palette
   ).freeze
 
   INTEGER_KEYS = %i(
@@ -124,6 +129,7 @@ class Form::AdminSettings
   validates :status_page_url, url: true, allow_blank: true
   validate :validate_site_uploads
   validates :landing_page, inclusion: { in: LANDING_PAGE }, if: -> { defined?(@landing_page) }
+  validate :validate_text_color_palette, if: -> { defined?(@text_color_palette) }
 
   KEYS.each do |key|
     define_method(key) do
@@ -139,6 +145,14 @@ class Form::AdminSettings
 
       instance_variable_set(:"@#{key}", stored_value)
     end
+  end
+
+  def text_color_palette=(value)
+    @text_color_palette = TextColorPalette.normalize(value)
+  end
+
+  def text_color_palette_submitted=(value)
+    @text_color_palette = [] if value.present? && !defined?(@text_color_palette)
   end
 
   UPLOAD_KEYS.each do |key|
@@ -204,6 +218,12 @@ class Form::AdminSettings
       value.blank? ? value : Integer(value)
     else
       value
+    end
+  end
+
+  def validate_text_color_palette
+    TextColorPalette.problems(@text_color_palette).each do |key, options|
+      errors.add(:text_color_palette, I18n.t("admin.settings.text_colors.errors.#{key}", **options))
     end
   end
 

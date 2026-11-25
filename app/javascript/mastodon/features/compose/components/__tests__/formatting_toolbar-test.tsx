@@ -6,6 +6,13 @@ import { render } from 'mastodon/test_helpers';
 
 import { FormattingToolbar } from '../formatting_toolbar';
 
+vi.mock('mastodon/initial_state', () => ({
+  textColors: [
+    { name: '빨간색 텍스트', hex: 'cf5148' },
+    { name: '파란색 텍스트', hex: '387dc9' },
+  ],
+}));
+
 const Harness: React.FC<{ initial: string }> = ({ initial }) => {
   const ref = useRef<HTMLTextAreaElement>(null);
 
@@ -53,10 +60,10 @@ describe('FormattingToolbar', () => {
     const textarea = setup('hi', 0, 2);
 
     fireEvent.click(screen.getByRole('button', { name: 'Text color' }));
-    fireEvent.click(screen.getByRole('button', { name: /Red text/ }));
+    fireEvent.click(screen.getByRole('button', { name: /빨간색 텍스트/ }));
 
     expect(textarea.value).toBe('[color:cf5148]hi[/color]');
-    expect(screen.queryByRole('button', { name: /Red text/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /빨간색 텍스트/ })).toBeNull();
   });
 
   it('toggles with the keyboard shortcut', () => {

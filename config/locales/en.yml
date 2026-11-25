@@ -1044,6 +1044,24 @@ en:
         authorized_fetch_hint: Requiring authentication from federated servers enables stricter enforcement of both user-level and server-level blocks. However, this comes at the cost of a performance penalty, reduces the reach of your replies, and may introduce compatibility issues with some federated services. In addition, this will not prevent dedicated actors from fetching your public posts and accounts.
         authorized_fetch_overridden_hint: You are currently unable to change this setting because it is overridden by an environment variable.
         federation_authentication: Federation authentication enforcement
+      text_colors:
+        add: Add color
+        count: "%{current} / %{max}"
+        default_hex: No color
+        default_name: Default text
+        errors:
+          blank_name: "Color %{position} needs a name."
+          invalid_hex: "Color %{position} has an invalid color code. Use 3 or 6 hexadecimal digits."
+          long_name: "The name of color %{position} can be up to %{count} characters, spaces included."
+          too_many: "You can set up to %{count} colors."
+        hex: Color code
+        locked: Default text cannot be edited
+        move_down: Move down
+        move_up: Move up
+        name: Color name
+        preview: Preview
+        remove: Remove this color
+        title: Text colors
       title: Server settings
       uploads:
         default: Preview
@@ -2199,6 +2217,9 @@ en:
     statuses_cleanup: Delete old posts
     strikes: Moderation strikes
     two_factor_authentication: Two-factor Auth
+    unsaved_changes:
+      message: You have unsaved changes!
+      save: Save changes
     webauthn_authentication: Security keys
   statuses:
     attached:

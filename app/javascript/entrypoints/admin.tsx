@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client';
 
 import Rails from '@rails/ujs';
 
+import { setupTextColorPalette } from '../mastodon/admin/text_color_palette';
 import ready from '../mastodon/ready';
 
 const setAnnouncementEndsAttributes = (target: HTMLInputElement) => {
@@ -461,6 +462,10 @@ ready(() => {
   document.querySelectorAll('[data-admin-component]').forEach((element) => {
     void mountReactComponent(element);
   });
+
+  document
+    .querySelectorAll<HTMLElement>('.text-color-palette')
+    .forEach(setupTextColorPalette);
 }).catch((reason: unknown) => {
   throw reason;
 });

@@ -133,6 +133,7 @@ class InitialStateSerializer < ActiveModel::Serializer
       scheduled_status_total_limit: ScheduledStatus::TOTAL_LIMIT,
       scheduled_status_daily_limit: ScheduledStatus::DAILY_LIMIT,
       dm_chat_enabled: Mastodon::DmChat.enabled?,
+      text_colors: TextColorPalette.current,
       local_live_feed_access: Setting.local_live_feed_access,
       remote_live_feed_access: Setting.remote_live_feed_access,
       local_topic_feed_access: Setting.local_topic_feed_access,

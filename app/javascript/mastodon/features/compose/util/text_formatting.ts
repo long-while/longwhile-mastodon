@@ -6,23 +6,6 @@ export interface TextSelectionEdit {
   end: number;
 }
 
-export interface TextColor {
-  id: string;
-  hex: string;
-}
-
-export const TEXT_COLORS: readonly TextColor[] = [
-  { id: 'gray', hex: '7d7a75' },
-  { id: 'brown', hex: '9f765a' },
-  { id: 'orange', hex: 'd27b2d' },
-  { id: 'yellow', hex: 'cb9434' },
-  { id: 'green', hex: '50946e' },
-  { id: 'blue', hex: '387dc9' },
-  { id: 'purple', hex: '9a6bb4' },
-  { id: 'pink', hex: 'c14c8a' },
-  { id: 'red', hex: 'cf5148' },
-];
-
 type Wrapper =
   | { kind: 'stars'; count: number }
   | { kind: 'u' | 's' | 'tilde' }
