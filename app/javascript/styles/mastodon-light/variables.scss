@@ -1,9 +1,7 @@
 @use 'sass:color';
 
-@use '../mastodon/functions' with (
-  $darken-multiplier: 1,
-  $lighten-multiplier: -1
-);
+@use '../mastodon/functions' with ($darken-multiplier: 1,
+  $lighten-multiplier: -1);
 
 $black: #000000; // Black
 $white: #ffffff; // White
@@ -22,8 +20,7 @@ $classic-secondary-color: #ffffff;
 
 $classic-highlight-color: $longwhile-500;
 
-@use '../mastodon/variables' with (
-  $success-green: #1d9bf0,
+@use '../mastodon/variables' with ($success-green: #1d9bf0,
   $base-overlay-background: $white,
 
   $ui-base-color: $classic-secondary-color,

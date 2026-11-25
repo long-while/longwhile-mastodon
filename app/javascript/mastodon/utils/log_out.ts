@@ -1,6 +1,12 @@
+import {
+  collectStoredTokens,
+  revokeTokens,
+} from 'mastodon/actions/multi_account';
 import api from 'mastodon/api';
 import { MULTI_ACCOUNT_REQUEST_TIMEOUT } from 'mastodon/api/multi_accounts_constants';
 import { clearDrafts } from 'mastodon/features/messages/util/drafts';
+import { resetCryptoKey } from 'mastodon/utils/multi_account_crypto';
+import { clearAllAccounts } from 'mastodon/utils/multi_account_db';
 import { clearActiveAccountIdInStorage } from 'mastodon/utils/multi_account_storage';
 
 interface LogOutOptions {
@@ -16,9 +22,6 @@ export class LogOutError extends Error {
 
 const collectTokensToRevoke = async (): Promise<string[]> => {
   try {
-    const { collectStoredTokens } = await import(
-      'mastodon/actions/multi_account'
-    );
     return await collectStoredTokens();
   } catch (error) {
     console.warn('[MultiAccount] Could not read the saved accounts:', error);
@@ -28,13 +31,6 @@ const collectTokensToRevoke = async (): Promise<string[]> => {
 
 const forgetSavedAccountsOnThisDevice = async (tokens: string[]) => {
   try {
-    const [{ revokeTokens }, { clearAllAccounts }, { resetCryptoKey }] =
-      await Promise.all([
-        import('mastodon/actions/multi_account'),
-        import('mastodon/utils/multi_account_db'),
-        import('mastodon/utils/multi_account_crypto'),
-      ]);
-
     await revokeTokens(tokens);
     await clearAllAccounts();
     await resetCryptoKey();
