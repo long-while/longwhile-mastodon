@@ -1,6 +1,11 @@
 import { useCallback, useMemo } from 'react';
 
-import { defineMessages, useIntl, FormattedMessage } from 'react-intl';
+import {
+  defineMessages,
+  useIntl,
+  FormattedMessage,
+  FormattedNumber,
+} from 'react-intl';
 
 import classNames from 'classnames';
 import { Helmet } from 'react-helmet';
@@ -341,7 +346,6 @@ export const AccountHeader: React.FC<{
     },
     [dispatch, account],
   );
-
 
   const handleMouseEnter = useCallback(
     ({ currentTarget }: React.MouseEvent) => {
@@ -789,7 +793,6 @@ export const AccountHeader: React.FC<{
           )}
 
         <div className='account__header__image'>
-
           {!(suspended || hidden) && (
             <img
               src={autoPlayGif ? account.header : account.header_static}
@@ -936,12 +939,12 @@ export const AccountHeader: React.FC<{
               <div className='account__header__extra__links'>
                 <NavLink
                   to={`/@${account.acct}`}
-                  title={intl.formatNumber(account.statuses_count)}
+                  title={intl.formatNumber(account.statuses_count ?? 0)}
                 >
-                  <ShortNumber
-                    value={account.statuses_count}
-                    renderer={StatusesCounter}
-                  />
+                  {StatusesCounter(
+                    <FormattedNumber value={account.statuses_count ?? 0} />,
+                    account.statuses_count,
+                  )}
                 </NavLink>
 
                 <NavLink
