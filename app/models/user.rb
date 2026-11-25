@@ -270,6 +270,7 @@ class User < ApplicationRecord
     webauthn_credentials.destroy_all if webauthn_enabled?
 
     save!
+    revoke_multi_account_tokens!
   end
 
   def applications_last_used
@@ -332,25 +333,11 @@ class User < ApplicationRecord
 
   def revoke_access!
     Doorkeeper::AccessGrant.by_resource_owner(self).touch_all(:revoked_at)
+    revoke_tokens!(Doorkeeper::AccessToken.by_resource_owner(self))
+  end
 
-    token_scope = Doorkeeper::AccessToken.by_resource_owner(self)
-    token_scope = token_scope.excluding_long_lived_refresh if token_scope.respond_to?(:excluding_long_lived_refresh)
-    token_scope = token_scope.non_multi_account if MultiAccountConfig.retain_tokens?
-
-    token_scope.in_batches do |batch|
-      batch.touch_all(:revoked_at)
-      Web::PushSubscription.where(access_token_id: batch).delete_all
-
-      # Revoke each access token for the Streaming API, since `update_all``
-      # doesn't trigger ActiveRecord Callbacks:
-      # TODO: #28793 Combine into a single topic
-      payload = { event: :kill }.to_json
-      redis.pipelined do |pipeline|
-        batch.ids.each do |id|
-          pipeline.publish("timeline:access_token:#{id}", payload)
-        end
-      end
-    end
+  def revoke_multi_account_tokens!
+    revoke_tokens!(Doorkeeper::AccessToken.by_resource_owner(self).multi_account_owned.not_revoked)
   end
 
   def reset_password!
@@ -392,6 +379,24 @@ class User < ApplicationRecord
   end
 
   private
+
+  def revoke_tokens!(token_scope)
+    token_scope.in_batches do |batch|
+      ids = batch.ids
+      Doorkeeper::AccessToken.where(id: ids).touch_all(:revoked_at)
+      Web::PushSubscription.where(access_token_id: ids).delete_all
+
+      # Revoke each access token for the Streaming API, since `update_all``
+      # doesn't trigger ActiveRecord Callbacks:
+      # TODO: #28793 Combine into a single topic
+      payload = { event: :kill }.to_json
+      redis.pipelined do |pipeline|
+        ids.each do |id|
+          pipeline.publish("timeline:access_token:#{id}", payload)
+        end
+      end
+    end
+  end
 
   def send_pending_devise_notifications
     pending_devise_notifications.each do |notification, args, kwargs|

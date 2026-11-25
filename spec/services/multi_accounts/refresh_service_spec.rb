@@ -99,6 +99,18 @@ RSpec.describe MultiAccounts::RefreshService do
             multi_account: true
           )
         end
+
+        context 'when the legacy token has expired' do
+          before { refresh_token_record.update!(expires_in: 60, created_at: 2.days.ago) }
+
+          it 'raises 401 and leaves the token as it was' do
+            expect { service_call }.to raise_error(MultiAccounts::RefreshService::Error) { |error|
+              expect(error.status).to eq(401)
+            }
+
+            expect(refresh_token_record.reload).to have_attributes(long_lived: false, purpose: nil)
+          end
+        end
       end
     end
 

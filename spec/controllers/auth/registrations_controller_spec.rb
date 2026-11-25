@@ -107,6 +107,24 @@ RSpec.describe Auth::RegistrationsController do
       end.to(change { user.reload.encrypted_password })
     end
 
+    it 'revokes multi-account tokens but keeps other tokens when the password changes' do
+      long_lived = Fabricate(:access_token, resource_owner_id: user.id, multi_account: true, purpose: 'multi_account_refresh', long_lived: true)
+      web_token = Fabricate(:access_token, resource_owner_id: user.id)
+
+      put :update, params: { user: { password: 'new password', password_confirmation: 'new password', current_password: current_password } }
+
+      expect(long_lived.reload.revoked_at).to be_present
+      expect(web_token.reload.revoked_at).to be_nil
+    end
+
+    it 'keeps multi-account tokens when only the email changes' do
+      long_lived = Fabricate(:access_token, resource_owner_id: user.id, multi_account: true, purpose: 'multi_account_refresh', long_lived: true)
+
+      put :update, params: { user: { email: 'newemail@example.com', current_password: current_password } }
+
+      expect(long_lived.reload.revoked_at).to be_nil
+    end
+
     it 'requires the password confirmation' do
       expect do
         put :update, params: {

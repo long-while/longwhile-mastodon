@@ -518,37 +518,63 @@ RSpec.describe User do
       allow(redis).to receive(:pipelined).and_yield(redis_pipeline_stub)
     end
 
-    context 'when multi-account retention is disabled' do
-      before do
-        allow(MultiAccountConfig).to receive(:retain_tokens?).and_return(false)
-      end
+    [true, false].each do |retain|
+      context "when multi-account retention is #{retain ? 'enabled' : 'disabled'}" do
+        before do
+          allow(MultiAccountConfig).to receive(:retain_tokens?).and_return(retain)
+        end
 
-      it 'revokes all access tokens' do
-        user.revoke_access!
+        it 'revokes every token, including long-lived multi-account tokens' do
+          user.revoke_access!
 
-        expect(multi_account_token.reload.revoked_at).to be_present
-        expect(standard_token.reload.revoked_at).to be_present
-        expect(long_lived_refresh_token.reload.revoked_at).to be_nil
-        expect(redis_pipeline_stub).to have_received(:publish).with("timeline:access_token:#{multi_account_token.id}", { event: :kill }.to_json)
-        expect(redis_pipeline_stub).to have_received(:publish).with("timeline:access_token:#{standard_token.id}", { event: :kill }.to_json)
+          [multi_account_token, standard_token, long_lived_refresh_token].each do |token|
+            expect(token.reload.revoked_at).to be_present
+            expect(redis_pipeline_stub).to have_received(:publish).with("timeline:access_token:#{token.id}", { event: :kill }.to_json)
+          end
+        end
       end
     end
+  end
 
-    context 'when multi-account retention is enabled' do
-      before do
-        allow(MultiAccountConfig).to receive(:retain_tokens?).and_return(true)
-      end
+  describe '#revoke_multi_account_tokens!' do
+    subject(:user) { Fabricate(:user) }
 
-      it 'skips revoking multi-account tokens' do
-        user.revoke_access!
+    let(:multi_account_app) { Fabricate(:application) }
+    let!(:session_token) { Fabricate(:access_token, resource_owner_id: user.id, multi_account: true, purpose: 'multi_account_session') }
+    let!(:long_lived_refresh_token) do
+      Fabricate(:access_token, resource_owner_id: user.id, multi_account: true, purpose: 'multi_account_refresh', long_lived: true)
+    end
+    let!(:legacy_app_token) { Fabricate(:access_token, resource_owner_id: user.id, application: multi_account_app) }
+    let!(:web_session_token) { Fabricate(:access_token, resource_owner_id: user.id) }
+    let!(:other_users_token) { Fabricate(:access_token, multi_account: true, purpose: 'multi_account_refresh', long_lived: true) }
+    let(:redis_pipeline_stub) { instance_double(Redis::PipelinedConnection, publish: nil) }
 
-        expect(multi_account_token.reload.revoked_at).to be_nil
-        expect(standard_token.reload.revoked_at).to be_present
-        expect(long_lived_refresh_token.reload.revoked_at).to be_nil
-        expect(redis_pipeline_stub).to have_received(:publish).with("timeline:access_token:#{standard_token.id}", { event: :kill }.to_json)
-        expect(redis_pipeline_stub).to_not have_received(:publish).with("timeline:access_token:#{multi_account_token.id}", anything)
-        expect(redis_pipeline_stub).to_not have_received(:publish).with("timeline:access_token:#{long_lived_refresh_token.id}", anything)
-      end
+    around do |example|
+      original = Rails.configuration.x.multi_account.dup
+      example.run
+      Rails.configuration.x.multi_account = ActiveSupport::HashWithIndifferentAccess.new(original)
+    end
+
+    before do
+      Rails.configuration.x.multi_account[:client_id] = multi_account_app.uid
+      allow(redis).to receive(:pipelined).and_yield(redis_pipeline_stub)
+    end
+
+    it 'revokes only the multi-account tokens of this user' do
+      user.revoke_multi_account_tokens!
+
+      expect([session_token, long_lived_refresh_token, legacy_app_token].map { |t| t.reload.revoked_at }).to all(be_present)
+      expect(web_session_token.reload.revoked_at).to be_nil
+      expect(other_users_token.reload.revoked_at).to be_nil
+      expect(redis_pipeline_stub).to have_received(:publish).with("timeline:access_token:#{long_lived_refresh_token.id}", { event: :kill }.to_json)
+      expect(redis_pipeline_stub).to_not have_received(:publish).with("timeline:access_token:#{web_session_token.id}", anything)
+    end
+
+    it 'is called when two-factor authentication is disabled' do
+      user.disable_two_factor!
+
+      expect(long_lived_refresh_token.reload.revoked_at).to be_present
+      expect(web_session_token.reload.revoked_at).to be_nil
     end
   end
 

@@ -25,6 +25,7 @@ module Settings
           current_user.otp_secret = session[:new_otp_secret]
           @recovery_codes = current_user.generate_otp_backup_codes!
           current_user.save!
+          current_user.revoke_multi_account_tokens!
 
           UserMailer.two_factor_enabled(current_user).deliver_later!
 

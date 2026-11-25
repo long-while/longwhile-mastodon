@@ -46,6 +46,7 @@ module Settings
             status = :ok
 
             if current_user.webauthn_credentials.size == 1
+              current_user.revoke_multi_account_tokens!
               UserMailer.webauthn_enabled(current_user).deliver_later!
             else
               UserMailer.webauthn_credential_added(current_user, user_credential).deliver_later!
@@ -70,6 +71,7 @@ module Settings
             flash[:success] = I18n.t('webauthn_credentials.destroy.success')
 
             if current_user.webauthn_credentials.empty?
+              current_user.revoke_multi_account_tokens!
               UserMailer.webauthn_disabled(current_user).deliver_later!
             else
               UserMailer.webauthn_credential_deleted(current_user, credential).deliver_later!

@@ -30,5 +30,22 @@ RSpec.describe 'Auth Passwords' do
           .and be_valid_password(user.password)
       end
     end
+
+    context 'with a valid reset_password_token' do
+      let!(:long_lived_refresh_token) do
+        Fabricate(:access_token, resource_owner_id: user.id, multi_account: true, purpose: 'multi_account_refresh', long_lived: true)
+      end
+      let!(:web_token) { Fabricate(:access_token, resource_owner_id: user.id) }
+
+      it 'changes the password and revokes every token, including long-lived multi-account tokens' do
+        raw_token = user.send(:set_reset_password_token)
+
+        put user_password_path, params: { user: { password: password, password_confirmation: password, reset_password_token: raw_token } }
+
+        expect(User.find(user.id)).to be_valid_password(password)
+        expect(long_lived_refresh_token.reload.revoked_at).to be_present
+        expect(web_token.reload.revoked_at).to be_present
+      end
+    end
   end
 end

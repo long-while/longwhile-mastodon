@@ -37,7 +37,10 @@ class Auth::RegistrationsController < Devise::RegistrationsController
 
   def update
     super do |resource|
-      resource.clear_other_sessions(current_session.session_id) if resource.saved_change_to_encrypted_password?
+      next unless resource.saved_change_to_encrypted_password?
+
+      resource.clear_other_sessions(current_session.session_id)
+      resource.revoke_multi_account_tokens!
     end
   end
 

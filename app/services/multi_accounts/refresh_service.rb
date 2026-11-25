@@ -110,6 +110,8 @@ module MultiAccounts
 
       return if token.long_lived_refresh?
 
+      raise Error.new('Refresh token has expired', status: 401) if token.expired?
+
       raise Error.new('Token is not a valid multi-account refresh token', status: 422) if token.try(:purpose) == SESSION_TOKEN_PURPOSE
 
       ma_client_id = Rails.configuration.x.multi_account[:client_id].presence
