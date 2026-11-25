@@ -18,6 +18,8 @@ export const ConfirmationModal: React.FC<
     onConfirm: () => void;
     closeWhenConfirm?: boolean;
 
+    confirmDisabled?: boolean;
+
     dangerous?: boolean;
   } & BaseConfirmationModalProps
 > = ({
@@ -29,6 +31,7 @@ export const ConfirmationModal: React.FC<
   secondary,
   onSecondary,
   closeWhenConfirm = true,
+  confirmDisabled = false,
   dangerous = false,
 }) => {
   const handleClick = useCallback(() => {
@@ -76,7 +79,13 @@ export const ConfirmationModal: React.FC<
           )}
 
           {/* eslint-disable-next-line jsx-a11y/no-autofocus -- we are in a modal and thus autofocusing is justified */}
-          <Button onClick={handleClick} dangerous={dangerous} autoFocus>
+          <Button
+            onClick={handleClick}
+            dangerous={dangerous}
+            disabled={confirmDisabled}
+            aria-busy={confirmDisabled || undefined}
+            autoFocus
+          >
             {confirm}
           </Button>
         </div>

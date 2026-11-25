@@ -15,126 +15,106 @@ interface PendingRequest {
 
 const pendingRequests = new Map<string, PendingRequest>();
 
+const releasePending = (state: string, pending: PendingRequest) => {
+  if (pending.checkInterval) {
+    clearInterval(pending.checkInterval);
+  }
+
+  if (pending.popup && !pending.popup.closed) {
+    try {
+      pending.popup.postMessage(
+        { type: 'multi-account-close-popup' },
+        window.location.origin,
+      );
+    } catch (error) {
+      console.error('Failed to send close message to popup:', error);
+    }
+  }
+
+  pendingRequests.delete(state);
+};
+
+const isFromOwnPopup = (
+  event: MessageEvent,
+  pending: PendingRequest,
+): boolean =>
+  event.origin === window.location.origin &&
+  !!pending.popup &&
+  event.source === pending.popup;
+
+const handleCallback = (event: MessageEvent, data: CallbackMessage) => {
+  const { state, code } = data;
+
+  if (!state || !code) {
+    console.error('Invalid callback data:', data);
+    return;
+  }
+
+  const pending = pendingRequests.get(state);
+
+  if (!pending) {
+    console.warn('Received callback for unknown state:', state);
+    return;
+  }
+
+  if (!isFromOwnPopup(event, pending)) {
+    console.warn('Ignoring callback from an unexpected window or origin');
+    return;
+  }
+
+  pending.resolve({ state, code });
+  releasePending(state, pending);
+};
+
+const handleError = (event: MessageEvent, data: CallbackMessage) => {
+  const { error, state } = data;
+  const reason = new Error(error || 'Unknown error');
+
+  if (state) {
+    const pending = pendingRequests.get(state);
+
+    if (pending && isFromOwnPopup(event, pending)) {
+      pending.reject(reason);
+      releasePending(state, pending);
+    }
+
+    return;
+  }
+
+  console.warn('Received error without state, rejecting its pending requests');
+
+  for (const [stateKey, pending] of [...pendingRequests.entries()]) {
+    if (isFromOwnPopup(event, pending)) {
+      pending.reject(reason);
+      releasePending(stateKey, pending);
+    }
+  }
+};
+
 /**
  * Handle OAuth callback messages from the popup window
  */
 const handleMessage = (event: MessageEvent) => {
-  const data = event.data as CallbackMessage;
+  if (event.origin !== window.location.origin) {
+    console.warn(
+      'Ignoring message from unexpected origin:',
+      event.origin,
+      'expected:',
+      window.location.origin,
+    );
+    return;
+  }
 
-  // Verify origin - allow same origin or check if it's from our domain
-  const eventOrigin = event.origin;
-  const currentOrigin = window.location.origin;
-  
-  // Allow messages from same origin or if origin matches current origin pattern
-  // This handles cases where redirect_origin might differ slightly (http vs https, port differences)
-  const isOriginValid = 
-    eventOrigin === currentOrigin ||
-    eventOrigin.replace(/^https?:\/\//, '').split(':')[0] === currentOrigin.replace(/^https?:\/\//, '').split(':')[0];
+  const data = event.data as CallbackMessage | null;
 
-  if (!isOriginValid) {
-    // Reject messages from unexpected origins instead of processing them — a
-    // cross-origin frame must never be able to deliver an OAuth callback.
-    console.warn('Ignoring message from unexpected origin:', eventOrigin, 'expected:', currentOrigin);
+  if (!data || typeof data !== 'object') {
     return;
   }
 
   if (data.type === 'multi-account-callback') {
-    const { state, code } = data;
-
-    if (!state || !code) {
-      console.error('Invalid callback data:', data);
-      return;
-    }
-
-    const pending = pendingRequests.get(state);
-    if (pending) {
-      pending.resolve({ state, code });
-
-      // Clear the popup check interval
-      if (pending.checkInterval) {
-        clearInterval(pending.checkInterval);
-      }
-
-      // Send close confirmation to popup
-      if (pending.popup && !pending.popup.closed) {
-        try {
-          // Try current origin first
-          pending.popup.postMessage(
-            { type: 'multi-account-close-popup' },
-            currentOrigin
-          );
-        } catch (error) {
-          console.error('Failed to send close message to popup:', error);
-          // Try with wildcard as fallback
-          try {
-            pending.popup.postMessage(
-              { type: 'multi-account-close-popup' },
-              '*'
-            );
-          } catch (e2) {
-            console.error('Failed to send close message with wildcard:', e2);
-          }
-        }
-      }
-
-      pendingRequests.delete(state);
-    } else {
-      console.warn('Received callback for unknown state:', state);
-    }
+    handleCallback(event, data);
   } else if (data.type === 'multi-account-error') {
-    const { error, state } = data;
-
-    if (state) {
-      // If we have state, reject only that specific request
-      const pending = pendingRequests.get(state);
-      if (pending) {
-        pending.reject(new Error(error || 'Unknown error'));
-
-        // Clear the popup check interval
-        if (pending.checkInterval) {
-          clearInterval(pending.checkInterval);
-        }
-
-        // Send close confirmation to popup
-        if (pending.popup && !pending.popup.closed) {
-          try {
-            pending.popup.postMessage(
-              { type: 'multi-account-close-popup' },
-              currentOrigin
-            );
-          } catch (error) {
-            console.error('Failed to send close message to popup:', error);
-          }
-        }
-
-        pendingRequests.delete(state);
-      }
-    } else {
-      // If no state, reject all pending requests
-      console.warn('Received error without state, rejecting all pending requests');
-      for (const [stateKey, pending] of pendingRequests.entries()) {
-        pending.reject(new Error(error || 'Unknown error'));
-
-        // Clear the popup check interval
-        if (pending.checkInterval) {
-          clearInterval(pending.checkInterval);
-        }
-
-        // Send close confirmation to popup
-        if (pending.popup && !pending.popup.closed) {
-          try {
-            pending.popup.postMessage(
-              { type: 'multi-account-close-popup' },
-              currentOrigin
-            );
-          } catch (error) {
-            console.error('Failed to send close message to popup:', error);
-          }
-        }
-
-        pendingRequests.delete(stateKey);
-      }
-    }
+    handleError(event, data);
   }
 };
 
@@ -211,7 +191,9 @@ export const openOAuthPopup = (
         clearInterval(checkInterval);
         const pending = pendingRequests.get(state);
         if (pending) {
-          pending.reject(new Error('OAuth popup was closed before authorization completed'));
+          pending.reject(
+            new Error('OAuth popup was closed before authorization completed'),
+          );
           pendingRequests.delete(state);
         }
       }
@@ -229,24 +211,26 @@ export const openOAuthPopup = (
         } catch {
           // ignore: popup may be inaccessible/cross-origin
         }
-        pending.reject(new Error('OAuth authorization timed out. Please try again.'));
+        pending.reject(
+          new Error('OAuth authorization timed out. Please try again.'),
+        );
         pendingRequests.delete(state);
       }
     }, 90000); // 90s timeout
 
     // Store the promise handlers with popup reference and interval ID
-    pendingRequests.set(state, { 
+    pendingRequests.set(state, {
       resolve: (data) => {
         clearTimeout(timeoutId);
         resolve(data);
-      }, 
+      },
       reject: (error) => {
         clearTimeout(timeoutId);
         reject(error);
-      }, 
-      state, 
-      popup, 
-      checkInterval 
+      },
+      state,
+      popup,
+      checkInterval,
     });
   });
 };

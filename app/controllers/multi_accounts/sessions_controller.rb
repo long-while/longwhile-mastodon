@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class MultiAccounts::SessionsController < ApplicationController
+  include MultiAccountSameOriginConcern
+
   skip_before_action :verify_authenticity_token
   before_action :require_same_origin!
 
@@ -33,15 +35,5 @@ class MultiAccounts::SessionsController < ApplicationController
   rescue StandardError => e
     Rails.logger.error("Failed to restore multi-account session: #{e.message}")
     render json: { error: 'Failed to restore session' }, status: :internal_server_error
-  end
-
-  private
-
-  def require_same_origin!
-    cross_site = request.headers['Sec-Fetch-Site'].present? && request.headers['Sec-Fetch-Site'] != 'same-origin'
-    foreign_origin = request.origin.present? && request.origin != request.base_url
-    return unless cross_site || foreign_origin
-
-    render json: { error: 'Cross-origin request refused' }, status: 403
   end
 end

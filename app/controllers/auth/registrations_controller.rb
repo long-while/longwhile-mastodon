@@ -40,7 +40,6 @@ class Auth::RegistrationsController < Devise::RegistrationsController
       next unless resource.saved_change_to_encrypted_password?
 
       resource.clear_other_sessions(current_session.session_id)
-      resource.revoke_multi_account_tokens!
     end
   end
 
@@ -53,7 +52,11 @@ class Auth::RegistrationsController < Devise::RegistrationsController
   def update_resource(resource, params)
     params[:password] = nil if Devise.pam_authentication && resource.encrypted_password.blank?
 
-    super
+    resource.class.transaction do
+      updated = super
+      resource.revoke_multi_account_tokens! if updated && resource.saved_change_to_encrypted_password?
+      updated
+    end
   end
 
   def build_resource(hash = nil)

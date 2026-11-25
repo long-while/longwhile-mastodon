@@ -3,6 +3,8 @@
 require 'rails_helper'
 
 RSpec.describe 'Api::V1::MultiAccountsController', type: :request do
+  let(:same_origin_headers) { { 'Origin' => "https://#{Rails.configuration.x.local_domain}" } }
+
   describe 'POST /api/v1/multi_accounts/consume' do
     let(:user) { Fabricate(:user) }
     let(:application) do
@@ -68,6 +70,44 @@ RSpec.describe 'Api::V1::MultiAccountsController', type: :request do
       end
     end
 
+    context 'when the state names the user who started adding the account' do
+      let(:initiator) { Fabricate(:user) }
+
+      before do
+        allow(MultiAccounts::StateStore).to receive(:consume!).and_return({ user_id: initiator.id }.with_indifferent_access)
+        allow(MultiAccountConfig).to receive(:refresh_flow_enabled?).and_return(true)
+      end
+
+      it 'links the two users' do
+        post '/api/v1/multi_accounts/consume', params: payload
+
+        expect(response).to have_http_status(200)
+        expect(MultiAccountLink.linked?(initiator.id, user.id)).to be(true)
+        expect(MultiAccountLink.linked?(user.id, initiator.id)).to be(true)
+      end
+
+      it 'revokes the new token and reports an error when the accounts cannot be linked' do
+        allow(MultiAccountLink).to receive(:link!).and_raise(ActiveRecord::StatementInvalid, 'boom')
+
+        post '/api/v1/multi_accounts/consume', params: payload
+
+        expect(response).to have_http_status(500)
+        expect(response.parsed_body).to_not have_key('token')
+        expect(access_token.reload.revoked_at).to be_present
+      end
+
+      it 'answers 422 with a code and revokes the new token when the group is full' do
+        allow(MultiAccountLink).to receive(:link!).and_raise(MultiAccountLink::GroupTooLargeError, 'too big')
+
+        post '/api/v1/multi_accounts/consume', params: payload
+
+        expect(response).to have_http_status(422)
+        expect(response.parsed_body).to include(code: 'multi_account_group_too_large')
+        expect(response.parsed_body).to_not have_key('token')
+        expect(access_token.reload.revoked_at).to be_present
+      end
+    end
+
     context 'when refresh flow is disabled' do
       before do
         allow(MultiAccountConfig).to receive(:retain_tokens?).and_call_original
@@ -92,17 +132,21 @@ RSpec.describe 'Api::V1::MultiAccountsController', type: :request do
     let(:result) { MultiAccounts::RefreshService::Result.new(access_token: access_token, account: user.account, user: user) }
     let(:service_instance) { instance_double(MultiAccounts::RefreshService, call: result) }
 
+    let(:session_user) { Fabricate(:user) }
+
     before do
       allow(MultiAccountConfig).to receive(:refresh_flow_enabled?).and_return(true)
       allow(MultiAccounts::RefreshService).to receive(:new).and_return(service_instance)
+      sign_in(session_user)
     end
 
     it 'returns refreshed token payload' do
-      post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: 'refresh-token' }
+      post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: 'refresh-token' }, headers: same_origin_headers
 
       expect(MultiAccounts::RefreshService).to have_received(:new).with(
         refresh_token: 'refresh-token',
-        request: kind_of(ActionDispatch::Request)
+        request: kind_of(ActionDispatch::Request),
+        session_user: session_user
       )
       expect(response).to have_http_status(:ok)
       body = JSON.parse(response.body)
@@ -117,7 +161,7 @@ RSpec.describe 'Api::V1::MultiAccountsController', type: :request do
       end
 
       it 'returns forbidden' do
-        post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: 'refresh-token' }
+        post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: 'refresh-token' }, headers: same_origin_headers
 
         expect(response).to have_http_status(:forbidden)
         expect(MultiAccounts::RefreshService).not_to have_received(:new)
@@ -132,16 +176,80 @@ RSpec.describe 'Api::V1::MultiAccountsController', type: :request do
       end
 
       it 'returns error response with appropriate status' do
-        post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: 'refresh-token' }
+        post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: 'refresh-token' }, headers: same_origin_headers
 
         expect(response).to have_http_status(:unauthorized)
         expect(JSON.parse(response.body)['error']).to eq('invalid')
       end
     end
 
+    context 'when the service refuses an account that is not linked' do
+      let(:service_error) do
+        MultiAccounts::RefreshService::Error.new('not linked', status: 403, code: MultiAccounts::RefreshService::NOT_LINKED_CODE)
+      end
+
+      before { allow(service_instance).to receive(:call).and_raise(service_error) }
+
+      it 'passes the error code on so the client can ask to add the account again' do
+        post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: 'refresh-token' }, headers: same_origin_headers
+
+        expect(response).to have_http_status(403)
+        expect(response.parsed_body['code']).to eq('multi_account_not_linked')
+      end
+    end
+
+    context 'when nobody is signed in' do
+      before { sign_out(session_user) }
+
+      it 'returns unauthorized without looking at the token' do
+        post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: 'refresh-token' }, headers: same_origin_headers
+
+        expect(response).to have_http_status(401)
+        expect(response.parsed_body[:code]).to eq('multi_account_sign_in_required')
+        expect(MultiAccounts::RefreshService).to_not have_received(:new)
+      end
+    end
+
+    context 'when the request carries neither Origin nor Sec-Fetch-Site' do
+      it 'refuses it' do
+        post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: 'refresh-token' }
+
+        expect(response).to have_http_status(403)
+        expect(MultiAccounts::RefreshService).to_not have_received(:new)
+      end
+    end
+
+    context 'when only Sec-Fetch-Site: same-origin is sent' do
+      it 'accepts it' do
+        post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: 'refresh-token' }, headers: { 'Sec-Fetch-Site' => 'same-origin' }
+
+        expect(response).to_not have_http_status(403)
+      end
+    end
+
+    context 'when the request carries an opaque origin' do
+      it 'refuses it' do
+        post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: 'refresh-token' }, headers: { 'Origin' => 'null' }
+
+        expect(response).to have_http_status(403)
+        expect(MultiAccounts::RefreshService).to_not have_received(:new)
+      end
+    end
+
+    context 'when the request comes from another site' do
+      it 'refuses it' do
+        post '/api/v1/multi_accounts/session/refresh',
+             params: { refresh_token: 'refresh-token' },
+             headers: { 'Origin' => 'https://evil.example', 'Sec-Fetch-Site' => 'cross-site' }
+
+        expect(response).to have_http_status(403)
+        expect(MultiAccounts::RefreshService).to_not have_received(:new)
+      end
+    end
+
     context 'when refresh_token is missing' do
       it 'returns bad request' do
-        post '/api/v1/multi_accounts/session/refresh', params: {}
+        post '/api/v1/multi_accounts/session/refresh', params: {}, headers: same_origin_headers
 
         expect(response).to have_http_status(:bad_request)
         expect(JSON.parse(response.body)['error']).to include('refresh_token')
@@ -157,10 +265,13 @@ RSpec.describe 'Api::V1::MultiAccountsController', type: :request do
                                expires_in: 10.years.to_i, multi_account: true, purpose: 'multi_account_refresh', long_lived: true)
     end
 
-    before { allow(MultiAccountConfig).to receive(:refresh_flow_enabled?).and_return(true) }
+    before do
+      allow(MultiAccountConfig).to receive(:refresh_flow_enabled?).and_return(true)
+      sign_in(user)
+    end
 
     it 'hands out a session token that expires shortly' do
-      post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: refresh_token.token }
+      post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: refresh_token.token }, headers: same_origin_headers
 
       expect(response).to have_http_status(200)
 
@@ -184,12 +295,82 @@ RSpec.describe 'Api::V1::MultiAccountsController', type: :request do
       end
 
       it 'switches without a security code challenge' do
-        post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: refresh_token.token }
+        post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: refresh_token.token }, headers: same_origin_headers
 
         expect(response).to have_http_status(200)
         expect(UserMailer).to_not have_received(:sign_in_token)
         expect(user.reload.sign_in_token).to be_nil
       end
+    end
+
+    context 'when another user who is not linked is signed in' do
+      let(:other_user) { Fabricate(:user) }
+
+      before do
+        sign_out(user)
+        sign_in(other_user)
+      end
+
+      it 'refuses to switch and keeps the current session' do
+        post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: refresh_token.token }, headers: same_origin_headers
+
+        expect(response).to have_http_status(403)
+        expect(response.parsed_body['code']).to eq('multi_account_not_linked')
+
+        get '/api/v1/multi_accounts/links'
+        expect(response.parsed_body['account_ids']).to eq([other_user.account_id.to_s])
+      end
+
+      it 'switches once the two users are linked' do
+        MultiAccountLink.link!(other_user.id, user.id)
+
+        post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: refresh_token.token }, headers: same_origin_headers
+
+        expect(response).to have_http_status(200)
+        expect(response.parsed_body.dig('account', 'id')).to eq(user.account_id.to_s)
+      end
+    end
+
+    context 'when nobody is signed in' do
+      before { sign_out(user) }
+
+      it 'refuses to switch' do
+        post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: refresh_token.token }, headers: same_origin_headers
+
+        expect(response).to have_http_status(401)
+        expect(Doorkeeper::AccessToken.where(purpose: 'multi_account_session')).to be_empty
+      end
+    end
+  end
+
+  describe 'GET /api/v1/multi_accounts/links' do
+    let(:user) { Fabricate(:user) }
+    let(:linked) { Fabricate(:user) }
+    let(:stranger) { Fabricate(:user) }
+
+    it "lists the account ids in the signed-in user's group, including their own" do
+      MultiAccountLink.link!(user.id, linked.id)
+      sign_in(user)
+
+      get '/api/v1/multi_accounts/links'
+
+      expect(response).to have_http_status(200)
+      expect(response.parsed_body['account_ids']).to contain_exactly(user.account_id.to_s, linked.account_id.to_s)
+      expect(response.parsed_body['account_ids']).to_not include(stranger.account_id.to_s)
+    end
+
+    it 'requires a signed-in user' do
+      get '/api/v1/multi_accounts/links'
+
+      expect(response).to have_http_status(401)
+    end
+
+    it 'does not accept a revoked bearer token' do
+      revoked = Fabricate(:accessible_access_token, resource_owner_id: user.id, scopes: 'read', revoked_at: 1.minute.ago)
+
+      get '/api/v1/multi_accounts/links', headers: { 'Authorization' => "Bearer #{revoked.token}" }
+
+      expect(response).to have_http_status(401)
     end
   end
 
@@ -254,6 +435,33 @@ RSpec.describe 'Api::V1::MultiAccountsController', type: :request do
       end
     end
 
+    context 'with a long-lived refresh token as the bearer' do
+      let(:stored_token) do
+        Fabricate(:access_token, application: multi_account_app, resource_owner_id: user.id,
+                                 multi_account: true, long_lived: true, purpose: 'multi_account_refresh')
+      end
+
+      it 'refuses to mint another long-lived token' do
+        post '/api/v1/multi_accounts/refresh_token', headers: { 'Authorization' => "Bearer #{stored_token.token}" }
+
+        expect(response).to have_http_status(403)
+        expect(long_lived_tokens).to contain_exactly(stored_token)
+      end
+    end
+
+    context 'with a switch session token as the bearer' do
+      let(:switch_token) do
+        Fabricate(:access_token, application: multi_account_app, resource_owner_id: user.id,
+                                 multi_account: true, purpose: 'multi_account_session')
+      end
+
+      it 'mints a long-lived token' do
+        post '/api/v1/multi_accounts/refresh_token', headers: { 'Authorization' => "Bearer #{switch_token.token}" }
+
+        expect(response).to have_http_status(200)
+      end
+    end
+
     context 'with the web interface session token' do
       it 'mints a token the switcher can actually use' do
         post '/api/v1/multi_accounts/refresh_token', headers: headers
@@ -273,9 +481,59 @@ RSpec.describe 'Api::V1::MultiAccountsController', type: :request do
         expect(response.parsed_body[:account][:id]).to eq user.account.id.to_s
       end
 
-      it 'reuses the existing token instead of piling up new ones' do
-        expect { 3.times { post '/api/v1/multi_accounts/refresh_token', headers: headers } }
-          .to change { long_lived_tokens.count }.from(0).to(1)
+      it 'mints a separate token for every call so devices do not share one' do
+        post '/api/v1/multi_accounts/refresh_token', headers: headers
+        first = response.parsed_body[:token]
+        post '/api/v1/multi_accounts/refresh_token', headers: headers
+        second = response.parsed_body[:token]
+
+        expect(second).to_not eq first
+
+        Doorkeeper::AccessToken.find_by(token: first).revoke
+
+        expect(Doorkeeper::AccessToken.find_by(token: second).revoked_at).to be_nil
+      end
+
+      it 'revokes the token the client says it is replacing' do
+        post '/api/v1/multi_accounts/refresh_token', headers: headers
+        old = response.parsed_body[:token]
+
+        post '/api/v1/multi_accounts/refresh_token', headers: headers, params: { previous_token: old }
+
+        expect(Doorkeeper::AccessToken.find_by(token: old).revoked_at).to be_present
+        expect(long_lived_tokens.count).to eq 1
+      end
+
+      it "does not revoke somebody else's token passed as previous_token" do
+        other = Fabricate(:user)
+        foreign = Doorkeeper::AccessToken.create!(
+          application: multi_account_app, resource_owner_id: other.id, scopes: 'read',
+          expires_in: 10.years.to_i, multi_account: true, purpose: 'multi_account_refresh', long_lived: true
+        )
+
+        post '/api/v1/multi_accounts/refresh_token', headers: headers, params: { previous_token: foreign.token }
+
+        expect(response).to have_http_status(200)
+        expect(foreign.reload.revoked_at).to be_nil
+      end
+
+      it 'does not revoke a web session token passed as previous_token' do
+        post '/api/v1/multi_accounts/refresh_token', headers: headers, params: { previous_token: session_token.token }
+
+        expect(session_token.reload.revoked_at).to be_nil
+      end
+
+      it 'keeps at most MAX_REFRESH_TOKENS_PER_USER live tokens, dropping the oldest' do
+        limit = Api::V1::MultiAccountsController::MAX_REFRESH_TOKENS_PER_USER
+        first = nil
+
+        (limit + 2).times do |index|
+          post '/api/v1/multi_accounts/refresh_token', headers: headers
+          first = response.parsed_body[:token] if index.zero?
+        end
+
+        expect(long_lived_tokens.count).to eq limit
+        expect(Doorkeeper::AccessToken.find_by(token: first).revoked_at).to be_present
       end
 
       it 'does not reuse a revoked token' do
@@ -342,6 +600,20 @@ RSpec.describe 'Api::V1::MultiAccountsController', type: :request do
       expect(web_token.reload.revoked_at).to be_nil
     end
 
+    it 'revokes a legacy token of the multi-account application' do
+      multi_account_app = Fabricate(:application)
+      original = Rails.configuration.x.multi_account.dup
+      Rails.configuration.x.multi_account[:client_id] = multi_account_app.uid
+      legacy = Fabricate(:access_token, resource_owner_id: user.id, application: multi_account_app)
+
+      delete '/api/v1/multi_accounts/refresh_token', params: { refresh_token: legacy.token }, as: :json
+
+      expect(response).to have_http_status(204)
+      expect(legacy.reload.revoked_at).to be_present
+    ensure
+      Rails.configuration.x.multi_account = ActiveSupport::HashWithIndifferentAccess.new(original)
+    end
+
     it 'answers 204 for unknown or missing tokens' do
       delete '/api/v1/multi_accounts/refresh_token', params: { refresh_token: 'nope' }, as: :json
       expect(response).to have_http_status(204)
@@ -353,11 +625,14 @@ RSpec.describe 'Api::V1::MultiAccountsController', type: :request do
     end
 
     it 'makes the revoked token unusable for switching' do
+      allow(MultiAccountConfig).to receive(:refresh_flow_enabled?).and_return(true)
       delete '/api/v1/multi_accounts/refresh_token', params: { refresh_token: long_lived.token }, as: :json
 
-      post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: long_lived.token }, as: :json
+      sign_in(user)
+      post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: long_lived.token }, as: :json, headers: same_origin_headers
 
       expect(response).to have_http_status(401)
+      expect(response.parsed_body['error']).to eq('Refresh token has been revoked')
     end
   end
 end

@@ -3,6 +3,7 @@
 require 'rails_helper'
 
 RSpec.describe 'Multi-account popup' do
+  let(:same_origin_headers) { { 'Origin' => "https://#{Rails.configuration.x.local_domain}" } }
   let(:user) { Fabricate(:user) }
 
   let!(:application) do
@@ -94,7 +95,7 @@ RSpec.describe 'Multi-account popup' do
     end
 
     it 'signs the original account back in for the matching nonce, once' do
-      post '/multi_accounts/session/restore', params: { payload: { state: 'state-2', nonce: 'nonce-2' } }
+      post '/multi_accounts/session/restore', params: { payload: { state: 'state-2', nonce: 'nonce-2' } }, headers: same_origin_headers
 
       expect(response).to have_http_status(200)
 
@@ -102,12 +103,12 @@ RSpec.describe 'Multi-account popup' do
       expect(response).to have_http_status(200)
       expect(controller.current_user).to eq user
 
-      post '/multi_accounts/session/restore', params: { payload: { state: 'state-2', nonce: 'nonce-2' } }
+      post '/multi_accounts/session/restore', params: { payload: { state: 'state-2', nonce: 'nonce-2' } }, headers: same_origin_headers
       expect(response).to have_http_status(401)
     end
 
     it 'refuses a wrong nonce and signs nobody in' do
-      post '/multi_accounts/session/restore', params: { payload: { state: 'state-2', nonce: 'guess' } }
+      post '/multi_accounts/session/restore', params: { payload: { state: 'state-2', nonce: 'guess' } }, headers: same_origin_headers
 
       expect(response).to have_http_status(401)
 
@@ -118,7 +119,7 @@ RSpec.describe 'Multi-account popup' do
     it 'refuses a suspended account' do
       user.account.suspend!
 
-      post '/multi_accounts/session/restore', params: { payload: { state: 'state-2', nonce: 'nonce-2' } }
+      post '/multi_accounts/session/restore', params: { payload: { state: 'state-2', nonce: 'nonce-2' } }, headers: same_origin_headers
 
       expect(response).to have_http_status(403)
     end

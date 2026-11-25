@@ -97,6 +97,34 @@ RSpec.describe Rack::Attack, type: :request do
     end
   end
 
+  describe 'throttle excessive status preview requests by account' do
+    let(:throttle) { 'throttle_status_preview/account' }
+    let(:limit) { 300 }
+    let(:period) { 5.minutes }
+    let(:user) { Fabricate(:user) }
+    let(:token) { Fabricate(:accessible_access_token, resource_owner_id: user.id, scopes: 'write:statuses') }
+    let(:discriminator) { user.id }
+    let(:request) { -> { post path, headers: { 'REMOTE_ADDR' => remote_ip, 'Authorization' => "Bearer #{token.token}" }, params: { status: 'hi' } } }
+
+    context 'with exact path' do
+      let(:path) { '/api/v1/statuses/preview' }
+
+      it_behaves_like 'throttled endpoint'
+    end
+
+    context 'with a trailing slash' do
+      let(:path) { '/api/v1/statuses/preview/' }
+
+      it_behaves_like 'throttled endpoint'
+    end
+
+    context 'with doubled slashes' do
+      let(:path) { '/api//v1/statuses//preview' }
+
+      it_behaves_like 'throttled endpoint'
+    end
+  end
+
   describe 'throttle excessive sign-up requests by IP address' do
     context 'when accessed through the website' do
       let(:throttle) { 'throttle_sign_up_attempts/ip' }

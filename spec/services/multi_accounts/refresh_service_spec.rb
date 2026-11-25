@@ -3,7 +3,9 @@
 require 'rails_helper'
 
 RSpec.describe MultiAccounts::RefreshService do
-  subject(:service_call) { described_class.new(refresh_token: refresh_token, request: request).call }
+  subject(:service_call) { described_class.new(refresh_token: refresh_token, request: request, session_user: session_user).call }
+
+  let(:session_user) { user }
 
   let(:request) { instance_double(ActionDispatch::Request, remote_ip: '127.0.0.1') }
   let(:application) { Doorkeeper::Application.create!(name: 'MultiAccount', redirect_uri: 'https://example.com/callback') }
@@ -52,6 +54,40 @@ RSpec.describe MultiAccounts::RefreshService do
           expect(error.status).to eq(403)
         }
         expect(Doorkeeper::AccessToken.where(purpose: 'multi_account_session')).to be_empty
+      end
+    end
+
+    context 'when nobody is signed in' do
+      let(:session_user) { nil }
+
+      it 'raises 401 before looking at the token' do
+        expect { service_call }.to raise_error(MultiAccounts::RefreshService::Error) { |error|
+          expect(error.status).to eq(401)
+          expect(error.code).to eq('multi_account_sign_in_required')
+        }
+        expect(Doorkeeper::AccessToken.where(purpose: 'multi_account_session')).to be_empty
+      end
+    end
+
+    context 'when the signed-in user is not linked to the token owner' do
+      let(:session_user) { Fabricate(:user) }
+
+      it 'raises 403 with the not-linked code and issues no session token' do
+        expect { service_call }.to raise_error(MultiAccounts::RefreshService::Error) { |error|
+          expect(error.status).to eq(403)
+          expect(error.code).to eq(described_class::NOT_LINKED_CODE)
+        }
+        expect(Doorkeeper::AccessToken.where(purpose: 'multi_account_session')).to be_empty
+      end
+    end
+
+    context 'when the signed-in user is linked to the token owner' do
+      let(:session_user) { Fabricate(:user) }
+
+      before { MultiAccountLink.link!(session_user.id, user.id) }
+
+      it 'switches to the token owner' do
+        expect(service_call.user).to eq(user)
       end
     end
 
@@ -123,11 +159,11 @@ RSpec.describe MultiAccounts::RefreshService do
       end
 
       let(:session_token_record) do
-        described_class.new(refresh_token: refresh_token, request: request).call.access_token
+        described_class.new(refresh_token: refresh_token, request: request, session_user: user).call.access_token
       end
 
       it 'refuses to accept it as a refresh token' do
-        replayed = described_class.new(refresh_token: session_token_record.token, request: request)
+        replayed = described_class.new(refresh_token: session_token_record.token, request: request, session_user: user)
 
         expect { replayed.call }.to raise_error(MultiAccounts::RefreshService::Error) { |error|
           expect(error.status).to eq(422)

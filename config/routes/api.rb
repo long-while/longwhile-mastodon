@@ -307,6 +307,7 @@ namespace :api, format: false do
       post :consume
       post :refresh_token
       delete :refresh_token, action: :revoke_refresh_token
+      get :links
     end
 
     namespace :multi_accounts do

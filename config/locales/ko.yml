@@ -332,7 +332,9 @@ ko:
         update_user_role_html: "%{name} 님이 %{target} 역할을 수정했습니다"
         update_username_block_html: "%{name} 님이 %{target}를 포함하는 사용자명에 대한 규칙을 수정했습니다"
         usable_tag_html: 사용할 수 있음;
+        search_direct_messages_query_account_html: "%{name} 님이 운영 화면에서 DM 을 “%{target}” 로 검색했습니다"
         view_dm_room_html: "%{name} 님이 %{target} 대화방을 열람했습니다"
+        view_status_html: "%{name} 님이 %{target}의 DM 게시물을 열람했습니다"
       deleted_account: 계정을 삭제했습니다
       empty: 로그를 찾을 수 없습니다
       filter_by_action: 동작 별 필터
@@ -1898,6 +1900,8 @@ ko:
     carry_mutes_over_text: 이 사용자는 예전에 뮤트한 %{acct}에서 이주 했습니다.
     copy_account_note_text: '이 사용자는 %{acct}로부터 이동하였습니다. 당신의 이전 노트는 이렇습니다:'
   multi_accounts:
+    actions: 작업
+    description: 다른 기기에서 "다른 계정 추가" 로 저장해 둔 계정 전환 연결입니다. 모르는 연결이 있으면 해지하세요. 해지한 기기에서는 "다른 계정 추가" 로 계정을 다시 추가해야 전환할 수 있습니다.
     empty: 저장된 계정 전환 연결이 없습니다.
     ip: 최근 IP
     issued_at: 연결한 날짜
@@ -1905,8 +1909,11 @@ ko:
     never_used: 사용 기록 없음
     revoke: 해지
     revoke_all: 모두 해지
+    revoke_all_confirm: 모든 기기의 계정 전환 연결을 해지하고 계정끼리의 연결도 끊습니다. 모든 기기에서 "다른 계정 추가" 로 계정을 다시 추가해야 전환할 수 있습니다. 계속할까요?
     revoke_all_success: 모든 계정 전환 연결을 해지했습니다.
     revoke_confirm: 이 연결을 해지할까요?
+    revoke_label: "%{date}에 연결한 계정 전환 연결 해지"
+    revoke_label_with_ip: "%{date}에 연결한 계정 전환 연결 해지 (최근 IP %{ip})"
     revoke_success: 계정 전환 연결을 해지했습니다.
     title: 계정 전환 연결
   navigation:
@@ -2174,6 +2181,7 @@ ko:
       limit: 이미 너무 많은 게시물을 고정했습니다
       ownership: 다른 사람의 게시물은 고정될 수 없습니다
       reblog: 재게시는 고정될 수 없습니다
+    preview_over_limit: 미리보기는 %{max}자까지만 할 수 있습니다.
     quote_error:
       not_available: 게시물 사용 불가
       pending_approval: 계류 중인 게시물

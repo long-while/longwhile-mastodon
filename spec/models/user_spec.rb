@@ -536,6 +536,18 @@ RSpec.describe User do
     end
   end
 
+  describe '#revoke_access! and already revoked tokens' do
+    it 'keeps the original revoke time' do
+      user = Fabricate(:user)
+      revoked_at = 3.days.ago.change(usec: 0)
+      token = Fabricate(:access_token, resource_owner_id: user.id, revoked_at: revoked_at)
+
+      user.revoke_access!
+
+      expect(token.reload.revoked_at).to eq(revoked_at)
+    end
+  end
+
   describe '#revoke_multi_account_tokens!' do
     subject(:user) { Fabricate(:user) }
 
@@ -570,11 +582,29 @@ RSpec.describe User do
       expect(redis_pipeline_stub).to_not have_received(:publish).with("timeline:access_token:#{web_session_token.id}", anything)
     end
 
+    it 'takes the user out of their multi-account group' do
+      peer = Fabricate(:user)
+      MultiAccountLink.link!(user.id, peer.id)
+
+      user.revoke_multi_account_tokens!
+
+      expect(MultiAccountLink.linked?(user.id, peer.id)).to be(false)
+      expect(MultiAccountLink.linked?(peer.id, user.id)).to be(false)
+    end
+
     it 'is called when two-factor authentication is disabled' do
       user.disable_two_factor!
 
       expect(long_lived_refresh_token.reload.revoked_at).to be_present
       expect(web_session_token.reload.revoked_at).to be_nil
+    end
+
+    it 'rolls two-factor authentication back when the revocation fails' do
+      user.update!(otp_required_for_login: true, otp_secret: '123123123')
+      allow(user).to receive(:revoke_multi_account_tokens!).and_raise(ActiveRecord::StatementInvalid, 'boom') # rubocop:disable RSpec/SubjectStub
+
+      expect { user.disable_two_factor! }.to raise_error(ActiveRecord::StatementInvalid)
+      expect(user.reload.otp_required_for_login).to be(true)
     end
   end
 

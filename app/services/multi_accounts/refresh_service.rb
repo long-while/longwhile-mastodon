@@ -8,18 +8,24 @@ module MultiAccounts
 
     Result = Struct.new(:access_token, :account, :user, keyword_init: true)
 
-    class Error < StandardError
-      attr_reader :status
+    NOT_LINKED_CODE = 'multi_account_not_linked'
 
-      def initialize(message, status:)
+    SIGN_IN_REQUIRED_CODE = 'multi_account_sign_in_required'
+
+    class Error < StandardError
+      attr_reader :status, :code
+
+      def initialize(message, status:, code: nil)
         super(message)
         @status = status
+        @code = code
       end
     end
 
-    def initialize(refresh_token:, request:)
+    def initialize(refresh_token:, request:, session_user: nil)
       @refresh_token_value = refresh_token
       @request = request
+      @session_user = session_user
     end
 
     def call
@@ -29,6 +35,7 @@ module MultiAccounts
 
       begin
         raise Error.new('refresh_token is required', status: 400) if refresh_token_value.blank?
+        raise Error.new('Sign-in required to switch accounts', status: 401, code: SIGN_IN_REQUIRED_CODE) unless session_user
 
         token = find_refresh_token
         ensure_refresh_token_valid!(token)
@@ -46,6 +53,7 @@ module MultiAccounts
         raise Error.new('User not found', status: 404) unless user
 
         raise Error.new('Account is suspended or disabled', status: 403) if user.disabled? || account.unavailable? || !user.active_for_authentication?
+        raise Error.new('This account is not connected to the signed-in account', status: 403, code: NOT_LINKED_CODE) unless MultiAccountLink.linked?(session_user.id, user.id)
 
         limiter = nil
         limiter = RateLimiter.new(resource_owner, family: :multi_account_refresh)
@@ -98,7 +106,7 @@ module MultiAccounts
 
     private
 
-    attr_reader :refresh_token_value, :request
+    attr_reader :refresh_token_value, :request, :session_user
 
     def find_refresh_token
       Doorkeeper::AccessToken.by_token(refresh_token_value)

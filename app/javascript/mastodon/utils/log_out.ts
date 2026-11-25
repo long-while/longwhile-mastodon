@@ -3,29 +3,91 @@ import { MULTI_ACCOUNT_REQUEST_TIMEOUT } from 'mastodon/api/multi_accounts_const
 import { clearDrafts } from 'mastodon/features/messages/util/drafts';
 import { clearActiveAccountIdInStorage } from 'mastodon/utils/multi_account_storage';
 
-export async function logOut() {
-  clearDrafts();
+interface LogOutOptions {
+  forgetSavedAccounts?: boolean;
+}
 
-  clearActiveAccountIdInStorage();
+export class LogOutError extends Error {
+  constructor(message: string, options?: { cause?: unknown }) {
+    super(message, options);
+    this.name = 'LogOutError';
+  }
+}
+
+const collectTokensToRevoke = async (): Promise<string[]> => {
+  try {
+    const { collectStoredTokens } = await import(
+      'mastodon/actions/multi_account'
+    );
+    return await collectStoredTokens();
+  } catch (error) {
+    console.warn('[MultiAccount] Could not read the saved accounts:', error);
+    return [];
+  }
+};
+
+const forgetSavedAccountsOnThisDevice = async (tokens: string[]) => {
+  try {
+    const [{ revokeTokens }, { clearAllAccounts }, { resetCryptoKey }] =
+      await Promise.all([
+        import('mastodon/actions/multi_account'),
+        import('mastodon/utils/multi_account_db'),
+        import('mastodon/utils/multi_account_crypto'),
+      ]);
+
+    await revokeTokens(tokens);
+    await clearAllAccounts();
+    await resetCryptoKey();
+  } catch (error) {
+    console.warn('[MultiAccount] Could not forget the saved accounts:', error);
+  }
+};
+
+const requestSignOut = async (forgetDevice: boolean): Promise<string> => {
+  let response;
 
   try {
-    const response = await api(false).delete<{ redirect_to?: string }>(
+    response = await api(false).delete<{ redirect_to?: string }>(
       '/auth/sign_out',
       {
         headers: { Accept: 'application/json' },
+        params: forgetDevice ? { forget_device: '1' } : undefined,
         withCredentials: true,
         timeout: MULTI_ACCOUNT_REQUEST_TIMEOUT,
       },
     );
-
-    if (response.status === 200 && response.data.redirect_to)
-      window.location.href = response.data.redirect_to;
-    else
-      console.error(
-        'Failed to log out, got an unexpected non-redirect response from the server',
-        response,
-      );
   } catch (error) {
     console.error('Failed to log out, response was an error', error);
+    throw new LogOutError('Failed to log out', { cause: error });
   }
+
+  const redirectTo = response.data.redirect_to;
+
+  if (response.status !== 200 || !redirectTo) {
+    console.error(
+      'Failed to log out, got an unexpected non-redirect response from the server',
+      response,
+    );
+    throw new LogOutError('Unexpected log out response');
+  }
+
+  return redirectTo;
+};
+
+export async function logOut({
+  forgetSavedAccounts = false,
+}: LogOutOptions = {}): Promise<void> {
+  const tokens = forgetSavedAccounts ? await collectTokensToRevoke() : [];
+
+  const redirectTo = await requestSignOut(forgetSavedAccounts);
+
+  clearDrafts();
+
+  clearActiveAccountIdInStorage();
+
+  if (forgetSavedAccounts) {
+    await forgetSavedAccountsOnThisDevice(tokens);
+  }
+
+  window.location.href = redirectTo;
 }

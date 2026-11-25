@@ -24,6 +24,7 @@
           %th= t('multi_accounts.last_used')
           %th= t('multi_accounts.ip')
           %th
+            %span.sr-only= t('multi_accounts.actions')
       %tbody
         - @tokens.each do |token|
           %tr
@@ -43,4 +44,5 @@
                                 t('multi_accounts.revoke'),
                                 settings_multi_account_path(token),
                                 method: :delete,
-                                data: { confirm: t('multi_accounts.revoke_confirm') }
+                                data: { confirm: t('multi_accounts.revoke_confirm') },
+                                'aria-label': revoke_link_label(token)

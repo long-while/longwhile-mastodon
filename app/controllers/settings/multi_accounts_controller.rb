@@ -22,6 +22,10 @@ class Settings::MultiAccountsController < Settings::BaseController
   private
 
   def connection_tokens
-    Doorkeeper::AccessToken.by_resource_owner(current_user).long_lived_refresh.not_revoked
+    Doorkeeper::AccessToken
+      .by_resource_owner(current_user)
+      .multi_account_owned
+      .not_revoked
+      .where("oauth_access_tokens.purpose IS DISTINCT FROM 'multi_account_session'")
   end
 end

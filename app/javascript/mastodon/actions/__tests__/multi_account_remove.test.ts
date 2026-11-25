@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  collectStoredTokens,
   removeAccount,
+  revokeTokens,
   revokeAllStoredTokens,
   revokeStoredToken,
 } from '../multi_account';
@@ -95,6 +97,31 @@ describe('revoking stored switching tokens', () => {
     loadAllEntries.mockResolvedValue({ A: {}, B: {} });
 
     await revokeAllStoredTokens();
+
+    expect(revokeRefreshToken).toHaveBeenCalledWith('token-A');
+    expect(revokeRefreshToken).toHaveBeenCalledWith('token-B');
+  });
+
+  it('reads the stored tokens into memory so they outlive the local wipe', async () => {
+    loadAllEntries.mockResolvedValue({ A: {}, B: {} });
+
+    expect(await collectStoredTokens()).toEqual(['token-A', 'token-B']);
+  });
+
+  it('skips tokens it cannot read and returns nothing when the database fails', async () => {
+    loadAllEntries.mockResolvedValue({ A: {}, B: {} });
+    decryptToken.mockRejectedValueOnce(new Error('bad key'));
+
+    expect(await collectStoredTokens()).toEqual(['token-B']);
+
+    loadAllEntries.mockRejectedValue(new Error('idb'));
+    expect(await collectStoredTokens()).toEqual([]);
+  });
+
+  it('revokes in-memory tokens and survives a failing one', async () => {
+    revokeRefreshToken.mockRejectedValueOnce(new Error('offline'));
+
+    await expect(revokeTokens(['token-A', 'token-B'])).resolves.toBeUndefined();
 
     expect(revokeRefreshToken).toHaveBeenCalledWith('token-A');
     expect(revokeRefreshToken).toHaveBeenCalledWith('token-B');

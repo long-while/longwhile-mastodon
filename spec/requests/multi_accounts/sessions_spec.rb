@@ -52,6 +52,17 @@ RSpec.describe 'Multi-account session restore' do
       end
     end
 
+    context 'when the request carries neither Origin nor Sec-Fetch-Site' do
+      let(:headers) { {} }
+
+      it 'refuses without signing anyone in' do
+        subject
+
+        expect(response).to have_http_status(403)
+        expect(session['warden.user.user.key']).to be_nil
+      end
+    end
+
     context 'when the browser marks the request as cross-site' do
       let(:headers) { { 'Sec-Fetch-Site' => 'cross-site' } }
 

@@ -1,4 +1,6 @@
 import api from 'mastodon/api';
+import { decryptToken } from 'mastodon/utils/multi_account_crypto';
+import { loadEncryptedToken } from 'mastodon/utils/multi_account_db';
 
 export { MULTI_ACCOUNT_REQUEST_TIMEOUT } from './multi_accounts_constants';
 import { MULTI_ACCOUNT_REQUEST_TIMEOUT } from './multi_accounts_constants';
@@ -39,12 +41,15 @@ export const fetchAuthorizeEntry = async (
   options: FetchAuthorizeEntryOptions = {},
 ): Promise<AuthorizeEntryResponse> => {
   const { forceLogin } = options;
-  const response = await api().get<AuthorizeEntryResponse>('/multi_accounts/entry', {
-    params: {
-      force_login: typeof forceLogin === 'boolean' ? forceLogin : undefined,
+  const response = await api().get<AuthorizeEntryResponse>(
+    '/multi_accounts/entry',
+    {
+      params: {
+        force_login: typeof forceLogin === 'boolean' ? forceLogin : undefined,
+      },
+      timeout: MULTI_ACCOUNT_REQUEST_TIMEOUT,
     },
-    timeout: MULTI_ACCOUNT_REQUEST_TIMEOUT,
-  });
+  );
   return response.data;
 };
 
@@ -53,7 +58,7 @@ export const consumeAuthorizationCode = async (
 ): Promise<ConsumeResponse> => {
   try {
     const url = '/api/v1/multi_accounts/consume';
-    
+
     const response = await api(false).post<ConsumeResponse>(
       url,
       { payload },
@@ -68,25 +73,35 @@ export const consumeAuthorizationCode = async (
       data: error?.response?.data,
       error: error,
     });
-    
+
     // Handle API errors with better messages
     if (error?.response?.status === 401) {
-      const errorMessage = error?.response?.data?.error || '인증에 실패했습니다. 다시 시도해주세요.';
+      const errorMessage =
+        error?.response?.data?.error ||
+        '인증에 실패했습니다. 다시 시도해주세요.';
       throw new Error(errorMessage);
     } else if (error?.response?.status === 400) {
       const errorMessage = error?.response?.data?.error || '잘못된 요청입니다.';
       throw new Error(errorMessage);
     } else if (error?.response?.status === 404) {
-      const errorMessage = error?.response?.data?.error || `API 엔드포인트를 찾을 수 없습니다. (${error?.config?.url})`;
+      const errorMessage =
+        error?.response?.data?.error ||
+        `API 엔드포인트를 찾을 수 없습니다. (${error?.config?.url})`;
       throw new Error(errorMessage);
     } else if (error?.response?.status === 422) {
-      const errorMessage = error?.response?.data?.error || '요청을 처리할 수 없습니다.';
+      const errorMessage =
+        error?.response?.data?.error || '요청을 처리할 수 없습니다.';
       throw new Error(errorMessage);
     } else if (error?.response) {
-      const errorMessage = error?.response?.data?.error || `서버 오류가 발생했습니다 (${error.response.status})`;
+      const errorMessage =
+        error?.response?.data?.error ||
+        `서버 오류가 발생했습니다 (${error.response.status})`;
       throw new Error(errorMessage);
     } else {
-      throw new Error(error?.message || '계정 추가 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.');
+      throw new Error(
+        error?.message ||
+          '계정 추가 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.',
+      );
     }
   }
 };
@@ -99,9 +114,13 @@ interface RestorePayload {
 export const restoreMultiAccountSession = async (
   payload: RestorePayload,
 ): Promise<void> => {
-  await api(false).post('/multi_accounts/session/restore', { payload }, {
-    timeout: MULTI_ACCOUNT_REQUEST_TIMEOUT,
-  });
+  await api(false).post(
+    '/multi_accounts/session/restore',
+    { payload },
+    {
+      timeout: MULTI_ACCOUNT_REQUEST_TIMEOUT,
+    },
+  );
 };
 
 export interface RefreshSessionResponse {
@@ -120,12 +139,22 @@ export interface RefreshSessionResponse {
 
 export type MintedSwitchToken = RefreshSessionResponse;
 
+const loadPreviousToken = async (accountId: string) => {
+  try {
+    const encrypted = await loadEncryptedToken(accountId);
+    return encrypted ? await decryptToken(encrypted) : null;
+  } catch {
+    return null;
+  }
+};
+
 export const mintSwitchToken = async (
   expectedAccountId: string,
 ): Promise<MintedSwitchToken | null> => {
+  const previousToken = await loadPreviousToken(expectedAccountId);
   const response = await api().post<MintedSwitchToken>(
     '/api/v1/multi_accounts/refresh_token',
-    undefined,
+    previousToken ? { previous_token: previousToken } : undefined,
     { timeout: MULTI_ACCOUNT_REQUEST_TIMEOUT },
   );
 
@@ -161,9 +190,11 @@ export const refreshSession = async (refreshToken: string) => {
   );
 };
 
+const REVOKE_TIMEOUT = 5000;
+
 export const revokeRefreshToken = async (refreshToken: string) => {
   await api(false).delete('/api/v1/multi_accounts/refresh_token', {
     data: { refresh_token: refreshToken },
-    timeout: MULTI_ACCOUNT_REQUEST_TIMEOUT,
+    timeout: REVOKE_TIMEOUT,
   });
 };

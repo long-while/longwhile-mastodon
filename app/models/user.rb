@@ -263,14 +263,16 @@ class User < ApplicationRecord
   end
 
   def disable_two_factor!
-    self.otp_required_for_login = false
-    self.otp_secret = nil
-    otp_backup_codes&.clear
+    transaction do
+      self.otp_required_for_login = false
+      self.otp_secret = nil
+      otp_backup_codes&.clear
 
-    webauthn_credentials.destroy_all if webauthn_enabled?
+      webauthn_credentials.destroy_all if webauthn_enabled?
 
-    save!
-    revoke_multi_account_tokens!
+      save!
+      revoke_multi_account_tokens!
+    end
   end
 
   def applications_last_used
@@ -334,10 +336,12 @@ class User < ApplicationRecord
   def revoke_access!
     Doorkeeper::AccessGrant.by_resource_owner(self).touch_all(:revoked_at)
     revoke_tokens!(Doorkeeper::AccessToken.by_resource_owner(self))
+    MultiAccountLink.unlink_all!(id)
   end
 
   def revoke_multi_account_tokens!
     revoke_tokens!(Doorkeeper::AccessToken.by_resource_owner(self).multi_account_owned.not_revoked)
+    MultiAccountLink.unlink_all!(id)
   end
 
   def reset_password!
@@ -383,7 +387,7 @@ class User < ApplicationRecord
   def revoke_tokens!(token_scope)
     token_scope.in_batches do |batch|
       ids = batch.ids
-      Doorkeeper::AccessToken.where(id: ids).touch_all(:revoked_at)
+      Doorkeeper::AccessToken.where(id: ids, revoked_at: nil).touch_all(:revoked_at)
       Web::PushSubscription.where(access_token_id: ids).delete_all
 
       # Revoke each access token for the Streaming API, since `update_all``

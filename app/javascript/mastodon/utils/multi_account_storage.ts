@@ -2,7 +2,10 @@ const STORAGE_KEY = 'MA_ACTIVE_ACCOUNT_ID';
 
 const canUseStorage = (): boolean => {
   try {
-    return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+    return (
+      typeof window !== 'undefined' &&
+      typeof window.localStorage !== 'undefined'
+    );
   } catch {
     return false;
   }
@@ -41,8 +44,7 @@ const SWITCH_INTENT_KEY = 'MA_SWITCH_INTENT';
 export const markSwitchIntent = (accountId: string): void => {
   try {
     window.sessionStorage.setItem(SWITCH_INTENT_KEY, accountId);
-  } catch {
-  }
+  } catch {}
 };
 
 export const takeSwitchIntent = (): string | null => {
@@ -62,7 +64,10 @@ export const clearActiveAccountIdIfMatches = (accountId: string): void => {
       window.localStorage.removeItem(STORAGE_KEY);
     }
   } catch (error) {
-    console.warn('Failed to clear active account id for account removal:', error);
+    console.warn(
+      'Failed to clear active account id for account removal:',
+      error,
+    );
   }
 };
 import type { Store } from '@reduxjs/toolkit';
@@ -72,10 +77,26 @@ import { me } from '../initial_state';
 import type { MultiAccountEntry } from '../types/multi_account';
 
 import { loadAllEntries } from './multi_account_db';
+import {
+  filterLinkedEntries,
+  loadLinkedAccountIds,
+} from './multi_account_links';
 
 export const hydrateStore = async (store: Store) => {
+  if (!me) {
+    return;
+  }
+
   try {
-    const storedEntries = await loadAllEntries();
+    const [allEntries, linkedIds] = await Promise.all([
+      loadAllEntries(),
+      loadLinkedAccountIds(),
+    ]);
+    const storedEntries = filterLinkedEntries(
+      allEntries,
+      linkedIds,
+      me ?? null,
+    );
 
     const accounts: Record<string, MultiAccountEntry> = {};
 
@@ -133,5 +154,28 @@ export const hydrateStore = async (store: Store) => {
     );
   } catch (error) {
     console.error('Failed to hydrate multi-account store:', error);
+  }
+};
+
+const LINK_NOTICE_DISMISSED_KEY = 'MA_LINK_NOTICE_DISMISSED';
+
+export const getDismissedLinkNoticeCount = (): number => {
+  if (!canUseStorage()) return 0;
+  try {
+    const value = Number(
+      window.localStorage.getItem(LINK_NOTICE_DISMISSED_KEY),
+    );
+    return Number.isFinite(value) && value > 0 ? value : 0;
+  } catch {
+    return 0;
+  }
+};
+
+export const setDismissedLinkNoticeCount = (count: number): void => {
+  if (!canUseStorage()) return;
+  try {
+    window.localStorage.setItem(LINK_NOTICE_DISMISSED_KEY, String(count));
+  } catch (error) {
+    console.warn('Failed to remember the dismissed link notice:', error);
   }
 };

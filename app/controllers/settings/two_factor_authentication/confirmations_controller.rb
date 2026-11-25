@@ -21,11 +21,7 @@ module Settings
         if current_user.validate_and_consume_otp!(confirmation_params[:otp_attempt], otp_secret: session[:new_otp_secret])
           flash.now[:notice] = I18n.t('two_factor_authentication.enabled_success')
 
-          current_user.otp_required_for_login = true
-          current_user.otp_secret = session[:new_otp_secret]
-          @recovery_codes = current_user.generate_otp_backup_codes!
-          current_user.save!
-          current_user.revoke_multi_account_tokens!
+          enable_two_factor!
 
           UserMailer.two_factor_enabled(current_user).deliver_later!
 
@@ -40,6 +36,16 @@ module Settings
       end
 
       private
+
+      def enable_two_factor!
+        User.transaction do
+          current_user.otp_required_for_login = true
+          current_user.otp_secret = session[:new_otp_secret]
+          @recovery_codes = current_user.generate_otp_backup_codes!
+          current_user.save!
+          current_user.revoke_multi_account_tokens!
+        end
+      end
 
       def return_to_app_url
         stored_location_for(:user)

@@ -22,7 +22,6 @@ import {
   switchAccount,
   registerAccountAction,
   removeAccount,
-  revokeAllStoredTokens,
 } from 'mastodon/actions/multi_account';
 import api, { suspendSessionRecovery } from 'mastodon/api';
 import type * as MultiAccountsApi from 'mastodon/api/multi_accounts';
@@ -40,12 +39,19 @@ import { useAppDispatch } from 'mastodon/store/typed_functions';
 import type { MultiAccountEntry } from 'mastodon/types/multi_account';
 import { MultiAccountSwitchError } from 'mastodon/types/multi_account';
 import { logOut } from 'mastodon/utils/log_out';
+import { loadEncryptedToken } from 'mastodon/utils/multi_account_db';
 import {
-  clearAllAccounts,
-  loadAllEntries,
-  loadEncryptedToken,
-} from 'mastodon/utils/multi_account_db';
-import { clearActiveAccountIdInStorage } from 'mastodon/utils/multi_account_storage';
+  loadLinkedEntries,
+  loadLinkedEntriesDetailed,
+  resetLinkedAccountIdsCache,
+} from 'mastodon/utils/multi_account_links';
+import type { LinkedEntriesResult } from 'mastodon/utils/multi_account_links';
+import {
+  getDismissedLinkNoticeCount,
+  setDismissedLinkNoticeCount,
+} from 'mastodon/utils/multi_account_storage';
+
+import { AccountLinkNotice } from './account_switcher_link_notice';
 
 const ADD_ACCOUNT_WATCHDOG_TIMEOUT = 100000;
 
@@ -216,6 +222,13 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
     MultiAccountEntry[]
   >([]);
   const [isManageOpen, setIsManageOpen] = useState(false);
+  const [linkStatus, setLinkStatus] = useState({
+    droppedCount: 0,
+    linksFailed: false,
+  });
+  const [dismissedNoticeCount, setDismissedNoticeCount] = useState(
+    getDismissedLinkNoticeCount,
+  );
   const [pendingDeletion, setPendingDeletion] =
     useState<MultiAccountEntry | null>(null);
   const [deletingAccountId, setDeletingAccountId] = useState<string | null>(
@@ -285,15 +298,26 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
     };
   }, []);
 
+  const applyLinkedEntries = useCallback((result: LinkedEntriesResult) => {
+    setPersistedAccounts(Object.values(result.entries));
+    setLinkStatus({
+      droppedCount: result.droppedCount,
+      linksFailed: result.linksFailed,
+    });
+  }, []);
+
   useEffect(() => {
-    void loadAllEntries()
-      .then((entries) => {
-        setPersistedAccounts(Object.values(entries));
-      })
+    void loadLinkedEntriesDetailed()
+      .then(applyLinkedEntries)
       .catch((error: unknown) => {
         console.error('Failed to load persisted multi-account entries:', error);
       });
-  }, []);
+  }, [applyLinkedEntries]);
+
+  const handleDismissLinkNotice = useCallback(() => {
+    setDismissedLinkNoticeCount(linkStatus.droppedCount);
+    setDismissedNoticeCount(linkStatus.droppedCount);
+  }, [linkStatus.droppedCount]);
 
   useEffect(() => {
     return () => {
@@ -403,7 +427,7 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
       }
 
       try {
-        const storedEntries = await loadAllEntries();
+        const storedEntries = await loadLinkedEntries();
         const storedEntry = storedEntries[accountId];
         if (storedEntry) {
           dispatch(registerAccountAction(storedEntry));
@@ -606,17 +630,15 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
       return;
     }
 
-    void loadAllEntries()
-      .then((entries) => {
-        setPersistedAccounts(Object.values(entries));
-      })
+    void loadLinkedEntriesDetailed()
+      .then(applyLinkedEntries)
       .catch((error: unknown) => {
         console.error(
           'Failed to refresh persisted multi-account entries:',
           error,
         );
       });
-  }, [isManageOpen]);
+  }, [isManageOpen, applyLinkedEntries]);
 
   const handleRequestDelete = useCallback((entry: MultiAccountEntry) => {
     setPendingDeletion(entry);
@@ -858,6 +880,8 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
           authorization_code: callback.code,
         });
 
+        resetLinkedAccountIdsCache();
+
         const accountEntry: MultiAccountEntry = {
           id: account.id,
           acct: account.acct,
@@ -937,11 +961,7 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
       setIsLoggingOutAll(true);
 
       try {
-        await revokeAllStoredTokens();
-        await clearAllAccounts();
-        clearActiveAccountIdInStorage();
-        setPersistedAccounts([]);
-        await logOut();
+        await logOut({ forgetSavedAccounts: true });
       } catch (error) {
         console.error('Failed to log out of all accounts:', error);
         dispatch(
@@ -975,6 +995,10 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
     };
 
     const hasManagedAccounts = managedAccounts.length > 0;
+    const showLinkNotice =
+      linkStatus.droppedCount > 0 &&
+      (linkStatus.linksFailed ||
+        linkStatus.droppedCount > dismissedNoticeCount);
 
     return createPortal(
       <div
@@ -1004,6 +1028,14 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
               {intl.formatMessage(messages.manageTitle)}
             </h2>
           </div>
+
+          {showLinkNotice && (
+            <AccountLinkNotice
+              droppedCount={linkStatus.droppedCount}
+              linksFailed={linkStatus.linksFailed}
+              onDismiss={handleDismissLinkNotice}
+            />
+          )}
 
           <div className='account-switcher__manage-list'>
             {managedAccounts.length === 0 ? (
