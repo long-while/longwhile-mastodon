@@ -45,4 +45,8 @@
 
     .sidebar-wrapper.sidebar-wrapper--empty
 
+  .unsaved-changes-toast{ hidden: true, role: 'status', aria: { live: 'polite' } }
+    %span.unsaved-changes-toast__message= t('settings.unsaved_changes.message')
+    %button.unsaved-changes-toast__save{ type: 'button' }= t('settings.unsaved_changes.save')
+
 = render template: 'layouts/application'

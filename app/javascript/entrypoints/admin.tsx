@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import Rails from '@rails/ujs';
 
 import { setupTextColorPalette } from '../mastodon/admin/text_color_palette';
+import { setupAllUnsavedChanges } from '../mastodon/admin/unsaved_changes';
 import ready from '../mastodon/ready';
 
 const setAnnouncementEndsAttributes = (target: HTMLInputElement) => {
@@ -466,6 +467,8 @@ ready(() => {
   document
     .querySelectorAll<HTMLElement>('.text-color-palette')
     .forEach(setupTextColorPalette);
+
+  setupAllUnsavedChanges();
 }).catch((reason: unknown) => {
   throw reason;
 });

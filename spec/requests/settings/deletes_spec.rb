@@ -62,6 +62,17 @@ RSpec.describe 'Settings Deletes' do
     context 'when signed in' do
       before { sign_in(user) }
 
+      context 'with a regular account' do
+        let(:user) { Fabricate(:user) }
+
+        it 'keeps the deletion form out of the unsaved-changes notice' do
+          get settings_delete_path
+
+          expect(response).to have_http_status(200)
+          expect(response.parsed_body.css('form[data-unsaved-guard]')).to be_empty
+        end
+      end
+
       context 'when suspended' do
         let(:user) { Fabricate(:user, account_attributes: { suspended_at: Time.now.utc }) }
 
