@@ -23,7 +23,7 @@ class AccountFilter
   end
 
   def results
-    scope = Account.includes(:account_stat, user: [:ips, :invite_request]).without_instance_actor
+    scope = Account.includes(:account_stat, user: [:ips, :invite_request], deleted_user_record: :ips).without_instance_actor
 
     relevant_params.each do |key, value|
       next if IGNORED_PARAMS.include?(key.to_s)
@@ -61,9 +61,9 @@ class AccountFilter
     when 'display_name'
       Account.matches_display_name(value.to_s.strip)
     when 'email'
-      accounts_with_users.merge(User.matches_email(value.to_s.strip))
+      email_scope(value.to_s.strip)
     when 'ip'
-      valid_ip?(value) ? accounts_with_users.merge(User.matches_ip(value).group(users: [:id], accounts: [:id])) : Account.none
+      valid_ip?(value) ? ip_scope(value) : Account.none
     when 'invited_by'
       invited_by_scope(value)
     when 'order'
@@ -112,6 +112,18 @@ class AccountFilter
     else
       raise Mastodon::InvalidParameterError, "Unknown order: #{value}"
     end
+  end
+
+  def email_scope(value)
+    accounts_in(User.matches_email(value).select(:account_id), DeletedUserRecord.matches_email(value).select(:account_id))
+  end
+
+  def ip_scope(value)
+    accounts_in(User.where(id: UserIp.contained_by(value).select(:user_id)).select(:account_id), DeletedUserRecord.matches_ip(value).select(:account_id))
+  end
+
+  def accounts_in(user_account_ids, deleted_account_ids)
+    Account.where('accounts.id IN (?) OR accounts.id IN (?)', user_account_ids, deleted_account_ids)
   end
 
   def invited_by_scope(value)

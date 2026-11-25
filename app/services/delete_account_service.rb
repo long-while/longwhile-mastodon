@@ -148,8 +148,20 @@ class DeleteAccountService < BaseService
       @account.user.disable!
       @account.user.invites.where(uses: 0).destroy_all
     else
-      @account.user.destroy
+      destroy_user_keeping_record!
     end
+  end
+
+  def destroy_user_keeping_record!
+    user = @account.user
+
+    ApplicationRecord.transaction do
+      DeletedUserRecord.capture!(user) if keep_account_record?
+      user.destroy
+    end
+  rescue ActiveRecord::ActiveRecordError => e
+    Rails.logger.error("DeleteAccountService: failed to archive and destroy user #{user.id} (account #{@account.id}): #{e.class}: #{e.message}")
+    raise
   end
 
   def purge_content!

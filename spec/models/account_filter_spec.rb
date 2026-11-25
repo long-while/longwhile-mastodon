@@ -63,4 +63,33 @@ RSpec.describe AccountFilter do
       expect(filter.results).to_not contain_exactly(local_account)
     end
   end
+
+  describe 'with email and ip including deleted users' do
+    let!(:live_user) { Fabricate(:user, email: 'live@shared.example', sign_up_ip: '192.0.2.10') }
+    let!(:deleted) { Fabricate(:deleted_user_record, email: 'gone@shared.example', sign_up_ip: nil) }
+    let!(:other_user) { Fabricate(:user, email: 'other@elsewhere.example', sign_up_ip: '198.51.100.1') }
+
+    before { deleted.ips.create!(ip: '192.0.2.20', used_at: 1.day.ago) }
+
+    it 'finds live and deleted accounts by email domain' do
+      filter = described_class.new(email: '%@shared.example')
+
+      expect(filter.results).to contain_exactly(live_user.account, deleted.account)
+    end
+
+    it 'finds live and deleted accounts by ip range' do
+      filter = described_class.new(ip: '192.0.2.0/24')
+
+      expect(filter.results).to contain_exactly(live_user.account, deleted.account)
+    end
+
+    it 'applies email and ip together rather than letting one replace the other', :aggregate_failures do
+      expect(described_class.new(email: '%@shared.example', ip: '192.0.2.20').results).to contain_exactly(deleted.account)
+      expect(described_class.new(email: 'other@', ip: '192.0.2.0/24').results).to be_empty
+    end
+
+    it 'leaves accounts that match neither out' do
+      expect(described_class.new(email: '%@shared.example').results).to_not include(other_user.account)
+    end
+  end
 end

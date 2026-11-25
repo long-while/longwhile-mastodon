@@ -1,0 +1,42 @@
+%tr
+  %th{ rowspan: can?(:create, :email_domain_block) ? 2 : 1 }= t('admin.accounts.email')
+  %td{ rowspan: can?(:create, :email_domain_block) ? 2 : 1 }= record.email
+  %td= table_link_to 'search', t('admin.accounts.search_same_email_domain'), admin_accounts_path(email: "%@#{record.email_domain}")
+- if can?(:create, :email_domain_block)
+  %tr
+    %td= table_link_to 'hide_source', t('admin.accounts.add_email_domain_block'), new_admin_email_domain_block_path(_domain: record.email_domain)
+%tr
+  %th= t('admin.accounts.email_status')
+  %td
+    - if record.confirmed?
+      = t('admin.accounts.confirmed')
+    - else
+      = t('admin.accounts.confirming')
+  %td
+%tr
+  %th= t('simple_form.labels.defaults.locale')
+  %td= standard_locale_name(record.locale)
+  %td
+%tr
+  %th= t('admin.accounts.joined')
+  %td
+    %time.formatted{ datetime: account.created_at.iso8601, title: l(account.created_at) }= l account.created_at
+  %td
+= render partial: 'admin/accounts/user_ip', collection: record.ips.by_latest_used, as: :user_ip
+%tr
+  %th= t('admin.accounts.most_recent_activity')
+  %td
+    - if record.current_sign_in_at
+      %time.formatted{ datetime: record.current_sign_in_at.iso8601, title: l(record.current_sign_in_at) }= l record.current_sign_in_at
+  %td
+- if record.invited_by_account
+  %tr
+    %th= t('admin.accounts.invited_by')
+    %td= admin_account_link_to record.invited_by_account
+    %td
+%tr
+  %th 탈퇴 날짜
+  %td
+    %time.formatted{ datetime: record.created_at.iso8601, title: l(record.created_at) }= l record.created_at
+  %td
+    #{l(record.expires_at.to_date)} 까지 보관

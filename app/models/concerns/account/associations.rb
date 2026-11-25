@@ -43,6 +43,7 @@ module Account::Associations
         has_many :generated_annual_reports
 
         has_one :deletion_request, class_name: 'AccountDeletionRequest'
+        has_one :deleted_user_record
         has_one :follow_recommendation_suppression
         has_one :notification_policy
         has_one :statuses_cleanup_policy, class_name: 'AccountStatusesCleanupPolicy'
