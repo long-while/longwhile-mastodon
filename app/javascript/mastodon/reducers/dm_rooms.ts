@@ -98,7 +98,7 @@ export const dmRoomsReducer = createReducer(initialState, (builder) => {
     })
     .addCase(fetchDmRooms.rejected, (state) => {
       state.isLoading = false;
-      state.hasError = true;
+      if (!state.loaded) state.hasError = true;
     })
     .addCase(fetchDmRooms.fulfilled, (state, { payload, meta }) => {
       state.isLoading = false;

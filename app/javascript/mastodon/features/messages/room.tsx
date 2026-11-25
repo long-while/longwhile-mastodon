@@ -108,7 +108,7 @@ const messages = defineMessages({
   offline: {
     id: 'messages.offline',
     defaultMessage:
-      'Connection lost. New messages will not appear until it is back.',
+      'Connection lost. Checking for new messages every so often until it is back.',
   },
 });
 

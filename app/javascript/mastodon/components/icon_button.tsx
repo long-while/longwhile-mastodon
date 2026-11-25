@@ -17,6 +17,7 @@ interface Props {
   onKeyPress?: React.KeyboardEventHandler<HTMLButtonElement>;
   active?: boolean;
   expanded?: boolean;
+  ariaControls?: string;
   style?: React.CSSProperties;
   activeStyle?: React.CSSProperties;
   disabled?: boolean;
@@ -34,6 +35,7 @@ export const IconButton = forwardRef<HTMLButtonElement, Props>(
     {
       className,
       expanded,
+      ariaControls,
       icon,
       iconComponent,
       inverted,
@@ -152,6 +154,7 @@ export const IconButton = forwardRef<HTMLButtonElement, Props>(
         type='button'
         aria-label={title}
         aria-expanded={expanded}
+        aria-controls={ariaControls}
         aria-hidden={ariaHidden}
         title={title}
         className={classes}

@@ -10,7 +10,6 @@ import {
 } from '../actions/dm_rooms';
 import { timelineDelete } from '../actions/timelines_typed';
 
-
 export interface PendingDmMessage {
   localId: string;
 
@@ -56,27 +55,35 @@ const merge = (existing: string[], incoming: string[]) =>
   Array.from(new Set([...existing, ...incoming])).sort(compareIds);
 
 const isRateLimited = (error: unknown) =>
-  (error as { response?: { status?: number } } | undefined)?.response?.status ===
-  429;
+  (error as { response?: { status?: number } } | undefined)?.response
+    ?.status === 429;
 
 export const dmMessagesReducer = createReducer(initialState, (builder) => {
   builder
     .addCase(fetchDmRoomStatuses.pending, (state, { meta }) => {
+      if (meta.arg.silent) return;
+
       const room = (state[meta.arg.roomId] ??= emptyRoom());
       room.isLoading = true;
       room.hasError = false;
     })
     .addCase(fetchDmRoomStatuses.rejected, (state, { meta }) => {
+      if (meta.arg.silent) return;
+
       const room = (state[meta.arg.roomId] ??= emptyRoom());
       room.isLoading = false;
-      room.hasError = true;
+      if (!(meta.arg.sinceId && room.statusIds.length > 0))
+        room.hasError = true;
     })
-    .addCase(fetchDmRoomStatuses.fulfilled, (state, { payload }) => {
+    .addCase(fetchDmRoomStatuses.fulfilled, (state, { payload, meta }) => {
       const room = (state[payload.roomId] ??= emptyRoom());
 
-      room.isLoading = false;
-      room.hasError = false;
-      room.loaded = true;
+      if (!meta.arg.silent) {
+        room.isLoading = false;
+        room.hasError = false;
+        room.loaded = true;
+      }
+
       room.statusIds = merge(room.statusIds, payload.statusIds);
 
       if (payload.mode !== 'append') {
