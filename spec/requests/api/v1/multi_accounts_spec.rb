@@ -319,4 +319,45 @@ RSpec.describe 'Api::V1::MultiAccountsController', type: :request do
       end
     end
   end
+
+  describe 'DELETE /api/v1/multi_accounts/refresh_token' do
+    let(:user) { Fabricate(:user) }
+    let!(:long_lived) do
+      Fabricate(:access_token, resource_owner_id: user.id, multi_account: true, purpose: 'multi_account_refresh', long_lived: true)
+    end
+
+    it 'revokes a long-lived refresh token without a session' do
+      delete '/api/v1/multi_accounts/refresh_token', params: { refresh_token: long_lived.token }, as: :json
+
+      expect(response).to have_http_status(204)
+      expect(long_lived.reload.revoked_at).to be_present
+    end
+
+    it 'does not revoke other kinds of tokens and still answers 204' do
+      web_token = Fabricate(:access_token, resource_owner_id: user.id)
+
+      delete '/api/v1/multi_accounts/refresh_token', params: { refresh_token: web_token.token }, as: :json
+
+      expect(response).to have_http_status(204)
+      expect(web_token.reload.revoked_at).to be_nil
+    end
+
+    it 'answers 204 for unknown or missing tokens' do
+      delete '/api/v1/multi_accounts/refresh_token', params: { refresh_token: 'nope' }, as: :json
+      expect(response).to have_http_status(204)
+
+      delete '/api/v1/multi_accounts/refresh_token', params: { refresh_token: ['x'] }, as: :json
+      expect(response).to have_http_status(204)
+
+      expect(long_lived.reload.revoked_at).to be_nil
+    end
+
+    it 'makes the revoked token unusable for switching' do
+      delete '/api/v1/multi_accounts/refresh_token', params: { refresh_token: long_lived.token }, as: :json
+
+      post '/api/v1/multi_accounts/session/refresh', params: { refresh_token: long_lived.token }, as: :json
+
+      expect(response).to have_http_status(401)
+    end
+  end
 end

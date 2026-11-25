@@ -1936,6 +1936,18 @@ en:
     carry_blocks_over_text: This user moved from %{acct}, which you had blocked.
     carry_mutes_over_text: This user moved from %{acct}, which you had muted.
     copy_account_note_text: 'This user moved from %{acct}, here were your previous notes about them:'
+  multi_accounts:
+    empty: There are no saved account switching connections.
+    ip: Last IP
+    issued_at: Connected
+    last_used: Last used
+    never_used: Never used
+    revoke: Revoke
+    revoke_all: Revoke all
+    revoke_all_success: All account switching connections have been revoked.
+    revoke_confirm: Revoke this connection?
+    revoke_success: The account switching connection has been revoked.
+    title: Account switching connections
   navigation:
     toggle_menu: Toggle menu
   notification_fallbacks:

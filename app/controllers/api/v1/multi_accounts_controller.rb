@@ -7,8 +7,8 @@ class Api::V1::MultiAccountsController < Api::BaseController
 
   REUSABLE_TOKEN_LOOKUP_LIMIT = 20
 
-  skip_before_action :require_authenticated_user!, only: [:consume]
-  skip_before_action :require_not_suspended!, only: [:consume]
+  skip_before_action :require_authenticated_user!, only: [:consume, :revoke_refresh_token]
+  skip_before_action :require_not_suspended!, only: [:consume, :revoke_refresh_token]
 
   before_action :require_refresh_token_caller!, only: [:refresh_token]
 
@@ -158,6 +158,14 @@ class Api::V1::MultiAccountsController < Api::BaseController
     Rails.logger.error("Multi-account token refresh failed: #{e.message}")
     Rails.logger.error(e.backtrace.join("\n"))
     render json: { error: '토큰을 갱신하는 중 오류가 발생했습니다.' }, status: 500
+  end
+
+  def revoke_refresh_token
+    value = params[:refresh_token]
+    token = value.is_a?(String) && value.present? ? Doorkeeper::AccessToken.by_token(value) : nil
+    token.revoke if token&.long_lived_refresh? && !token.revoked?
+
+    head 204
   end
 
   private

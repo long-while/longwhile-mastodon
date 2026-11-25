@@ -22,6 +22,7 @@ import {
   switchAccount,
   registerAccountAction,
   removeAccount,
+  revokeAllStoredTokens,
 } from 'mastodon/actions/multi_account';
 import api, { suspendSessionRecovery } from 'mastodon/api';
 import type * as MultiAccountsApi from 'mastodon/api/multi_accounts';
@@ -936,6 +937,7 @@ export const AccountSwitcher: FC<AccountSwitcherProps> = ({
       setIsLoggingOutAll(true);
 
       try {
+        await revokeAllStoredTokens();
         await clearAllAccounts();
         clearActiveAccountIdInStorage();
         setPersistedAccounts([]);

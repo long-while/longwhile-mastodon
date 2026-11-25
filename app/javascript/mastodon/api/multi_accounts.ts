@@ -161,3 +161,9 @@ export const refreshSession = async (refreshToken: string) => {
   );
 };
 
+export const revokeRefreshToken = async (refreshToken: string) => {
+  await api(false).delete('/api/v1/multi_accounts/refresh_token', {
+    data: { refresh_token: refreshToken },
+    timeout: MULTI_ACCOUNT_REQUEST_TIMEOUT,
+  });
+};

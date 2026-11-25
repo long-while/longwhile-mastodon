@@ -1897,6 +1897,18 @@ ko:
     carry_blocks_over_text: 이 사용자는 예전에 차단한 %{acct}에서 이주 했습니다.
     carry_mutes_over_text: 이 사용자는 예전에 뮤트한 %{acct}에서 이주 했습니다.
     copy_account_note_text: '이 사용자는 %{acct}로부터 이동하였습니다. 당신의 이전 노트는 이렇습니다:'
+  multi_accounts:
+    empty: 저장된 계정 전환 연결이 없습니다.
+    ip: 최근 IP
+    issued_at: 연결한 날짜
+    last_used: 최근 사용
+    never_used: 사용 기록 없음
+    revoke: 해지
+    revoke_all: 모두 해지
+    revoke_all_success: 모든 계정 전환 연결을 해지했습니다.
+    revoke_confirm: 이 연결을 해지할까요?
+    revoke_success: 계정 전환 연결을 해지했습니다.
+    title: 계정 전환 연결
   navigation:
     toggle_menu: 토글 메뉴
   notification_fallbacks:

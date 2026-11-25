@@ -8,6 +8,7 @@ import {
 import api, { setActiveAccountToken, updateCSRFToken } from '../api';
 import {
   deleteEncryptedToken,
+  loadAllEntries,
   loadEncryptedToken,
   saveEncryptedToken,
 } from '../utils/multi_account_db';
@@ -387,12 +388,39 @@ export const switchAccount =
     }
   };
 
+export const revokeStoredToken = async (accountId: string): Promise<void> => {
+  try {
+    const payload = await loadEncryptedToken(accountId);
+    if (!payload) {
+      return;
+    }
+
+    const token = await decryptToken(payload);
+    const { revokeRefreshToken } = await import('../api/multi_accounts');
+    await revokeRefreshToken(token);
+  } catch (error) {
+    console.warn(
+      `[MultiAccount] Could not revoke the stored token for ${accountId} on the server:`,
+      error,
+    );
+  }
+};
+
+export const revokeAllStoredTokens = async (): Promise<void> => {
+  const entries = await loadAllEntries();
+  for (const accountId of Object.keys(entries)) {
+    await revokeStoredToken(accountId);
+  }
+};
+
 export const removeAccount =
   (accountId: string) => async (dispatch: AppDispatch, getState: GetState) => {
     try {
       const state: any = getState();
       const wasActive =
         state?.getIn?.(['multiAccount', 'activeAccountId']) === accountId;
+
+      await revokeStoredToken(accountId);
 
       // Delete the encrypted token
       await deleteEncryptedToken(accountId);

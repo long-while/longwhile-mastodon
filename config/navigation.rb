@@ -22,9 +22,11 @@ SimpleNavigation::Configuration.run do |navigation|
 
     n.item :notifications, safe_join([material_symbol('notifications'), t('settings.notifications')]), settings_notifications_path, if: -> { current_user.functional? && !self_destruct }, highlights_on: %r{/settings/notifications}
 
-    n.item :security, safe_join([material_symbol('account_circle'), t('settings.account')]), edit_user_registration_path, highlights_on: %r{^/auth|/settings/delete|/settings/login_activities|/settings/two_factor_authentication|/settings/otp_authentication|/settings/security_keys|/settings/applications|/settings/export|/statuses_cleanup|^/disputes} do |s|
+    n.item :security, safe_join([material_symbol('account_circle'), t('settings.account')]), edit_user_registration_path,
+           highlights_on: %r{^/auth|/settings/delete|/settings/login_activities|/settings/two_factor_authentication|/settings/otp_authentication|/settings/security_keys|/settings/applications|/settings/multi_accounts|/settings/export|/statuses_cleanup|^/disputes} do |s|
       s.item :password, safe_join([material_symbol('lock'), t('settings.account_settings')]), edit_user_registration_path, highlights_on: %r{^/auth|^/disputes}
       s.item :login_activities, safe_join([material_symbol('history'), t('login_activities.title')]), settings_login_activities_path, highlights_on: %r{/settings/login_activities}
+      s.item :multi_accounts, safe_join([material_symbol('link'), t('multi_accounts.title')]), settings_multi_accounts_path, highlights_on: %r{/settings/multi_accounts}
       s.item :development, safe_join([material_symbol('code'), t('settings.development')]), settings_applications_path, highlights_on: %r{/settings/applications}, if: -> { !self_destruct }
       s.item :statuses_cleanup, safe_join([material_symbol('hourglass'), t('settings.statuses_cleanup')]), statuses_cleanup_path, if: -> { current_user.functional_or_moved? && !self_destruct }
       s.item :export, safe_join([material_symbol('cloud_download'), t('settings.export')]), settings_export_path, highlights_on: %r{/settings/export}
