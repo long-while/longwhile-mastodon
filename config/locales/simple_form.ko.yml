@@ -289,6 +289,7 @@ ko:
         site_short_description: 서버 설명
         site_terms: 개인정보처리방침
         site_title: 서버 이름
+        status_length_limit: 글자 수 제한
         status_page_url: 상태 페이지 URL
         theme: 기본 테마
         thumbnail: 서버 썸네일

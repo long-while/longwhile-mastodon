@@ -62,6 +62,24 @@ RSpec.describe PostStatusService do
       expect(status2.id).to eq status1.id
     end
 
+    it 'publishes even if the character limit went down after scheduling' do
+      Setting.status_length_limit = 1500
+      scheduled = subject.call(account, text: 'a' * 1200, scheduled_at: future)
+      expect(scheduled.params).to include('length_limit' => 1500)
+
+      Setting.status_length_limit = 600
+      published = described_class.new.call(account, scheduled.params.with_indifferent_access.merge(scheduled_at: nil))
+
+      expect(published).to be_persisted
+      expect(published.text.length).to eq 1200
+    end
+
+    it 'keeps the stored limit out of the API representation' do
+      scheduled = subject.call(account, text: 'hi', scheduled_at: future)
+
+      expect(REST::ScheduledStatusSerializer.new(scheduled).serializable_hash[:params]).to_not have_key('length_limit')
+    end
+
     context 'when scheduled_at is less than min offset' do
       let(:invalid_scheduled_time) { (ScheduledStatus::MINIMUM_OFFSET - 1.second).from_now }
 

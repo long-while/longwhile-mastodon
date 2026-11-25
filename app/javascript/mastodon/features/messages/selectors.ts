@@ -1,5 +1,7 @@
 import type { Map as ImmutableMap } from 'immutable';
 
+import { maxCharacters } from 'mastodon/initial_state';
+
 import type { Account } from 'mastodon/models/account';
 import type { Status } from 'mastodon/models/status';
 import type { AdminDmRoomsState } from 'mastodon/reducers/admin_dm_rooms';
@@ -54,6 +56,20 @@ export const selectMessageAccountsMap = (
 export const selectMessageStatuses = (
   state: unknown,
 ): ImmutableMap<string, Status> => asDmChatState(state).statuses;
+
+export const selectMaxCharacters = (state: unknown): number => {
+  const server = (state as { server?: { getIn?: (path: string[]) => unknown } })
+    .server;
+
+  const value = server?.getIn?.([
+    'server',
+    'configuration',
+    'statuses',
+    'max_characters',
+  ]);
+
+  return typeof value === 'number' && value > 0 ? value : maxCharacters;
+};
 
 const DEFAULT_MAX_MEDIA_ATTACHMENTS = 4;
 

@@ -49,6 +49,7 @@ class Form::AdminSettings
     landing_page
     wrapstodon
     email_footer_text
+    status_length_limit
   ).freeze
 
   INTEGER_KEYS = %i(
@@ -56,6 +57,7 @@ class Form::AdminSettings
     content_cache_retention_period
     backups_retention_period
     min_age
+    status_length_limit
   ).freeze
 
   BOOLEAN_KEYS = %i(
@@ -114,6 +116,9 @@ class Form::AdminSettings
   validates :remote_topic_feed_access, inclusion: { in: FEED_ACCESS_MODES }, if: -> { defined?(@remote_topic_feed_access) }
   validates :media_cache_retention_period, :content_cache_retention_period, :backups_retention_period, numericality: { only_integer: true }, allow_blank: true, if: -> { defined?(@media_cache_retention_period) || defined?(@content_cache_retention_period) || defined?(@backups_retention_period) }
   validates :min_age, numericality: { only_integer: true }, allow_blank: true, if: -> { defined?(@min_age) }
+  validates :status_length_limit,
+            numericality: { only_integer: true, in: StatusLengthValidator::MIN_LIMIT..StatusLengthValidator::MAX_LIMIT },
+            if: -> { defined?(@status_length_limit) }
   validates :site_short_description, length: { maximum: DESCRIPTION_LIMIT }, if: -> { defined?(@site_short_description) }
   validates :thumbnail_description, length: { maximum: DESCRIPTION_LIMIT }, if: -> { defined?(@thumbnail_description) }
   validates :status_page_url, url: true, allow_blank: true
@@ -163,6 +168,10 @@ class Form::AdminSettings
         setting.update(value: typecast_value(key, instance_variable_get(:"@#{key}")))
       end
     end
+
+    expire_instance_api_cache if instance_variable_defined?(:@status_length_limit)
+
+    true
   end
 
   def persisted?
@@ -181,6 +190,11 @@ class Form::AdminSettings
         Digest::SHA256.hexdigest(key_value)
       )
     end
+  end
+
+  def expire_instance_api_cache
+    Rails.cache.delete_matched('api/v1/instances/show*')
+    Rails.cache.delete_matched('api/v2/instances/show*')
   end
 
   def typecast_value(key, value)

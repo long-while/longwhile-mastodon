@@ -12,6 +12,7 @@
  * @property {boolean} auto_play_gif
  * @property {boolean} activity_api_enabled
  * @property {boolean} dm_chat_enabled
+ * @property {number=} max_characters
  * @property {string} admin
  * @property {boolean=} boost_modal
  * @property {boolean=} delete_modal
@@ -104,6 +105,7 @@ export const expandSpoilers = getMeta('expand_spoilers');
 export const forceSingleColumn = !getMeta('advanced_layout');
 export const limitedFederationMode = getMeta('limited_federation_mode');
 export const mascot = getMeta('mascot');
+export const maxCharacters = getMeta('max_characters') ?? 1000;
 export const me = getMeta('me');
 export const movedToAccountId = getMeta('moved_to_account_id');
 export const owner = getMeta('owner');

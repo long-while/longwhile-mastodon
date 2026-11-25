@@ -1,5 +1,7 @@
 import { Map as ImmutableMap, List as ImmutableList, OrderedSet as ImmutableOrderedSet, fromJS } from 'immutable';
 
+import { length } from 'stringz';
+
 import { changeUploadCompose } from 'mastodon/actions/compose_typed';
 import { timelineDelete } from 'mastodon/actions/timelines_typed';
 
@@ -53,6 +55,7 @@ import {
 } from '../actions/compose';
 import { REDRAFT } from '../actions/statuses';
 import { STORE_HYDRATE } from '../actions/store';
+import { countableText } from '../features/compose/util/counter';
 import { me } from '../initial_state';
 import { unescapeHTML } from '../utils/html';
 import { uuid } from '../uuid';
@@ -64,6 +67,7 @@ const initialState = ImmutableMap({
   spoiler_text: '',
   privacy: null,
   id: null,
+  edit_original_length: 0,
   text: '',
   focusDate: null,
   caretPosition: null,
@@ -617,6 +621,7 @@ export const composeReducer = (state = initialState, action) => {
   case COMPOSE_SET_STATUS:
     return state.withMutations(map => {
       map.set('id', action.status.get('id'));
+      map.set('edit_original_length', length([action.spoiler_text, countableText(action.text)].join('')));
       // Published posts cannot be scheduled, so any pending schedule is dropped.
       map.set('scheduled_at', null);
       map.set('scheduled_status_id', null);

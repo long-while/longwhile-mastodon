@@ -51,6 +51,43 @@ RSpec.describe UpdateScheduledStatusService do
     end
   end
 
+  describe 'a body longer than the current limit but within the limit it was scheduled under' do
+    let(:long_text) { 'a' * 700 }
+    let(:stored_params) do
+      {
+        'text' => long_text,
+        'spoiler_text' => '',
+        'sensitive' => false,
+        'visibility' => 'private',
+        'language' => 'en',
+        'length_limit' => 1000,
+      }
+    end
+
+    before { allow(StatusLengthValidator).to receive(:max_chars).and_return(500) }
+
+    it 'lets a visibility-only edit through', :aggregate_failures do
+      expect { subject.call(scheduled_status, visibility: 'unlisted') }.to_not raise_error
+
+      scheduled_status.reload
+      expect(scheduled_status.params['visibility']).to eq 'unlisted'
+      expect(scheduled_status.params['text']).to eq long_text
+      expect(scheduled_status.params['length_limit']).to eq 1000
+    end
+
+    it 'still refuses growing past the stored limit' do
+      expect { subject.call(scheduled_status, text: 'a' * 1001) }.to raise_error(ActiveRecord::RecordInvalid)
+    end
+  end
+
+  describe 'a body over the limit on a record without a stored limit' do
+    before { allow(StatusLengthValidator).to receive(:max_chars).and_return(500) }
+
+    it 'refuses it' do
+      expect { subject.call(scheduled_status, text: 'a' * 501) }.to raise_error(ActiveRecord::RecordInvalid)
+    end
+  end
+
   describe 'removing a poll' do
     let(:stored_params) do
       {

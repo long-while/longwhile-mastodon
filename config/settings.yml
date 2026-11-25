@@ -3,6 +3,7 @@
 
 defaults: &defaults
   site_title: Mastodon
+  status_length_limit: 1000
   site_short_description: ''
   site_description: ''
   site_extended_description: ''

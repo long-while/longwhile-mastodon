@@ -1,28 +1,41 @@
 # frozen_string_literal: true
 
 class StatusLengthValidator < ActiveModel::Validator
-  MAX_CHARS = 1000
+  DEFAULT_MAX_CHARS = 1000
+  MIN_LIMIT = 500
+  MAX_LIMIT = 10_000
+
+  MAX_CHARS = DEFAULT_MAX_CHARS
   URL_PLACEHOLDER_CHARS = 23
   URL_PLACEHOLDER = 'x' * 23
 
+  def self.max_chars
+    value = Integer(Setting.status_length_limit, exception: false)
+    value&.between?(MIN_LIMIT, MAX_LIMIT) ? value : DEFAULT_MAX_CHARS
+  end
+
   def validate(status)
     return unless status.local? && !status.reblog?
+    return unless status.new_record? || status.will_save_change_to_text? || status.will_save_change_to_spoiler_text?
 
-    status.errors.add(:text, I18n.t('statuses.over_character_limit', max: MAX_CHARS)) if too_long?(status)
+    limit = effective_limit(status)
+    status.errors.add(:text, I18n.t('statuses.over_character_limit', max: limit)) if length_of(status.spoiler_text, status.text) > limit
   end
 
   private
 
-  def too_long?(status)
-    countable_length(combined_text(status)) > MAX_CHARS
+  def effective_limit(status)
+    candidates = [self.class.max_chars, status.length_limit_override.to_i]
+    candidates << length_of(status.spoiler_text_was, status.text_was) if status.persisted?
+    candidates.max
+  end
+
+  def length_of(spoiler_text, text)
+    countable_length([spoiler_text, countable_text(text)].join)
   end
 
   def countable_length(str)
     str.each_grapheme_cluster.size
-  end
-
-  def combined_text(status)
-    [status.spoiler_text, countable_text(status.text)].join
   end
 
   def countable_text(str)
