@@ -108,4 +108,27 @@ RSpec.describe Export do
         )
     end
   end
+
+  describe '#to_bookmark_folders_csv' do
+    let(:export) { CSV.parse(subject.to_bookmark_folders_csv) }
+
+    it 'writes one row per filed bookmark, folders in their order', :aggregate_failures do
+      second = Fabricate(:bookmark_folder, account: account, name: '둘째')
+      first = Fabricate(:bookmark_folder, account: account, name: '첫째, 쉼표')
+      Fabricate(:bookmark_folder, account: account, name: '빈 폴더')
+      BookmarkFolder.reorder!(account, [first.id, second.id, account.bookmark_folders.find_by(name: '빈 폴더').id])
+      older, newer, gone = Fabricate.times(3, :bookmark, account: account)
+      [older, newer, gone].each { |b| BookmarkFolderItem.create!(bookmark_folder: first, bookmark: b) }
+      BookmarkFolderItem.create!(bookmark_folder: second, bookmark: older)
+      gone.status.discard
+      Fabricate(:bookmark_folder_item)
+
+      uri = ->(bookmark) { ActivityPub::TagManager.instance.uri_for(bookmark.status) }
+      expect(export).to eq [
+        ['첫째, 쉼표', uri.call(newer)],
+        ['첫째, 쉼표', uri.call(older)],
+        ['둘째', uri.call(older)],
+      ]
+    end
+  end
 end

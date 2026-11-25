@@ -7,6 +7,7 @@ import {
   unblockAccount,
 } from '../actions/accounts';
 import { initBlockModal } from '../actions/blocks';
+import { toggleStatusBookmark } from '../actions/bookmark_toggle';
 import {
   replyCompose,
   mentionCompose,
@@ -22,8 +23,6 @@ import {
 import {
   toggleReblog,
   toggleFavourite,
-  bookmark,
-  unbookmark,
   pin,
   unpin,
 } from '../actions/interactions';
@@ -81,11 +80,7 @@ const mapDispatchToProps = (dispatch, { contextType }) => ({
   },
 
   onBookmark (status) {
-    if (status.get('bookmarked')) {
-      dispatch(unbookmark(status));
-    } else {
-      dispatch(bookmark(status));
-    }
+    dispatch(toggleStatusBookmark(status));
   },
 
   onPin (status) {

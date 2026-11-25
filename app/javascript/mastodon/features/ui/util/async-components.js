@@ -182,6 +182,22 @@ export function EmbedModal() {
   return import('../components/embed_modal');
 }
 
+export function BookmarkFolderAdder() {
+  return import('../../bookmark_folders/folder_adder_modal');
+}
+
+export function BookmarkFolderManager() {
+  return import('../../bookmark_folders/folder_manager_modal');
+}
+
+export function BookmarkNoteModal() {
+  return import('../../bookmarked_statuses/note_modal');
+}
+
+export function BookmarkMoveModal() {
+  return import('../../bookmarked_statuses/move_modal');
+}
+
 export function ListAdder() {
   return import('../../list_adder');
 }

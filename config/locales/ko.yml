@@ -1520,6 +1520,18 @@ ko:
     s_blog: "%{name}의 블로그"
     then_instructions: 그리고 발행처의 도메인 네임을 아래 입력란에 추가하세요.
     title: 작성자 기여
+  bookmark_folders:
+    errors:
+      conflict: 북마크가 방금 바뀌었습니다. 다시 시도해 주세요.
+      limit: 북마크 폴더는 %{limit}개까지 만들 수 있습니다.
+      stale_order: 폴더 목록이 바뀌었습니다. 새로 고친 뒤 다시 시도해 주세요.
+      unknown_folder: 없는 폴더가 들어 있습니다.
+  bookmarks:
+    errors:
+      invalid_note: 메모는 글자여야 합니다.
+      invalid_status_ids: 게시물 목록의 형식이 올바르지 않습니다.
+      note_too_long: 메모는 %{limit}자까지 쓸 수 있습니다.
+      too_many_statuses: 한 번에 게시물 %{limit}개까지 다룰 수 있습니다.
   challenge:
     confirm: 계속
     hint_html: "<strong>팁:</strong> 한 시간 동안 다시 암호를 묻지 않을 것입니다."
@@ -1692,6 +1704,7 @@ ko:
       request: 아카이브 요청하기
       size: 크기
     blocks: 차단
+    bookmark_folders: 북마크 폴더
     bookmarks: 북마크
     csv: CSV
     custom_filters: 필터

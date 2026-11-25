@@ -28,7 +28,15 @@ class Api::V1::BookmarksController < Api::BaseController
   end
 
   def account_bookmarks
-    current_account.bookmarks
+    bookmark_filter.results
+  end
+
+  def bookmark_filter
+    @bookmark_filter ||= BookmarkFilter.new(current_account, params)
+  end
+
+  def pagination_params(core_params)
+    params.slice(:limit).permit(:limit).merge(bookmark_filter.link_params).merge(core_params)
   end
 
   def next_path

@@ -51,6 +51,7 @@ namespace :api, format: false do
 
         resource :bookmark, only: :create
         post :unbookmark, to: 'bookmarks#destroy'
+        resource :bookmark_folders, only: [:show, :update]
 
         resource :mute, only: :create
         post :unmute, to: 'mutes#destroy'
@@ -139,7 +140,25 @@ namespace :api, format: false do
     resources :blocks, only: [:index]
     resources :mutes, only: [:index]
     resources :favourites, only: [:index]
+    namespace :bookmarks do
+      get :details, to: 'details#index'
+      get :authors, to: 'authors#index'
+      post :remove, to: 'removals#create'
+      put ':status_id/note', to: 'notes#update', as: :note
+    end
     resources :bookmarks, only: [:index]
+
+    resources :bookmark_folders, only: [:index, :create, :update, :destroy] do
+      collection do
+        put :order
+      end
+
+      member do
+        delete 'statuses/:status_id', action: :remove_status, as: :status
+      end
+
+      resource :statuses, only: [:create, :destroy], controller: 'bookmark_folders/statuses'
+    end
     resources :reports, only: [:create]
     resources :trends, only: [:index], controller: 'trends/tags'
     resources :filters, only: [:index, :create, :show, :update, :destroy]

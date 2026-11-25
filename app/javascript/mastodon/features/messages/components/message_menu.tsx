@@ -3,11 +3,12 @@ import { useCallback, useMemo } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 
 import MoreHorizIcon from '@/material-icons/400-24px/more_horiz.svg?react';
+import { toggleStatusBookmark } from 'mastodon/actions/bookmark_toggle';
 import { hideDmMessage } from 'mastodon/actions/dm_rooms';
 import { openModal } from 'mastodon/actions/modal';
 import { Dropdown } from 'mastodon/components/dropdown_menu';
 import type { MenuItem } from 'mastodon/models/dropdown_menu';
-import { useAppDispatch } from 'mastodon/store';
+import { useAppDispatch, useAppSelector } from 'mastodon/store';
 import { unescapeHTML } from 'mastodon/utils/html';
 
 const messages = defineMessages({
@@ -25,6 +26,15 @@ const messages = defineMessages({
   redraft: {
     id: 'messages.menu.redraft',
     defaultMessage: 'Delete & re-draft',
+  },
+  bookmark: { id: 'messages.menu.bookmark', defaultMessage: 'Bookmark' },
+  unbookmark: {
+    id: 'messages.menu.unbookmark',
+    defaultMessage: 'Remove bookmark',
+  },
+  bookmarkFolders: {
+    id: 'messages.menu.bookmark_folders',
+    defaultMessage: 'Add to folder',
   },
 
   confirmDeleteForMeTitle: {
@@ -78,6 +88,23 @@ export const MessageMenu: React.FC<Props> = ({
 }) => {
   const intl = useIntl();
   const dispatch = useAppDispatch();
+  const status = useAppSelector((state) => state.statuses.get(statusId));
+  const bookmarked = Boolean(status?.get('bookmarked'));
+
+  const handleBookmark = useCallback(() => {
+    if (!status) return;
+
+    void dispatch(toggleStatusBookmark(status));
+  }, [dispatch, status]);
+
+  const handleBookmarkFolders = useCallback(() => {
+    dispatch(
+      openModal({
+        modalType: 'BOOKMARK_FOLDER_ADDER',
+        modalProps: { statusId },
+      }),
+    );
+  }, [dispatch, statusId]);
 
   const handleCopy = useCallback(() => {
     const text = contentHtml ? unescapeHTML(contentHtml) : '';
@@ -139,6 +166,21 @@ export const MessageMenu: React.FC<Props> = ({
   const items = useMemo(() => {
     const menu: MenuItem[] = [];
 
+    const bookmarkItems: MenuItem[] = status
+      ? [
+          {
+            text: intl.formatMessage(
+              bookmarked ? messages.unbookmark : messages.bookmark,
+            ),
+            action: handleBookmark,
+          },
+          {
+            text: intl.formatMessage(messages.bookmarkFolders),
+            action: handleBookmarkFolders,
+          },
+        ]
+      : [];
+
     if (isMine) {
       if (onEdit) {
         menu.push({
@@ -146,6 +188,8 @@ export const MessageMenu: React.FC<Props> = ({
           action: handleEdit,
         });
       }
+
+      menu.push(...bookmarkItems);
 
       if (roomId) {
         menu.push({
@@ -176,6 +220,8 @@ export const MessageMenu: React.FC<Props> = ({
         });
       }
 
+      menu.push(...bookmarkItems);
+
       if (roomId) {
         menu.push({
           text: intl.formatMessage(messages.deleteForMe),
@@ -187,7 +233,10 @@ export const MessageMenu: React.FC<Props> = ({
 
     return menu;
   }, [
+    bookmarked,
     contentHtml,
+    handleBookmark,
+    handleBookmarkFolders,
     handleCopy,
     handleDeleteForEveryone,
     handleDeleteForMe,
@@ -198,6 +247,7 @@ export const MessageMenu: React.FC<Props> = ({
     onEdit,
     onRedraft,
     roomId,
+    status,
   ]);
 
   if (items.length === 0) return null;

@@ -17,6 +17,8 @@ import ReplyIcon from '@/material-icons/400-24px/reply.svg?react';
 import ReplyAllIcon from '@/material-icons/400-24px/reply_all.svg?react';
 import StarIcon from '@/material-icons/400-24px/star-fill.svg?react';
 import StarBorderIcon from '@/material-icons/400-24px/star.svg?react';
+import PencilFillIcon from '@/styles/bird-theme-svg/pencil-fill.svg?react';
+import PencilIcon from '@/styles/bird-theme-svg/pencil.svg?react';
 import RepeatActiveIcon from '@/svg-icons/repeat_active.svg?react';
 import RepeatDisabledIcon from '@/svg-icons/repeat_disabled.svg?react';
 import RepeatPrivateIcon from '@/svg-icons/repeat_private.svg?react';
@@ -25,7 +27,9 @@ import { identityContextPropShape, withIdentity } from 'mastodon/identity_contex
 import { PERMISSION_MANAGE_USERS, PERMISSION_MANAGE_FEDERATION } from 'mastodon/permissions';
 import { WithRouterPropTypes } from 'mastodon/utils/react_router';
 
+import { openModal } from 'mastodon/actions/modal';
 import { Dropdown } from 'mastodon/components/dropdown_menu';
+import { BookmarkContext } from 'mastodon/features/bookmarked_statuses/bookmark_context';
 import { me } from '../initial_state';
 
 import { IconButton } from './icon_button';
@@ -54,6 +58,10 @@ const messages = defineMessages({
   unmuteConversation: { id: 'status.unmute_conversation', defaultMessage: 'Unmute conversation' },
   pin: { id: 'status.pin', defaultMessage: 'Pin on profile' },
   unpin: { id: 'status.unpin', defaultMessage: 'Unpin from profile' },
+  bookmarkFolders: { id: 'status.bookmark_folders', defaultMessage: 'Add to bookmark folder' },
+  addBookmarkNote: { id: 'bookmark_note.add', defaultMessage: 'Add note' },
+  editBookmarkNote: { id: 'bookmark_note.edit', defaultMessage: 'Edit note' },
+  removeFromBookmarkFolder: { id: 'bookmark_folders.remove_from_folder', defaultMessage: 'Remove from this folder' },
   admin_account: { id: 'status.admin_account', defaultMessage: 'Open moderation interface for @{name}' },
   admin_status: { id: 'status.admin_status', defaultMessage: 'Open this post in the moderation interface' },
   admin_domain: { id: 'status.admin_domain', defaultMessage: 'Open moderation interface for {domain}' },
@@ -73,7 +81,10 @@ const mapStateToProps = (state, { status }) => ({
 const countOrNone = (count) => (count > 0 ? count : undefined);
 
 class StatusActionBar extends ImmutablePureComponent {
+  static contextType = BookmarkContext;
+
   static propTypes = {
+    dispatch: PropTypes.func.isRequired,
     identity: identityContextPropShape,
     status: ImmutablePropTypes.map.isRequired,
     relationship: ImmutablePropTypes.record,
@@ -160,6 +171,21 @@ class StatusActionBar extends ImmutablePureComponent {
     this.props.onPin(this.props.status);
   };
 
+  handleBookmarkNoteClick = () => {
+    this.context?.onEditNote(this.props.status.get('id'));
+  };
+
+  handleRemoveFromBookmarkFolderClick = () => {
+    this.context?.onRemoveFromFolder(this.props.status.get('id'));
+  };
+
+  handleBookmarkFoldersClick = () => {
+    this.props.dispatch(openModal({
+      modalType: 'BOOKMARK_FOLDER_ADDER',
+      modalProps: { statusId: this.props.status.get('id') },
+    }));
+  };
+
   handleMentionClick = () => {
     this.props.onMention(this.props.status.get('account'));
   };
@@ -242,6 +268,16 @@ class StatusActionBar extends ImmutablePureComponent {
 
     if (signedIn) {
       menu.push(null);
+      menu.push({ text: intl.formatMessage(messages.bookmarkFolders), action: this.handleBookmarkFoldersClick });
+
+      if (this.context) {
+        const hasNote = !!this.context.details[status.get('id')]?.note;
+        menu.push({ text: intl.formatMessage(hasNote ? messages.editBookmarkNote : messages.addBookmarkNote), action: this.handleBookmarkNoteClick });
+
+        if (this.context.folderId) {
+          menu.push({ text: intl.formatMessage(messages.removeFromBookmarkFolder), action: this.handleRemoveFromBookmarkFolderClick });
+        }
+      }
 
       if (writtenByMe && pinnableStatus) {
         menu.push({ text: intl.formatMessage(status.get('pinned') ? messages.unpin : messages.pin), action: this.handlePinClick });
@@ -345,6 +381,18 @@ class StatusActionBar extends ImmutablePureComponent {
     const favouriteTitle = intl.formatMessage(status.get('favourited') ? messages.removeFavourite : messages.favourite);
     const isReply = status.get('in_reply_to_account_id') === status.getIn(['account', 'id']);
 
+    let bookmarkNoteButton = null;
+
+    if (signedIn && this.context) {
+      const hasNote = !!this.context.details[status.get('id')]?.note;
+
+      bookmarkNoteButton = (
+        <div className='status__action-bar__button-wrapper'>
+          <IconButton className={classNames('status__action-bar__button', 'bookmark-note-icon', { 'bookmark-note-icon--filled': hasNote })} title={intl.formatMessage(hasNote ? messages.editBookmarkNote : messages.addBookmarkNote)} icon='pencil' iconComponent={hasNote ? PencilFillIcon : PencilIcon} onClick={this.handleBookmarkNoteClick} />
+        </div>
+      );
+    }
+
     return (
       <div className='status__action-bar'>
         <div className='status__action-bar__button-wrapper'>
@@ -359,6 +407,7 @@ class StatusActionBar extends ImmutablePureComponent {
         <div className='status__action-bar__button-wrapper'>
           <IconButton className='status__action-bar__button bookmark-icon' disabled={!signedIn} active={status.get('bookmarked')} title={bookmarkTitle} icon='bookmark' iconComponent={status.get('bookmarked') ? BookmarkIcon : BookmarkBorderIcon} onClick={this.handleBookmarkClick} />
         </div>
+        {bookmarkNoteButton}
         <div className='status__action-bar__button-wrapper'>
           <Dropdown
             scrollKey={scrollKey}

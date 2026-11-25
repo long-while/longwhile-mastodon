@@ -26,6 +26,7 @@ import {
   unmuteAccount,
 } from '../../actions/accounts';
 import { initBlockModal } from '../../actions/blocks';
+import { toggleStatusBookmark } from '../../actions/bookmark_toggle';
 import {
   replyCompose,
   mentionCompose,
@@ -37,8 +38,6 @@ import {
 } from '../../actions/domain_blocks';
 import {
   toggleFavourite,
-  bookmark,
-  unbookmark,
   toggleReblog,
   pin,
   unpin,
@@ -242,11 +241,7 @@ class Status extends ImmutablePureComponent {
   };
 
   handleBookmarkClick = (status) => {
-    if (status.get('bookmarked')) {
-      this.props.dispatch(unbookmark(status));
-    } else {
-      this.props.dispatch(bookmark(status));
-    }
+    this.props.dispatch(toggleStatusBookmark(status));
   };
 
   handleDeleteClick = (status, withRedraft = false) => {

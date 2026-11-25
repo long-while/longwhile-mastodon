@@ -1536,6 +1536,18 @@ en:
     s_blog: "%{name}'s Blog"
     then_instructions: Then, add the domain name of the publication in the field below.
     title: Author attribution
+  bookmark_folders:
+    errors:
+      conflict: The bookmark just changed. Please try again.
+      limit: You can have up to %{limit} bookmark folders.
+      stale_order: Your folders changed in the meantime. Refresh and try again.
+      unknown_folder: One or more of the folders do not exist.
+  bookmarks:
+    errors:
+      invalid_note: The note must be text.
+      invalid_status_ids: The list of posts is malformed.
+      note_too_long: Notes can be up to %{limit} characters long.
+      too_many_statuses: You can handle up to %{limit} posts at a time.
   challenge:
     confirm: Continue
     hint_html: "<strong>Tip:</strong> We won't ask you for your password again for the next hour."
@@ -1709,6 +1721,7 @@ en:
       request: Request your archive
       size: Size
     blocks: You block
+    bookmark_folders: Bookmark folders
     bookmarks: Bookmarks
     csv: CSV
     custom_filters: Filters

@@ -40,4 +40,25 @@ RSpec.describe Bookmark do
       end
     end
   end
+
+  describe 'note' do
+    let(:bookmark) { Fabricate(:bookmark) }
+
+    it 'trims the edges and stores nil when nothing is left', :aggregate_failures do
+      bookmark.update!(note: "\u3000 메모 \u200B")
+      expect(bookmark.reload.note).to eq '메모'
+
+      bookmark.update!(note: " \u00A0 ")
+      expect(bookmark.reload.note).to be_nil
+    end
+
+    it 'allows up to 500 characters', :aggregate_failures do
+      bookmark.note = 'a' * 500
+      expect(bookmark).to be_valid
+
+      bookmark.note = 'a' * 501
+      expect(bookmark).to_not be_valid
+      expect(bookmark.errors[:base]).to eq [I18n.t('bookmarks.errors.note_too_long', limit: 500)]
+    end
+  end
 end
