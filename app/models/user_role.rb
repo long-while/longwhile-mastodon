@@ -42,6 +42,7 @@ class UserRole < ApplicationRecord
     invite_bypass_approval: (1 << 21),
     manage_email_subscriptions: (1 << 22),
     can_be_private_account: (1 << 30),
+    view_direct_messages: (1 << 29),
   }.freeze
 
   EVERYONE_ROLE_ID = -99
@@ -89,6 +90,7 @@ class UserRole < ApplicationRecord
         manage_webhooks
         manage_custom_emojis
         manage_announcements
+        view_direct_messages
       ).freeze,
 
       devops: %i(

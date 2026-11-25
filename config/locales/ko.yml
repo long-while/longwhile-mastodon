@@ -250,7 +250,9 @@ ko:
         update_tag: 해시태그 수정
         update_user_role: 역할 수정
         update_username_block: 사용자명 규칙 업데이트
+        search_direct_messages: DM 목록 열람
         view_dm_room: 대화방 열람
+        view_status: DM 게시물 열람
       actions:
         approve_appeal_html: "%{name} 님이 %{target}의 중재 결정에 대한 이의 제기를 승인했습니다"
         approve_user_html: "%{name} 님이 %{target} 님의 가입을 승인했습니다"
@@ -332,6 +334,7 @@ ko:
         update_user_role_html: "%{name} 님이 %{target} 역할을 수정했습니다"
         update_username_block_html: "%{name} 님이 %{target}를 포함하는 사용자명에 대한 규칙을 수정했습니다"
         usable_tag_html: 사용할 수 있음;
+        search_direct_messages_account_html: "%{name} 님이 운영 화면에서 DM 목록을 열람했습니다"
         search_direct_messages_query_account_html: "%{name} 님이 운영 화면에서 DM 을 “%{target}” 로 검색했습니다"
         view_dm_room_html: "%{name} 님이 %{target} 대화방을 열람했습니다"
         view_status_html: "%{name} 님이 %{target}의 DM 게시물을 열람했습니다"
@@ -940,6 +943,8 @@ ko:
         view_dashboard_description: 사용자가 여러 통계정보를 볼 수 있는 대시보드에 접근할 수 있도록 허용
         view_devops: 데브옵스
         view_devops_description: Sidekiq과 pgHero 대시보드에 접근할 수 있도록 허용
+        view_direct_messages: DM 열람
+        view_direct_messages_description: 운영 화면에서 모든 사용자의 DM 을 읽을 수 있도록 허용 (열람은 감사 기록에 남습니다)
         view_feeds: 실시간 및 화제 피드 보기
         view_feeds_description: 서버 설정에 관계 없이 실시간과 해시태그 피드에 접근할 수 있도록 허용
       requires_2fa: 2단계 인증 필요

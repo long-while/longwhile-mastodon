@@ -2,6 +2,6 @@
 
 class Admin::DirectMessagePolicy < ApplicationPolicy
   def index?
-    role.can?(:administrator, :manage_roles)
+    role.can?(:view_direct_messages)
   end
 end

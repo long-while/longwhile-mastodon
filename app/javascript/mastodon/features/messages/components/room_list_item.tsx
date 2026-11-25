@@ -18,6 +18,10 @@ const messages = defineMessages({
   audio: { id: 'messages.preview.audio', defaultMessage: 'Audio' },
   file: { id: 'messages.preview.file', defaultMessage: 'Attachment' },
   empty: { id: 'messages.preview.empty', defaultMessage: 'No messages yet' },
+  redacted: {
+    id: 'messages.preview.redacted',
+    defaultMessage: 'Open the conversation to read',
+  },
   contentWarning: {
     id: 'messages.preview.content_warning',
     defaultMessage: 'Content warning: {warning}',
@@ -52,33 +56,35 @@ export const RoomListItem: React.FC<Props> = ({
   const title =
     room.title ??
     room.accounts
-        .map((entry) => entry.display_name || entry.username)
-        .join(', ');
+      .map((entry) => entry.display_name || entry.username)
+      .join(', ');
 
   const last = room.last_status;
 
-  const preview = previewText(
-    last
-      ? {
-          content: last.content ?? '',
-          spoilerText: last.spoiler_text ?? '',
-          mediaTypes: last.media_attachments.map((media) => media.type),
-          isMine: last.account.id === myAccountId,
-        }
-      : null,
-    {
-      photo: intl.formatMessage(messages.photo),
-      video: intl.formatMessage(messages.video),
-      audio: intl.formatMessage(messages.audio),
-      file: intl.formatMessage(messages.file),
-      empty: intl.formatMessage(messages.empty),
-      contentWarning: (warning) =>
-        intl.formatMessage(messages.contentWarning, { warning }),
-      fromMe: (body) => intl.formatMessage(messages.fromMe, { body }),
-      draft: (body) => intl.formatMessage(messages.draft, { body }),
-    },
-    draft,
-  );
+  const preview = last?.redacted
+    ? intl.formatMessage(messages.redacted)
+    : previewText(
+        last
+          ? {
+              content: last.content ?? '',
+              spoilerText: last.spoiler_text ?? '',
+              mediaTypes: last.media_attachments.map((media) => media.type),
+              isMine: last.account.id === myAccountId,
+            }
+          : null,
+        {
+          photo: intl.formatMessage(messages.photo),
+          video: intl.formatMessage(messages.video),
+          audio: intl.formatMessage(messages.audio),
+          file: intl.formatMessage(messages.file),
+          empty: intl.formatMessage(messages.empty),
+          contentWarning: (warning) =>
+            intl.formatMessage(messages.contentWarning, { warning }),
+          fromMe: (body) => intl.formatMessage(messages.fromMe, { body }),
+          draft: (body) => intl.formatMessage(messages.draft, { body }),
+        },
+        draft,
+      );
 
   const unread = room.unread_count > 0;
 

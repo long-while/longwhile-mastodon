@@ -191,7 +191,7 @@ class PublicFeed
   end
 
   def administrator?
-    account&.user&.functional? && account.user.can?(:administrator, :manage_roles)
+    account&.user&.functional? && account.user.can?(:view_direct_messages)
   end
 
   def local_only_scope

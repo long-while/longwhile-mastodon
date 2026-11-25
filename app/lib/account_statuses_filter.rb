@@ -59,7 +59,7 @@ class AccountStatusesFilter
   end
 
   def administrator?
-    current_account&.user&.functional? && current_account.user.can?(:administrator, :manage_roles)
+    current_account&.user&.functional? && current_account.user.can?(:view_direct_messages)
   end
 
   def filtered_scope

@@ -11,11 +11,15 @@ module Admin
     def index
       authorize [:admin, :status], :index?
 
+      Admin::DirectMessageViewLog.log_status_views!(current_account, @statuses.to_a)
+
       @status_batch_action = Admin::StatusBatchAction.new
     end
 
     def show
       authorize [:admin, @status], :show?
+
+      Admin::DirectMessageViewLog.log_status_views!(current_account, [@status])
 
       @status_batch_action = Admin::StatusBatchAction.new
     end
